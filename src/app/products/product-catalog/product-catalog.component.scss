@@ -6,9 +6,12 @@
 
 .search-bar {
   margin-bottom: 30px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
 
   .search-input {
-    width: 100%;
+    flex: 1;
     padding: 14px 20px;
     font-size: 15px;
     border: 2px solid #e1e8ed;
@@ -19,6 +22,19 @@
 
     &:focus {
       border-color: #667eea;
+    }
+  }
+
+  .cart-total-info {
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+    white-space: nowrap;
+
+    .cart-total-amount {
+      color: #667eea;
+      font-size: 20px;
+      font-weight: 700;
     }
   }
 }
@@ -230,11 +246,17 @@
   }
 
   .bulk-info {
-    .products-count {
+    .cart-total-label {
       font-size: 16px;
       font-weight: 600;
-      color: #667eea;
+      color: #333;
       white-space: nowrap;
+
+      .cart-total-value {
+        color: #667eea;
+        font-size: 18px;
+        font-weight: 700;
+      }
     }
   }
 
@@ -573,6 +595,23 @@
 }
 
 @media (max-width: 768px) {
+  .search-bar {
+    flex-direction: column;
+    gap: 12px;
+    align-items: stretch;
+
+    .search-input {
+      width: 100%;
+    }
+
+    .cart-total-info {
+      text-align: center;
+      padding: 12px;
+      background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+      border-radius: 8px;
+    }
+  }
+
   .products-grid {
     grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
   }

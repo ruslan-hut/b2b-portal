@@ -166,4 +166,8 @@ export class ProductCatalogComponent implements OnInit {
   isInCart(productId: string): boolean {
     return this.cartItems.some(item => item.productId === productId);
   }
+
+  getCartTotal(): number {
+    return this.cartItems.reduce((total, item) => total + item.subtotal, 0);
+  }
 }

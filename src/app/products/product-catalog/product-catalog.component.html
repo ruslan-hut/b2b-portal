@@ -7,6 +7,9 @@
       placeholder="Search products by name, description, category, or SKU..."
       class="search-input"
     />
+    <div class="cart-total-info">
+      Cart Total: <span class="cart-total-amount">${{ getCartTotal().toFixed(2) }}</span>
+    </div>
   </div>
 
   <div class="loading-container" *ngIf="loading">
@@ -55,7 +58,7 @@
         />
         <div class="bulk-actions-right">
           <div class="bulk-info">
-            <span class="products-count">{{ filteredProducts.length }} Products</span>
+            <span class="cart-total-label">Cart Total: <span class="cart-total-value">${{ getCartTotal().toFixed(2) }}</span></span>
           </div>
           <button 
             class="btn btn-add-bulk" 
