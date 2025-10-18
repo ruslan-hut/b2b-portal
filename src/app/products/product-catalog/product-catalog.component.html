@@ -4,17 +4,17 @@
       type="text"
       [(ngModel)]="searchQuery"
       (ngModelChange)="onSearchChange()"
-      placeholder="Search products by name, description, category, or SKU..."
+      [placeholder]="'products.searchPlaceholder' | translate"
       class="search-input"
     />
     <div class="cart-total-info">
-      Cart Total: <span class="cart-total-amount">${{ getCartTotal().toFixed(2) }}</span>
+      {{ 'products.total' | translate }}: <span class="cart-total-amount">${{ getCartTotal().toFixed(2) }}</span>
     </div>
   </div>
 
   <div class="loading-container" *ngIf="loading">
     <div class="spinner-large"></div>
-    <p>Loading products...</p>
+    <p>{{ 'common.loading' | translate }}</p>
   </div>
 
   <!-- Grid View -->
@@ -23,14 +23,14 @@
       <div class="product-image">
         <img [src]="product.imageUrl" [alt]="product.name" />
         <span class="stock-badge" [class.out-of-stock]="!product.inStock">
-          {{ product.inStock ? 'In Stock' : 'Out of Stock' }}
+          {{ product.inStock ? ('products.stock' | translate) : ('products.outOfStock' | translate) }}
         </span>
       </div>
       <div class="product-info">
         <div class="product-category">{{ product.category }}</div>
         <h3 class="product-name">{{ product.name }}</h3>
         <p class="product-description">{{ product.description }}</p>
-        <div class="product-sku">SKU: {{ product.sku }}</div>
+        <div class="product-sku">{{ 'products.sku' | translate }}: {{ product.sku }}</div>
         <div class="product-footer">
           <div class="product-price">${{ product.price.toFixed(2) }}</div>
           <button
@@ -38,7 +38,7 @@
             (click)="addToCart(product)"
             [disabled]="!product.inStock"
           >
-            {{ product.inStock ? 'Add to Cart' : 'Unavailable' }}
+            {{ product.inStock ? ('products.addToCart' | translate) : ('products.outOfStock' | translate) }}
           </button>
         </div>
       </div>
@@ -53,19 +53,19 @@
           type="text"
           [(ngModel)]="searchQuery"
           (ngModelChange)="onSearchChange()"
-          placeholder="Search products by name, description, category, or SKU..."
+          [placeholder]="'products.searchPlaceholder' | translate"
           class="search-input-bulk"
         />
         <div class="bulk-actions-right">
           <div class="bulk-info">
-            <span class="cart-total-label">Cart Total: <span class="cart-total-value">${{ getCartTotal().toFixed(2) }}</span></span>
+            <span class="cart-total-label">{{ 'products.total' | translate }}: <span class="cart-total-value">${{ getCartTotal().toFixed(2) }}</span></span>
           </div>
           <button 
             class="btn btn-add-bulk" 
             (click)="addBulkToCart()"
             [disabled]="!hasBulkItems()"
           >
-            Update Cart
+            {{ 'products.updateCart' | translate }}
           </button>
         </div>
       </div>
@@ -74,13 +74,13 @@
         <table class="bulk-table">
           <thead>
             <tr>
-              <th>SKU</th>
-              <th>Product</th>
-              <th>Category</th>
-              <th>Price</th>
-              <th>Status</th>
-              <th>Quantity</th>
-              <th>Subtotal</th>
+              <th>{{ 'products.sku' | translate }}</th>
+              <th>{{ 'navigation.products' | translate }}</th>
+              <th>{{ 'products.category' | translate }}</th>
+              <th>{{ 'products.price' | translate }}</th>
+              <th>{{ 'orders.status' | translate }}</th>
+              <th>{{ 'products.quantity' | translate }}</th>
+              <th>{{ 'products.total' | translate }}</th>
             </tr>
           </thead>
           <tbody>
@@ -101,7 +101,7 @@
               <td class="price-cell">${{ product.price.toFixed(2) }}</td>
               <td class="status-cell">
                 <span class="status-badge" [class.in-stock]="product.inStock">
-                  {{ product.inStock ? 'In Stock' : 'Out of Stock' }}
+                  {{ product.inStock ? ('products.stock' | translate) : ('products.outOfStock' | translate) }}
                 </span>
               </td>
               <td class="quantity-cell">
@@ -141,15 +141,20 @@
         <div class="detail-content">
           <div class="detail-category">{{ selectedProduct.category }}</div>
           <h2 class="detail-title">{{ selectedProduct.name }}</h2>
-          <div class="detail-sku">SKU: {{ selectedProduct.sku }}</div>
+          <div class="detail-sku">{{ 'products.sku' | translate }}: {{ selectedProduct.sku }}</div>
           <p class="detail-description">{{ selectedProduct.description }}</p>
           <div class="detail-price-section">
             <div class="detail-price">${{ selectedProduct.price.toFixed(2) }}</div>
-            <span class="price-label">per unit</span>
+            <span class="price-label">{{ 'products.price' | translate }}</span>
           </div>
           <div class="detail-stock">
             <span class="stock-indicator" [class.in-stock]="selectedProduct.inStock">
-              {{ selectedProduct.inStock ? '✓ In Stock' : '✗ Out of Stock' }}
+              <ng-container *ngIf="selectedProduct.inStock">
+                ✓ {{ 'products.stock' | translate }}
+              </ng-container>
+              <ng-container *ngIf="!selectedProduct.inStock">
+                ✗ {{ 'products.outOfStock' | translate }}
+              </ng-container>
             </span>
           </div>
         </div>
@@ -159,7 +164,7 @@
 
   <div class="empty-state" *ngIf="!loading && filteredProducts.length === 0">
     <div class="empty-icon">🔍</div>
-    <h2>No products found</h2>
-    <p>Try adjusting your search criteria</p>
+    <h2>{{ 'products.noProducts' | translate }}</h2>
+    <p>{{ 'common.search' | translate }}</p>
   </div>
 </div>

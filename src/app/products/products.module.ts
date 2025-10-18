@@ -5,6 +5,7 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ProductsRoutingModule } from './products-routing.module';
 import { ProductCatalogComponent } from './product-catalog/product-catalog.component';
 import { OrderConfirmationComponent } from './order-confirmation/order-confirmation.component';
+import { CoreModule } from '../core/core.module';
 
 
 @NgModule({
@@ -16,7 +17,8 @@ import { OrderConfirmationComponent } from './order-confirmation/order-confirmat
     CommonModule,
     FormsModule,
     ReactiveFormsModule,
-    ProductsRoutingModule
+    ProductsRoutingModule,
+    CoreModule
   ]
 })
 export class ProductsModule { }

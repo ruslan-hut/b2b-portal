@@ -1,22 +1,22 @@
 <div class="order-history-container">
   <div class="page-header">
-    <h1>Order History</h1>
+    <h1>{{ 'orders.title' | translate }}</h1>
     <button class="btn btn-primary" (click)="navigateToCatalog()">
-      Browse Products
+      {{ 'navigation.products' | translate }}
     </button>
   </div>
 
   <div class="loading-container" *ngIf="loading">
     <div class="spinner-large"></div>
-    <p>Loading orders...</p>
+    <p>{{ 'common.loading' | translate }}</p>
   </div>
 
   <div class="empty-state" *ngIf="!loading && orders.length === 0">
     <div class="empty-icon">📦</div>
-    <h2>No orders yet</h2>
-    <p>Start browsing our products and place your first order!</p>
+    <h2>{{ 'orders.noOrders' | translate }}</h2>
+    <p>{{ 'navigation.products' | translate }}</p>
     <button class="btn btn-primary" (click)="navigateToCatalog()">
-      View Products
+      {{ 'orders.viewDetails' | translate }}
     </button>
   </div>
 
@@ -38,7 +38,7 @@
         <div class="item" *ngFor="let item of order.items">
           <div class="item-info">
             <span class="item-name">{{ item.productName }}</span>
-            <span class="item-quantity">Qty: {{ item.quantity }}</span>
+            <span class="item-quantity">{{ 'products.quantity' | translate }}: {{ item.quantity }}</span>
           </div>
           <div class="item-price">
             ${{ item.subtotal.toFixed(2) }}
@@ -48,11 +48,11 @@
 
       <div class="order-footer">
         <div class="order-total">
-          <span class="total-label">Total:</span>
+          <span class="total-label">{{ 'products.total' | translate }}:</span>
           <span class="total-amount">${{ order.totalAmount.toFixed(2) }}</span>
         </div>
         <button class="btn btn-secondary" (click)="viewOrderDetails(order.id)">
-          View Details
+          {{ 'orders.viewDetails' | translate }}
         </button>
       </div>
     </div>

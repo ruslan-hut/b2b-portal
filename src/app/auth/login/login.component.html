@@ -1,40 +1,41 @@
 <div class="login-container">
   <div class="login-card">
     <div class="login-header">
-      <h1>B2B Portal</h1>
-      <p>Sign in to your account</p>
+      <h1>{{ 'auth.title' | translate }}</h1>
+      <p>{{ 'auth.welcomeMessage' | translate }}</p>
+      <app-language-switcher></app-language-switcher>
     </div>
 
     <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login-form">
       <div class="form-group">
-        <label for="email">Email Address</label>
+        <label for="email">{{ 'common.email' | translate }}</label>
         <input
           type="email"
           id="email"
           formControlName="email"
           class="form-control"
           [class.is-invalid]="submitted && f['email'].errors"
-          placeholder="Enter your email"
+          [placeholder]="'auth.emailPlaceholder' | translate"
         />
         <div class="invalid-feedback" *ngIf="submitted && f['email'].errors">
-          <div *ngIf="f['email'].errors['required']">Email is required</div>
-          <div *ngIf="f['email'].errors['email']">Please enter a valid email</div>
+          <div *ngIf="f['email'].errors['required']">{{ 'validation.required' | translate }}</div>
+          <div *ngIf="f['email'].errors['email']">{{ 'validation.email' | translate }}</div>
         </div>
       </div>
 
       <div class="form-group">
-        <label for="password">Password</label>
+        <label for="password">{{ 'common.password' | translate }}</label>
         <input
           type="password"
           id="password"
           formControlName="password"
           class="form-control"
           [class.is-invalid]="submitted && f['password'].errors"
-          placeholder="Enter your password"
+          [placeholder]="'auth.passwordPlaceholder' | translate"
         />
         <div class="invalid-feedback" *ngIf="submitted && f['password'].errors">
-          <div *ngIf="f['password'].errors['required']">Password is required</div>
-          <div *ngIf="f['password'].errors['minlength']">Password must be at least 6 characters</div>
+          <div *ngIf="f['password'].errors['required']">{{ 'validation.required' | translate }}</div>
+          <div *ngIf="f['password'].errors['minlength']">{{ 'validation.minLength' | translate: {min: 6} }}</div>
         </div>
       </div>
 
@@ -44,8 +45,8 @@
 
       <button type="submit" class="btn btn-primary" [disabled]="loading">
         <span *ngIf="loading" class="spinner"></span>
-        <span *ngIf="!loading">Sign In</span>
-        <span *ngIf="loading">Signing In...</span>
+        <span *ngIf="!loading">{{ 'auth.loginButton' | translate }}</span>
+        <span *ngIf="loading">{{ 'common.loading' | translate }}</span>
       </button>
     </form>
 

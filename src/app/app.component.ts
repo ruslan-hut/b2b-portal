@@ -3,6 +3,7 @@ import { Router, NavigationEnd } from '@angular/router';
 import { AuthService } from './core/services/auth.service';
 import { OrderService } from './core/services/order.service';
 import { ProductService } from './core/services/product.service';
+import { TranslationService } from './core/services/translation.service';
 import { User } from './core/models/user.model';
 import { OrderItem } from './core/models/order.model';
 import { filter } from 'rxjs/operators';
@@ -25,7 +26,8 @@ export class AppComponent {
     private authService: AuthService,
     private orderService: OrderService,
     private productService: ProductService,
-    private router: Router
+    private router: Router,
+    public translationService: TranslationService
   ) {
     this.authService.currentUser.subscribe(user => {
       this.currentUser = user;

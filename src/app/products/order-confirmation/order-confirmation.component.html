@@ -1,11 +1,11 @@
 <div class="confirmation-container">
   <div class="page-header">
-    <h1>Confirm Your Order</h1>
+    <h1>{{ 'products.orderConfirmation' | translate }}</h1>
   </div>
 
   <div class="confirmation-content">
     <div class="order-summary">
-      <h2>Order Summary</h2>
+      <h2>{{ 'products.orderConfirmation' | translate }}</h2>
       
       <div class="summary-items">
         <div class="summary-item" *ngFor="let item of cartItems">
@@ -18,20 +18,20 @@
           <div class="item-actions">
             <span class="item-total">${{ item.subtotal.toFixed(2) }}</span>
             <button class="remove-btn" (click)="removeItem(item.productId)">
-              Remove
+              {{ 'common.delete' | translate }}
             </button>
           </div>
         </div>
       </div>
 
       <div class="summary-total">
-        <span class="total-label">Total Amount:</span>
+        <span class="total-label">{{ 'products.total' | translate }}:</span>
         <span class="total-amount">${{ cartTotal.toFixed(2) }}</span>
       </div>
     </div>
 
     <div class="shipping-form-section">
-      <h2>Shipping Address</h2>
+      <h2>{{ 'products.confirmOrder' | translate }}</h2>
       
       <form [formGroup]="shippingForm" (ngSubmit)="onSubmit()">
         <div class="form-row">
@@ -46,7 +46,7 @@
               placeholder="Enter street address"
             />
             <div class="invalid-feedback" *ngIf="submitted && f['street'].errors">
-              <div *ngIf="f['street'].errors['required']">Street address is required</div>
+              <div *ngIf="f['street'].errors['required']">{{ 'validation.required' | translate }}</div>
             </div>
           </div>
         </div>
@@ -63,7 +63,7 @@
               placeholder="City"
             />
             <div class="invalid-feedback" *ngIf="submitted && f['city'].errors">
-              <div *ngIf="f['city'].errors['required']">City is required</div>
+              <div *ngIf="f['city'].errors['required']">{{ 'validation.required' | translate }}</div>
             </div>
           </div>
 
@@ -78,7 +78,7 @@
               placeholder="State"
             />
             <div class="invalid-feedback" *ngIf="submitted && f['state'].errors">
-              <div *ngIf="f['state'].errors['required']">State is required</div>
+              <div *ngIf="f['state'].errors['required']">{{ 'validation.required' | translate }}</div>
             </div>
           </div>
         </div>
@@ -95,8 +95,8 @@
               placeholder="12345"
             />
             <div class="invalid-feedback" *ngIf="submitted && f['zipCode'].errors">
-              <div *ngIf="f['zipCode'].errors['required']">ZIP code is required</div>
-              <div *ngIf="f['zipCode'].errors['pattern']">Invalid ZIP code format</div>
+              <div *ngIf="f['zipCode'].errors['required']">{{ 'validation.required' | translate }}</div>
+              <div *ngIf="f['zipCode'].errors['pattern']">{{ 'validation.pattern' | translate }}</div>
             </div>
           </div>
 
@@ -110,7 +110,7 @@
               [class.is-invalid]="submitted && f['country'].errors"
             />
             <div class="invalid-feedback" *ngIf="submitted && f['country'].errors">
-              <div *ngIf="f['country'].errors['required']">Country is required</div>
+              <div *ngIf="f['country'].errors['required']">{{ 'validation.required' | translate }}</div>
             </div>
           </div>
         </div>
@@ -121,12 +121,12 @@
 
         <div class="form-actions">
           <button type="button" class="btn btn-secondary" (click)="cancelOrder()" [disabled]="loading">
-            Cancel
+            {{ 'common.cancel' | translate }}
           </button>
           <button type="submit" class="btn btn-primary" [disabled]="loading">
             <span *ngIf="loading" class="spinner"></span>
-            <span *ngIf="!loading">Place Order</span>
-            <span *ngIf="loading">Processing...</span>
+            <span *ngIf="!loading">{{ 'products.confirmOrder' | translate }}</span>
+            <span *ngIf="loading">{{ 'common.loading' | translate }}</span>
           </button>
         </div>
       </form>

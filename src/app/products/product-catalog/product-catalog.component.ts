@@ -4,6 +4,7 @@ import { ProductService } from '../../core/services/product.service';
 import { OrderService } from '../../core/services/order.service';
 import { Product } from '../../core/models/product.model';
 import { OrderItem } from '../../core/models/order.model';
+import { TranslationService } from '../../core/services/translation.service';
 
 @Component({
   selector: 'app-product-catalog',
@@ -25,7 +26,8 @@ export class ProductCatalogComponent implements OnInit {
   constructor(
     private productService: ProductService,
     private orderService: OrderService,
-    private router: Router
+    private router: Router,
+    public translationService: TranslationService
   ) {}
 
   ngOnInit(): void {

@@ -8,26 +8,32 @@
       
       <nav class="main-nav">
         <a routerLink="/products/catalog" routerLinkActive="active" class="nav-link">
-          Products
+          {{ 'navigation.products' | translate }}
         </a>
         <a routerLink="/orders/history" routerLinkActive="active" class="nav-link">
-          Orders
+          {{ 'navigation.orders' | translate }}
         </a>
       </nav>
       
       <div class="user-menu">
+        <app-language-switcher></app-language-switcher>
         <button class="btn-view-toggle" *ngIf="showViewToggle" (click)="toggleViewMode()">
-          {{ viewMode === 'grid' ? '📋 Bulk Order' : '🔲 Grid View' }}
+          <ng-container *ngIf="viewMode === 'grid'">
+            📋 {{ 'navigation.bulkOrder' | translate }}
+          </ng-container>
+          <ng-container *ngIf="viewMode === 'bulk'">
+            🔲 {{ 'navigation.gridView' | translate }}
+          </ng-container>
         </button>
         <button class="btn-cart" (click)="toggleCartPanel()">
-          🛒 Cart ({{ cartItems.length }})
+          🛒 {{ 'navigation.cart' | translate }} ({{ cartItems.length }})
         </button>
         <div class="user-info">
           <span class="user-name">{{ currentUser.name }}</span>
           <span class="user-company">{{ currentUser.companyName }}</span>
         </div>
         <button class="btn-logout" (click)="logout()">
-          Logout
+          {{ 'common.logout' | translate }}
         </button>
       </div>
     </div>
@@ -41,21 +47,21 @@
   <div class="cart-overlay" *ngIf="showCartPanel" (click)="toggleCartPanel()"></div>
   <div class="cart-panel" [class.open]="showCartPanel">
     <div class="cart-header">
-      <h2>Shopping Cart</h2>
+      <h2>{{ 'products.addToCart' | translate }}</h2>
       <button class="close-btn" (click)="toggleCartPanel()">✕</button>
     </div>
 
     <div class="cart-content">
       <div class="empty-cart" *ngIf="cartItems.length === 0">
         <div class="empty-icon">🛒</div>
-        <p>Your cart is empty</p>
+        <p>{{ 'messages.cartCleared' | translate }}</p>
       </div>
 
       <div class="cart-items" *ngIf="cartItems.length > 0">
         <div class="cart-item" *ngFor="let item of cartItems">
           <div class="item-details">
             <div class="item-name">{{ item.productName }}</div>
-            <div class="item-price">${{ item.price.toFixed(2) }} each</div>
+            <div class="item-price">${{ item.price.toFixed(2) }}</div>
           </div>
           <div class="item-controls">
             <div class="quantity-controls">
@@ -72,11 +78,11 @@
 
     <div class="cart-footer" *ngIf="cartItems.length > 0">
       <div class="cart-total">
-        <span class="total-label">Total:</span>
+        <span class="total-label">{{ 'products.total' | translate }}:</span>
         <span class="total-amount">${{ cartTotal.toFixed(2) }}</span>
       </div>
       <button class="btn-checkout" (click)="proceedToCheckout()">
-        Proceed to Checkout
+        {{ 'products.confirmOrder' | translate }}
       </button>
     </div>
   </div>

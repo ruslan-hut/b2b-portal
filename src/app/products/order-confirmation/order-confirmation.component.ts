@@ -3,6 +3,7 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { OrderService } from '../../core/services/order.service';
 import { OrderItem, CreateOrderRequest } from '../../core/models/order.model';
+import { TranslationService } from '../../core/services/translation.service';
 
 @Component({
   selector: 'app-order-confirmation',
@@ -20,7 +21,8 @@ export class OrderConfirmationComponent implements OnInit {
   constructor(
     private formBuilder: FormBuilder,
     private orderService: OrderService,
-    private router: Router
+    private router: Router,
+    private translationService: TranslationService
   ) {}
 
   ngOnInit(): void {
@@ -68,11 +70,12 @@ export class OrderConfirmationComponent implements OnInit {
         this.orderService.clearCart();
         this.loading = false;
         // Show success message or navigate to order details
-        alert(`Order ${order.orderNumber} placed successfully!`);
+        const successMsg = this.translationService.instant('products.orderSuccess');
+        alert(`${successMsg} ${order.orderNumber}`);
         this.router.navigate(['/orders/history']);
       },
       error: (error) => {
-        this.errorMessage = 'Failed to place order. Please try again.';
+        this.errorMessage = this.translationService.instant('products.orderError');
         this.loading = false;
       }
     });
