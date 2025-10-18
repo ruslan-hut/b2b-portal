@@ -32,12 +32,12 @@ jobs:
           npx ng build --configuration=production
           # npx ng build --configuration=production --base-href "$BASE_HREF" --deploy-url "$DEPLOY_URL"
 
-      - name: Pack dist
-        id: pack
+      - name: Pack dist (Angular browser output)
         run: |
-          APP_DIR=$(ls -1 dist | head -n1)
-          echo "APP_DIR=$APP_DIR" >> $GITHUB_ENV
-          tar -C "dist/$APP_DIR" -czf build.tar.gz .
+            APP_DIR=$(ls -1 dist | head -n1)
+            echo "APP_DIR=$APP_DIR" >> $GITHUB_ENV
+            # ВАЖНО: берем dist/<app>/browser
+            tar -C "dist/$APP_DIR/browser" -czf build.tar.gz .
 
       - name: Setup SSH
         run: |
