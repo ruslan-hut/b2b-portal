@@ -1,0 +1,83 @@
+<div class="app-container">
+  <header class="app-header" *ngIf="currentUser">
+    <div class="header-content">
+      <div class="logo" (click)="navigateTo('/products/catalog')">
+        <span class="logo-icon">🏢</span>
+        <span class="logo-text">{{ title }}</span>
+      </div>
+      
+      <nav class="main-nav">
+        <a routerLink="/products/catalog" routerLinkActive="active" class="nav-link">
+          Products
+        </a>
+        <a routerLink="/orders/history" routerLinkActive="active" class="nav-link">
+          Orders
+        </a>
+      </nav>
+      
+      <div class="user-menu">
+        <button class="btn-view-toggle" *ngIf="showViewToggle" (click)="toggleViewMode()">
+          {{ viewMode === 'grid' ? '📋 Bulk Order' : '🔲 Grid View' }}
+        </button>
+        <button class="btn-cart" (click)="toggleCartPanel()">
+          🛒 Cart ({{ cartItems.length }})
+        </button>
+        <div class="user-info">
+          <span class="user-name">{{ currentUser.name }}</span>
+          <span class="user-company">{{ currentUser.companyName }}</span>
+        </div>
+        <button class="btn-logout" (click)="logout()">
+          Logout
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="app-main">
+    <router-outlet />
+  </main>
+
+  <!-- Cart Side Panel -->
+  <div class="cart-overlay" *ngIf="showCartPanel" (click)="toggleCartPanel()"></div>
+  <div class="cart-panel" [class.open]="showCartPanel">
+    <div class="cart-header">
+      <h2>Shopping Cart</h2>
+      <button class="close-btn" (click)="toggleCartPanel()">✕</button>
+    </div>
+
+    <div class="cart-content">
+      <div class="empty-cart" *ngIf="cartItems.length === 0">
+        <div class="empty-icon">🛒</div>
+        <p>Your cart is empty</p>
+      </div>
+
+      <div class="cart-items" *ngIf="cartItems.length > 0">
+        <div class="cart-item" *ngFor="let item of cartItems">
+          <div class="item-details">
+            <div class="item-name">{{ item.productName }}</div>
+            <div class="item-price">${{ item.price.toFixed(2) }} each</div>
+          </div>
+          <div class="item-controls">
+            <div class="quantity-controls">
+              <button class="qty-btn" (click)="updateQuantity(item.productId, item.quantity - 1)">-</button>
+              <span class="quantity">{{ item.quantity }}</span>
+              <button class="qty-btn" (click)="updateQuantity(item.productId, item.quantity + 1)">+</button>
+            </div>
+            <div class="item-subtotal">${{ item.subtotal.toFixed(2) }}</div>
+            <button class="remove-btn" (click)="removeFromCart(item.productId)">🗑️</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="cart-footer" *ngIf="cartItems.length > 0">
+      <div class="cart-total">
+        <span class="total-label">Total:</span>
+        <span class="total-amount">${{ cartTotal.toFixed(2) }}</span>
+      </div>
+      <button class="btn-checkout" (click)="proceedToCheckout()">
+        Proceed to Checkout
+      </button>
+    </div>
+  </div>
+</div>

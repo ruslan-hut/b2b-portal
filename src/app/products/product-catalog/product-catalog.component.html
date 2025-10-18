@@ -1,0 +1,162 @@
+<div class="catalog-container">
+  <div class="search-bar" *ngIf="viewMode === 'grid'">
+    <input
+      type="text"
+      [(ngModel)]="searchQuery"
+      (ngModelChange)="onSearchChange()"
+      placeholder="Search products by name, description, category, or SKU..."
+      class="search-input"
+    />
+  </div>
+
+  <div class="loading-container" *ngIf="loading">
+    <div class="spinner-large"></div>
+    <p>Loading products...</p>
+  </div>
+
+  <!-- Grid View -->
+  <div class="products-grid" *ngIf="!loading && viewMode === 'grid'">
+    <div class="product-card" *ngFor="let product of filteredProducts">
+      <div class="product-image">
+        <img [src]="product.imageUrl" [alt]="product.name" />
+        <span class="stock-badge" [class.out-of-stock]="!product.inStock">
+          {{ product.inStock ? 'In Stock' : 'Out of Stock' }}
+        </span>
+      </div>
+      <div class="product-info">
+        <div class="product-category">{{ product.category }}</div>
+        <h3 class="product-name">{{ product.name }}</h3>
+        <p class="product-description">{{ product.description }}</p>
+        <div class="product-sku">SKU: {{ product.sku }}</div>
+        <div class="product-footer">
+          <div class="product-price">${{ product.price.toFixed(2) }}</div>
+          <button
+            class="btn btn-add-to-cart"
+            (click)="addToCart(product)"
+            [disabled]="!product.inStock"
+          >
+            {{ product.inStock ? 'Add to Cart' : 'Unavailable' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bulk Order View -->
+  <div class="bulk-view-container" *ngIf="!loading && viewMode === 'bulk'">
+    <div class="bulk-table-section">
+      <div class="bulk-actions-bar">
+        <input
+          type="text"
+          [(ngModel)]="searchQuery"
+          (ngModelChange)="onSearchChange()"
+          placeholder="Search products by name, description, category, or SKU..."
+          class="search-input-bulk"
+        />
+        <div class="bulk-actions-right">
+          <div class="bulk-info">
+            <span class="products-count">{{ filteredProducts.length }} Products</span>
+          </div>
+          <button 
+            class="btn btn-add-bulk" 
+            (click)="addBulkToCart()"
+            [disabled]="!hasBulkItems()"
+          >
+            Update Cart
+          </button>
+        </div>
+      </div>
+
+      <div class="bulk-table-wrapper">
+        <table class="bulk-table">
+          <thead>
+            <tr>
+              <th>SKU</th>
+              <th>Product</th>
+              <th>Category</th>
+              <th>Price</th>
+              <th>Status</th>
+              <th>Quantity</th>
+              <th>Subtotal</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr 
+              *ngFor="let product of filteredProducts" 
+              class="bulk-row"
+              [class.selected]="selectedProduct?.id === product.id"
+              [class.out-of-stock]="!product.inStock"
+              [class.in-cart]="isInCart(product.id)"
+              (mouseenter)="selectProduct(product)"
+              (click)="selectProduct(product)"
+            >
+              <td class="sku-cell">{{ product.sku }}</td>
+              <td class="name-cell">
+                <div class="product-name-cell">{{ product.name }}</div>
+              </td>
+              <td class="category-cell">{{ product.category }}</td>
+              <td class="price-cell">${{ product.price.toFixed(2) }}</td>
+              <td class="status-cell">
+                <span class="status-badge" [class.in-stock]="product.inStock">
+                  {{ product.inStock ? 'In Stock' : 'Out of Stock' }}
+                </span>
+              </td>
+              <td class="quantity-cell">
+                <div class="quantity-cell-wrapper">
+                  <input 
+                    type="number" 
+                    class="quantity-input"
+                    [value]="getBulkQuantity(product.id)"
+                    (input)="setBulkQuantity(product.id, +$any($event.target).value)"
+                    (focus)="selectProduct(product)"
+                    min="0"
+                    [disabled]="!product.inStock"
+                    placeholder="0"
+                  />
+                  <span class="cart-badge" *ngIf="isInCart(product.id)">
+                    🛒
+                  </span>
+                </div>
+              </td>
+              <td class="subtotal-cell">
+                <span *ngIf="getBulkQuantity(product.id) > 0">
+                  ${{ (product.price * getBulkQuantity(product.id)).toFixed(2) }}
+                </span>
+                <span *ngIf="getBulkQuantity(product.id) === 0">-</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="bulk-detail-section" *ngIf="selectedProduct">
+      <div class="detail-card">
+        <div class="detail-image">
+          <img [src]="selectedProduct.imageUrl" [alt]="selectedProduct.name" />
+        </div>
+        <div class="detail-content">
+          <div class="detail-category">{{ selectedProduct.category }}</div>
+          <h2 class="detail-title">{{ selectedProduct.name }}</h2>
+          <div class="detail-sku">SKU: {{ selectedProduct.sku }}</div>
+          <p class="detail-description">{{ selectedProduct.description }}</p>
+          <div class="detail-price-section">
+            <div class="detail-price">${{ selectedProduct.price.toFixed(2) }}</div>
+            <span class="price-label">per unit</span>
+          </div>
+          <div class="detail-stock">
+            <span class="stock-indicator" [class.in-stock]="selectedProduct.inStock">
+              {{ selectedProduct.inStock ? '✓ In Stock' : '✗ Out of Stock' }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="empty-state" *ngIf="!loading && filteredProducts.length === 0">
+    <div class="empty-icon">🔍</div>
+    <h2>No products found</h2>
+    <p>Try adjusting your search criteria</p>
+  </div>
+</div>
