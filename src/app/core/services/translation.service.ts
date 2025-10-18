@@ -19,10 +19,10 @@ export class TranslationService {
 
   private translations: { [key in Language]?: TranslationData } = {};
   private readonly LANGUAGE_KEY = 'app_language';
+  private translationsLoaded = false;
 
   constructor() {
     this.initializeLanguage();
-    this.loadTranslations();
   }
 
   /**
@@ -36,17 +36,26 @@ export class TranslationService {
   }
 
   /**
+   * Initialize translations - must be called before app bootstrap
+   * Returns a Promise to be used with APP_INITIALIZER
+   */
+  initTranslations(): Promise<void> {
+    return this.loadTranslations();
+  }
+
+  /**
    * Load translations for both languages
    */
   private async loadTranslations(): Promise<void> {
     try {
       const [enTranslations, ukTranslations] = await Promise.all([
-        fetch('/assets/i18n/en.json').then(res => res.json()),
-        fetch('/assets/i18n/uk.json').then(res => res.json())
+        fetch('assets/i18n/en.json').then(res => res.json()),
+        fetch('assets/i18n/uk.json').then(res => res.json())
       ]);
 
       this.translations['en'] = enTranslations;
       this.translations['uk'] = ukTranslations;
+      this.translationsLoaded = true;
 
       // Emit current language translations
       this.updateCurrentTranslations();
@@ -55,6 +64,7 @@ export class TranslationService {
       // Fallback to empty translations
       this.translations['en'] = {};
       this.translations['uk'] = {};
+      this.translationsLoaded = true;
     }
   }
 
@@ -169,7 +179,7 @@ export class TranslationService {
    * Check if translations are loaded
    */
   areTranslationsLoaded(): boolean {
-    return Object.keys(this.translations).length > 0;
+    return this.translationsLoaded;
   }
 }
 

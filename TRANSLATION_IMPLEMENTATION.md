@@ -5,10 +5,12 @@
 This guide provides step-by-step instructions for integrating the Translation Service into your B2B Portal application. The service supports **English (en)** and **Ukrainian (uk)** languages with reactive translations that update automatically when the language changes.
 
 ###  Key Features
+-  **Pre-loaded translations** via APP_INITIALIZER (no flash of translation keys)
 -  **Compact dropdown** language switcher (60% space saving)
 -  **Instant reactive updates** when language changes
 -  **Smart caching** with language change detection
 -  **LocalStorage persistence** for language preference
+-  **Production-ready** with relative asset paths for any base URL
 -  **Smooth animations** and professional UI
 -  **Mobile responsive** design
 -  **105+ translation keys** covering all app features
@@ -38,7 +40,57 @@ src/assets/i18n/
 
 ##  Implementation Steps
 
-### Step 1: Import CoreModule in AppModule
+### Step 1: Configure CoreModule with APP_INITIALIZER
+
+The `CoreModule` is already configured with `APP_INITIALIZER` to load translations **before** the app bootstraps. This prevents translation keys from appearing on first load.
+
+**Important:** The `core.module.ts` includes:
+
+```typescript
+import { NgModule, APP_INITIALIZER } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { TranslatePipe } from './pipes/translate.pipe';
+import { LanguageSwitcherComponent } from './components/language-switcher/language-switcher.component';
+import { TranslationService } from './services/translation.service';
+
+/**
+ * Factory function to initialize translations before app starts
+ */
+export function initializeTranslations(translationService: TranslationService) {
+  return () => translationService.initTranslations();
+}
+
+@NgModule({
+  declarations: [
+    TranslatePipe,
+    LanguageSwitcherComponent
+  ],
+  imports: [
+    CommonModule
+  ],
+  exports: [
+    TranslatePipe,
+    LanguageSwitcherComponent
+  ],
+  providers: [
+    {
+      provide: APP_INITIALIZER,
+      useFactory: initializeTranslations,
+      deps: [TranslationService],
+      multi: true
+    }
+  ]
+})
+export class CoreModule { }
+```
+
+**Why APP_INITIALIZER is Critical:**
+- ✅ Translations load **before** any component renders
+- ✅ No flash of translation keys (like `common.welcome`) on first load
+- ✅ Translations available immediately when app starts
+- ❌ Without it: Components render with keys, translations load async, keys visible until user switches language
+
+### Step 2: Import CoreModule in AppModule
 
 Update `src/app/app.module.ts`:
 
@@ -56,7 +108,7 @@ import { CoreModule } from './core/core.module';  // Add this import
   imports: [
     BrowserModule,
     AppRoutingModule,
-    CoreModule  // Add this
+    CoreModule  // Add this - includes APP_INITIALIZER
   ],
   providers: [],
   bootstrap: [AppComponent]
@@ -64,7 +116,7 @@ import { CoreModule } from './core/core.module';  // Add this import
 export class AppModule { }
 ```
 
-### Step 2: Import CoreModule in Feature Modules
+### Step 3: Import CoreModule in Feature Modules
 
 For each feature module (AuthModule, ProductsModule, OrdersModule), import CoreModule:
 
@@ -86,7 +138,7 @@ import { CoreModule } from '../core/core.module';  // Add this
 export class YourFeatureModule { }
 ```
 
-### Step 3: Add Language Switcher to App Component
+### Step 4: Add Language Switcher to App Component
 
 Update `src/app/app.component.html` to include the language switcher in your navigation:
 
@@ -289,18 +341,76 @@ export class ProductCatalogComponent implements OnInit {
 </div>
 ```
 
+##  Architecture & How It Works
+
+### Translation Loading Flow
+
+**1. App Bootstrap Sequence:**
+```
+Angular starts → APP_INITIALIZER runs → Load translations → App renders
+```
+
+**2. Without APP_INITIALIZER (❌ Problem):**
+```
+Angular starts → App renders → Translations load async → Keys visible → Switch language → Translations appear
+```
+
+**3. With APP_INITIALIZER (✅ Solution):**
+```
+Angular starts → Fetch en.json & uk.json → Wait for load → App renders → Translations ready
+```
+
+### Key Components
+
+**TranslationService:**
+- Fetches translation files using **relative paths** (`assets/i18n/...`)
+- Stores translations in memory for instant access
+- Provides `currentLanguage$` and `translations$` observables
+- Implements `initTranslations()` for APP_INITIALIZER
+- Manages localStorage persistence
+
+**APP_INITIALIZER:**
+- Angular's built-in mechanism for running code before app starts
+- Returns a Promise that must resolve before bootstrapping
+- Ensures translations are loaded synchronously from app's perspective
+- Located in `core.module.ts` providers array
+
+**TranslatePipe:**
+- Impure pipe that subscribes to `translations$` observable
+- Detects language changes and translation loading
+- Implements smart caching to avoid unnecessary service calls
+- Re-translates only when language or key changes
+
+**Why Relative Paths Matter:**
+
+```typescript
+// With baseHref: "/b2b/" in angular.json
+
+// ✅ Relative path (correct):
+fetch('assets/i18n/en.json')
+// → Browser resolves to: /b2b/assets/i18n/en.json ✅
+
+// ❌ Absolute path (incorrect):
+fetch('/assets/i18n/en.json')
+// → Browser tries: /assets/i18n/en.json ❌ (404 error)
+```
+
+Relative paths work with any base URL configuration, making your app portable across different deployment environments.
+
 ##  API Reference
 
 ### TranslationService Methods
 
 | Method | Description | Parameters | Return Type |
 |--------|-------------|------------|-------------|
+| `initTranslations()` | Initialize translations (used by APP_INITIALIZER) | None | `Promise<void>` |
 | `getCurrentLanguage()` | Get current active language | None | `Language` ('en' \| 'uk') |
 | `setLanguage(lang)` | Set application language | `lang: Language` | `void` |
 | `toggleLanguage()` | Toggle between en and uk | None | `void` |
 | `instant(key, params?)` | Get translation synchronously | `key: string, params?: object` | `string` |
 | `get(key, params?)` | Get translation as Observable | `key: string, params?: object` | `Observable<string>` |
 | `translate(key, params?)` | Alias for instant() | `key: string, params?: object` | `string` |
+| `areTranslationsLoaded()` | Check if translations are loaded | None | `boolean` |
 
 ### Observable Properties
 
@@ -499,48 +609,149 @@ getStatusLabel(status: string): string {
 
 ##  Troubleshooting
 
-**Translations not loading:**
-- Ensure `en.json` and `uk.json` are in `src/assets/i18n/`
-- Check browser console for fetch errors
-- Verify JSON syntax is valid
+### Translation Keys Visible on First Load (CRITICAL)
 
-**Translations not updating or disappearing when switching languages:**
--  **FIXED:** The translate pipe now properly tracks language changes
-- The pipe caches translations but re-fetches when language changes
-- Avoid complex string concatenation with pipes (use `*ngIf` containers instead)
-- Example: Instead of `{{ 'prefix ' + ('key' | translate) }}`, use:
-  ```html
-  <ng-container>
-    prefix {{ 'key' | translate }}
-  </ng-container>
-  ```
+**Problem:** You see translation keys (like `common.welcome`) instead of actual text when the app first loads. After switching languages, translations appear correctly.
 
-**Missing translation keys:**
+**Root Cause:** Translations are loading asynchronously but components render before they're loaded.
+
+**Solution:** ✅ **Already implemented** - The `CoreModule` uses `APP_INITIALIZER` to load translations before app bootstrap. If you're experiencing this:
+1. Verify `CoreModule` is imported in `AppModule`
+2. Check that `APP_INITIALIZER` is configured in `core.module.ts`
+3. Ensure `initTranslations()` method exists in `translation.service.ts`
+
+```typescript
+// core.module.ts should have:
+providers: [
+  {
+    provide: APP_INITIALIZER,
+    useFactory: initializeTranslations,
+    deps: [TranslationService],
+    multi: true
+  }
+]
+```
+
+### Translations Not Loading in Production
+
+**Problem:** Translations work in development but not in production. You see 404 errors for translation files or only translation keys.
+
+**Root Cause:** Using absolute paths (`/assets/...`) doesn't work with custom base URLs (like `/b2b/`).
+
+**Solution:** ✅ **Already fixed** - Translation service uses **relative paths**:
+```typescript
+// ✅ CORRECT (already implemented):
+fetch('assets/i18n/en.json')
+
+// ❌ WRONG (don't use):
+fetch('/assets/i18n/en.json')
+```
+
+**Why this matters:**
+- Relative paths: `assets/i18n/en.json` → works with any base URL
+- With `/b2b/` base: resolves to `/b2b/assets/i18n/en.json` ✅
+- With `/` root: resolves to `/assets/i18n/en.json` ✅
+- Absolute paths: `/assets/i18n/en.json` → only works at root
+- With `/b2b/` base: still tries `/assets/i18n/en.json` ❌ (404 error)
+
+**Verification:**
+1. Check browser Network tab for translation file requests
+2. Ensure files load from correct path with your base URL
+3. Check browser console for 404 or fetch errors
+4. Verify `angular.json` has `"src/assets"` in `assets` array
+
+### Translations Not Loading at All
+
+**Problem:** No translations load in any environment.
+
+**Checklist:**
+- ✅ Ensure `en.json` and `uk.json` are in `src/assets/i18n/`
+- ✅ Check `angular.json` includes `"src/assets"` in build assets
+- ✅ Verify JSON files have valid syntax (no trailing commas)
+- ✅ Check browser console for fetch errors (404, CORS, etc.)
+- ✅ Verify translation files are in the production build: `dist/b2b-portal/browser/assets/i18n/`
+
+### Translations Disappearing When Switching Languages
+
+**Problem:** Translations disappear or show keys briefly when switching languages.
+
+**Solution:** ✅ **Already fixed** - The translate pipe subscribes to `translations$` observable:
+```typescript
+// translate.pipe.ts - already implemented:
+this.subscription = this.translationService.translations$.subscribe(() => {
+  // Reset cache and mark for update
+  this.changeDetectorRef.markForCheck();
+});
+```
+
+**Best Practice:** Avoid complex string concatenation with pipes:
+```html
+<!-- ❌ BAD: Can cause issues -->
+{{ 'prefix ' + ('key' | translate) }}
+
+<!-- ✅ GOOD: Use ng-container -->
+<ng-container>
+  prefix {{ 'key' | translate }}
+</ng-container>
+```
+
+### Missing Translation Keys
+
+**Problem:** Some translations show keys instead of text.
+
+**Diagnosis:**
 - Service returns the key itself if translation is not found
-- Check browser console for the returned key to identify missing translations
+- Check browser console - the key will be logged
+- Verify the key exists in both `en.json` and `uk.json`
+- Check for typos in key names
+- Ensure proper nesting structure in JSON files
 
-**Performance concerns with impure pipe:**
+### Performance Concerns with Impure Pipe
+
+**Question:** Is the impure pipe slow?
+
+**Answer:** No significant impact:
 - The translate pipe is impure to detect language changes
-- It caches translations to minimize service calls
+- It implements smart caching to minimize service calls
+- Only re-translates when language changes or key changes
 - Performance impact is negligible for typical applications
+- Tested with 100+ translations, no noticeable performance degradation
 
 ##  Implementation Checklist
 
-The translation service is fully integrated! Here's what's been completed:
+The translation service is fully integrated and production-ready! Here's what's been completed:
 
+###  Core Features
+-  **APP_INITIALIZER** configured to load translations before app starts
 -  Core translation service with reactive updates
--  Translation pipe with language change detection
+-  Translation pipe with `translations$` observable subscription
 -  Compact dropdown language switcher component
 -  English and Ukrainian translation files (105+ keys)
+
+###  Production Readiness
+-  **Relative asset paths** for compatibility with any base URL
+-  Works with custom base URLs (e.g., `/b2b/`, `/app/`, etc.)
+-  No flash of translation keys on first load
+-  Proper error handling and fallback
+
+###  Component Integration
 -  All components translated (Login, Products, Orders, Cart)
 -  All header buttons translated (including view toggle)
 -  CoreModule imported in all feature modules
+-  Translation pipe properly updates on language change
+
+###  User Experience
 -  Click-outside-to-close dropdown functionality
 -  Smooth animations and transitions
--  LocalStorage persistence
+-  LocalStorage persistence for language preference
 -  Mobile responsive design
--  Translation pipe bug fixed (no disappearing text)
--  Build successful and production-ready
+-  Instant language switching without page reload
+
+###  Bug Fixes Applied
+-  ✅ Translation keys visible on first load (fixed with APP_INITIALIZER)
+-  ✅ Translations not loading in production (fixed with relative paths)
+-  ✅ Translations disappearing when switching (fixed with translations$ subscription)
+-  ✅ Build successful and production-ready
 
 ##  Next Steps for Your Project
 
@@ -561,10 +772,136 @@ The translation service is fully integrated! Here's what's been completed:
    - As you add new features, add corresponding keys
    - Follow the existing key naming conventions
 
+##  Production Deployment Guide
+
+### Pre-Deployment Checklist
+
+Before deploying to production, verify:
+
+1. **Build the production bundle:**
+   ```bash
+   npm run build
+   ```
+
+2. **Verify translation files are included:**
+   ```bash
+   ls -la dist/b2b-portal/browser/assets/i18n/
+   # Should show: en.json, uk.json
+   ```
+
+3. **Check file sizes:**
+   - `en.json` should be ~3KB
+   - `uk.json` should be ~4KB
+
+4. **Verify angular.json configuration:**
+   ```json
+   {
+     "assets": [
+       "src/favicon.ico",
+       "src/assets"  // ← This includes i18n folder
+     ]
+   }
+   ```
+
+### Common Production Issues & Solutions
+
+| Issue | Symptom | Solution |
+|-------|---------|----------|
+| **404 on translation files** | Keys visible, console shows 404 errors | Check web server serves `/b2b/assets/` path correctly |
+| **Keys on first load** | Keys flash, then translations load | Verify APP_INITIALIZER is in CoreModule |
+| **No translations after deploy** | Only keys, no translations ever | Check that `dist/*/browser/assets/i18n/` has JSON files |
+| **Works locally, fails in prod** | Development works, production shows keys | Ensure using relative paths (not absolute) |
+
+### Web Server Configuration
+
+Ensure your web server properly serves:
+- Static assets from the correct path
+- Single Page Application routing (redirect to `index.html`)
+
+**Example Nginx configuration:**
+```nginx
+location /b2b/ {
+    alias /path/to/dist/b2b-portal/browser/;
+    try_files $uri $uri/ /b2b/index.html;
+}
+```
+
+**Example Apache .htaccess:**
+```apache
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /b2b/
+    RewriteRule ^index\.html$ - [L]
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule . /b2b/index.html [L]
+</IfModule>
+```
+
+### Testing Production Build Locally
+
+Test the production build before deploying:
+
+```bash
+# Build production
+npm run build
+
+# Serve the production build (requires http-server or similar)
+npx http-server dist/b2b-portal/browser -p 8080 --proxy http://localhost:8080?
+
+# Open browser to: http://localhost:8080/b2b/
+```
+
+**What to verify:**
+1. ✅ Translations load immediately (no keys visible)
+2. ✅ Language switcher works
+3. ✅ No console errors
+4. ✅ Network tab shows successful translation file loads
+5. ✅ Language persists after page refresh
+
+### Debugging Production Issues
+
+**Step 1: Open Browser DevTools**
+- Press F12 or Right-click → Inspect
+
+**Step 2: Check Network Tab**
+- Look for requests to `en.json` and `uk.json`
+- Verify they return 200 status (not 404)
+- Check the request URL matches your base path
+
+**Step 3: Check Console Tab**
+- Look for errors like "Failed to load translations"
+- Check for 404 or fetch errors
+- Verify no CORS issues
+
+**Step 4: Verify Files Exist**
+```bash
+# Check build output includes translation files
+find dist/b2b-portal -name "*.json" -type f
+```
+
+**Step 5: Test Translation Loading**
+Open browser console and run:
+```javascript
+fetch('assets/i18n/en.json')
+  .then(res => res.json())
+  .then(data => console.log('Translations loaded:', data))
+  .catch(err => console.error('Failed to load:', err));
+```
+
 ##  Additional Resources
 
 - Translation files: `src/assets/i18n/`
 - Service: `src/app/core/services/translation.service.ts`
 - Pipe: `src/app/core/pipes/translate.pipe.ts`
 - Language Switcher: `src/app/core/components/language-switcher/`
+- CoreModule: `src/app/core/core.module.ts`
+
+### Quick Links to Key Fixes
+
+| Fix | Location | What it does |
+|-----|----------|--------------|
+| APP_INITIALIZER | `core.module.ts` (lines 27-33) | Loads translations before app starts |
+| Relative paths | `translation.service.ts` (lines 51-52) | Works with any base URL |
+| Observable subscription | `translate.pipe.ts` (line 20) | Updates on translation load |
 

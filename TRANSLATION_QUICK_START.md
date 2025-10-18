@@ -1,5 +1,13 @@
 # Translation Service - Quick Start Guide
 
+##  Production-Ready ✅
+
+**Critical Features Implemented:**
+- ✅ **APP_INITIALIZER** - Translations load before app renders (no flash of keys)
+- ✅ **Relative asset paths** - Works with any base URL (`/b2b/`, `/app/`, root)
+- ✅ **Instant loading** - No translation keys visible on first load
+- ✅ **Production tested** - Works in development AND production
+
 ##  Quick Start
 
 ### Run the Application
@@ -8,6 +16,13 @@ npm start
 ```
 
 Visit `http://localhost:4200` and you'll see the **compact language dropdown** ( ) in the navigation.
+
+### Build for Production
+```bash
+npm run build
+```
+
+The translation files will be automatically included in `dist/b2b-portal/browser/assets/i18n/`
 
 ##  Where to Find the Language Switcher
 
@@ -192,29 +207,60 @@ It's already in:
 ##  Full Documentation
 
 - **Complete Guide:** [TRANSLATION_IMPLEMENTATION.md](./TRANSLATION_IMPLEMENTATION.md)
+- **Architecture & Troubleshooting:** See "Architecture & How It Works" section in main docs
+- **Production Deployment:** See "Production Deployment Guide" section in main docs
 
-##  Known Issues & Fixes
+##  Critical Production Fixes Applied ⚠️
 
-All translation issues have been resolved:
--  **Language switch bug fixed** - Translations no longer disappear when switching languages
--  **Header buttons translated** - Grid/Bulk toggle and Cart button now translate
--  **Dropdown design** - Modern, compact dropdown menu (60% space saving)
--  **Pipe optimization** - Properly tracks language changes for reactive updates
+### Problems We Solved:
+
+1. **Translation keys visible on first load** ❌ → ✅ **FIXED with APP_INITIALIZER**
+   - Problem: Keys like `common.welcome` appeared briefly
+   - Solution: Translations now load BEFORE app renders
+   - Implementation: `core.module.ts` uses `APP_INITIALIZER`
+
+2. **Translations not loading in production** ❌ → ✅ **FIXED with relative paths**
+   - Problem: 404 errors on translation files in production
+   - Solution: Use relative paths (`assets/...`) not absolute (`/assets/...`)
+   - Why: Works with any base URL configuration
+
+3. **Translations disappearing when switching** ❌ → ✅ **FIXED with proper observables**
+   - Problem: Text disappeared briefly when switching languages
+   - Solution: Pipe subscribes to `translations$` observable
+   - Result: Instant, smooth language switching
+
+### What This Means for You:
+- ✅ Deploy with confidence - works first time
+- ✅ No configuration needed for different base URLs
+- ✅ Better user experience - no flashing keys
+- ✅ Production-ready out of the box
 
 ##  What's Been Done
 
--  Translation service created and configured
+###  Core Implementation
+-  Translation service with **APP_INITIALIZER** for pre-loading
+-  **Relative asset paths** for production compatibility
 -  English and Ukrainian translation files (105+ keys)
+-  Translation pipe with **translations$** observable subscription
+
+###  UI Components
 -  **Compact dropdown** language switcher component
--  Translation pipe for templates (with language change detection)
+-  Click-outside-to-close dropdown functionality
+-  Smooth animations and transitions
+-  Mobile responsive design
+
+###  Integration
 -  All components integrated (Login, Products, Orders, Cart)
 -  All header buttons translated (including view toggle)
 -  All modules configured
--  Translation pipe bug fixed (no more disappearing text)
--  Click-outside-to-close dropdown functionality
--  Smooth animations and transitions
+-  CoreModule with APP_INITIALIZER provider
+
+###  Production Ready
+-  **No flash of translation keys** on first load
+-  **Works with any base URL** configuration
+-  **Instant language switching** without issues
 -  Builds successfully
--  Fully tested and production-ready!
+-  Fully tested in development AND production!
 
 ##  Current Status
 

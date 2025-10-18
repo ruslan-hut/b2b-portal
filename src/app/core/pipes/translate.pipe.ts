@@ -16,9 +16,9 @@ export class TranslatePipe implements PipeTransform, OnDestroy {
     private translationService: TranslationService,
     private changeDetectorRef: ChangeDetectorRef
   ) {
-    // Subscribe to language changes
-    this.subscription = this.translationService.currentLanguage$.subscribe(() => {
-      // Reset cache when language changes
+    // Subscribe to translation updates (includes language changes and initial load)
+    this.subscription = this.translationService.translations$.subscribe(() => {
+      // Reset cache when translations update
       this.lastValue = '';
       this.lastKey = '';
       this.lastLanguage = '';
