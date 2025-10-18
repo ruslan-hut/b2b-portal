@@ -32,25 +32,25 @@ The user profile will be populated based on the email used.
 The system includes **15 sample products** across 3 categories:
 
 ### Electronics (5 products)
-- **Wireless Mouse Pro** - $49.99 (SKU: ELEC-MOUSE-001) ✅ In Stock
-- **Mechanical Keyboard** - $129.99 (SKU: ELEC-KEY-002) ✅ In Stock
-- **USB-C Hub** - $79.99 (SKU: ELEC-HUB-003) ✅ In Stock
-- **Webcam 4K** - $159.99 (SKU: ELEC-CAM-004) ❌ Out of Stock
-- **Wireless Headset** - $199.99 (SKU: ELEC-HEAD-005) ✅ In Stock
+- **Wireless Mouse Pro** - $49.99 (SKU: ELEC-MOUSE-001)  In Stock
+- **Mechanical Keyboard** - $129.99 (SKU: ELEC-KEY-002)  In Stock
+- **USB-C Hub** - $79.99 (SKU: ELEC-HUB-003)  In Stock
+- **Webcam 4K** - $159.99 (SKU: ELEC-CAM-004)  Out of Stock
+- **Wireless Headset** - $199.99 (SKU: ELEC-HEAD-005)  In Stock
 
 ### Office Supplies (5 products)
-- **Premium Notebook Set** - $24.99 (SKU: OFF-NOTE-006) ✅ In Stock
-- **Executive Pen Set** - $89.99 (SKU: OFF-PEN-007) ✅ In Stock
-- **Desk Organizer** - $34.99 (SKU: OFF-ORG-008) ✅ In Stock
-- **Paper Shredder** - $149.99 (SKU: OFF-SHRED-009) ❌ Out of Stock
-- **Whiteboard Set** - $119.99 (SKU: OFF-BOARD-010) ✅ In Stock
+- **Premium Notebook Set** - $24.99 (SKU: OFF-NOTE-006)  In Stock
+- **Executive Pen Set** - $89.99 (SKU: OFF-PEN-007)  In Stock
+- **Desk Organizer** - $34.99 (SKU: OFF-ORG-008)  In Stock
+- **Paper Shredder** - $149.99 (SKU: OFF-SHRED-009)  Out of Stock
+- **Whiteboard Set** - $119.99 (SKU: OFF-BOARD-010)  In Stock
 
 ### Furniture (5 products)
-- **Ergonomic Office Chair** - $399.99 (SKU: FURN-CHAIR-011) ✅ In Stock
-- **Standing Desk** - $599.99 (SKU: FURN-DESK-012) ✅ In Stock
-- **Filing Cabinet** - $249.99 (SKU: FURN-CAB-013) ✅ In Stock
-- **Bookshelf Unit** - $179.99 (SKU: FURN-SHELF-014) ✅ In Stock
-- **Conference Table** - $899.99 (SKU: FURN-TABLE-015) ❌ Out of Stock
+- **Ergonomic Office Chair** - $399.99 (SKU: FURN-CHAIR-011)  In Stock
+- **Standing Desk** - $599.99 (SKU: FURN-DESK-012)  In Stock
+- **Filing Cabinet** - $249.99 (SKU: FURN-CAB-013)  In Stock
+- **Bookshelf Unit** - $179.99 (SKU: FURN-SHELF-014)  In Stock
+- **Conference Table** - $899.99 (SKU: FURN-TABLE-015)  Out of Stock
 
 ### Features You Can Test
 - Browse all products in the catalog

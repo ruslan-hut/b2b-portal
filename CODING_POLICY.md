@@ -39,19 +39,19 @@ This is a B2B portal application built with Angular that allows clients to brows
 
 ```
 src/
-├── app/
-│   ├── core/                 # Core module (singleton services, guards, models)
-│   │   ├── guards/          # Route guards
-│   │   ├── models/          # Data models and interfaces
-│   │   └── services/        # Singleton services
-│   ├── auth/                # Authentication module
-│   ├── orders/              # Orders module
-│   ├── products/            # Products module
-│   ├── shared/              # Shared components, directives, pipes (future)
-│   ├── app.component.*      # Root component
-│   ├── app.module.ts        # Root module
-│   └── app-routing.module.ts # Root routing
-└── assets/                  # Static assets
+ app/
+    core/                 # Core module (singleton services, guards, models)
+       guards/          # Route guards
+       models/          # Data models and interfaces
+       services/        # Singleton services
+    auth/                # Authentication module
+    orders/              # Orders module
+    products/            # Products module
+    shared/              # Shared components, directives, pipes (future)
+    app.component.*      # Root component
+    app.module.ts        # Root module
+    app-routing.module.ts # Root routing
+ assets/                  # Static assets
 ```
 
 ### Module Organization

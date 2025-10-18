@@ -4,39 +4,39 @@
 
 This guide provides step-by-step instructions for integrating the Translation Service into your B2B Portal application. The service supports **English (en)** and **Ukrainian (uk)** languages with reactive translations that update automatically when the language changes.
 
-### ✨ Key Features
-- 🎯 **Compact dropdown** language switcher (60% space saving)
-- ⚡ **Instant reactive updates** when language changes
-- 🔄 **Smart caching** with language change detection
-- 💾 **LocalStorage persistence** for language preference
-- 🎨 **Smooth animations** and professional UI
-- 📱 **Mobile responsive** design
-- 🌐 **105+ translation keys** covering all app features
+###  Key Features
+-  **Compact dropdown** language switcher (60% space saving)
+-  **Instant reactive updates** when language changes
+-  **Smart caching** with language change detection
+-  **LocalStorage persistence** for language preference
+-  **Smooth animations** and professional UI
+-  **Mobile responsive** design
+-  **105+ translation keys** covering all app features
 
-## 📁 File Structure
+##  File Structure
 
 ```
 src/app/core/
-├── services/
-│   ├── translation.service.ts          # Main translation service
-│   └── translation.service.spec.ts     # Unit tests
-├── pipes/
-│   ├── translate.pipe.ts               # Translation pipe for templates
-│   └── translate.pipe.spec.ts          # Unit tests
-├── components/
-│   └── language-switcher/
-│       ├── language-switcher.component.ts
-│       ├── language-switcher.component.html
-│       ├── language-switcher.component.scss
-│       └── language-switcher.component.spec.ts
-└── core.module.ts                      # Core module
+ services/
+    translation.service.ts          # Main translation service
+    translation.service.spec.ts     # Unit tests
+ pipes/
+    translate.pipe.ts               # Translation pipe for templates
+    translate.pipe.spec.ts          # Unit tests
+ components/
+    language-switcher/
+        language-switcher.component.ts
+        language-switcher.component.html
+        language-switcher.component.scss
+        language-switcher.component.spec.ts
+ core.module.ts                      # Core module
 
 src/assets/i18n/
-├── en.json                             # English translations
-└── uk.json                             # Ukrainian translations
+ en.json                             # English translations
+ uk.json                             # Ukrainian translations
 ```
 
-## 🚀 Implementation Steps
+##  Implementation Steps
 
 ### Step 1: Import CoreModule in AppModule
 
@@ -99,7 +99,7 @@ Update `src/app/app.component.html` to include the language switcher in your nav
 <router-outlet></router-outlet>
 ```
 
-## 💡 Usage Examples
+##  Usage Examples
 
 ### 1. Using the Translate Pipe in Templates
 
@@ -188,7 +188,7 @@ export class ExampleComponent {
 <h1>{{ pageTitle$ | async }}</h1>
 ```
 
-## 📝 Component Integration Examples
+##  Component Integration Examples
 
 ### Login Component Example
 
@@ -289,7 +289,7 @@ export class ProductCatalogComponent implements OnInit {
 </div>
 ```
 
-## 🔧 API Reference
+##  API Reference
 
 ### TranslationService Methods
 
@@ -309,7 +309,7 @@ export class ProductCatalogComponent implements OnInit {
 | `currentLanguage$` | `Observable<Language>` | Emits when language changes |
 | `translations$` | `Observable<TranslationData>` | Emits when translations update |
 
-## 📦 Translation File Structure
+##  Translation File Structure
 
 Translation keys use dot notation for nested objects:
 
@@ -340,15 +340,15 @@ this.translationService.instant('welcome', { name: 'John', count: 5 });
 // Result: "Hello John, you have 5 new messages"
 ```
 
-## 🎨 Language Switcher Design
+##  Language Switcher Design
 
 The language switcher uses a **modern dropdown design**:
 
 ### Compact Toggle Button
 ```html
 <button class="language-toggle">
-  <span class="flag">🇬🇧</span>  <!-- Current language flag -->
-  <span class="arrow">▼</span>   <!-- Dropdown indicator -->
+  <span class="flag"></span>  <!-- Current language flag -->
+  <span class="arrow"></span>   <!-- Dropdown indicator -->
 </button>
 ```
 
@@ -386,7 +386,7 @@ You can customize the dropdown by modifying `language-switcher.component.scss`:
 }
 ```
 
-## 🧪 Testing
+##  Testing
 
 The service stores language preference in `localStorage` with key `'app_language'`.
 
@@ -398,9 +398,9 @@ The service stores language preference in `localStorage` with key `'app_language
    ```
 
 2. **Test dropdown functionality**
-   - Click the language button (🇬🇧 ▼)
+   - Click the language button ( )
    - Dropdown should slide down smoothly
-   - Arrow should rotate 180°
+   - Arrow should rotate 180
    - Select a language
    - Dropdown should close
    - All text should update instantly
@@ -440,7 +440,7 @@ this.translationService.currentLanguage$.subscribe(lang => {
 });
 ```
 
-## 🔍 Best Practices
+##  Best Practices
 
 1. **Always use translation keys** - Never hardcode text in templates
 2. **Organize keys logically** - Group related translations together
@@ -450,24 +450,24 @@ this.translationService.currentLanguage$.subscribe(lang => {
 6. **Handle missing translations** - Service returns the key if translation is not found
 7. **Avoid string concatenation with pipes** - Use `<ng-container>` instead:
    ```html
-   <!-- ❌ BAD: Can cause issues -->
+   <!--  BAD: Can cause issues -->
    {{ 'prefix ' + ('key' | translate) }}
    
-   <!-- ✅ GOOD: Use ng-container -->
+   <!--  GOOD: Use ng-container -->
    <ng-container>
      prefix {{ 'key' | translate }}
    </ng-container>
    ```
 8. **Use parameters for dynamic values** - Instead of concatenating:
    ```html
-   <!-- ❌ BAD -->
+   <!--  BAD -->
    {{ 'Min length: ' + minValue }}
    
-   <!-- ✅ GOOD -->
+   <!--  GOOD -->
    {{ 'validation.minLength' | translate: {min: minValue} }}
    ```
 
-## 📌 Common Patterns
+##  Common Patterns
 
 ### Form Validation Messages
 ```typescript
@@ -497,7 +497,7 @@ getStatusLabel(status: string): string {
 }
 ```
 
-## 🚨 Troubleshooting
+##  Troubleshooting
 
 **Translations not loading:**
 - Ensure `en.json` and `uk.json` are in `src/assets/i18n/`
@@ -505,7 +505,7 @@ getStatusLabel(status: string): string {
 - Verify JSON syntax is valid
 
 **Translations not updating or disappearing when switching languages:**
-- ✅ **FIXED:** The translate pipe now properly tracks language changes
+-  **FIXED:** The translate pipe now properly tracks language changes
 - The pipe caches translations but re-fetches when language changes
 - Avoid complex string concatenation with pipes (use `*ngIf` containers instead)
 - Example: Instead of `{{ 'prefix ' + ('key' | translate) }}`, use:
@@ -524,25 +524,25 @@ getStatusLabel(status: string): string {
 - It caches translations to minimize service calls
 - Performance impact is negligible for typical applications
 
-## ✅ Implementation Checklist
+##  Implementation Checklist
 
 The translation service is fully integrated! Here's what's been completed:
 
-- ✅ Core translation service with reactive updates
-- ✅ Translation pipe with language change detection
-- ✅ Compact dropdown language switcher component
-- ✅ English and Ukrainian translation files (105+ keys)
-- ✅ All components translated (Login, Products, Orders, Cart)
-- ✅ All header buttons translated (including view toggle)
-- ✅ CoreModule imported in all feature modules
-- ✅ Click-outside-to-close dropdown functionality
-- ✅ Smooth animations and transitions
-- ✅ LocalStorage persistence
-- ✅ Mobile responsive design
-- ✅ Translation pipe bug fixed (no disappearing text)
-- ✅ Build successful and production-ready
+-  Core translation service with reactive updates
+-  Translation pipe with language change detection
+-  Compact dropdown language switcher component
+-  English and Ukrainian translation files (105+ keys)
+-  All components translated (Login, Products, Orders, Cart)
+-  All header buttons translated (including view toggle)
+-  CoreModule imported in all feature modules
+-  Click-outside-to-close dropdown functionality
+-  Smooth animations and transitions
+-  LocalStorage persistence
+-  Mobile responsive design
+-  Translation pipe bug fixed (no disappearing text)
+-  Build successful and production-ready
 
-## 🚀 Next Steps for Your Project
+##  Next Steps for Your Project
 
 1. **Add more languages** (optional)
    - Create new JSON files (e.g., `pl.json`, `de.json`)
@@ -561,7 +561,7 @@ The translation service is fully integrated! Here's what's been completed:
    - As you add new features, add corresponding keys
    - Follow the existing key naming conventions
 
-## 📚 Additional Resources
+##  Additional Resources
 
 - Translation files: `src/assets/i18n/`
 - Service: `src/app/core/services/translation.service.ts`

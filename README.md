@@ -4,29 +4,29 @@ A modern B2B portal application built with Angular 18, designed for clients to b
 
 ## Features
 
-- 🔐 **User Authentication** - Secure login system with JWT token support
-- 🛍️ **Product Catalog** - Browse and search through product inventory
-- 🛒 **Shopping Cart** - Add products to cart with quantity management
-- 📦 **Order Management** - Create orders and view order history
-- 📱 **Responsive Design** - Works seamlessly on desktop and mobile devices
-- 🎨 **Modern UI** - Beautiful gradient-based design with smooth animations
+-  **User Authentication** - Secure login system with JWT token support
+-  **Product Catalog** - Browse and search through product inventory
+-  **Shopping Cart** - Add products to cart with quantity management
+-  **Order Management** - Create orders and view order history
+-  **Responsive Design** - Works seamlessly on desktop and mobile devices
+-  **Modern UI** - Beautiful gradient-based design with smooth animations
 
 ## Project Structure
 
 ```
 src/app/
-├── core/                    # Core module (singleton services, guards, models)
-│   ├── guards/             # Route guards (auth protection)
-│   ├── models/             # Data models and interfaces
-│   └── services/           # Application-wide services
-├── auth/                   # Authentication module
-│   └── login/             # Login component
-├── orders/                 # Orders module
-│   └── order-history/     # Order history component
-├── products/               # Products module
-│   ├── product-catalog/   # Product catalog component
-│   └── order-confirmation/ # Order confirmation component
-└── shared/                 # Shared components (future)
+ core/                    # Core module (singleton services, guards, models)
+    guards/             # Route guards (auth protection)
+    models/             # Data models and interfaces
+    services/           # Application-wide services
+ auth/                   # Authentication module
+    login/             # Login component
+ orders/                 # Orders module
+    order-history/     # Order history component
+ products/               # Products module
+    product-catalog/   # Product catalog component
+    order-confirmation/ # Order confirmation component
+ shared/                 # Shared components (future)
 ```
 
 ## Technology Stack
@@ -97,7 +97,7 @@ ng e2e               # End-to-end tests (when configured)
 
 The application includes comprehensive mock data for testing all features before API integration.
 
-**📖 See [MOCK_DATA.md](./MOCK_DATA.md) for detailed information about:**
+** See [MOCK_DATA.md](./MOCK_DATA.md) for detailed information about:**
 - Available test users and login credentials
 - Complete product catalog (15 products across 3 categories)
 - Sample orders with various statuses
@@ -178,7 +178,7 @@ Please refer to [CODING_POLICY.md](./CODING_POLICY.md) for detailed coding guide
 
 ## Project Status
 
-### Completed ✅
+### Completed 
 - Angular project setup
 - Authentication module with login page
 - Product catalog with search and cart functionality
@@ -188,7 +188,7 @@ Please refer to [CODING_POLICY.md](./CODING_POLICY.md) for detailed coding guide
 - Service layer with mock data
 - Responsive UI design
 
-### Pending 🚧
+### Pending 
 - Real API integration
 - Unit tests
 - E2E tests
@@ -217,4 +217,4 @@ For questions or issues, please create an issue in the repository.
 
 ---
 
-**Built with ❤️ using Angular**
+**Built with  using Angular**

@@ -11,9 +11,9 @@ This directory contains mock data files used throughout the application for test
 ## Usage
 
 These mock data files are imported by the respective services:
-- `AuthService` → `users.mock.ts`
-- `ProductService` → `products.mock.ts`
-- `OrderService` → `orders.mock.ts`
+- `AuthService`  `users.mock.ts`
+- `ProductService`  `products.mock.ts`
+- `OrderService`  `orders.mock.ts`
 
 ## Documentation
 

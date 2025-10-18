@@ -65,17 +65,17 @@ After logging in, you'll be redirected to the Product Catalog.
 
 ```
 src/app/
-├── auth/
-│   └── login/                    # Login page
-├── orders/
-│   └── order-history/           # Order history page
-├── products/
-│   ├── product-catalog/         # Product catalog with cart
-│   └── order-confirmation/      # Order confirmation page
-└── core/
-    ├── services/                # Auth, Product, Order services
-    ├── models/                  # TypeScript interfaces
-    └── guards/                  # Route protection
+ auth/
+    login/                    # Login page
+ orders/
+    order-history/           # Order history page
+ products/
+    product-catalog/         # Product catalog with cart
+    order-confirmation/      # Order confirmation page
+ core/
+     services/                # Auth, Product, Order services
+     models/                  # TypeScript interfaces
+     guards/                  # Route protection
 ```
 
 ## Key Pages
