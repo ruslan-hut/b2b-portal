@@ -1,0 +1,78 @@
+name: Build & Deploy B2B to dev.darkbyrior.com/b2b
+
+on:
+  push:
+    branches: [ main ]
+
+env:
+  # Если baseHref/deployUrl уже заданы в angular.json — можно не трогать.
+  BASE_HREF: /b2b/
+  DEPLOY_URL: /b2b/
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node 22.12
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.12'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Angular (production)
+        run: |
+          # Если в angular.json уже проставлены baseHref/deployUrl — используйте просто:
+          npx ng build --configuration=production
+          # npx ng build --configuration=production --base-href "$BASE_HREF" --deploy-url "$DEPLOY_URL"
+
+      - name: Pack dist
+        id: pack
+        run: |
+          APP_DIR=$(ls -1 dist | head -n1)
+          echo "APP_DIR=$APP_DIR" >> $GITHUB_ENV
+          tar -C "dist/$APP_DIR" -czf build.tar.gz .
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_key
+          chmod 600 ~/.ssh/id_key
+          printf "Host target\n  HostName %s\n  User %s\n  IdentityFile ~/.ssh/id_key\n  StrictHostKeyChecking no\n" \
+            "${{ secrets.SSH_HOST }}" "${{ secrets.SSH_USER }}" > ~/.ssh/config
+
+      - name: Upload and activate release
+        env:
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+        run: |
+          set -e
+          RELEASE="release-${GITHUB_SHA}"
+
+          # 1) Каталог релиза на сервере
+          ssh target "mkdir -p ${DEPLOY_PATH}/releases/${RELEASE}"
+
+          # 2) Заливка артефакта
+          scp build.tar.gz target:${DEPLOY_PATH}/releases/${RELEASE}/
+
+          # 3) Распаковка, права, атомарное переключение симлинка, очистка старых релизов
+          ssh target "
+            set -e
+            cd ${DEPLOY_PATH}/releases/${RELEASE}
+            tar -xzf build.tar.gz && rm -f build.tar.gz
+            # (опционально) Права/владельцы под веб-сервер:
+            chgrp -R www-data ${DEPLOY_PATH}/releases/${RELEASE} || true
+            chmod -R 755 ${DEPLOY_PATH}/releases/${RELEASE}
+            ln -sfn ${DEPLOY_PATH}/releases/${RELEASE} ${DEPLOY_PATH}/current
+            # Храним только 5 последних релизов
+            ls -1dt ${DEPLOY_PATH}/releases/* | tail -n +6 | xargs -r rm -rf
+          "
+
+      # Для статики перезагрузка Apache не нужна. Если хотите — раскомментируйте:
+      # - name: Reload Apache
+      #   run: ssh target "sudo systemctl reload apache2"
