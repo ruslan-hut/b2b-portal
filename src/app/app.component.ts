@@ -14,7 +14,7 @@ import { filter } from 'rxjs/operators';
   styleUrl: './app.component.scss'
 })
 export class AppComponent {
-  title = 'B2B Portal';
+  title = 'DARK B2B';
   currentUser: User | null = null;
   cartItems: OrderItem[] = [];
   showCartPanel = false;
