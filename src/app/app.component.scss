@@ -34,7 +34,9 @@
     }
 
     .logo-icon {
-      font-size: 28px;
+      width: 32px;
+      height: 32px;
+      object-fit: contain;
     }
 
     .logo-text {
