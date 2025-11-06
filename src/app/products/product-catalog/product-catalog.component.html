@@ -1,12 +1,24 @@
 <div class="catalog-container">
   <div class="search-bar" *ngIf="viewMode === 'grid'">
-    <input
-      type="text"
-      [(ngModel)]="searchQuery"
-      (ngModelChange)="onSearchChange()"
-      [placeholder]="'products.searchPlaceholder' | translate"
-      class="search-input"
-    />
+    <div class="search-filter-container">
+      <select
+        [(ngModel)]="selectedCategory"
+        (ngModelChange)="onCategoryChange()"
+        class="category-selector"
+      >
+        <option value="">{{ 'products.allCategories' | translate }}</option>
+        <option *ngFor="let category of allCategories" [value]="category">
+          {{ category }}
+        </option>
+      </select>
+      <input
+        type="text"
+        [(ngModel)]="searchQuery"
+        (ngModelChange)="onSearchChange()"
+        [placeholder]="'products.searchPlaceholder' | translate"
+        class="search-input"
+      />
+    </div>
     <div class="cart-total-info">
       {{ 'products.total' | translate }}: <span class="cart-total-amount">${{ getCartTotal().toFixed(2) }}</span>
     </div>
@@ -18,28 +30,36 @@
   </div>
 
   <!-- Grid View -->
-  <div class="products-grid" *ngIf="!loading && viewMode === 'grid'">
-    <div class="product-card" *ngFor="let product of filteredProducts">
-      <div class="product-image">
-        <img [src]="product.imageUrl" [alt]="product.name" />
-        <span class="stock-badge" [class.out-of-stock]="!product.inStock">
-          {{ product.inStock ? ('products.stock' | translate) : ('products.outOfStock' | translate) }}
-        </span>
+  <div class="products-grid-container" *ngIf="!loading && viewMode === 'grid'">
+    <div *ngFor="let category of categories">
+      <div class="category-header">
+        <h2 class="category-title">{{ category }}</h2>
+        <div class="category-divider"></div>
       </div>
-      <div class="product-info">
-        <div class="product-category">{{ product.category }}</div>
-        <h3 class="product-name">{{ product.name }}</h3>
-        <p class="product-description">{{ product.description }}</p>
-        <div class="product-sku">{{ 'products.sku' | translate }}: {{ product.sku }}</div>
-        <div class="product-footer">
-          <div class="product-price">${{ product.price.toFixed(2) }}</div>
-          <button
-            class="btn btn-add-to-cart"
-            (click)="addToCart(product)"
-            [disabled]="!product.inStock"
-          >
-            {{ product.inStock ? ('products.addToCart' | translate) : ('products.outOfStock' | translate) }}
-          </button>
+      <div class="products-grid">
+        <div class="product-card" *ngFor="let product of productsByCategory.get(category)">
+          <div class="product-image">
+            <img [src]="product.imageUrl" [alt]="product.name" />
+            <span class="stock-badge" [class.out-of-stock]="!product.inStock">
+              {{ product.inStock ? ('products.stock' | translate) : ('products.outOfStock' | translate) }}
+            </span>
+          </div>
+          <div class="product-info">
+            <div class="product-category">{{ product.category }}</div>
+            <h3 class="product-name">{{ product.name }}</h3>
+            <p class="product-description">{{ product.description }}</p>
+            <div class="product-sku">{{ 'products.sku' | translate }}: {{ product.sku }}</div>
+            <div class="product-footer">
+              <div class="product-price">${{ product.price.toFixed(2) }}</div>
+              <button
+                class="btn btn-add-to-cart"
+                (click)="addToCart(product)"
+                [disabled]="!product.inStock"
+              >
+                {{ product.inStock ? ('products.addToCart' | translate) : ('products.outOfStock' | translate) }}
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -49,19 +69,31 @@
   <div class="bulk-view-container" *ngIf="!loading && viewMode === 'bulk'">
     <div class="bulk-table-section">
       <div class="bulk-actions-bar">
-        <input
-          type="text"
-          [(ngModel)]="searchQuery"
-          (ngModelChange)="onSearchChange()"
-          [placeholder]="'products.searchPlaceholder' | translate"
-          class="search-input-bulk"
-        />
+        <div class="search-filter-container-bulk">
+          <select
+            [(ngModel)]="selectedCategory"
+            (ngModelChange)="onCategoryChange()"
+            class="category-selector-bulk"
+          >
+            <option value="">{{ 'products.allCategories' | translate }}</option>
+            <option *ngFor="let category of allCategories" [value]="category">
+              {{ category }}
+            </option>
+          </select>
+          <input
+            type="text"
+            [(ngModel)]="searchQuery"
+            (ngModelChange)="onSearchChange()"
+            [placeholder]="'products.searchPlaceholder' | translate"
+            class="search-input-bulk"
+          />
+        </div>
         <div class="bulk-actions-right">
           <div class="bulk-info">
             <span class="cart-total-label">{{ 'products.total' | translate }}: <span class="cart-total-value">${{ getCartTotal().toFixed(2) }}</span></span>
           </div>
-          <button 
-            class="btn btn-add-bulk" 
+          <button
+            class="btn btn-add-bulk"
             (click)="addBulkToCart()"
             [disabled]="!hasBulkItems()"
           >
@@ -84,8 +116,8 @@
             </tr>
           </thead>
           <tbody>
-            <tr 
-              *ngFor="let product of filteredProducts" 
+            <tr
+              *ngFor="let product of filteredProducts"
               class="bulk-row"
               [class.selected]="selectedProduct?.id === product.id"
               [class.out-of-stock]="!product.inStock"
@@ -106,8 +138,8 @@
               </td>
               <td class="quantity-cell">
                 <div class="quantity-cell-wrapper">
-                  <input 
-                    type="number" 
+                  <input
+                    type="number"
                     class="quantity-input"
                     [value]="getBulkQuantity(product.id)"
                     (input)="setBulkQuantity(product.id, +$any($event.target).value)"

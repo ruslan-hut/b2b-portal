@@ -17,11 +17,17 @@ export class ProductCatalogComponent implements OnInit {
   loading = false;
   searchQuery = '';
   cartItems: OrderItem[] = [];
-  
+
   // Layout management
   viewMode: 'grid' | 'bulk' = 'bulk';
   selectedProduct: Product | null = null;
   bulkQuantities: Map<string, number> = new Map();
+
+  // Category grouping
+  productsByCategory: Map<string, Product[]> = new Map();
+  categories: string[] = [];
+  allCategories: string[] = [];
+  selectedCategory: string = '';
 
   constructor(
     private productService: ProductService,
@@ -46,8 +52,10 @@ export class ProductCatalogComponent implements OnInit {
     this.loading = true;
     this.productService.getProducts().subscribe({
       next: (products) => {
-        this.products = products;
-        this.filteredProducts = products;
+        this.products = this.sortProductsByCategoryAndName(products);
+        this.extractAllCategories(products);
+        this.filteredProducts = [...this.products];
+        this.groupProductsByCategory(this.filteredProducts);
         this.loading = false;
         // Set first product as selected by default in bulk view
         if (this.filteredProducts.length > 0) {
@@ -61,19 +69,66 @@ export class ProductCatalogComponent implements OnInit {
     });
   }
 
+  extractAllCategories(products: Product[]): void {
+    const categorySet = new Set<string>();
+    products.forEach(product => categorySet.add(product.category));
+    this.allCategories = Array.from(categorySet).sort();
+  }
+
+  sortProductsByCategoryAndName(products: Product[]): Product[] {
+    return products.sort((a, b) => {
+      // First sort by category
+      const categoryCompare = a.category.localeCompare(b.category);
+      if (categoryCompare !== 0) {
+        return categoryCompare;
+      }
+      // Then sort by name within the same category
+      return a.name.localeCompare(b.name);
+    });
+  }
+
+  groupProductsByCategory(products: Product[]): void {
+    this.productsByCategory.clear();
+    this.categories = [];
+
+    products.forEach(product => {
+      if (!this.productsByCategory.has(product.category)) {
+        this.productsByCategory.set(product.category, []);
+        this.categories.push(product.category);
+      }
+      this.productsByCategory.get(product.category)!.push(product);
+    });
+  }
+
   onSearchChange(): void {
-    if (!this.searchQuery.trim()) {
-      this.filteredProducts = this.products;
-      return;
+    this.applyFilters();
+  }
+
+  onCategoryChange(): void {
+    this.applyFilters();
+  }
+
+  applyFilters(): void {
+    let filtered = [...this.products];
+
+    // Filter by category if selected
+    if (this.selectedCategory) {
+      filtered = filtered.filter(p => p.category === this.selectedCategory);
     }
 
-    const query = this.searchQuery.toLowerCase();
-    this.filteredProducts = this.products.filter(p =>
-      p.name.toLowerCase().includes(query) ||
-      p.description.toLowerCase().includes(query) ||
-      p.category.toLowerCase().includes(query) ||
-      p.sku.toLowerCase().includes(query)
-    );
+    // Filter by search query
+    if (this.searchQuery.trim()) {
+      const query = this.searchQuery.toLowerCase();
+      filtered = filtered.filter(p =>
+        p.name.toLowerCase().includes(query) ||
+        p.description.toLowerCase().includes(query) ||
+        p.category.toLowerCase().includes(query) ||
+        p.sku.toLowerCase().includes(query)
+      );
+    }
+
+    this.filteredProducts = this.sortProductsByCategoryAndName(filtered);
+    this.groupProductsByCategory(this.filteredProducts);
   }
 
   addToCart(product: Product): void {
