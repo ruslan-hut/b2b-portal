@@ -1,4 +1,4 @@
-name: Build & Deploy B2B to dev.darkbyrior.com/b2b
+name: Build & Deploy B2B to b2b.darkbyrior.com
 
 on:
   push:

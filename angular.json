@@ -43,8 +43,8 @@
               "src/styles.scss"
             ],
             "scripts": [],
-            "baseHref": "/b2b/",
-            "deployUrl": "/b2b/"
+            "baseHref": "/",
+            "deployUrl": "/"
           },
           "configurations": {
             "production": {
