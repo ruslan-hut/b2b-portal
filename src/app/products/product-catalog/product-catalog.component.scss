@@ -314,12 +314,17 @@
       font-size: 13px;
       text-transform: uppercase;
       letter-spacing: 0.5px;
+
+      &:first-child {
+        padding-left: 16px;
+      }
     }
   }
 
   tbody {
     .bulk-row {
       border-bottom: 1px solid #e1e8ed;
+      border-left: 4px solid transparent;
       cursor: pointer;
       transition: all 0.2s ease;
 
@@ -329,16 +334,16 @@
 
       &.selected {
         background-color: #e8eeff;
-        border-left: 4px solid #667eea;
+        border-left-color: #667eea;
       }
 
       &.in-cart {
-        border-left: 3px solid #28a745;
+        border-left-color: #28a745;
         background-color: #f0fff4;
       }
 
       &.selected.in-cart {
-        border-left: 4px solid #667eea;
+        border-left-color: #667eea;
         background-color: #e8eeff;
       }
 
@@ -350,6 +355,10 @@
       td {
         padding: 16px 12px;
         vertical-align: middle;
+
+        &:first-child {
+          padding-left: 16px;
+        }
       }
 
       .sku-cell {
