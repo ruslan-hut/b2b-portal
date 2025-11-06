@@ -6,8 +6,8 @@ on:
 
 env:
   # Если baseHref/deployUrl уже заданы в angular.json — можно не трогать.
-  BASE_HREF: /b2b/
-  DEPLOY_URL: /b2b/
+  BASE_HREF: /
+  DEPLOY_URL: /
 
 jobs:
   deploy:
