@@ -8,6 +8,8 @@ env:
   # Если baseHref/deployUrl уже заданы в angular.json — можно не трогать.
   BASE_HREF: /
   DEPLOY_URL: /
+  # Backend API URL - set this in GitHub repository secrets or variables
+  API_URL: ${{ secrets.API_URL || vars.API_URL}}
 
 jobs:
   deploy:
@@ -27,10 +29,14 @@ jobs:
         run: npm ci
 
       - name: Build Angular (production)
+        env:
+          API_URL: ${{ env.API_URL }}
         run: |
-          # Если в angular.json уже проставлены baseHref/deployUrl — используйте просто:
-          npx ng build --configuration=production
-          # npx ng build --configuration=production --base-href "$BASE_HREF" --deploy-url "$DEPLOY_URL"
+          # Set environment variables and build for production
+          # The set-env script will replace API_URL in environment.prod.ts
+          npm run build:prod
+          # Alternative if using custom base-href/deploy-url:
+          # npm run set-env && npx ng build --configuration=production --base-href "$BASE_HREF" --deploy-url "$DEPLOY_URL"
 
       - name: Pack dist (Angular browser output)
         run: |

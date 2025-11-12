@@ -1,65 +1,300 @@
 import { Injectable } from '@angular/core';
-import { Observable, of, BehaviorSubject, throwError } from 'rxjs';
-import { delay } from 'rxjs/operators';
-import { LoginRequest, LoginResponse, User } from '../models/user.model';
-import { MOCK_USERS } from '../mock-data/users.mock';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { Observable, BehaviorSubject, throwError, timer, of } from 'rxjs';
+import { map, catchError, switchMap, tap, shareReplay } from 'rxjs/operators';
+import {
+  LoginRequest,
+  LoginResponse,
+  User,
+  Client,
+  AuthMeResponse,
+  RefreshTokenRequest,
+  TokensListResponse,
+  ApiResponse
+} from '../models/user.model';
+import { environment } from '../../../environments/environment';
+
+interface AuthData {
+  entityType: 'user' | 'client';
+  entity: User | Client;
+  accessToken: string;
+  refreshToken: string;
+  expiresAt: string;
+}
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
-  private currentUserSubject: BehaviorSubject<User | null>;
-  public currentUser: Observable<User | null>;
+  private readonly AUTH_DATA_KEY = 'BASE_AUTH_DATA';
+  private readonly apiUrl = environment.apiUrl;
 
-  constructor() {
-    const storedUser = localStorage.getItem('currentUser');
-    this.currentUserSubject = new BehaviorSubject<User | null>(
-      storedUser ? JSON.parse(storedUser) : null
+  private currentEntitySubject: BehaviorSubject<User | Client | null>;
+  public currentEntity$: Observable<User | Client | null>;
+
+  private entityTypeSubject: BehaviorSubject<'user' | 'client' | null>;
+  public entityType$: Observable<'user' | 'client' | null>;
+
+  private refreshTokenTimeout?: any;
+
+  constructor(private http: HttpClient) {
+    const authData = this.getStoredAuthData();
+    this.currentEntitySubject = new BehaviorSubject<User | Client | null>(
+      authData ? authData.entity : null
     );
-    this.currentUser = this.currentUserSubject.asObservable();
+    this.entityTypeSubject = new BehaviorSubject<'user' | 'client' | null>(
+      authData ? authData.entityType : null
+    );
+    this.currentEntity$ = this.currentEntitySubject.asObservable();
+    this.entityType$ = this.entityTypeSubject.asObservable();
+
+    // Start token refresh timer if user is logged in
+    if (authData) {
+      this.startRefreshTokenTimer(authData.expiresAt);
+    }
   }
 
-  public get currentUserValue(): User | null {
-    return this.currentUserSubject.value;
+  public get currentEntityValue(): User | Client | null {
+    return this.currentEntitySubject.value;
   }
 
+  public get entityTypeValue(): 'user' | 'client' | null {
+    return this.entityTypeSubject.value;
+  }
+
+  /**
+   * Login with user credentials or client credentials
+   */
   login(credentials: LoginRequest): Observable<LoginResponse> {
-    // TODO: Replace with actual API call
-    // Mock authentication: find user by email
-    const user = MOCK_USERS.find(u => u.email === credentials.email);
-    
-    if (!user) {
-      // Simulate authentication failure
-      return throwError(() => new Error('Invalid credentials')).pipe(delay(500));
+    return this.http.post<LoginResponse>(`${this.apiUrl}/auth/login`, credentials).pipe(
+      tap(response => {
+        if (response.status === 'success') {
+          this.handleLoginSuccess(response);
+        }
+      }),
+      catchError(error => {
+        console.error('Login error:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  /**
+   * Logout and revoke current token
+   */
+  logout(): Observable<any> {
+    const accessToken = this.getAccessToken();
+    if (!accessToken) {
+      this.clearAuthData();
+      return of(null);
     }
 
-    const mockResponse: LoginResponse = {
-      token: 'mock-jwt-token-' + new Date().getTime(),
-      user: user
+    return this.http.post(`${this.apiUrl}/auth/logout`, {}).pipe(
+      tap(() => this.clearAuthData()),
+      catchError(error => {
+        // Even if logout fails on server, clear local data
+        this.clearAuthData();
+        return throwError(() => error);
+      })
+    );
+  }
+
+  /**
+   * Refresh access token using refresh token
+   */
+  refreshToken(): Observable<LoginResponse> {
+    const authData = this.getStoredAuthData();
+    if (!authData || !authData.refreshToken) {
+      return throwError(() => new Error('No refresh token available'));
+    }
+
+    const request: RefreshTokenRequest = {
+      refresh_token: authData.refreshToken
     };
 
-    // Simulate API delay
-    return of(mockResponse).pipe(delay(500));
+    return this.http.post<LoginResponse>(`${this.apiUrl}/auth/refresh`, request).pipe(
+      tap(response => {
+        if (response.status === 'success') {
+          this.handleLoginSuccess(response);
+        }
+      }),
+      catchError(error => {
+        // If refresh fails, logout user
+        this.clearAuthData();
+        return throwError(() => error);
+      })
+    );
   }
 
-  logout(): void {
-    // TODO: Call API to invalidate token
-    localStorage.removeItem('currentUser');
-    localStorage.removeItem('authToken');
-    this.currentUserSubject.next(null);
+  /**
+   * Get current user/client information from server
+   */
+  getCurrentEntity(): Observable<User | Client> {
+    return this.http.get<AuthMeResponse>(`${this.apiUrl}/auth/me`).pipe(
+      map(response => {
+        if (response.status === 'success') {
+          const entity = response.data.entity_type === 'user'
+            ? response.data.user!
+            : response.data.client!;
+
+          // Update local state
+          this.currentEntitySubject.next(entity);
+          this.entityTypeSubject.next(response.data.entity_type);
+
+          // Update stored auth data
+          const authData = this.getStoredAuthData();
+          if (authData) {
+            authData.entity = entity;
+            authData.entityType = response.data.entity_type;
+            this.storeAuthData(authData);
+          }
+
+          return entity;
+        }
+        throw new Error('Failed to get current entity');
+      }),
+      catchError(error => {
+        console.error('Get current entity error:', error);
+        return throwError(() => error);
+      })
+    );
   }
 
-  setAuthData(response: LoginResponse): void {
-    localStorage.setItem('currentUser', JSON.stringify(response.user));
-    localStorage.setItem('authToken', response.token);
-    this.currentUserSubject.next(response.user);
+  /**
+   * Get list of active tokens (all devices)
+   */
+  getActiveTokens(): Observable<TokensListResponse> {
+    return this.http.get<TokensListResponse>(`${this.apiUrl}/auth/tokens`).pipe(
+      catchError(error => {
+        console.error('Get active tokens error:', error);
+        return throwError(() => error);
+      })
+    );
   }
 
+  /**
+   * Revoke specific token (logout from specific device)
+   */
+  revokeToken(tokenUid: string): Observable<ApiResponse<string>> {
+    return this.http.delete<ApiResponse<string>>(`${this.apiUrl}/auth/tokens/${tokenUid}`).pipe(
+      catchError(error => {
+        console.error('Revoke token error:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  /**
+   * Revoke all tokens (logout from all devices)
+   */
+  revokeAllTokens(): Observable<ApiResponse<string>> {
+    return this.http.post<ApiResponse<string>>(`${this.apiUrl}/auth/tokens/revoke-all`, {}).pipe(
+      tap(() => this.clearAuthData()),
+      catchError(error => {
+        console.error('Revoke all tokens error:', error);
+        // Even if request fails, clear local data
+        this.clearAuthData();
+        return throwError(() => error);
+      })
+    );
+  }
+
+  /**
+   * Check if user is authenticated
+   */
   isAuthenticated(): boolean {
-    return !!this.currentUserValue && !!localStorage.getItem('authToken');
+    const authData = this.getStoredAuthData();
+    if (!authData || !authData.accessToken) {
+      return false;
+    }
+
+    // Check if token is expired
+    const expiresAt = new Date(authData.expiresAt);
+    const now = new Date();
+    return expiresAt > now;
   }
 
-  getToken(): string | null {
-    return localStorage.getItem('authToken');
+  /**
+   * Get access token
+   */
+  getAccessToken(): string | null {
+    const authData = this.getStoredAuthData();
+    return authData ? authData.accessToken : null;
+  }
+
+  /**
+   * Get refresh token
+   */
+  getRefreshToken(): string | null {
+    const authData = this.getStoredAuthData();
+    return authData ? authData.refreshToken : null;
+  }
+
+  // Private helper methods
+
+  private handleLoginSuccess(response: LoginResponse): void {
+    const authData: AuthData = {
+      entityType: response.data.entity_type,
+      entity: {} as any, // Will be populated by getCurrentEntity() call
+      accessToken: response.data.access_token,
+      refreshToken: response.data.refresh_token,
+      expiresAt: response.data.expires_at
+    };
+
+    this.storeAuthData(authData);
+    this.entityTypeSubject.next(response.data.entity_type);
+
+    // Fetch full entity information
+    this.getCurrentEntity().subscribe();
+
+    // Start refresh token timer
+    this.startRefreshTokenTimer(response.data.expires_at);
+  }
+
+  private clearAuthData(): void {
+    localStorage.removeItem(this.AUTH_DATA_KEY);
+    this.currentEntitySubject.next(null);
+    this.entityTypeSubject.next(null);
+    this.stopRefreshTokenTimer();
+  }
+
+  private storeAuthData(authData: AuthData): void {
+    localStorage.setItem(this.AUTH_DATA_KEY, JSON.stringify(authData));
+  }
+
+  private getStoredAuthData(): AuthData | null {
+    const stored = localStorage.getItem(this.AUTH_DATA_KEY);
+    return stored ? JSON.parse(stored) : null;
+  }
+
+  private startRefreshTokenTimer(expiresAt: string): void {
+    // Stop any existing timer
+    this.stopRefreshTokenTimer();
+
+    // Calculate time until token expires
+    const expires = new Date(expiresAt);
+    const now = new Date();
+    const timeout = expires.getTime() - now.getTime();
+
+    // Refresh token 1 minute before it expires
+    const refreshTime = timeout - (60 * 1000);
+
+    if (refreshTime > 0) {
+      this.refreshTokenTimeout = setTimeout(() => {
+        this.refreshToken().subscribe({
+          error: (error) => {
+            console.error('Auto token refresh failed:', error);
+            // Will be handled by interceptor and redirect to login
+          }
+        });
+      }, refreshTime);
+    }
+  }
+
+  private stopRefreshTokenTimer(): void {
+    if (this.refreshTokenTimeout) {
+      clearTimeout(this.refreshTokenTimeout);
+      this.refreshTokenTimeout = undefined;
+    }
   }
 }

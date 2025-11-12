@@ -4,12 +4,16 @@ A modern B2B portal application built with Angular 18, designed for clients to b
 
 ## Features
 
--  **User Authentication** - Secure login system with JWT token support
+-  **User Authentication** - JWT-based authentication with support for Users and Clients
+   - Auto-detection of login type (username+password or phone+PIN)
+   - Automatic token refresh
+   - Multi-device session management
 -  **Product Catalog** - Browse and search through product inventory
 -  **Shopping Cart** - Add products to cart with quantity management
 -  **Order Management** - Create orders and view order history
 -  **Responsive Design** - Works seamlessly on desktop and mobile devices
 -  **Modern UI** - Beautiful gradient-based design with smooth animations
+-  **Internationalization** - English and Ukrainian language support
 
 ## Project Structure
 
@@ -93,22 +97,56 @@ ng e2e               # End-to-end tests (when configured)
 
 ## Usage
 
-### Testing with Mock Data
+### Authentication
 
-The application includes comprehensive mock data for testing all features before API integration.
+The application uses **JWT-based authentication** and supports two types of entities:
 
-** See [MOCK_DATA.md](./MOCK_DATA.md) for detailed information about:**
-- Available test users and login credentials
-- Complete product catalog (15 products across 3 categories)
-- Sample orders with various statuses
-- Testing scenarios and tips
+#### User Login (username + password)
+```
+Username/Phone: admin
+Password/PIN: password123
+```
 
-### Quick Start - Demo Credentials
+#### Client Login (phone + PIN code)
+```
+Username/Phone: +1234567890
+Password/PIN: 1234
+```
 
-Login with any of these test accounts:
-- **Admin**: `admin@example.com` (any password)
-- **Client**: `client@example.com` (any password)
-- **Demo**: `demo@example.com` (any password)
+**Auto-Detection**: The login form automatically detects whether you're logging in as a User or Client based on the identifier format:
+- Phone numbers (10+ digits, optional +) → Client login
+- Other text → User login
+
+### Backend Configuration
+
+Before using authentication, ensure your backend API is running and configured:
+
+1. **Development**: Update `src/environments/environment.ts`:
+   ```typescript
+   apiUrl: 'http://localhost:8080/api/v1'
+   ```
+
+2. **Production**: Set the `API_URL` environment variable or GitHub secret (see [DEPLOYMENT.md](./DEPLOYMENT.md))
+
+### Troubleshooting Authentication
+
+If you encounter login errors like "Invalid credentials":
+
+📖 **See [AUTHENTICATION_TROUBLESHOOTING.md](./AUTHENTICATION_TROUBLESHOOTING.md)** for comprehensive troubleshooting guide including:
+- Backend connection issues
+- CORS configuration
+- API URL configuration
+- Token management
+- Debug tips and tools
+
+### Testing with Mock Data (Legacy)
+
+For frontend-only testing without a backend, you can use the mock data:
+
+**See [MOCK_DATA.md](./MOCK_DATA.md) for:**
+- Mock user credentials
+- Sample product catalog
+- Testing scenarios
 
 ### Key Features
 

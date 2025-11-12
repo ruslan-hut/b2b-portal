@@ -1,11 +1,11 @@
 <div class="app-container">
-  <header class="app-header" *ngIf="currentUser">
+  <header class="app-header" *ngIf="currentEntity">
     <div class="header-content">
       <div class="logo" (click)="navigateTo('/products/catalog')">
         <img src="assets/favicon/icon-192.png" alt="Logo" class="logo-icon">
         <span class="logo-text">{{ title }}</span>
       </div>
-      
+
       <nav class="main-nav">
         <a routerLink="/products/catalog" routerLinkActive="active" class="nav-link">
           {{ 'navigation.products' | translate }}
@@ -14,7 +14,7 @@
           {{ 'navigation.orders' | translate }}
         </a>
       </nav>
-      
+
       <div class="user-menu">
         <app-language-switcher></app-language-switcher>
         <button class="btn-view-toggle" *ngIf="showViewToggle" (click)="toggleViewMode()">
@@ -29,8 +29,9 @@
           🛒 {{ 'navigation.cart' | translate }} ({{ cartItems.length }})
         </button>
         <div class="user-info">
-          <span class="user-name">{{ currentUser.name }}</span>
-          <span class="user-company">{{ currentUser.companyName }}</span>
+          <span class="user-name">{{ getDisplayName() }}</span>
+          <span class="user-company" *ngIf="entityType === 'user' && currentEntity">{{ getUserData()?.username }}</span>
+          <span class="user-company" *ngIf="entityType === 'client' && currentEntity">{{ getClientData()?.phone }}</span>
         </div>
         <button class="btn-logout" (click)="logout()">
           {{ 'common.logout' | translate }}

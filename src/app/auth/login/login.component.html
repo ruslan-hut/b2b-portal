@@ -8,34 +8,33 @@
 
     <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login-form">
       <div class="form-group">
-        <label for="email">{{ 'common.email' | translate }}</label>
+        <label for="identifier">{{ 'auth.identifierLabel' | translate }}</label>
         <input
-          type="email"
-          id="email"
-          formControlName="email"
+          type="text"
+          id="identifier"
+          formControlName="identifier"
           class="form-control"
-          [class.is-invalid]="submitted && f['email'].errors"
-          [placeholder]="'auth.emailPlaceholder' | translate"
+          [class.is-invalid]="submitted && f['identifier'] && f['identifier'].errors"
+          [placeholder]="'auth.identifierPlaceholder' | translate"
         />
-        <div class="invalid-feedback" *ngIf="submitted && f['email'].errors">
-          <div *ngIf="f['email'].errors['required']">{{ 'validation.required' | translate }}</div>
-          <div *ngIf="f['email'].errors['email']">{{ 'validation.email' | translate }}</div>
+        <div class="invalid-feedback" *ngIf="submitted && f['identifier'] && f['identifier'].errors">
+          <div *ngIf="f['identifier'].errors['required']">{{ 'validation.required' | translate }}</div>
         </div>
       </div>
 
       <div class="form-group">
-        <label for="password">{{ 'common.password' | translate }}</label>
+        <label for="credential">{{ 'auth.credentialLabel' | translate }}</label>
         <input
           type="password"
-          id="password"
-          formControlName="password"
+          id="credential"
+          formControlName="credential"
           class="form-control"
-          [class.is-invalid]="submitted && f['password'].errors"
-          [placeholder]="'auth.passwordPlaceholder' | translate"
+          [class.is-invalid]="submitted && f['credential'] && f['credential'].errors"
+          [placeholder]="'auth.credentialPlaceholder' | translate"
         />
-        <div class="invalid-feedback" *ngIf="submitted && f['password'].errors">
-          <div *ngIf="f['password'].errors['required']">{{ 'validation.required' | translate }}</div>
-          <div *ngIf="f['password'].errors['minlength']">{{ 'validation.minLength' | translate: {min: 6} }}</div>
+        <div class="invalid-feedback" *ngIf="submitted && f['credential'] && f['credential'].errors">
+          <div *ngIf="f['credential'].errors['required']">{{ 'validation.required' | translate }}</div>
+          <div *ngIf="f['credential'].errors['minlength']">{{ 'validation.minLength' | translate: {min: 4} }}</div>
         </div>
       </div>
 
@@ -51,7 +50,9 @@
     </form>
 
     <div class="login-footer">
-      <p class="hint">Demo credentials: any email with password (min 6 characters)</p>
+      <p class="hint">
+        {{ 'auth.loginHint' | translate }}
+      </p>
     </div>
   </div>
 </div>

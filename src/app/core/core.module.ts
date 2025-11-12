@@ -1,8 +1,10 @@
 import { NgModule, APP_INITIALIZER } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { HttpClientModule, HTTP_INTERCEPTORS } from '@angular/common/http';
 import { TranslatePipe } from './pipes/translate.pipe';
 import { LanguageSwitcherComponent } from './components/language-switcher/language-switcher.component';
 import { TranslationService } from './services/translation.service';
+import { AuthInterceptor } from './interceptors/auth.interceptor';
 
 /**
  * Factory function to initialize translations before app starts
@@ -17,7 +19,8 @@ export function initializeTranslations(translationService: TranslationService) {
     LanguageSwitcherComponent
   ],
   imports: [
-    CommonModule
+    CommonModule,
+    HttpClientModule
   ],
   exports: [
     TranslatePipe,
@@ -28,6 +31,11 @@ export function initializeTranslations(translationService: TranslationService) {
       provide: APP_INITIALIZER,
       useFactory: initializeTranslations,
       deps: [TranslationService],
+      multi: true
+    },
+    {
+      provide: HTTP_INTERCEPTORS,
+      useClass: AuthInterceptor,
       multi: true
     }
   ]
