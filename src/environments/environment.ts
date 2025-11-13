@@ -4,7 +4,7 @@
 
 export const environment = {
   production: false,
-  apiUrl: 'localHosrt:3000/api/v1'
+  apiUrl: 'https://b2b.darkbyrior.com/api/v1'
 };
 
 /*

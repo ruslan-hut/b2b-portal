@@ -91,9 +91,12 @@ export class LoginComponent implements OnInit {
 
     this.authService.login(credentials).subscribe({
       next: (response) => {
-        if (response.status === 'success') {
+
+        if (response.success) {
+          console.log('Login successful, navigating to:', this.returnUrl);
           this.router.navigate([this.returnUrl]);
         } else {
+          console.warn('Login response status not success:', response.status_message);
           this.errorMessage = this.translationService.instant('auth.loginError');
           this.loading = false;
         }

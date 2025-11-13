@@ -67,10 +67,14 @@ export class AuthService {
    */
   login(credentials: LoginRequest): Observable<LoginResponse> {
     return this.http.post<LoginResponse>(`${this.apiUrl}/auth/login`, credentials).pipe(
-      tap(response => {
-        if (response.status === 'success') {
-          this.handleLoginSuccess(response);
+      switchMap(response => {
+        if (response.success) {
+          // Wait for login success handling to complete
+          return this.handleLoginSuccess(response).pipe(
+            map(() => response)
+          );
         }
+        return of(response);
       }),
       catchError(error => {
         console.error('Login error:', error);
@@ -113,10 +117,14 @@ export class AuthService {
     };
 
     return this.http.post<LoginResponse>(`${this.apiUrl}/auth/refresh`, request).pipe(
-      tap(response => {
-        if (response.status === 'success') {
-          this.handleLoginSuccess(response);
+      switchMap(response => {
+        if (response.success) {
+          // Wait for login success handling to complete
+          return this.handleLoginSuccess(response).pipe(
+            map(() => response)
+          );
         }
+        return of(response);
       }),
       catchError(error => {
         // If refresh fails, logout user
@@ -132,7 +140,11 @@ export class AuthService {
   getCurrentEntity(): Observable<User | Client> {
     return this.http.get<AuthMeResponse>(`${this.apiUrl}/auth/me`).pipe(
       map(response => {
-        if (response.status === 'success') {
+
+        // Support both 'status: success' and 'success: true' formats
+        const isSuccess = response.status === 'success' || (response as any).success === true;
+
+        if (isSuccess) {
           const entity = response.data.entity_type === 'user'
             ? response.data.user!
             : response.data.client!;
@@ -151,10 +163,11 @@ export class AuthService {
 
           return entity;
         }
+        console.error('Response not successful:', response);
         throw new Error('Failed to get current entity');
       }),
       catchError(error => {
-        console.error('Get current entity error:', error);
+
         return throwError(() => error);
       })
     );
@@ -232,7 +245,7 @@ export class AuthService {
 
   // Private helper methods
 
-  private handleLoginSuccess(response: LoginResponse): void {
+  private handleLoginSuccess(response: LoginResponse): Observable<User | Client> {
     const authData: AuthData = {
       entityType: response.data.entity_type,
       entity: {} as any, // Will be populated by getCurrentEntity() call
@@ -244,11 +257,10 @@ export class AuthService {
     this.storeAuthData(authData);
     this.entityTypeSubject.next(response.data.entity_type);
 
-    // Fetch full entity information
-    this.getCurrentEntity().subscribe();
-
     // Start refresh token timer
     this.startRefreshTokenTimer(response.data.expires_at);
+
+    return this.getCurrentEntity();
   }
 
   private clearAuthData(): void {

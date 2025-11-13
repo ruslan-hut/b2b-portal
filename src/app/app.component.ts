@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectorRef } from '@angular/core';
 import { Router, NavigationEnd } from '@angular/router';
 import { AuthService } from './core/services/auth.service';
 import { OrderService } from './core/services/order.service';
@@ -24,14 +24,16 @@ export class AppComponent {
   showViewToggle = false;
 
   constructor(
-    private authService: AuthService,
+    public authService: AuthService,
     private orderService: OrderService,
     private productService: ProductService,
     private router: Router,
-    public translationService: TranslationService
+    public translationService: TranslationService,
+    private cdr: ChangeDetectorRef
   ) {
     this.authService.currentEntity$.subscribe(entity => {
       this.currentEntity = entity;
+      this.cdr.markForCheck();
     });
 
     this.authService.entityType$.subscribe(type => {

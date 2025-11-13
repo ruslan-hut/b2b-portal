@@ -49,7 +49,8 @@ export type LoginRequest = UserLoginRequest | ClientLoginRequest;
 
 // Login response from /auth/login
 export interface LoginResponse {
-  status: string;
+  success: boolean;
+  status_message: string;
   data: {
     access_token: string;
     refresh_token: string;
