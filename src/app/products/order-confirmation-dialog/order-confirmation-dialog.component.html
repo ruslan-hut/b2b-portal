@@ -1,0 +1,24 @@
+<div class="dialog-overlay" (click)="onClose()">
+  <div class="dialog-content" (click)="$event.stopPropagation()">
+    <div class="dialog-header">
+      <h2>{{ 'products.orderConfirmed' | translate }}</h2>
+      <button class="close-btn" (click)="onClose()">✕</button>
+    </div>
+
+    <div class="dialog-body">
+      <div class="success-icon">✓</div>
+      <p class="confirmation-message">{{ 'products.orderConfirmationMessage' | translate }}</p>
+
+      <div class="order-total-section">
+        <span class="total-label">{{ 'products.total' | translate }}:</span>
+        <span class="total-amount">${{ total.toFixed(2) }}</span>
+      </div>
+    </div>
+
+    <div class="dialog-footer">
+      <button class="btn btn-primary" (click)="onConfirm()">
+        {{ 'common.ok' | translate }}
+      </button>
+    </div>
+  </div>
+</div>

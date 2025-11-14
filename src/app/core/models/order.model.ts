@@ -43,3 +43,32 @@ export interface CreateOrderRequest {
   shippingAddress: ShippingAddress;
 }
 
+// Backend API format
+export interface BackendOrderRequest {
+  uid?: string;
+  user_uid: string;
+  status?: 'new' | 'processing' | 'confirmed';
+  total: number;
+  shipping_address: string;
+  billing_address?: string;
+  items: {
+    order_uid?: string;
+    product_uid: string;
+    quantity: number;
+    price: number;
+    discount?: number;
+    total: number;
+  }[];
+}
+
+export interface BackendOrderResponse {
+  uid: string;
+  user_uid: string;
+  status: string;
+  total: number;
+  shipping_address: string;
+  billing_address?: string;
+  created_at: string;
+  updated_at: string;
+}
+

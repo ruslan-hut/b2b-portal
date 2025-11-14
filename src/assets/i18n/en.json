@@ -20,6 +20,7 @@
     "confirmation": "Confirmation",
     "yes": "Yes",
     "no": "No",
+    "ok": "OK",
     "back": "Back",
     "next": "Next",
     "close": "Close"
@@ -65,6 +66,8 @@
     "description": "Description",
     "noProducts": "No products found",
     "orderConfirmation": "Order Confirmation",
+    "orderConfirmed": "Order Confirmed",
+    "orderConfirmationMessage": "Your order has been successfully placed!",
     "confirmOrder": "Confirm Order",
     "orderSuccess": "Order placed successfully!",
     "orderError": "Failed to place order",
@@ -105,6 +108,14 @@
     "profileUpdated": "Profile updated successfully",
     "passwordChanged": "Password changed successfully",
     "somethingWentWrong": "Something went wrong. Please try again."
+  },
+  "errors": {
+    "insufficientStock": "Some items are out of stock. Please update your cart.",
+    "productInactive": "Some items are no longer available.",
+    "productNotFound": "Product not found.",
+    "invalidStatus": "Invalid order status.",
+    "networkError": "Network error. Please check your connection.",
+    "orderFailed": "Failed to create order. Please try again."
   }
 }
 

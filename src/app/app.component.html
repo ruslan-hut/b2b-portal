@@ -1,5 +1,5 @@
 <div class="app-container">
-  <header class="app-header" *ngIf="(authService.currentEntity$ | async) as entity">
+  <header class="app-header" *ngIf="!isAuthRoute && (authService.currentEntity$ | async) as entity">
     <div class="header-content">
       <div class="logo" (click)="navigateTo('/products/catalog')">
         <img src="assets/favicon/icon-192.png" alt="Logo" class="logo-icon">
@@ -44,6 +44,14 @@
     <router-outlet />
   </main>
 
+  <!-- Order Confirmation Dialog -->
+  <app-order-confirmation-dialog
+    *ngIf="showOrderDialog"
+    [total]="cartTotal"
+    (confirmed)="onOrderConfirmed()"
+    (closed)="closeOrderDialog()"
+  ></app-order-confirmation-dialog>
+
   <!-- Cart Side Panel -->
   <div class="cart-overlay" *ngIf="showCartPanel" (click)="toggleCartPanel()"></div>
   <div class="cart-panel" [class.open]="showCartPanel">
@@ -60,18 +68,17 @@
 
       <div class="cart-items" *ngIf="cartItems.length > 0">
         <div class="cart-item" *ngFor="let item of cartItems">
-          <div class="item-details">
-            <div class="item-name">{{ item.productName }}</div>
-            <div class="item-price">${{ item.price.toFixed(2) }}</div>
+          <div class="item-info">
+            <span class="item-name">{{ item.productName }}</span>
+            <span class="item-details">
+              ${{ item.price.toFixed(2) }} × {{ item.quantity }}
+            </span>
           </div>
-          <div class="item-controls">
-            <div class="quantity-controls">
-              <button class="qty-btn" (click)="updateQuantity(item.productId, item.quantity - 1)">-</button>
-              <span class="quantity">{{ item.quantity }}</span>
-              <button class="qty-btn" (click)="updateQuantity(item.productId, item.quantity + 1)">+</button>
-            </div>
-            <div class="item-subtotal">${{ item.subtotal.toFixed(2) }}</div>
-            <button class="remove-btn" (click)="removeFromCart(item.productId)">🗑️</button>
+          <div class="item-actions">
+            <span class="item-total">${{ item.subtotal.toFixed(2) }}</span>
+            <button class="remove-btn" (click)="removeFromCart(item.productId)">
+              {{ 'common.delete' | translate }}
+            </button>
           </div>
         </div>
       </div>

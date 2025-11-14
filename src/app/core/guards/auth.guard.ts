@@ -10,6 +10,9 @@ export const authGuard: CanActivateFn = (route, state) => {
     return true;
   }
 
+  // Clear auth data if token is expired
+  authService.clearAuth();
+
   // Redirect to login page with return URL
   router.navigate(['/auth/login'], { queryParams: { returnUrl: state.url } });
   return false;

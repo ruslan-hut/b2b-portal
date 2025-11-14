@@ -349,7 +349,8 @@ All error responses will have the following structure:
               "uid": "prod-123", // Optional for create, required for update
               "price": 1000,
               "quantity": 50,
-              "category_uid": "cat-456"
+              "category_uid": "cat-456",
+              "active": true // Optional, defaults to true
             }
           ]
         }
@@ -402,6 +403,26 @@ All error responses will have the following structure:
         }
         ```
     *   **Response:** Success message
+
+#### Update Product Active Status (Batch)
+*   **POST** `/product/active`
+    *   **Request Body:**
+        ```json
+        {
+          "data": [
+            {
+              "uid": "prod-123",
+              "active": false
+            },
+            {
+              "uid": "prod-456",
+              "active": true
+            }
+          ]
+        }
+        ```
+    *   **Response:** Success message
+    *   **Description:** Update the active status of one or more products. Use this to soft-delete or activate products.
 
 #### Upsert Product Descriptions (Batch)
 *   **POST** `/product/description`
@@ -575,11 +596,12 @@ All error responses will have the following structure:
               "name": "string",
               "email": "string",
               "phone": "string",
-              "pion_code": "string",
+              "pin_code": "string",
               "address": "string",
               "discount": 10,
               "currency": "USD",
-              "price_type_uid": "string"
+              "price_type_uid": "string",
+              "active": true // Optional, defaults to true
             }
           ]
         }
@@ -610,6 +632,26 @@ All error responses will have the following structure:
 #### Find Client by Email
 *   **GET** `/client/email/{email}`
     *   **Response:** Single client object
+
+#### Update Client Active Status (Batch)
+*   **POST** `/client/active`
+    *   **Request Body:**
+        ```json
+        {
+          "data": [
+            {
+              "uid": "client-123",
+              "active": false
+            },
+            {
+              "uid": "client-456",
+              "active": true
+            }
+          ]
+        }
+        ```
+    *   **Response:** Success message
+    *   **Description:** Update the active status of one or more clients. Use this to soft-delete or activate client accounts.
 
 ---
 
@@ -654,6 +696,46 @@ All error responses will have the following structure:
 #### Find Categories by Parent
 *   **GET** `/category/parent/{parentUID}`
     *   **Response:** Array of categories
+
+#### Upsert Category Descriptions (Batch)
+*   **POST** `/category/description`
+    *   **Request Body:**
+        ```json
+        {
+          "data": [
+            {
+              "category_uid": "cat-123",
+              "language": "en",
+              "name": "Electronics",
+              "description": "Electronic devices and accessories"
+            },
+            {
+              "category_uid": "cat-123",
+              "language": "es",
+              "name": "Electrónica",
+              "description": "Dispositivos electrónicos y accesorios"
+            }
+          ]
+        }
+        ```
+    *   **Response:** Success message
+
+#### Remove Category Descriptions
+*   **DELETE** `/category/description/{categoryUID}/{language}` - Delete single (backward compatible)
+*   **DELETE** `/category/description` - Batch delete
+    *   **Request Body:**
+        ```json
+        {
+          "data": [
+            {"category_uid": "cat-123", "language": "en"},
+            {"category_uid": "cat-123", "language": "es"}
+          ]
+        }
+        ```
+
+#### Get Category Descriptions
+*   **GET** `/category/description/{categoryUID}`
+    *   **Response:** Array of category descriptions
 
 ---
 
@@ -846,6 +928,7 @@ List endpoints now return pagination metadata:
 The following operations use true database-level upserts (INSERT ... ON DUPLICATE KEY UPDATE):
 - Order Items: Based on composite key (order_uid + product_uid)
 - Product Descriptions: Based on composite PRIMARY KEY (product_uid + language)
+- Category Descriptions: Based on composite PRIMARY KEY (category_uid + language)
 - Attribute Descriptions: Based on composite PRIMARY KEY (attribute_uid + language)
 - Attribute Values: Based on composite PRIMARY KEY (uid + language)
 

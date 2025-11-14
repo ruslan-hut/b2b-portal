@@ -243,6 +243,13 @@ export class AuthService {
     return authData ? authData.refreshToken : null;
   }
 
+  /**
+   * Clear authentication data (public method for guards/interceptors)
+   */
+  public clearAuth(): void {
+    this.clearAuthData();
+  }
+
   // Private helper methods
 
   private handleLoginSuccess(response: LoginResponse): Observable<User | Client> {
