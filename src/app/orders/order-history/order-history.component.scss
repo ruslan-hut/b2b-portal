@@ -219,6 +219,30 @@
     }
   }
 
+  .order-comment {
+    margin-bottom: 15px;
+    padding: 12px;
+    background: #f8f9fa;
+    border-left: 3px solid #667eea;
+    border-radius: 4px;
+
+    .comment-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: #667eea;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    .comment-text {
+      font-size: 14px;
+      color: #333;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+  }
+
   .order-footer {
     display: flex;
     justify-content: space-between;

@@ -250,9 +250,33 @@ export class AuthService {
     this.clearAuthData();
   }
 
+  /**
+   * Debug helper: Inspect current token (call from browser console)
+   * Usage: In console, run: window['authService'].inspectToken()
+   */
+  public inspectToken(): void {
+    const token = this.getAccessToken();
+    if (!token) {
+      console.log('❌ No access token found');
+      return;
+    }
+
+    const payload = this.decodeToken(token);
+    console.log('🔍 Current Access Token Info:');
+    console.log('  Token UID:', payload.token_uid);
+    console.log('  Expires At:', new Date(payload.exp * 1000).toISOString());
+    console.log('  Issued At:', new Date(payload.iat * 1000).toISOString());
+    console.log('  User/Client UID:', payload.user_uid || payload.client_uid);
+    console.log('  Full Token (first 50 chars):', token.substring(0, 50) + '...');
+    console.log('  Full Payload:', payload);
+  }
+
   // Private helper methods
 
   private handleLoginSuccess(response: LoginResponse): Observable<User | Client> {
+    // CRITICAL: Clear old auth data first to prevent token conflicts
+    this.clearAuthData();
+
     const authData: AuthData = {
       entityType: response.data.entity_type,
       entity: {} as any, // Will be populated by getCurrentEntity() call
@@ -314,6 +338,20 @@ export class AuthService {
     if (this.refreshTokenTimeout) {
       clearTimeout(this.refreshTokenTimeout);
       this.refreshTokenTimeout = undefined;
+    }
+  }
+
+  /**
+   * Decode JWT token to extract payload (for debugging)
+   */
+  private decodeToken(token: string): any {
+    try {
+      const payload = token.split('.')[1];
+      const decoded = atob(payload);
+      return JSON.parse(decoded);
+    } catch (error) {
+      console.error('Failed to decode token:', error);
+      return {};
     }
   }
 }

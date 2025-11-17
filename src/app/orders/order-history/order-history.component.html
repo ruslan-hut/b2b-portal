@@ -46,6 +46,11 @@
         </div>
       </div>
 
+      <div class="order-comment" *ngIf="order.comment">
+        <div class="comment-label">{{ 'orders.comment' | translate }}:</div>
+        <div class="comment-text">{{ order.comment }}</div>
+      </div>
+
       <div class="order-footer">
         <div class="order-total">
           <span class="total-label">{{ 'products.total' | translate }}:</span>

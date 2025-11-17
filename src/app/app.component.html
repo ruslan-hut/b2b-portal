@@ -85,12 +85,22 @@
     </div>
 
     <div class="cart-footer" *ngIf="cartItems.length > 0">
+      <div class="comment-section">
+        <label for="orderComment" class="comment-label">{{ 'orders.comment' | translate }}:</label>
+        <textarea
+          id="orderComment"
+          [(ngModel)]="orderComment"
+          [placeholder]="'orders.commentPlaceholder' | translate"
+          class="comment-textarea"
+          rows="3"
+        ></textarea>
+      </div>
       <div class="cart-total">
         <span class="total-label">{{ 'products.total' | translate }}:</span>
         <span class="total-amount">${{ cartTotal.toFixed(2) }}</span>
       </div>
-      <button class="btn-checkout" (click)="proceedToCheckout()">
-        {{ 'products.confirmOrder' | translate }}
+      <button class="btn-checkout" (click)="proceedToCheckout()" [disabled]="isCreatingOrder">
+        {{ isCreatingOrder ? ('common.loading' | translate) : ('products.confirmOrder' | translate) }}
       </button>
     </div>
   </div>

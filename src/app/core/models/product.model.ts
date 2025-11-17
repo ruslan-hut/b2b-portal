@@ -25,5 +25,6 @@ export interface BackendProduct {
   active: boolean;
   category?: string;
   sku?: string;
+  image?: string; // Product image URL
 }
 

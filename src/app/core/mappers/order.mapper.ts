@@ -9,7 +9,8 @@ export class OrderMapper {
     userId: string,
     items: OrderItem[],
     shippingAddress: ShippingAddress,
-    billingAddress?: ShippingAddress
+    billingAddress?: ShippingAddress,
+    comment?: string
   ): BackendOrderRequest {
     const orderUid = uuidv4();
 
@@ -27,6 +28,7 @@ export class OrderMapper {
       total: total,
       shipping_address: shippingAddressStr,
       billing_address: billingAddressStr,
+      comment: comment || undefined,
       items: items.map(item => ({
         order_uid: orderUid,
         product_uid: item.productId,
@@ -57,7 +59,8 @@ export class OrderMapper {
       status: this.mapBackendStatus(response.status),
       createdAt: new Date(response.created_at),
       updatedAt: new Date(response.updated_at),
-      shippingAddress: this.parseAddress(response.shipping_address)
+      shippingAddress: this.parseAddress(response.shipping_address),
+      comment: response.comment
     };
   }
 

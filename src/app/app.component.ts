@@ -26,6 +26,7 @@ export class AppComponent {
   showViewToggle = false;
   isAuthRoute = false;
   isCreatingOrder = false;
+  orderComment = '';
 
   constructor(
     public authService: AuthService,
@@ -143,7 +144,8 @@ export class AppComponent {
         productId: item.productId,
         quantity: item.quantity
       })),
-      shippingAddress: emptyAddress
+      shippingAddress: emptyAddress,
+      comment: this.orderComment.trim() || undefined
     };
 
     this.orderService.createOrder(orderRequest).subscribe({
@@ -165,6 +167,7 @@ export class AppComponent {
 
   onOrderConfirmed(): void {
     this.orderService.clearCart();
+    this.orderComment = ''; // Clear comment after order is created
     this.closeOrderDialog();
     this.router.navigate(['/orders/history']);
   }

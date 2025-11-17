@@ -1,10 +1,11 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, of, BehaviorSubject, throwError, forkJoin } from 'rxjs';
+import { Observable, of, BehaviorSubject, throwError } from 'rxjs';
 import { delay, map, catchError, switchMap } from 'rxjs/operators';
 import { Order, OrderItem, CreateOrderRequest, OrderStatus, BackendOrderRequest, BackendOrderResponse } from '../models/order.model';
 import { OrderMapper } from '../mappers/order.mapper';
 import { AuthService } from './auth.service';
+import { ProductService } from './product.service';
 import { environment } from '../../../environments/environment';
 import { MOCK_ORDERS } from '../mock-data/orders.mock';
 import { MOCK_PRODUCTS } from '../mock-data/products.mock';
@@ -26,7 +27,8 @@ export class OrderService {
 
   constructor(
     private http: HttpClient,
-    private authService: AuthService
+    private authService: AuthService,
+    private productService: ProductService
   ) { }
 
   /**
@@ -53,14 +55,58 @@ export class OrderService {
           throw new Error(response.message || 'Failed to fetch orders');
         }
 
-        // For each order, fetch items
-        const orders$ = response.data.map(orderData =>
-          this.getOrderItems(orderData.uid).pipe(
-            map(items => OrderMapper.fromBackendResponse(orderData, items))
-          )
-        );
+        const ordersData = response.data;
 
-        return orders$.length > 0 ? forkJoin(orders$) : of([]);
+        if (ordersData.length === 0) {
+          return of([]);
+        }
+
+        // Extract all order UIDs
+        const orderUids = ordersData.map(o => o.uid);
+
+        // Fetch all order items in ONE batch request
+        return this.getBatchOrderItems(orderUids).pipe(
+          switchMap(itemsMap => {
+            // Extract all unique product UIDs from all order items
+            const productUids = new Set<string>();
+            itemsMap.forEach(items => {
+              items.forEach(item => {
+                if (item.product_uid) {
+                  productUids.add(item.product_uid);
+                }
+              });
+            });
+
+            // If no products, return orders without names
+            if (productUids.size === 0) {
+              return of(ordersData.map(orderData => {
+                const items = itemsMap.get(orderData.uid) || [];
+                return OrderMapper.fromBackendResponse(orderData, items);
+              }));
+            }
+
+            // Fetch product names in ONE batch request
+            return this.productService.getBatchProductDescriptions(
+              Array.from(productUids),
+              this.productService['translationService'].getCurrentLanguage()
+            ).pipe(
+              map(productNamesMap => {
+                // Enrich items with product names
+                return ordersData.map(orderData => {
+                  const items = itemsMap.get(orderData.uid) || [];
+
+                  // Add product names to items
+                  const enrichedItems = items.map(item => ({
+                    ...item,
+                    product_name: productNamesMap.get(item.product_uid)?.name || 'Unknown Product'
+                  }));
+
+                  return OrderMapper.fromBackendResponse(orderData, enrichedItems);
+                });
+              })
+            );
+          })
+        );
       }),
       catchError(error => {
         console.error('Error fetching orders, using mock data:', error);
@@ -83,7 +129,32 @@ export class OrderService {
 
         // Fetch items
         return this.getOrderItems(orderUid).pipe(
-          map(items => OrderMapper.fromBackendResponse(orderData, items))
+          switchMap(items => {
+            // Extract product UIDs from items
+            const productUids = items
+              .filter(item => item.product_uid)
+              .map(item => item.product_uid);
+
+            if (productUids.length === 0) {
+              return of(OrderMapper.fromBackendResponse(orderData, items));
+            }
+
+            // Fetch product names
+            return this.productService.getBatchProductDescriptions(
+              productUids,
+              this.productService['translationService'].getCurrentLanguage()
+            ).pipe(
+              map(productNamesMap => {
+                // Enrich items with product names
+                const enrichedItems = items.map(item => ({
+                  ...item,
+                  product_name: productNamesMap.get(item.product_uid)?.name || 'Unknown Product'
+                }));
+
+                return OrderMapper.fromBackendResponse(orderData, enrichedItems);
+              })
+            );
+          })
         );
       }),
       catchError(error => {
@@ -94,7 +165,7 @@ export class OrderService {
   }
 
   /**
-   * Fetch items for a specific order
+   * Fetch items for a specific order - SINGLE order
    */
   private getOrderItems(orderUid: string): Observable<any[]> {
     return this.http.get<ApiResponse<any[]>>(`${this.apiUrl}/order/${orderUid}/items`).pipe(
@@ -105,6 +176,46 @@ export class OrderService {
         return response.data;
       }),
       catchError(() => of([]))
+    );
+  }
+
+  /**
+   * Fetch order items in BATCH - all orders in ONE request
+   */
+  private getBatchOrderItems(orderUids: string[]): Observable<Map<string, any[]>> {
+    if (orderUids.length === 0) {
+      return of(new Map());
+    }
+
+    const payload = {
+      order_uids: orderUids
+    };
+
+    return this.http.post<ApiResponse<any[][]>>(
+      `${this.apiUrl}/order/items/batch`,
+      payload
+    ).pipe(
+      map(response => {
+        if (!response.success || !response.data) {
+          return new Map();
+        }
+
+        // The API returns array of arrays, one array per order
+        // We need to match them with order UIDs
+        const itemsMap = new Map<string, any[]>();
+
+        response.data.forEach((items, index) => {
+          if (index < orderUids.length) {
+            itemsMap.set(orderUids[index], items);
+          }
+        });
+
+        return itemsMap;
+      }),
+      catchError(error => {
+        console.error('Error fetching batch order items:', error);
+        return of(new Map());
+      })
     );
   }
 
@@ -121,7 +232,9 @@ export class OrderService {
     const backendRequest: BackendOrderRequest = OrderMapper.toBackendRequest(
       userId,
       cartItems,
-      request.shippingAddress
+      request.shippingAddress,
+      undefined, // billingAddress
+      request.comment
     );
 
     // Wrap in data array as per API spec

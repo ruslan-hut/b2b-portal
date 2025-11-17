@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { Router } from '@angular/router';
 import { OrderService } from '../../core/services/order.service';
 import { Order, OrderStatus } from '../../core/models/order.model';
@@ -17,7 +17,8 @@ export class OrderHistoryComponent implements OnInit {
   constructor(
     private orderService: OrderService,
     private router: Router,
-    public translationService: TranslationService
+    public translationService: TranslationService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -30,10 +31,13 @@ export class OrderHistoryComponent implements OnInit {
       next: (orders) => {
         this.orders = orders;
         this.loading = false;
+        // Manually trigger change detection to ensure UI updates
+        this.cdr.detectChanges();
       },
       error: (error) => {
         console.error('Error loading orders:', error);
         this.loading = false;
+        this.cdr.detectChanges();
       }
     });
   }

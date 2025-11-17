@@ -464,6 +464,40 @@ All error responses will have the following structure:
 *   **GET** `/product/description/{productUID}`
     *   **Response:** Array of product descriptions
 
+#### Get Batch Product Descriptions
+*   **POST** `/product/descriptions/batch`
+    *   **Description:** Retrieve simplified product descriptions (UID + Name + Description) for multiple products in a specific language. Useful for bulk operations and displaying product names and descriptions in lists.
+    *   **Request Body:**
+        ```json
+        {
+          "product_uids": [
+            "prod-123",
+            "prod-456"
+          ],
+          "language": "en"
+        }
+        ```
+    *   **Response:**
+        ```json
+        {
+          "success": true,
+          "data": [
+            {
+              "uid": "prod-123",
+              "name": "Basic Widget",
+              "description": "High-quality basic widget"
+            }
+          ],
+          "status_message": "success",
+          "timestamp": "2025-11-17T12:00:00Z"
+        }
+        ```
+    *   **Notes:**
+        - Only products with descriptions in the requested language will be returned
+        - Products without matching descriptions are omitted from response
+        - Efficient single-query implementation using SQL IN clause
+        - Maximum efficiency for bulk name lookups
+
 ---
 
 ### Order
@@ -480,12 +514,14 @@ All error responses will have the following structure:
               "status": "pending",
               "total": 5000.0,
               "shipping_address": "123 Main St",
-              "billing_address": "123 Main St"
+              "billing_address": "123 Main St",
+              "comment": "Please deliver after 5 PM" // Optional
             }
           ]
         }
         ```
     *   **Response:** Array of created/updated order UIDs
+    *   **Note:** The `comment` field is optional and can be used to store additional notes about the order
 
 #### List Orders
 *   **GET** `/order`
@@ -510,17 +546,23 @@ All error responses will have the following structure:
 
 #### Find Orders by User
 *   **GET** `/order/user/{user_uid}`
-    *   **Query Parameters:**
-        *   `offset`: (optional) integer, default 0
-        *   `limit`: (optional) integer, default 100
-    *   **Response:** Array of orders
+    *   **Path Parameters:**
+        *   `user_uid`: User UID (required)
+    *   **Query Parameters (via request body):**
+        *   `page`: (optional) integer, default 1
+        *   `count`: (optional) integer, default 100
+    *   **Example:** `GET /order/user/123`
+    *   **Response:** Array of orders with pagination metadata
 
 #### Find Orders by Status
 *   **GET** `/order/status/{status}`
-    *   **Query Parameters:**
-        *   `offset`: (optional) integer, default 0
-        *   `limit`: (optional) integer, default 100
-    *   **Response:** Array of orders
+    *   **Path Parameters:**
+        *   `status`: Order status code (required) - e.g., "pending", "shipped", "delivered"
+    *   **Query Parameters (via request body):**
+        *   `page`: (optional) integer, default 1
+        *   `count`: (optional) integer, default 100
+    *   **Example:** `GET /order/status/pending`
+    *   **Response:** Array of orders with pagination metadata
 
 #### Update Order Status
 *   **PUT** `/order/status` - Batch update order statuses (Array Input)
@@ -580,6 +622,100 @@ All error responses will have the following structure:
 #### Get Order Items
 *   **GET** `/order/{orderUID}/items`
     *   **Response:** Array of order items
+
+#### Get Batch Order Items
+*   **POST** `/order/items/batch`
+    *   **Description:** Retrieve order items for multiple orders.
+    *   **Request Body:**
+        ```json
+        {
+          "order_uids": [
+            "order-123",
+            "order-456"
+          ]
+        }
+        ```
+    *   **Response:**
+        ```json
+        {
+          "success": true,
+          "data": [
+            [
+              {
+                "order_uid": "order-123",
+                "product_uid": "prod-456",
+                "quantity": 2,
+                "price": 1000,
+                "discount": 100,
+                "total": 1800.0,
+                "last_update": "2025-11-17T12:00:00Z"
+              }
+            ],
+            [
+              {
+                "order_uid": "order-456",
+                "product_uid": "prod-789",
+                "quantity": 1,
+                "price": 500,
+                "discount": 0,
+                "total": 500.0,
+                "last_update": "2025-11-17T12:00:00Z"
+              }
+            ]
+          ],
+          "status_message": "success",
+          "timestamp": "2025-11-17T12:00:00Z"
+        }
+        ```
+
+---
+
+### Order Status
+
+#### Upsert Order Statuses (Create or Update)
+*   **POST** `/order_status`
+    *   **Request Body:**
+        ```json
+        {
+          "data": [
+            {
+              "status": "new",
+              "language": "en",
+              "name": "New Order"
+            },
+            {
+              "status": "processing",
+              "language": "en",
+              "name": "Processing Order"
+            }
+          ]
+        }
+        ```
+    *   **Response:** Array of created/updated order status codes
+
+#### List Order Statuses
+*   **GET** `/order_status`
+    *   **Query Parameters:**
+        *   `offset`: (optional) integer, default 0
+        *   `limit`: (optional) integer, default 100
+    *   **Response:** Array of order statuses with metadata
+
+#### Get Order Status by Status and Language Code
+*   **GET** `/order_status/{status}/{lang_code}`
+    *   **Response:** Single order status object
+
+#### Delete Order Statuses
+*   **DELETE** `/order_status` - Batch delete
+    *   **Request Body:**
+        ```json
+        {
+          "data": {
+            "statuses": ["new", "processing"],
+            "lang_codes": ["en", "en"]
+          }
+        }
+        ```
+    *   **Response:** Success message
 
 ---
 
@@ -906,6 +1042,30 @@ All error responses will have the following structure:
 
 ---
 
+### Cleanup
+
+#### Delete Records Older Than a Specific Date
+*   **POST** `/cleanup`
+    *   **Description:** Deletes all records in various tables that have a `created_at` timestamp older than the provided date.
+    *   **Request Body:**
+        ```json
+        {
+          "date": "2023-01-01T00:00:00Z" // Date in RFC3339 format
+        }
+        ```
+    *   **Response:**
+        ```json
+        {
+          "data": {},
+          "success": true,
+          "status_message": "Success",
+          "timestamp": "2023-10-27T10:00:00Z"
+        }
+        ```
+        Or an error response if cleanup fails or date format is invalid.
+
+---
+
 ## Pagination Metadata
 
 List endpoints now return pagination metadata:
@@ -931,6 +1091,7 @@ The following operations use true database-level upserts (INSERT ... ON DUPLICAT
 - Category Descriptions: Based on composite PRIMARY KEY (category_uid + language)
 - Attribute Descriptions: Based on composite PRIMARY KEY (attribute_uid + language)
 - Attribute Values: Based on composite PRIMARY KEY (uid + language)
+- Order Statuses: Based on composite PRIMARY KEY (status + language)
 
 This ensures atomic operations and prevents race conditions.
 

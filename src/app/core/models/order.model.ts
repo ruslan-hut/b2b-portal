@@ -8,6 +8,7 @@ export interface Order {
   createdAt: Date;
   updatedAt: Date;
   shippingAddress?: ShippingAddress;
+  comment?: string;
 }
 
 export interface OrderItem {
@@ -41,6 +42,7 @@ export interface CreateOrderRequest {
     quantity: number;
   }[];
   shippingAddress: ShippingAddress;
+  comment?: string;
 }
 
 // Backend API format
@@ -51,6 +53,7 @@ export interface BackendOrderRequest {
   total: number;
   shipping_address: string;
   billing_address?: string;
+  comment?: string;
   items: {
     order_uid?: string;
     product_uid: string;
@@ -68,6 +71,7 @@ export interface BackendOrderResponse {
   total: number;
   shipping_address: string;
   billing_address?: string;
+  comment?: string;
   created_at: string;
   updated_at: string;
 }

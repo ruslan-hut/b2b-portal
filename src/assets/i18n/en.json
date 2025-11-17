@@ -72,7 +72,9 @@
     "orderSuccess": "Order placed successfully!",
     "orderError": "Failed to place order",
     "quantity": "Quantity",
-    "total": "Total"
+    "total": "Total",
+    "readMore": "Read more",
+    "readLess": "Read less"
   },
   "orders": {
     "title": "Order History",
@@ -90,7 +92,9 @@
     "cancelled": "Cancelled",
     "trackOrder": "Track Order",
     "reorder": "Reorder",
-    "downloadInvoice": "Download Invoice"
+    "downloadInvoice": "Download Invoice",
+    "comment": "Comment",
+    "commentPlaceholder": "Add any special instructions or notes for this order..."
   },
   "validation": {
     "required": "This field is required",

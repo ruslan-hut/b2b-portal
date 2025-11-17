@@ -11,7 +11,7 @@ export class ProductMapper {
       description: description || '',
       price: backendProduct.price / 100, // Convert from cents
       category: backendProduct.category || 'Uncategorized',
-      imageUrl: undefined, // Set if you have image URLs
+      imageUrl: backendProduct.image || undefined,
       inStock: backendProduct.active && backendProduct.quantity > 0,
       sku: backendProduct.sku || '',
       quantity: backendProduct.quantity,

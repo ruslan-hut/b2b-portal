@@ -29,6 +29,9 @@ export class ProductCatalogComponent implements OnInit {
   allCategories: string[] = [];
   selectedCategory: string = '';
 
+  // Description expansion tracking
+  expandedDescriptions: Set<string> = new Set();
+
   constructor(
     private productService: ProductService,
     private orderService: OrderService,
@@ -41,10 +44,19 @@ export class ProductCatalogComponent implements OnInit {
     this.orderService.currentOrder$.subscribe(items => {
       this.cartItems = items;
     });
-    
+
     // Subscribe to view mode changes from the service
     this.productService.viewMode$.subscribe(mode => {
       this.viewMode = mode;
+    });
+
+    // Subscribe to language changes and reload products with new language descriptions
+    this.translationService.currentLanguage$.subscribe(language => {
+      // Only reload if products are already loaded (skip initial load)
+      if (this.products.length > 0) {
+        console.log(`[Language Change] Reloading products for language: ${language}`);
+        this.loadProducts();
+      }
     });
   }
 
@@ -226,5 +238,31 @@ export class ProductCatalogComponent implements OnInit {
 
   getCartTotal(): number {
     return this.cartItems.reduce((total, item) => total + item.subtotal, 0);
+  }
+
+  /**
+   * Handle image load errors by setting a placeholder image
+   */
+  onImageError(event: Event): void {
+    const imgElement = event.target as HTMLImageElement;
+    imgElement.src = 'assets/images/product-placeholder.svg';
+  }
+
+  /**
+   * Toggle description expansion for a product
+   */
+  toggleDescription(productId: string): void {
+    if (this.expandedDescriptions.has(productId)) {
+      this.expandedDescriptions.delete(productId);
+    } else {
+      this.expandedDescriptions.add(productId);
+    }
+  }
+
+  /**
+   * Check if a product's description is expanded
+   */
+  isDescriptionExpanded(productId: string): boolean {
+    return this.expandedDescriptions.has(productId);
   }
 }

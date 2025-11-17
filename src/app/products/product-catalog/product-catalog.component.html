@@ -39,7 +39,10 @@
       <div class="products-grid">
         <div class="product-card" *ngFor="let product of productsByCategory.get(category)">
           <div class="product-image">
-            <img [src]="product.imageUrl" [alt]="product.name" />
+            <img
+              [src]="product.imageUrl || 'assets/images/product-placeholder.svg'"
+              [alt]="product.name"
+              (error)="onImageError($event)" />
             <span class="stock-badge" [class.out-of-stock]="!product.inStock">
               {{ product.inStock ? ('products.stock' | translate) : ('products.outOfStock' | translate) }}
             </span>
@@ -47,7 +50,19 @@
           <div class="product-info">
             <div class="product-category">{{ product.category }}</div>
             <h3 class="product-name">{{ product.name }}</h3>
-            <p class="product-description">{{ product.description }}</p>
+            <div class="product-description-container">
+              <div
+                class="product-description"
+                [class.collapsed]="!isDescriptionExpanded(product.id)"
+                [innerHTML]="product.description">
+              </div>
+              <button
+                class="btn-toggle-description"
+                (click)="toggleDescription(product.id)"
+                *ngIf="product.description && product.description.length > 100">
+                {{ isDescriptionExpanded(product.id) ? ('products.readLess' | translate) : ('products.readMore' | translate) }}
+              </button>
+            </div>
             <div class="product-sku">{{ 'products.sku' | translate }}: {{ product.sku }}</div>
             <div class="product-footer">
               <div class="product-price">${{ product.price.toFixed(2) }}</div>
@@ -168,13 +183,28 @@
     <div class="bulk-detail-section" *ngIf="selectedProduct">
       <div class="detail-card">
         <div class="detail-image">
-          <img [src]="selectedProduct.imageUrl" [alt]="selectedProduct.name" />
+          <img
+            [src]="selectedProduct.imageUrl || 'assets/images/product-placeholder.svg'"
+            [alt]="selectedProduct.name"
+            (error)="onImageError($event)" />
         </div>
         <div class="detail-content">
           <div class="detail-category">{{ selectedProduct.category }}</div>
           <h2 class="detail-title">{{ selectedProduct.name }}</h2>
           <div class="detail-sku">{{ 'products.sku' | translate }}: {{ selectedProduct.sku }}</div>
-          <p class="detail-description">{{ selectedProduct.description }}</p>
+          <div class="detail-description-container">
+            <div
+              class="detail-description"
+              [class.collapsed]="!isDescriptionExpanded('detail-' + selectedProduct.id)"
+              [innerHTML]="selectedProduct.description">
+            </div>
+            <button
+              class="btn-toggle-description"
+              (click)="toggleDescription('detail-' + selectedProduct.id)"
+              *ngIf="selectedProduct.description && selectedProduct.description.length > 150">
+              {{ isDescriptionExpanded('detail-' + selectedProduct.id) ? ('products.readLess' | translate) : ('products.readMore' | translate) }}
+            </button>
+          </div>
           <div class="detail-price-section">
             <div class="detail-price">${{ selectedProduct.price.toFixed(2) }}</div>
             <span class="price-label">{{ 'products.price' | translate }}</span>
