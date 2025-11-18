@@ -23,7 +23,8 @@ export interface BackendProduct {
   price: number; // In cents
   quantity: number;
   active: boolean;
-  category?: string;
+  category?: string; // Category UID (not the name) - category names must be fetched separately via /category/description/{categoryUID}
+  category_uid?: string; // Alternative field name that backend might use
   sku?: string;
   image?: string; // Product image URL
 }

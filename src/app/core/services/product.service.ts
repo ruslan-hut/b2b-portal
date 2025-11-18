@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, of, BehaviorSubject } from 'rxjs';
+import { Observable, of, BehaviorSubject, combineLatest } from 'rxjs';
 import { delay, map, catchError, switchMap } from 'rxjs/operators';
 import { Product, ProductCategory, BackendProduct } from '../models/product.model';
 import { ProductMapper } from '../mappers/product.mapper';
@@ -83,6 +83,12 @@ export class ProductService {
 
         const backendProducts = response.data;
 
+        // DEBUG: Log what we receive from backend
+        console.log('[DEBUG] Backend products response:', backendProducts);
+        if (backendProducts.length > 0) {
+          console.log('[DEBUG] Sample product structure:', JSON.stringify(backendProducts[0], null, 2));
+        }
+
         if (backendProducts.length === 0) {
           return of([]);
         }
@@ -95,12 +101,37 @@ export class ProductService {
 
         // Fetch all descriptions in ONE batch request using current language
         return this.getBatchProductDescriptions(productUids, currentLanguage).pipe(
-          map(descriptionsMap => {
-            // Map backend products with their descriptions
-            return backendProducts.map(backendProduct => {
-              const desc = descriptionsMap.get(backendProduct.uid);
-              return ProductMapper.fromBackend(backendProduct, desc?.name, desc?.description);
-            });
+          switchMap(descriptionsMap => {
+            // Extract unique category UIDs from products
+            // Backend might use 'category' or 'category_uid' field
+            const categoryUids = [...new Set(
+              backendProducts
+                .map(p => p.category_uid || p.category)
+                .filter((cat): cat is string => !!cat)
+            )];
+
+            // Fetch category names if we have category UIDs
+            if (categoryUids.length > 0) {
+              return this.getBatchCategoryDescriptions(categoryUids, currentLanguage).pipe(
+                map(categoryNamesMap => {
+                  // Map backend products with their descriptions and category names
+                  return backendProducts.map(backendProduct => {
+                    const desc = descriptionsMap.get(backendProduct.uid);
+                    const categoryUid = backendProduct.category_uid || backendProduct.category;
+                    const categoryName = categoryUid 
+                      ? (categoryNamesMap.get(categoryUid) || categoryUid)
+                      : 'Uncategorized';
+                    return ProductMapper.fromBackend(backendProduct, desc?.name, desc?.description, categoryName);
+                  });
+                })
+              );
+            } else {
+              // No categories, map products without category names
+              return of(backendProducts.map(backendProduct => {
+                const desc = descriptionsMap.get(backendProduct.uid);
+                return ProductMapper.fromBackend(backendProduct, desc?.name, desc?.description);
+              }));
+            }
           })
         );
       }),
@@ -123,7 +154,20 @@ export class ProductService {
 
         // Fetch description using current language
         return this.getProductDescription(uid, currentLanguage).pipe(
-          map(desc => ProductMapper.fromBackend(backendProduct, desc?.name, desc?.description))
+          switchMap(desc => {
+            // If product has a category, fetch its name
+            const categoryUid = backendProduct.category_uid || backendProduct.category;
+            if (categoryUid) {
+              return this.getBatchCategoryDescriptions([categoryUid], currentLanguage).pipe(
+                map(categoryNamesMap => {
+                  const categoryName = categoryNamesMap.get(categoryUid) || categoryUid;
+                  return ProductMapper.fromBackend(backendProduct, desc?.name, desc?.description, categoryName);
+                })
+              );
+            } else {
+              return of(ProductMapper.fromBackend(backendProduct, desc?.name, desc?.description));
+            }
+          })
         );
       }),
       catchError(error => {
@@ -300,6 +344,53 @@ export class ProductService {
       languages: Array.from(languages),
       oldestEntry: oldestTimestamp < Date.now() ? new Date(oldestTimestamp) : null
     };
+  }
+
+  /**
+   * Fetch category descriptions in BATCH - all categories in ONE request
+   * Similar to getBatchProductDescriptions but for categories
+   */
+  getBatchCategoryDescriptions(categoryUids: string[], language: string = 'en'): Observable<Map<string, string>> {
+    if (categoryUids.length === 0) {
+      return of(new Map());
+    }
+
+    // Fetch category descriptions for all UIDs
+    // Note: The API doesn't have a batch endpoint for categories, so we'll need to fetch individually
+    // or check if the backend returns category names in the product response
+    const categoryDescriptions$ = categoryUids.map(uid => 
+      this.http.get<ApiResponse<Array<{category_uid: string; language: string; name: string; description?: string}>>>(
+        `${this.apiUrl}/category/description/${uid}`
+      ).pipe(
+        map(response => {
+          if (!response.success || !response.data.length) {
+            return null;
+          }
+          // Find description in requested language, or fallback to first available
+          const desc = response.data.find(d => d.language === language) || response.data[0];
+          return { uid, name: desc?.name || uid };
+        }),
+        catchError(error => {
+          console.error(`Error fetching category description for ${uid}:`, error);
+          return of({ uid, name: uid }); // Fallback to UID if fetch fails
+        })
+      )
+    );
+
+    // Combine all requests
+    return categoryDescriptions$.length > 0
+      ? combineLatest(categoryDescriptions$).pipe(
+          map(results => {
+            const map = new Map<string, string>();
+            results.forEach(result => {
+              if (result) {
+                map.set(result.uid, result.name);
+              }
+            });
+            return map;
+          })
+        )
+      : of(new Map());
   }
 
   getCategories(): Observable<ProductCategory[]> {
