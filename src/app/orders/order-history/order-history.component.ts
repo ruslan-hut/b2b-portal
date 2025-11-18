@@ -44,14 +44,25 @@ export class OrderHistoryComponent implements OnInit {
 
   getStatusClass(status: OrderStatus): string {
     const statusClasses: { [key in OrderStatus]: string } = {
-      [OrderStatus.PENDING]: 'status-pending',
-      [OrderStatus.CONFIRMED]: 'status-confirmed',
+      [OrderStatus.DRAFT]: 'status-draft',
+      [OrderStatus.NEW]: 'status-new',
       [OrderStatus.PROCESSING]: 'status-processing',
-      [OrderStatus.SHIPPED]: 'status-shipped',
-      [OrderStatus.DELIVERED]: 'status-delivered',
+      [OrderStatus.CONFIRMED]: 'status-confirmed',
       [OrderStatus.CANCELLED]: 'status-cancelled'
     };
-    return statusClasses[status];
+    return statusClasses[status] || 'status-new';
+  }
+
+  getTranslatedStatus(status: OrderStatus): string {
+    const statusKeys: { [key in OrderStatus]: string } = {
+      [OrderStatus.DRAFT]: 'orders.draft',
+      [OrderStatus.NEW]: 'orders.new',
+      [OrderStatus.PROCESSING]: 'orders.processing',
+      [OrderStatus.CONFIRMED]: 'orders.confirmed',
+      [OrderStatus.CANCELLED]: 'orders.cancelled'
+    };
+    const key = statusKeys[status] || 'orders.new';
+    return this.translationService.instant(key);
   }
 
   viewOrderDetails(orderId: string): void {

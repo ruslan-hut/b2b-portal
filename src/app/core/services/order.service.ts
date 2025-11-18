@@ -2,13 +2,12 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, of, BehaviorSubject, throwError } from 'rxjs';
 import { delay, map, catchError, switchMap } from 'rxjs/operators';
-import { Order, OrderItem, CreateOrderRequest, OrderStatus, BackendOrderRequest, BackendOrderResponse } from '../models/order.model';
+import { Order, OrderItem, CreateOrderRequest, OrderStatus, BackendOrderRequest, BackendOrderResponse, ShippingAddress } from '../models/order.model';
 import { OrderMapper } from '../mappers/order.mapper';
 import { AuthService } from './auth.service';
 import { ProductService } from './product.service';
 import { environment } from '../../../environments/environment';
 import { MOCK_ORDERS } from '../mock-data/orders.mock';
-import { MOCK_PRODUCTS } from '../mock-data/products.mock';
 
 interface ApiResponse<T> {
   success: boolean;
@@ -25,11 +24,26 @@ export class OrderService {
 
   private readonly apiUrl = environment.apiUrl;
 
+  // Track currently saved draft order UID (if any)
+  private draftOrderUid?: string;
+
   constructor(
     private http: HttpClient,
     private authService: AuthService,
     private productService: ProductService
-  ) { }
+  ) {
+    // Load draft cart when user is available (on service init or after login)
+    // Subscribe to auth changes and react accordingly
+    this.authService.currentEntity$.subscribe(entity => {
+      if (entity) {
+        this.loadDraftCart();
+      } else {
+        // On logout/unauthenticated state clear local cart and draft pointer
+        this.draftOrderUid = undefined;
+        this.currentOrderSubject.next([]);
+      }
+    });
+  }
 
   /**
    * Fetch order history for current user
@@ -220,9 +234,11 @@ export class OrderService {
   }
 
   /**
-   * Create new order
+   * Create new order with specified status ('new' or 'draft')
+   * Use 'new' for confirmed orders (validates stock, creates allocations)
+   * Use 'draft' for saved carts (no validation, no allocations)
    */
-  createOrder(request: CreateOrderRequest): Observable<Order> {
+  createOrder(request: CreateOrderRequest, status: 'draft' | 'new' = 'new', orderUid?: string): Observable<Order> {
     const userId = this.getCurrentUserId();
 
     // Get current cart items with full details
@@ -234,7 +250,9 @@ export class OrderService {
       cartItems,
       request.shippingAddress,
       undefined, // billingAddress
-      request.comment
+      request.comment,
+      status // Pass status to mapper
+      , orderUid // allow passing existing UID to update
     );
 
     // Wrap in data array as per API spec
@@ -242,7 +260,7 @@ export class OrderService {
       data: [backendRequest]
     };
 
-    return this.http.post<ApiResponse<string[]>>(`${this.apiUrl}/order/`, payload).pipe(
+    return this.http.post<ApiResponse<string[]>>(`${this.apiUrl}/order`, payload).pipe(
       switchMap(response => {
         if (!response.success) {
           throw new Error(response.message || 'Failed to create order');
@@ -281,6 +299,142 @@ export class OrderService {
 
         return throwError(() => error);
       })
+    );
+  }
+
+  /**
+   * Create draft order (saved cart)
+   * No stock validation, no allocations
+   */
+  createDraftOrder(request: CreateOrderRequest): Observable<Order> {
+    return this.createOrder(request, 'draft');
+  }
+
+  /**
+   * Save current cart as draft on server. If a draft already exists it will be updated.
+   * Returns Observable<Order> of the saved draft.
+   */
+  saveDraftCart(shippingAddress?: ShippingAddress, comment?: string): Observable<Order> {
+    // Ensure we have at least an empty shipping address to satisfy mapper
+    const addr: ShippingAddress = shippingAddress || { street: '', city: '', state: '', zipCode: '', country: '' };
+
+    const request: CreateOrderRequest = {
+      items: this.getCartItems().map(i => ({ productId: i.productId, quantity: i.quantity })),
+      shippingAddress: addr,
+      comment: comment
+    };
+
+    return this.createOrder(request, 'draft', this.draftOrderUid).pipe(
+      map(order => {
+        // remember draft UID for future updates
+        this.draftOrderUid = order.id;
+
+        // sync local cart items with server response (use server version if available)
+        this.currentOrderSubject.next(order.items || []);
+        return order;
+      })
+    );
+  }
+
+  /**
+   * Load user's latest draft from server (if any) and set it as current cart.
+   */
+  loadDraftCart(): void {
+    this.getDraftOrders().subscribe({
+      next: drafts => {
+        if (drafts && drafts.length > 0) {
+          // Choose the most recently updated draft
+          const latest = drafts.sort((a, b) => (new Date(b.updatedAt).getTime()) - (new Date(a.updatedAt).getTime()))[0];
+          this.draftOrderUid = latest.id;
+          this.currentOrderSubject.next(latest.items || []);
+        } else {
+          // No drafts - keep empty cart
+          this.draftOrderUid = undefined;
+          this.currentOrderSubject.next([]);
+        }
+      },
+      error: err => {
+        console.error('Failed to load draft cart:', err);
+      }
+    });
+  }
+
+  /**
+   * Convert draft order to new order (confirm order)
+   * Validates stock and creates allocations
+   */
+  confirmDraftOrder(orderUid: string): Observable<Order> {
+    // First, get the existing draft order
+    return this.getOrderById(orderUid).pipe(
+      switchMap(order => {
+        if (!order) {
+          return throwError(() => new Error('Order not found'));
+        }
+
+        if (order.status !== OrderStatus.DRAFT) {
+          return throwError(() => new Error('Only draft orders can be confirmed'));
+        }
+
+        const userId = this.getCurrentUserId();
+
+        // Convert to backend format with 'new' status
+        const backendRequest: BackendOrderRequest = OrderMapper.toBackendRequest(
+          userId,
+          order.items,
+          order.shippingAddress!,
+          undefined,
+          order.comment,
+          'new', // Change status to 'new'
+          orderUid // Use existing UID
+        );
+
+        const payload = {
+          data: [backendRequest]
+        };
+
+        return this.http.post<ApiResponse<string[]>>(`${this.apiUrl}/order`, payload).pipe(
+          switchMap(response => {
+            if (!response.success) {
+              throw new Error(response.message || 'Failed to confirm order');
+            }
+
+            // Fetch the updated order
+            return this.getOrderById(orderUid);
+          }),
+          map(updatedOrder => {
+            if (!updatedOrder) {
+              throw new Error('Failed to fetch confirmed order');
+            }
+            return updatedOrder;
+          })
+        );
+      }),
+      catchError(error => {
+        console.error('Error confirming draft order:', error);
+
+        // Parse specific error types
+        if (error.error?.message) {
+          const msg = error.error.message.toLowerCase();
+
+          if (msg.includes('insufficient stock')) {
+            return throwError(() => new Error('INSUFFICIENT_STOCK: ' + error.error.message));
+          }
+          if (msg.includes('not active')) {
+            return throwError(() => new Error('PRODUCT_INACTIVE: ' + error.error.message));
+          }
+        }
+
+        return throwError(() => error);
+      })
+    );
+  }
+
+  /**
+   * Get draft orders for current user
+   */
+  getDraftOrders(): Observable<Order[]> {
+    return this.getOrderHistory().pipe(
+      map(orders => orders.filter(order => order.status === OrderStatus.DRAFT))
     );
   }
 

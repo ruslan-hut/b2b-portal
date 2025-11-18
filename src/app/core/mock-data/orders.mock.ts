@@ -22,7 +22,7 @@ export const MOCK_ORDERS: Order[] = [
       }
     ],
     totalAmount: 1149.85,
-    status: OrderStatus.DELIVERED,
+    status: OrderStatus.CONFIRMED,
     createdAt: new Date('2024-09-15T10:30:00'),
     updatedAt: new Date('2024-09-20T14:45:00'),
     shippingAddress: {
@@ -54,7 +54,7 @@ export const MOCK_ORDERS: Order[] = [
       }
     ],
     totalAmount: 11999.75,
-    status: OrderStatus.SHIPPED,
+    status: OrderStatus.PROCESSING,
     createdAt: new Date('2024-10-01T09:15:00'),
     updatedAt: new Date('2024-10-05T11:20:00'),
     shippingAddress: {
@@ -143,7 +143,7 @@ export const MOCK_ORDERS: Order[] = [
       }
     ],
     totalAmount: 1999.92,
-    status: OrderStatus.PENDING,
+    status: OrderStatus.PROCESSING,
     createdAt: new Date('2024-10-16T11:30:00'),
     updatedAt: new Date('2024-10-16T11:30:00'),
     shippingAddress: {
@@ -175,7 +175,7 @@ export const MOCK_ORDERS: Order[] = [
       }
     ],
     totalAmount: 1649.65,
-    status: OrderStatus.DELIVERED,
+    status: OrderStatus.CONFIRMED,
     createdAt: new Date('2024-09-20T13:15:00'),
     updatedAt: new Date('2024-09-27T16:45:00'),
     shippingAddress: {

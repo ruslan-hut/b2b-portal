@@ -9,7 +9,11 @@ export const MOCK_PRODUCTS: Product[] = [
     "category": "Hologram cat ",
     "imageUrl": "https://riornails.com/upload/xml_img/290f83ea-0341-11f0-b809-00155d018000/",
     "inStock": true,
-    "sku": "DHologramCat03"
+    "sku": "DHologramCat03",
+    "quantity": 100,
+    "availableQuantity": 85,
+    "allocatedQuantity": 15,
+    "active": true
   },
   {
     "id": "2",
@@ -19,7 +23,11 @@ export const MOCK_PRODUCTS: Product[] = [
     "category": "DARK POLYGEL",
     "imageUrl": "https://riornails.com/upload/xml_img/21753dea-220f-11ed-b76f-00155d018000/",
     "inStock": true,
-    "sku": "DPG0330j"
+    "sku": "DPG0330j",
+    "quantity": 50,
+    "availableQuantity": 42,
+    "allocatedQuantity": 8,
+    "active": true
   },
   {
     "id": "3",
@@ -29,7 +37,11 @@ export const MOCK_PRODUCTS: Product[] = [
     "category": "DARK SMART BUILDER GEL",
     "imageUrl": "https://riornails.com/upload/xml_img/3c5161bb-edab-11ee-b7ba-00155d018000/",
     "inStock": true,
-    "sku": "DSG1922"
+    "sku": "DSG1922",
+    "quantity": 30,
+    "availableQuantity": 5,
+    "allocatedQuantity": 25,
+    "active": true
   },
   {
     "id": "4",
@@ -39,7 +51,11 @@ export const MOCK_PRODUCTS: Product[] = [
     "category": "ОСНОВНА КОЛЕКЦІЯ",
     "imageUrl": "https://riornails.com/upload/xml_img/acb58119-3839-11ef-b7e2-00155d018000/",
     "inStock": true,
-    "sku": "DGP13106"
+    "sku": "DGP13106",
+    "quantity": 75,
+    "availableQuantity": 75,
+    "allocatedQuantity": 0,
+    "active": true
   },
   {
     "id": "5",
@@ -49,7 +65,11 @@ export const MOCK_PRODUCTS: Product[] = [
     "category": "ОСНОВНА КОЛЕКЦІЯ",
     "imageUrl": "https://riornails.com/upload/xml_img/f9a58ed1-8b9f-11ef-b7fb-00155d018000/",
     "inStock": true,
-    "sku": "DGP14106"
+    "sku": "DGP14106",
+    "quantity": 200,
+    "availableQuantity": 150,
+    "allocatedQuantity": 50,
+    "active": true
   },
   {
     "id": "6",

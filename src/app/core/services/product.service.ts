@@ -406,19 +406,122 @@ export class ProductService {
   }
 
   /**
+   * Get available quantity for a product from backend
+   * Available quantity = CRM quantity - allocated quantity
+   * This is the recommended approach per FRONTEND_CHANGES.md
+   */
+  getAvailableQuantity(productUid: string): Observable<number> {
+    return this.http.get<ApiResponse<{ available_quantity: number }>>(
+      `${this.apiUrl}/product/${productUid}/available`
+    ).pipe(
+      map(response => {
+        if (!response.success) {
+          throw new Error('Failed to fetch available quantity');
+        }
+        return response.data.available_quantity;
+      }),
+      catchError(error => {
+        console.error('Error fetching available quantity, falling back to CRM quantity:', error);
+        // Fallback: use product.quantity if available endpoint doesn't exist yet
+        return this.http.get<ApiResponse<BackendProduct>>(`${this.apiUrl}/product/${productUid}`).pipe(
+          map(res => res.success ? res.data.quantity : 0),
+          catchError(() => of(0))
+        );
+      })
+    );
+  }
+
+  /**
    * Validate product stock before adding to cart
+   * NOW USES AVAILABLE QUANTITY instead of CRM quantity
    */
   validateStock(productId: string, requestedQuantity: number): Observable<boolean> {
     return this.http.get<ApiResponse<BackendProduct>>(`${this.apiUrl}/product/${productId}`).pipe(
-      map(response => {
+      switchMap(response => {
         if (!response.success) {
-          return false;
+          return of(false);
         }
 
         const product = response.data;
-        return product.active && product.quantity >= requestedQuantity;
+
+        // Product must be active
+        if (!product.active) {
+          return of(false);
+        }
+
+        // Validate against AVAILABLE quantity, not CRM quantity
+        return this.getAvailableQuantity(productId).pipe(
+          map(availableQty => availableQty >= requestedQuantity),
+          catchError(() => of(false))
+        );
       }),
       catchError(() => of(false))
+    );
+  }
+
+  /**
+   * Get product with available quantity information
+   * Enriches the product data with available quantity
+   */
+  getProductWithAvailability(uid: string): Observable<Product | undefined> {
+    return this.getProductById(uid).pipe(
+      switchMap(product => {
+        if (!product) {
+          return of(undefined);
+        }
+
+        // Fetch available quantity and enrich the product
+        return this.getAvailableQuantity(uid).pipe(
+          map(availableQty => {
+            const enrichedProduct = { ...product };
+            enrichedProduct.availableQuantity = availableQty;
+            enrichedProduct.allocatedQuantity = (product.quantity || 0) - availableQty;
+            return enrichedProduct;
+          }),
+          catchError(() => {
+            // If available quantity fetch fails, use CRM quantity as fallback
+            product.availableQuantity = product.quantity;
+            product.allocatedQuantity = 0;
+            return of(product);
+          })
+        );
+      })
+    );
+  }
+
+  /**
+   * Get products with availability information
+   * Enriches product list with available quantities for each product
+   */
+  getProductsWithAvailability(offset: number = 0, limit: number = 100): Observable<Product[]> {
+    return this.getProducts(offset, limit).pipe(
+      switchMap(products => {
+        if (products.length === 0) {
+          return of([]);
+        }
+
+        // Fetch available quantities for all products in parallel
+        const enrichedProducts$ = products.map(product =>
+          this.getAvailableQuantity(product.id).pipe(
+            map(availableQty => {
+              const enriched = { ...product };
+              enriched.availableQuantity = availableQty;
+              enriched.allocatedQuantity = (product.quantity || 0) - availableQty;
+              // Update inStock based on available quantity
+              enriched.inStock = product.active !== false && availableQty > 0;
+              return enriched;
+            }),
+            catchError(() => {
+              // Fallback: use CRM quantity
+              product.availableQuantity = product.quantity;
+              product.allocatedQuantity = 0;
+              return of(product);
+            })
+          )
+        );
+
+        return combineLatest(enrichedProducts$);
+      })
     );
   }
 }

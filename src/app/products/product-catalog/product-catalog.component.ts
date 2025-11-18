@@ -62,7 +62,8 @@ export class ProductCatalogComponent implements OnInit {
 
   loadProducts(): void {
     this.loading = true;
-    this.productService.getProducts().subscribe({
+    // Use getProductsWithAvailability to fetch products with available quantity information
+    this.productService.getProductsWithAvailability().subscribe({
       next: (products) => {
         this.products = this.sortProductsByCategoryAndName(products);
         this.extractAllCategories(products);
@@ -144,6 +145,22 @@ export class ProductCatalogComponent implements OnInit {
   }
 
   addToCart(product: Product): void {
+    // Validate available quantity before adding to cart
+    const availableQty = product.availableQuantity ?? product.quantity ?? 0;
+
+    // Check current cart quantity for this product
+    const cartItem = this.cartItems.find(item => item.productId === product.id);
+    const currentCartQty = cartItem ? cartItem.quantity : 0;
+    const requestedQty = currentCartQty + 1;
+
+    if (availableQty < requestedQty) {
+      const errorMsg = this.translationService.instant('product.insufficientStock', {
+        available: availableQty
+      });
+      alert(errorMsg);
+      return;
+    }
+
     const orderItem: OrderItem = {
       productId: product.id,
       productName: product.name,
@@ -164,6 +181,20 @@ export class ProductCatalogComponent implements OnInit {
       this.removeFromCart(productId);
       return;
     }
+
+    // Validate against available quantity
+    const product = this.products.find(p => p.id === productId);
+    if (product) {
+      const availableQty = product.availableQuantity ?? product.quantity ?? 0;
+      if (quantity > availableQty) {
+        const errorMsg = this.translationService.instant('product.insufficientStock', {
+          available: availableQty
+        });
+        alert(errorMsg);
+        return;
+      }
+    }
+
     this.orderService.updateCartItemQuantity(productId, quantity);
   }
 
@@ -195,15 +226,30 @@ export class ProductCatalogComponent implements OnInit {
 
   addBulkToCart(): void {
     let itemsUpdated = 0;
-    
+    const errors: string[] = [];
+
     // Process all products that have bulk quantities set
     this.bulkQuantities.forEach((quantity, productId) => {
       if (quantity > 0) {
         const product = this.products.find(p => p.id === productId);
         if (product && product.inStock) {
+          // Validate against available quantity
+          const availableQty = product.availableQuantity ?? product.quantity ?? 0;
+
+          if (quantity > availableQty) {
+            errors.push(
+              this.translationService.instant('product.bulkInsufficientStock', {
+                product: product.name,
+                requested: quantity,
+                available: availableQty
+              })
+            );
+            return; // Skip this product
+          }
+
           // Check if item is already in cart
           const existingItem = this.cartItems.find(item => item.productId === productId);
-          
+
           if (existingItem) {
             // Update existing cart item quantity
             this.orderService.updateCartItemQuantity(productId, quantity);
@@ -223,8 +269,25 @@ export class ProductCatalogComponent implements OnInit {
       }
     });
 
+    // Show errors if any
+    if (errors.length > 0) {
+      alert(errors.join('\n'));
+    }
+
     if (itemsUpdated > 0) {
-      this.bulkQuantities.clear();
+      // Save the updated cart as draft on the server
+      this.orderService.saveDraftCart().subscribe({
+        next: draftOrder => {
+          // Optionally notify user
+          console.log('Draft saved', draftOrder);
+          // Clear bulk quantities after successful save
+          this.bulkQuantities.clear();
+        },
+        error: err => {
+          console.error('Failed to save draft cart:', err);
+          alert(this.translationService.instant('product.saveDraftFailed') || 'Failed to save cart draft');
+        }
+      });
     }
   }
 

@@ -74,7 +74,14 @@
     "quantity": "Кількість",
     "total": "Всього",
     "readMore": "Читати далі",
-    "readLess": "Згорнути"
+    "readLess": "Згорнути",
+    "available": "Доступно",
+    "availableToOrder": "Доступно для замовлення",
+    "crmInventory": "Інвентар CRM",
+    "allocated": "Зарезервовано",
+    "inventoryDetails": "Деталі інвентарю",
+    "insufficientStock": "Доступно лише {{available}} одиниць",
+    "bulkInsufficientStock": "{{product}}: запитано {{requested}}, доступно лише {{available}}"
   },
   "orders": {
     "title": "Історія замовлень",
@@ -85,8 +92,11 @@
     "items": "Товари",
     "viewDetails": "Переглянути деталі",
     "noOrders": "Замовлення не знайдено",
+    "draft": "Чернетка",
+    "new": "Нове",
     "pending": "Очікує",
     "processing": "Обробляється",
+    "confirmed": "Підтверджено",
     "shipped": "Відправлено",
     "delivered": "Доставлено",
     "cancelled": "Скасовано",
@@ -94,7 +104,13 @@
     "reorder": "Замовити знову",
     "downloadInvoice": "Завантажити рахунок",
     "comment": "Коментар",
-    "commentPlaceholder": "Додайте спеціальні інструкції або примітки до цього замовлення..."
+    "commentPlaceholder": "Додайте спеціальні інструкції або примітки до цього замовлення...",
+    "saveDraft": "Зберегти як чернетку",
+    "confirmDraft": "Підтвердити замовлення",
+    "savedCarts": "Збережені кошики",
+    "draftSaved": "Кошик збережено як чернетку",
+    "orderConfirmed": "Замовлення успішно підтверджено",
+    "cannotModify": "Це замовлення не можна змінити (керується CRM)"
   },
   "validation": {
     "required": "Це поле є обов'язковим",

@@ -7,7 +7,9 @@ export interface Product {
   imageUrl?: string;
   inStock: boolean;
   sku: string;
-  quantity?: number; // Stock quantity
+  quantity?: number; // CRM inventory quantity (total stock)
+  availableQuantity?: number; // Available to order (quantity - allocatedQuantity)
+  allocatedQuantity?: number; // Quantity allocated to pending orders
   active?: boolean;  // Active status
 }
 

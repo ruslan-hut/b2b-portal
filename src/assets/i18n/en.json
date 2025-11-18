@@ -74,7 +74,14 @@
     "quantity": "Quantity",
     "total": "Total",
     "readMore": "Read more",
-    "readLess": "Read less"
+    "readLess": "Read less",
+    "available": "Available",
+    "availableToOrder": "Available to Order",
+    "crmInventory": "CRM Inventory",
+    "allocated": "Allocated",
+    "inventoryDetails": "Inventory Details",
+    "insufficientStock": "Only {{available}} items available",
+    "bulkInsufficientStock": "{{product}}: requested {{requested}}, only {{available}} available"
   },
   "orders": {
     "title": "Order History",
@@ -85,8 +92,11 @@
     "items": "Items",
     "viewDetails": "View Details",
     "noOrders": "No orders found",
+    "draft": "Draft",
+    "new": "New",
     "pending": "Pending",
     "processing": "Processing",
+    "confirmed": "Confirmed",
     "shipped": "Shipped",
     "delivered": "Delivered",
     "cancelled": "Cancelled",
@@ -94,7 +104,13 @@
     "reorder": "Reorder",
     "downloadInvoice": "Download Invoice",
     "comment": "Comment",
-    "commentPlaceholder": "Add any special instructions or notes for this order..."
+    "commentPlaceholder": "Add any special instructions or notes for this order...",
+    "saveDraft": "Save as Draft",
+    "confirmDraft": "Confirm Order",
+    "savedCarts": "Saved Carts",
+    "draftSaved": "Cart saved as draft",
+    "orderConfirmed": "Order confirmed successfully",
+    "cannotModify": "This order cannot be modified (CRM managed)"
   },
   "validation": {
     "required": "This field is required",

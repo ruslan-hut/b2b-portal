@@ -28,12 +28,11 @@ export interface ShippingAddress {
 }
 
 export enum OrderStatus {
-  PENDING = 'PENDING',
-  CONFIRMED = 'CONFIRMED',
-  PROCESSING = 'PROCESSING',
-  SHIPPED = 'SHIPPED',
-  DELIVERED = 'DELIVERED',
-  CANCELLED = 'CANCELLED'
+  DRAFT = 'draft',           // Saved cart, no validation, no allocation
+  NEW = 'new',               // User confirmed, stock validated, allocation created
+  PROCESSING = 'processing', // CRM fulfilling order (cannot modify from frontend)
+  CONFIRMED = 'confirmed',   // CRM completed order, allocation deleted
+  CANCELLED = 'cancelled'    // Order cancelled
 }
 
 export interface CreateOrderRequest {
@@ -49,7 +48,7 @@ export interface CreateOrderRequest {
 export interface BackendOrderRequest {
   uid?: string;
   user_uid: string;
-  status?: 'new' | 'processing' | 'confirmed';
+  status?: 'draft' | 'new' | 'processing' | 'confirmed'; // Frontend can only use 'draft' or 'new'
   total: number;
   shipping_address: string;
   billing_address?: string;

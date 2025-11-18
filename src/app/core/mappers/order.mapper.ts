@@ -10,9 +10,11 @@ export class OrderMapper {
     items: OrderItem[],
     shippingAddress: ShippingAddress,
     billingAddress?: ShippingAddress,
-    comment?: string
+    comment?: string,
+    status?: 'draft' | 'new', // Frontend can only use 'draft' or 'new'
+    orderUid?: string // Optional UID for updating existing orders
   ): BackendOrderRequest {
-    const orderUid = uuidv4();
+    const uid = orderUid || uuidv4();
 
     // Calculate total in cents
     const total = items.reduce((sum, item) => sum + item.subtotal, 0) * 100;
@@ -22,15 +24,15 @@ export class OrderMapper {
     const billingAddressStr = billingAddress ? this.formatAddress(billingAddress) : shippingAddressStr;
 
     return {
-      uid: orderUid,
+      uid: uid,
       user_uid: userId,
-      status: 'new',
+      status: status || 'new', // Default to 'new' for backward compatibility
       total: total,
       shipping_address: shippingAddressStr,
       billing_address: billingAddressStr,
       comment: comment || undefined,
       items: items.map(item => ({
-        order_uid: orderUid,
+        order_uid: uid,
         product_uid: item.productId,
         quantity: item.quantity,
         price: Math.round(item.price * 100), // Convert to cents
@@ -91,14 +93,13 @@ export class OrderMapper {
    */
   private static mapBackendStatus(status: string): OrderStatus {
     const statusMap: { [key: string]: OrderStatus } = {
-      'new': OrderStatus.PENDING,
+      'draft': OrderStatus.DRAFT,
+      'new': OrderStatus.NEW,
       'processing': OrderStatus.PROCESSING,
       'confirmed': OrderStatus.CONFIRMED,
-      'shipped': OrderStatus.SHIPPED,
-      'delivered': OrderStatus.DELIVERED,
       'cancelled': OrderStatus.CANCELLED
     };
-    return statusMap[status.toLowerCase()] || OrderStatus.PENDING;
+    return statusMap[status.toLowerCase()] || OrderStatus.NEW;
   }
 
   /**

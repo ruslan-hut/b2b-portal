@@ -339,6 +339,24 @@ All error responses will have the following structure:
 
 ### Product
 
+#### Product Quantity Management
+**IMPORTANT:** The product quantity system has been refactored to separate CRM inventory from local order allocations:
+
+- **`product.quantity`**: Stores the quantity received from your external CRM system (read-only for order operations)
+- **Order Allocations**: When orders are created with status `"new"`, quantities are allocated in a separate `order_product_allocations` table
+- **Available Quantity**: Calculated as `product.quantity - SUM(allocated_quantities)`
+- **Stock Updates**: Use `/product/stock` endpoint to update CRM quantities. Order creation/deletion does NOT modify `product.quantity`
+- **Allocation Lifecycle**:
+  - Created when order status is `"new"` (user confirmed)
+  - Maintained during `"processing"` status (CRM fulfilling)
+  - Deleted when order status becomes `"confirmed"` (order fulfilled)
+
+This design ensures:
+- CRM data remains untouched by order operations
+- Accurate available inventory calculation
+- Ability to see which orders have reserved which products
+- Simple reconciliation with external CRM systems
+
 #### Upsert Products (Create or Update)
 *   **POST** `/product`
     *   **Request Body:**
@@ -348,7 +366,7 @@ All error responses will have the following structure:
             {
               "uid": "prod-123", // Optional for create, required for update
               "price": 1000,
-              "quantity": 50,
+              "quantity": 50, // CRM quantity - not modified by order operations
               "category_uid": "cat-456",
               "active": true // Optional, defaults to true
             }
@@ -356,6 +374,7 @@ All error responses will have the following structure:
         }
         ```
     *   **Response:** Array of created/updated product UIDs
+    *   **Note:** The `quantity` field represents CRM inventory and is NOT automatically decreased when orders are created
 
 #### List Products
 *   **GET** `/product`
@@ -387,13 +406,14 @@ All error responses will have the following structure:
 
 #### Update Product Stock (Batch)
 *   **POST** `/product/stock`
+    *   **Description:** Updates CRM quantity for products. This should be used when syncing with external CRM system. Order creation/deletion does NOT affect this value.
     *   **Request Body:**
         ```json
         {
           "data": [
             {
               "uid": "prod-123",
-              "quantity": 50
+              "quantity": 50  // New CRM quantity
             },
             {
               "uid": "prod-456",
@@ -403,6 +423,7 @@ All error responses will have the following structure:
         }
         ```
     *   **Response:** Success message
+    *   **Use Case:** Synchronizing inventory from external CRM/ERP systems
 
 #### Update Product Active Status (Batch)
 *   **POST** `/product/active`
@@ -502,6 +523,75 @@ All error responses will have the following structure:
 
 ### Order
 
+#### Order and Product Allocation System
+**IMPORTANT:** Order operations now use a product allocation system with a simplified status flow:
+
+**Order Status Flow:**
+```
+Frontend:    "draft" (saved cart)  →  "new" (user confirmed)
+             ↓                        ↓
+             No allocation           Allocation created
+
+External CRM:  "new"  →  "processing"  →  "confirmed"
+               ↓          ↓               ↓
+               Allocated  Allocated       Allocation DELETED (fulfilled)
+```
+
+**Status Descriptions:**
+- **`"draft"`**: Saved cart, no validation, no allocation
+- **`"new"`**: User confirmed order, stock validated, allocation created
+- **`"processing"`**: CRM processing, allocation exists
+- **`"confirmed"`**: CRM fulfilled order, allocation **deleted**
+
+**Frontend Can Only Create:**
+- **Status `"draft"`** - Save cart for later
+- **Status `"new"`** - Confirm order and reserve inventory
+
+**External CRM Manages:**
+- **`"new"` → `"processing"`** - Begin processing
+- **`"processing"` → `"confirmed"`** - Mark as fulfilled (auto-deletes allocation)
+
+---
+
+**When Creating a Draft Order:**
+1. Creates order record with status `"draft"`
+2. **Does NOT** validate product availability
+3. **Does NOT** create allocation records
+4. **Does NOT** modify `product.quantity`
+
+**When Creating a "New" Order (User Confirmed):**
+1. Validates available quantity: `product.quantity - allocated_quantities`
+2. Creates order record with status `"new"`
+3. Creates allocation records in `order_product_allocations` table
+4. **Does NOT modify** `product.quantity`
+
+**When CRM Changes Status to "Confirmed":**
+1. Updates order status to `"confirmed"`
+2. **Deletes allocation records** (order fulfilled, inventory shipped)
+3. **Does NOT modify** `product.quantity`
+
+**When Deleting/Cancelling an Order:**
+1. Removes allocation records (via CASCADE delete for "new" orders)
+2. Deletes order record
+3. **Does NOT modify** `product.quantity`
+
+**When Adding/Updating Order Items:**
+- **Draft Orders (`"draft"`):** Items can be added/updated without validation or allocations
+- **New Orders (`"new"`):** Validates available quantity and creates/updates allocations
+- **Processing/Confirmed Orders:** **Cannot be modified from frontend** (managed by CRM)
+
+**When Removing Order Items:**
+- **Draft Orders (`"draft"`):** Removes items without allocation management
+- **New Orders (`"new"`):** Removes items and corresponding allocation records
+- **Processing/Confirmed Orders:** **Cannot be modified from frontend** (managed by CRM)
+
+**Key Benefits:**
+- Users can save carts without reserving inventory
+- Clear separation: frontend creates, CRM manages fulfillment
+- Allocations automatically released when order confirmed (fulfilled)
+- Product CRM quantity remains unchanged by order operations
+- Real-time available inventory calculation
+
 #### Upsert Orders (Create or Update)
 *   **POST** `/order`
     *   **Request Body:**
@@ -511,17 +601,39 @@ All error responses will have the following structure:
             {
               "uid": "order-123", // Optional for create, required for update
               "user_uid": "user-456",
-              "status": "pending",
+              "status": "draft", // Can be "draft", "new", "confirmed", "processing"
               "total": 5000.0,
               "shipping_address": "123 Main St",
               "billing_address": "123 Main St",
-              "comment": "Please deliver after 5 PM" // Optional
+              "comment": "Please deliver after 5 PM", // Optional
+              "items": [
+                {
+                  "product_uid": "prod-789",
+                  "quantity": 2,
+                  "price": 1000,
+                  "discount": 0,
+                  "total": 2000.0
+                }
+              ]
             }
           ]
         }
         ```
     *   **Response:** Array of created/updated order UIDs
-    *   **Note:** The `comment` field is optional and can be used to store additional notes about the order
+    *   **Behavior Based on Status:**
+        - **`status: "draft"`**: Saves cart without validation or allocations
+        - **`status: "new"`**: Validates stock and creates allocations (user confirmed)
+        - **Other statuses**: Will return error - only "draft" or "new" allowed from frontend
+    *   **Note:**
+        - The `comment` field is optional and can be used to store additional notes about the order
+        - Stock validation uses available quantity (CRM quantity - allocated quantity)
+        - Creates product allocation records automatically for "new" orders
+        - Frontend can only create with "draft" or "new" status
+    *   **Example Workflow:**
+        1. Create order with `status: "draft"` to save cart → No allocation
+        2. Create order with `status: "new"` to confirm → Allocation created
+        3. CRM changes to "processing" → Allocation exists
+        4. CRM changes to "confirmed" → Allocation deleted
 
 #### List Orders
 *   **GET** `/order`
@@ -566,16 +678,26 @@ All error responses will have the following structure:
 
 #### Update Order Status
 *   **PUT** `/order/status` - Batch update order statuses (Array Input)
+    *   **Primary Use:** This endpoint is primarily used by external CRM systems to transition orders through fulfillment stages
     *   **Request Body:**
         ```json
         {
           "data": [
-            {"uid": "order-123", "status": "shipped"},
-            {"uid": "order-456", "status": "delivered"},
-            {"uid": "order-789", "status": "cancelled"}
+            {"uid": "order-123", "status": "confirmed"},
+            {"uid": "order-456", "status": "processing"}
           ]
         }
         ```
+    *   **Special Behavior - Order Confirmation:**
+        - When changing status to `"confirmed"`:
+          1. Updates order status to "confirmed"
+          2. **Deletes all allocation records** for this order (order is fulfilled)
+          3. Products are now available for other orders
+        - Example: CRM marks order as shipped/delivered → `"processing"` → `"confirmed"` → Allocations deleted
+    *   **Typical CRM Flow:**
+        1. Frontend creates order with `status: "new"` (allocation created)
+        2. CRM updates to `"processing"` (allocation remains)
+        3. CRM updates to `"confirmed"` (allocation deleted - order fulfilled)
     *   **Response:** Success message
 
 #### Upsert Order Items (Batch)
@@ -603,7 +725,12 @@ All error responses will have the following structure:
           ]
         }
         ```
-    *   **Note:** Uses database-level upsert based on order_uid + product_uid
+    *   **Behavior:**
+        - Uses database-level upsert based on order_uid + product_uid
+        - **Draft Orders:** Adds/updates items without validation or allocations
+        - **New Orders:** Validates available quantity and creates/updates allocations
+        - **Processing/Confirmed Orders:** Cannot be modified (returns error - CRM managed)
+        - Does NOT modify `product.quantity`
     *   **Response:** Success message
 
 #### Remove Order Items
@@ -618,6 +745,13 @@ All error responses will have the following structure:
           ]
         }
         ```
+    *   **Behavior:**
+        - Removes order item records
+        - **Draft Orders:** Only removes items, no allocation management
+        - **New Orders:** Removes items and corresponding allocation records
+        - **Processing/Confirmed Orders:** Cannot be modified (returns error - CRM managed)
+        - Does NOT modify `product.quantity`
+    *   **Response:** Success message
 
 #### Get Order Items
 *   **GET** `/order/{orderUID}/items`
@@ -793,6 +927,24 @@ All error responses will have the following structure:
 
 ### Category
 
+#### Category Description Format
+**IMPORTANT:** Category descriptions now automatically include parent category names:
+
+- When retrieving category descriptions via `GET /category/description/{categoryUID}`, the `name` field will include the parent category name as a prefix
+- Format: `"Parent Name Child Name"` (if parent exists and has a description in the same language)
+- If no parent exists or parent has no description in that language, only the category name is returned
+- This applies to all languages independently (parent name in EN will prefix child name in EN, etc.)
+
+**Example:**
+- Category "Smartphones" with parent "Electronics"
+- Returned name: `"Electronics Smartphones"`
+- Without parent: `"Smartphones"`
+
+This feature helps with:
+- Displaying full category paths
+- Better context for nested categories
+- Improved navigation and breadcrumbs
+
 #### Upsert Categories (Create or Update)
 *   **POST** `/category`
     *   **Request Body:**
@@ -872,6 +1024,29 @@ All error responses will have the following structure:
 #### Get Category Descriptions
 *   **GET** `/category/description/{categoryUID}`
     *   **Response:** Array of category descriptions
+    *   **Response Format:**
+        ```json
+        {
+          "success": true,
+          "data": [
+            {
+              "category_uid": "cat-smartphones",
+              "language": "en",
+              "name": "Electronics Smartphones",  // Includes parent name prefix
+              "description": "Mobile phones and accessories",
+              "last_update": "2025-11-18T10:00:00Z"
+            },
+            {
+              "category_uid": "cat-smartphones",
+              "language": "es",
+              "name": "Electrónica Teléfonos Inteligentes",  // Parent name in Spanish + child name in Spanish
+              "description": "Teléfonos móviles y accesorios",
+              "last_update": "2025-11-18T10:00:00Z"
+            }
+          ]
+        }
+        ```
+    *   **Note:** The `name` field automatically includes the parent category name as a prefix when available in the same language
 
 ---
 
