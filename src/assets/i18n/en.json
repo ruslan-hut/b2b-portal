@@ -120,6 +120,12 @@
     "invalidStatus": "Invalid order status.",
     "networkError": "Network error. Please check your connection.",
     "orderFailed": "Failed to create order. Please try again."
+  },
+  "pwa": {
+    "updateAvailable": "New version available!",
+    "updateMessage": "A new version of the app is ready. Please reload to update.",
+    "reload": "Reload",
+    "later": "Later"
   }
 }
 

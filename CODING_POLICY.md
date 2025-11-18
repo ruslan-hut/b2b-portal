@@ -344,6 +344,12 @@ createOrder(order: CreateOrderRequest): void {
 
 The `UpdateNotificationComponent` automatically detects and notifies users of app updates. It's included in the root component and requires no additional configuration.
 
+**Translation Support**: The update notification component uses the translation service to display messages in the user's selected language. Translation keys are defined under the `pwa` namespace in translation files:
+- `pwa.updateAvailable` - Title text
+- `pwa.updateMessage` - Description text
+- `pwa.reload` - Reload button text
+- `pwa.later` - Dismiss button text
+
 ### PWA Best Practices
 
 1. **Service Worker**: Only enabled in production builds
