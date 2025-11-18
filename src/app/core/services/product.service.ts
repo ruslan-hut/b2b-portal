@@ -83,12 +83,6 @@ export class ProductService {
 
         const backendProducts = response.data;
 
-        // DEBUG: Log what we receive from backend
-        console.log('[DEBUG] Backend products response:', backendProducts);
-        if (backendProducts.length > 0) {
-          console.log('[DEBUG] Sample product structure:', JSON.stringify(backendProducts[0], null, 2));
-        }
-
         if (backendProducts.length === 0) {
           return of([]);
         }
