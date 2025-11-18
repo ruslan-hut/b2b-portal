@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { HttpClientModule, HTTP_INTERCEPTORS } from '@angular/common/http';
 import { TranslatePipe } from './pipes/translate.pipe';
 import { LanguageSwitcherComponent } from './components/language-switcher/language-switcher.component';
+import { UpdateNotificationComponent } from './components/update-notification/update-notification.component';
 import { TranslationService } from './services/translation.service';
 import { AuthInterceptor } from './interceptors/auth.interceptor';
 
@@ -16,7 +17,8 @@ export function initializeTranslations(translationService: TranslationService) {
 @NgModule({
   declarations: [
     TranslatePipe,
-    LanguageSwitcherComponent
+    LanguageSwitcherComponent,
+    UpdateNotificationComponent
   ],
   imports: [
     CommonModule,
@@ -24,7 +26,8 @@ export function initializeTranslations(translationService: TranslationService) {
   ],
   exports: [
     TranslatePipe,
-    LanguageSwitcherComponent
+    LanguageSwitcherComponent,
+    UpdateNotificationComponent
   ],
   providers: [
     {

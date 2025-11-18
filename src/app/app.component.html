@@ -1,4 +1,12 @@
 <div class="app-container">
+  <!-- Offline Indicator -->
+  <div class="offline-indicator" *ngIf="!isOnline">
+    <div class="offline-content">
+      <span class="offline-icon">📡</span>
+      <span class="offline-message">You are currently offline. Some features may be limited.</span>
+    </div>
+  </div>
+
   <header class="app-header" *ngIf="!isAuthRoute && (authService.currentEntity$ | async) as entity">
     <div class="header-content">
       <div class="logo" (click)="navigateTo('/products/catalog')">
@@ -43,6 +51,9 @@
   <main class="app-main">
     <router-outlet />
   </main>
+
+  <!-- Update Notification -->
+  <app-update-notification></app-update-notification>
 
   <!-- Order Confirmation Dialog -->
   <app-order-confirmation-dialog

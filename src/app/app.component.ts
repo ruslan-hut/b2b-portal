@@ -1,20 +1,22 @@
-import { Component, ChangeDetectorRef } from '@angular/core';
+import { Component, ChangeDetectorRef, OnInit, OnDestroy } from '@angular/core';
 import { Router, NavigationEnd } from '@angular/router';
 import { AuthService } from './core/services/auth.service';
 import { OrderService } from './core/services/order.service';
 import { ProductService } from './core/services/product.service';
 import { TranslationService } from './core/services/translation.service';
 import { ErrorHandlerService } from './core/services/error-handler.service';
+import { NetworkService } from './core/services/network.service';
 import { User, Client } from './core/models/user.model';
 import { OrderItem, CreateOrderRequest, ShippingAddress } from './core/models/order.model';
 import { filter } from 'rxjs/operators';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss'
 })
-export class AppComponent {
+export class AppComponent implements OnInit, OnDestroy {
   title = 'DARK B2B';
   currentEntity: User | Client | null = null;
   entityType: 'user' | 'client' | null = null;
@@ -27,6 +29,8 @@ export class AppComponent {
   isAuthRoute = false;
   isCreatingOrder = false;
   orderComment = '';
+  isOnline = true;
+  private subscriptions = new Subscription();
 
   constructor(
     public authService: AuthService,
@@ -35,6 +39,7 @@ export class AppComponent {
     private router: Router,
     public translationService: TranslationService,
     private errorHandler: ErrorHandlerService,
+    private networkService: NetworkService,
     private cdr: ChangeDetectorRef
   ) {
     this.authService.currentEntity$.subscribe(entity => {
@@ -66,6 +71,20 @@ export class AppComponent {
       this.showViewToggle = event.url.includes('/products/catalog');
       this.isAuthRoute = event.url.includes('/auth');
     });
+  }
+
+  ngOnInit(): void {
+    // Subscribe to network status
+    this.subscriptions.add(
+      this.networkService.isOnline$.subscribe(isOnline => {
+        this.isOnline = isOnline;
+        this.cdr.markForCheck();
+      })
+    );
+  }
+
+  ngOnDestroy(): void {
+    this.subscriptions.unsubscribe();
   }
 
   logout(): void {

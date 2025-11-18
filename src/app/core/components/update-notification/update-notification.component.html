@@ -1,0 +1,14 @@
+<div class="update-notification" *ngIf="updateAvailable">
+  <div class="update-content">
+    <div class="update-icon">🔄</div>
+    <div class="update-message">
+      <strong>New version available!</strong>
+      <span>A new version of the app is ready. Please reload to update.</span>
+    </div>
+    <div class="update-actions">
+      <button class="btn-reload" (click)="reloadApp()">Reload</button>
+      <button class="btn-dismiss" (click)="dismiss()">Later</button>
+    </div>
+  </div>
+</div>
+
