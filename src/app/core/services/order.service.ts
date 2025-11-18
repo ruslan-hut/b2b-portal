@@ -460,6 +460,20 @@ export class OrderService {
     );
   }
 
+  /**
+   * Get current draft order UID (if any)
+   */
+  getCurrentDraftUid(): string | undefined {
+    return this.draftOrderUid;
+  }
+
+  /**
+   * Clear draft order UID (call after confirming draft)
+   */
+  clearDraftUid(): void {
+    this.draftOrderUid = undefined;
+  }
+
   // Cart management
   addToCart(item: OrderItem): void {
     const currentItems = this.currentOrderSubject.value;
@@ -493,6 +507,8 @@ export class OrderService {
 
   clearCart(): void {
     this.currentOrderSubject.next([]);
+    // Clear draft UID when cart is cleared
+    this.draftOrderUid = undefined;
   }
 
   getCartTotal(): number {

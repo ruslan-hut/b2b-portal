@@ -1,6 +1,7 @@
 export interface Order {
   id: string;
   orderNumber: string;
+  number?: string; // Optional order number from backend
   userId: string;
   items: OrderItem[];
   totalAmount: number;
@@ -65,6 +66,7 @@ export interface BackendOrderRequest {
 
 export interface BackendOrderResponse {
   uid: string;
+  number?: string; // Optional order number from backend
   user_uid: string;
   status: string;
   total: number;
@@ -73,5 +75,6 @@ export interface BackendOrderResponse {
   comment?: string;
   created_at: string;
   updated_at: string;
+  // Some backend API versions use `last_update` instead of `updated_at`.
+  last_update?: string;
 }
-

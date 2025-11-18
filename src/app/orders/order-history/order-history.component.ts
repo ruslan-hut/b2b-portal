@@ -12,7 +12,6 @@ import { TranslationService } from '../../core/services/translation.service';
 export class OrderHistoryComponent implements OnInit {
   orders: Order[] = [];
   loading = false;
-  OrderStatus = OrderStatus;
 
   constructor(
     private orderService: OrderService,
@@ -29,7 +28,30 @@ export class OrderHistoryComponent implements OnInit {
     this.loading = true;
     this.orderService.getOrderHistory().subscribe({
       next: (orders) => {
-        this.orders = orders;
+        // Sort by updatedAt (newest first). Fallback to createdAt if updatedAt missing
+        this.orders = orders.sort((a, b) => {
+          const aTime = (a.updatedAt || a.createdAt).getTime();
+          const bTime = (b.updatedAt || b.createdAt).getTime();
+          return bTime - aTime; // newest first
+        });
+
+        // Preload full details for each order to ensure items and product names are present in cards.
+        // getOrderHistory already tries to batch items, but in some cases extra enrichment may arrive later
+        // so we explicitly fetch each order's full details and replace the entry.
+        this.orders.forEach((order, idx) => {
+          this.orderService.getOrderById(order.id).subscribe({
+            next: (full) => {
+              if (full) {
+                this.orders[idx] = full;
+                this.cdr.detectChanges();
+              }
+            },
+            error: (err) => {
+              console.error('Failed to preload order details for', order.id, err);
+            }
+          });
+        });
+
         this.loading = false;
         // Manually trigger change detection to ensure UI updates
         this.cdr.detectChanges();
@@ -72,5 +94,10 @@ export class OrderHistoryComponent implements OnInit {
 
   navigateToCatalog(): void {
     this.router.navigate(['/products/catalog']);
+  }
+
+  getOrderTitle(order: Order): string {
+    const dateStr = new Date(order.createdAt).toLocaleDateString();
+    return order.number ? `${dateStr} - ${order.number}` : dateStr;
   }
 }

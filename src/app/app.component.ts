@@ -187,9 +187,14 @@ export class AppComponent implements OnInit, OnDestroy {
       comment: this.orderComment.trim() || undefined
     };
 
-    this.orderService.createOrder(orderRequest).subscribe({
+    // Check if there's a current draft - if so, update it instead of creating new order
+    const draftUid = this.orderService.getCurrentDraftUid();
+
+    this.orderService.createOrder(orderRequest, 'new', draftUid).subscribe({
       next: () => {
         this.isCreatingOrder = false;
+        // Clear the draft UID since it's now confirmed
+        this.orderService.clearDraftUid();
         this.showCartPanel = false;
         this.showOrderDialog = true;
       },

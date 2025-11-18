@@ -49,6 +49,7 @@ export class OrderMapper {
     return {
       id: response.uid,
       orderNumber: this.generateOrderNumber(response.uid),
+      number: response.number, // Optional order number from backend
       userId: response.user_uid,
       items: items.map(item => ({
         productId: item.product_uid,
@@ -60,7 +61,9 @@ export class OrderMapper {
       totalAmount: response.total / 100, // Convert from cents
       status: this.mapBackendStatus(response.status),
       createdAt: new Date(response.created_at),
-      updatedAt: new Date(response.updated_at),
+      // Backend may return `updated_at` or `last_update` depending on API version.
+      // Prefer `last_update` if present, otherwise fall back to `updated_at` or `created_at`.
+      updatedAt: new Date(response.last_update || response.updated_at || response.created_at),
       shippingAddress: this.parseAddress(response.shipping_address),
       comment: response.comment
     };

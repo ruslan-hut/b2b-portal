@@ -24,8 +24,12 @@
     <div class="order-card" *ngFor="let order of orders">
       <div class="order-header">
         <div class="order-info">
-          <h3>{{ order.orderNumber }}</h3>
+          <h3>{{ getOrderTitle(order) }}</h3>
           <span class="order-date">{{ order.createdAt | date: 'medium' }}</span>
+          <!-- Show last updated if available -->
+          <div class="order-updated" *ngIf="order.updatedAt">
+            <small>{{ 'orders.lastUpdated' | translate }}: {{ order.updatedAt | date: 'short' }}</small>
+          </div>
         </div>
         <div class="order-status">
           <span class="status-badge" [ngClass]="getStatusClass(order.status)">

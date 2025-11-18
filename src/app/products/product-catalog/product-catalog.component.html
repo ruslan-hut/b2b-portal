@@ -64,12 +64,6 @@
               </button>
             </div>
             <div class="product-sku">{{ 'products.sku' | translate }}: {{ product.sku }}</div>
-            <div class="product-availability" *ngIf="product.availableQuantity !== undefined">
-              <strong>{{ 'products.availableToOrder' | translate }}:</strong> {{ product.availableQuantity }}
-              <span class="availability-details" *ngIf="product.quantity !== undefined && product.allocatedQuantity !== undefined">
-                ({{ 'products.crmInventory' | translate }}: {{ product.quantity }}, {{ 'products.allocated' | translate }}: {{ product.allocatedQuantity }})
-              </span>
-            </div>
             <div class="product-footer">
               <div class="product-price">${{ product.price.toFixed(2) }}</div>
               <button
@@ -132,7 +126,6 @@
               <th>{{ 'products.category' | translate }}</th>
               <th>{{ 'products.price' | translate }}</th>
               <th>{{ 'orders.status' | translate }}</th>
-              <th>{{ 'products.available' | translate }}</th>
               <th>{{ 'products.quantity' | translate }}</th>
               <th>{{ 'products.total' | translate }}</th>
             </tr>
@@ -158,12 +151,6 @@
                   {{ product.inStock ? ('products.stock' | translate) : ('products.outOfStock' | translate) }}
                 </span>
               </td>
-              <td class="available-cell">
-                <span *ngIf="product.availableQuantity !== undefined" [class.low-stock]="product.availableQuantity < 10">
-                  {{ product.availableQuantity }}
-                </span>
-                <span *ngIf="product.availableQuantity === undefined">-</span>
-              </td>
               <td class="quantity-cell">
                 <div class="quantity-cell-wrapper">
                   <input
@@ -173,7 +160,6 @@
                     (input)="setBulkQuantity(product.id, +$any($event.target).value)"
                     (focus)="selectProduct(product)"
                     min="0"
-                    [max]="product.availableQuantity ?? product.quantity"
                     [disabled]="!product.inStock"
                     placeholder="0"
                   />
@@ -232,20 +218,6 @@
                 ✗ {{ 'products.outOfStock' | translate }}
               </ng-container>
             </span>
-          </div>
-          <div class="inventory-info" *ngIf="selectedProduct.availableQuantity !== undefined">
-            <div class="inventory-main">
-              <strong>{{ 'products.availableToOrder' | translate }}:</strong>
-              <span class="available-qty">{{ selectedProduct.availableQuantity }}</span>
-            </div>
-            <details class="inventory-details" *ngIf="selectedProduct.quantity !== undefined">
-              <summary>{{ 'products.inventoryDetails' | translate }}</summary>
-              <div class="inventory-breakdown">
-                <div>{{ 'products.crmInventory' | translate }}: {{ selectedProduct.quantity }}</div>
-                <div>{{ 'products.allocated' | translate }}: {{ selectedProduct.allocatedQuantity || 0 }}</div>
-                <div><strong>{{ 'products.available' | translate }}: {{ selectedProduct.availableQuantity }}</strong></div>
-              </div>
-            </details>
           </div>
         </div>
       </div>

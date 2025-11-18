@@ -85,6 +85,7 @@
   },
   "orders": {
     "title": "Order History",
+    "lastUpdated": "Last updated",
     "orderNumber": "Order #",
     "date": "Date",
     "status": "Status",
@@ -144,4 +145,3 @@
     "later": "Later"
   }
 }
-
