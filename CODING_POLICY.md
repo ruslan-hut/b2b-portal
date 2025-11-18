@@ -9,8 +9,9 @@
 6. [Service Guidelines](#service-guidelines)
 7. [Styling Guidelines](#styling-guidelines)
 8. [API Integration](#api-integration)
-9. [Testing Guidelines](#testing-guidelines)
-10. [Git Workflow](#git-workflow)
+9. [PWA Guidelines](#pwa-guidelines)
+10. [Testing Guidelines](#testing-guidelines)
+11. [Git Workflow](#git-workflow)
 
 ## Project Overview
 
@@ -25,13 +26,14 @@ This is a B2B portal application built with Angular that allows clients to brows
 
 ## Technology Stack
 
-- **Framework**: Angular 18+ (module-based architecture)
+- **Framework**: Angular 17+ (module-based architecture)
 - **Language**: TypeScript (strict mode enabled)
 - **Styling**: SCSS
 - **Forms**: Reactive Forms
 - **Routing**: Angular Router with lazy loading
 - **State Management**: RxJS (BehaviorSubjects for simple state)
-- **HTTP Client**: Angular HttpClient (to be integrated)
+- **HTTP Client**: Angular HttpClient
+- **PWA**: Angular Service Worker (@angular/pwa)
 
 ## Code Organization
 
@@ -266,6 +268,97 @@ $danger: #dc3545;
 $info: #17a2b8;
 ```
 
+## PWA Guidelines
+
+### Progressive Web App Features
+
+The application is configured as a Progressive Web App (PWA) with the following features:
+
+1. **Service Worker**: Automatically caches app shell and assets for offline functionality
+2. **Web App Manifest**: Defines app metadata, icons, and display mode
+3. **Offline Support**: Network detection and offline action queuing
+4. **Update Notifications**: Automatic detection and notification of app updates
+
+### Service Worker Configuration
+
+The service worker is configured in `ngsw-config.json`:
+
+- **App Shell**: Prefetched with network-first strategy
+- **Static Assets**: Lazy loaded with prefetch updates
+- **API Data**: Network-first with freshness strategy (5-10 minute cache)
+
+```json
+{
+  "dataGroups": [
+    {
+      "name": "api-products",
+      "urls": ["/api/v1/products/**"],
+      "cacheConfig": {
+        "strategy": "freshness",
+        "maxAge": "10m",
+        "timeout": "5s"
+      }
+    }
+  ]
+}
+```
+
+### Network Service Pattern
+
+Use `NetworkService` to monitor connectivity:
+
+```typescript
+constructor(private networkService: NetworkService) {}
+
+ngOnInit(): void {
+  this.networkService.isOnline$.subscribe(isOnline => {
+    if (!isOnline) {
+      // Handle offline state
+    }
+  });
+}
+```
+
+### Offline Storage Pattern
+
+Use `OfflineStorageService` to queue actions when offline:
+
+```typescript
+constructor(
+  private offlineStorage: OfflineStorageService,
+  private networkService: NetworkService
+) {}
+
+createOrder(order: CreateOrderRequest): void {
+  if (this.networkService.isOnline) {
+    // Execute immediately
+    this.orderService.createOrder(order).subscribe();
+  } else {
+    // Queue for later
+    this.offlineStorage.queueAction('order', order).subscribe();
+  }
+}
+```
+
+### Update Notification
+
+The `UpdateNotificationComponent` automatically detects and notifies users of app updates. It's included in the root component and requires no additional configuration.
+
+### PWA Best Practices
+
+1. **Service Worker**: Only enabled in production builds
+2. **Caching Strategy**: Use freshness strategy for API calls, cache-first for static assets
+3. **Offline Indicators**: Always show clear UI feedback when offline
+4. **Update Handling**: Provide user-friendly update notifications
+5. **Manifest**: Keep manifest.webmanifest updated with correct icons and metadata
+
+### PWA Testing
+
+- Test installability on mobile and desktop browsers
+- Test offline functionality by disabling network
+- Test update notifications by deploying new versions
+- Validate manifest.json with PWA audit tools (Lighthouse)
+
 ## API Integration
 
 ### REST API Standards
@@ -425,8 +518,10 @@ Closes #123
 1. **Lazy Loading**: Use lazy loading for feature modules
 2. **OnPush**: Consider OnPush change detection strategy
 3. **TrackBy**: Always use trackBy with ngFor
-4. **Unsubscribe**: Always unsubscribe from observables
+4. **Unsubscribe**: Always unsubscribe from observables (use OnDestroy lifecycle hook)
 5. **Pure Pipes**: Prefer pure pipes over methods in templates
+6. **Service Worker**: Leverage service worker caching for improved performance
+7. **Bundle Size**: Monitor and optimize bundle sizes (use production builds)
 
 ### Accessibility
 
@@ -446,10 +541,11 @@ Closes #123
 
 - Implement state management solution (NgRx or Akita) if complexity increases
 - Add comprehensive unit and E2E tests
-- Implement PWA features
-- Add internationalization (i18n)
+- Enhance PWA features (background sync, push notifications)
+- Add internationalization (i18n) - partially implemented
 - Implement advanced caching strategies
 - Add monitoring and error tracking (e.g., Sentry)
+- Add IndexedDB for more robust offline storage
 
 ## Resources
 
@@ -460,6 +556,6 @@ Closes #123
 
 ---
 
-**Last Updated**: October 2025
-**Version**: 1.0.0
+**Last Updated**: January 2025
+**Version**: 1.1.0
 

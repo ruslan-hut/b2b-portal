@@ -1,7 +1,11 @@
 import { Injectable } from '@angular/core';
-import { Observable, fromEvent, merge, of } from 'rxjs';
+import { Observable, fromEvent, merge } from 'rxjs';
 import { map, startWith } from 'rxjs/operators';
 
+/**
+ * Service for monitoring network connectivity status
+ * Provides observables and synchronous methods to check online/offline state
+ */
 @Injectable({
   providedIn: 'root'
 })
@@ -24,6 +28,7 @@ export class NetworkService {
 
   /**
    * Observable that emits true when online, false when offline
+   * @returns Observable<boolean> - Emits network status changes
    */
   get isOnline$(): Observable<boolean> {
     return this.online$;
@@ -31,6 +36,7 @@ export class NetworkService {
 
   /**
    * Get current online status synchronously
+   * @returns boolean - True if online, false if offline
    */
   get isOnline(): boolean {
     return navigator.onLine;
@@ -38,6 +44,7 @@ export class NetworkService {
 
   /**
    * Observable that emits true when offline, false when online
+   * @returns Observable<boolean> - Emits inverted network status
    */
   get isOffline$(): Observable<boolean> {
     return this.online$.pipe(

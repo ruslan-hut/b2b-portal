@@ -42,35 +42,46 @@ export class AppComponent implements OnInit, OnDestroy {
     private networkService: NetworkService,
     private cdr: ChangeDetectorRef
   ) {
-    this.authService.currentEntity$.subscribe(entity => {
-      this.currentEntity = entity;
-      this.cdr.markForCheck();
-    });
+    this.subscriptions.add(
+      this.authService.currentEntity$.subscribe(entity => {
+        this.currentEntity = entity;
+        this.cdr.markForCheck();
+      })
+    );
 
-    this.authService.entityType$.subscribe(type => {
-      this.entityType = type;
-    });
+    this.subscriptions.add(
+      this.authService.entityType$.subscribe(type => {
+        this.entityType = type;
+      })
+    );
 
-    this.orderService.currentOrder$.subscribe(items => {
-      this.cartItems = items;
-      this.cartTotal = this.orderService.getCartTotal();
-    });
+    this.subscriptions.add(
+      this.orderService.currentOrder$.subscribe(items => {
+        this.cartItems = items;
+        this.cartTotal = this.orderService.getCartTotal();
+      })
+    );
 
-    this.productService.viewMode$.subscribe(mode => {
-      this.viewMode = mode;
-    });
+    this.subscriptions.add(
+      this.productService.viewMode$.subscribe(mode => {
+        this.viewMode = mode;
+      })
+    );
 
     // Initialize auth route check
     this.isAuthRoute = this.router.url.includes('/auth');
 
     // Show view toggle only on products catalog page
     // Also track if we're on auth route
-    this.router.events.pipe(
-      filter(event => event instanceof NavigationEnd)
-    ).subscribe((event: any) => {
-      this.showViewToggle = event.url.includes('/products/catalog');
-      this.isAuthRoute = event.url.includes('/auth');
-    });
+    this.subscriptions.add(
+      this.router.events.pipe(
+        filter(event => event instanceof NavigationEnd)
+      ).subscribe((event) => {
+        const navEvent = event as NavigationEnd;
+        this.showViewToggle = navEvent.url.includes('/products/catalog');
+        this.isAuthRoute = navEvent.url.includes('/auth');
+      })
+    );
   }
 
   ngOnInit(): void {
@@ -100,7 +111,10 @@ export class AppComponent implements OnInit, OnDestroy {
     });
   }
 
-  // Helper method to get display name
+  /**
+   * Get display name for current entity
+   * @returns Display name string
+   */
   getDisplayName(): string {
     if (!this.currentEntity) return '';
     if (this.entityType === 'user') {
@@ -112,12 +126,18 @@ export class AppComponent implements OnInit, OnDestroy {
     }
   }
 
-  // Helper method to get user data
+  /**
+   * Get user data if entity type is user
+   * @returns User object or null
+   */
   getUserData(): User | null {
     return this.entityType === 'user' ? this.currentEntity as User : null;
   }
 
-  // Helper method to get client data
+  /**
+   * Get client data if entity type is client
+   * @returns Client object or null
+   */
   getClientData(): Client | null {
     return this.entityType === 'client' ? this.currentEntity as Client : null;
   }

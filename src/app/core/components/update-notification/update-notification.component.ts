@@ -1,11 +1,12 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { SwUpdate, VersionReadyEvent } from '@angular/service-worker';
-import { filter, map, Subscription } from 'rxjs';
+import { filter, map } from 'rxjs/operators';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-update-notification',
   templateUrl: './update-notification.component.html',
-  styleUrls: ['./update-notification.component.scss']
+  styleUrl: './update-notification.component.scss'
 })
 export class UpdateNotificationComponent implements OnInit, OnDestroy {
   updateAvailable = false;
@@ -13,6 +14,9 @@ export class UpdateNotificationComponent implements OnInit, OnDestroy {
 
   constructor(private swUpdate: SwUpdate) {}
 
+  /**
+   * Initialize component and check for service worker updates
+   */
   ngOnInit(): void {
     if (!this.swUpdate.isEnabled) {
       return;
@@ -38,6 +42,9 @@ export class UpdateNotificationComponent implements OnInit, OnDestroy {
     this.subscriptions.unsubscribe();
   }
 
+  /**
+   * Reload the application with the new version
+   */
   reloadApp(): void {
     if (this.swUpdate.isEnabled) {
       this.swUpdate.activateUpdate().then(() => {
@@ -48,6 +55,9 @@ export class UpdateNotificationComponent implements OnInit, OnDestroy {
     }
   }
 
+  /**
+   * Dismiss the update notification
+   */
   dismiss(): void {
     this.updateAvailable = false;
   }

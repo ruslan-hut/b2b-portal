@@ -1,6 +1,7 @@
-import { Injectable } from '@angular/core';
-import { Observable, from, of, throwError } from 'rxjs';
-import { catchError, tap } from 'rxjs/operators';
+import { Injectable, OnDestroy } from '@angular/core';
+import { Observable, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
+import { Subscription } from 'rxjs';
 import { NetworkService } from './network.service';
 import { CreateOrderRequest } from '../models/order.model';
 
@@ -18,24 +19,34 @@ const MAX_RETRIES = 3;
 @Injectable({
   providedIn: 'root'
 })
-export class OfflineStorageService {
+export class OfflineStorageService implements OnDestroy {
   private pendingActions: PendingAction[] = [];
+  private networkSubscription?: Subscription;
 
   constructor(private networkService: NetworkService) {
     this.loadPendingActions();
     
     // Watch for online status and sync when back online
-    this.networkService.isOnline$.subscribe(isOnline => {
+    this.networkSubscription = this.networkService.isOnline$.subscribe(isOnline => {
       if (isOnline && this.pendingActions.length > 0) {
         this.syncPendingActions();
       }
     });
   }
 
+  ngOnDestroy(): void {
+    if (this.networkSubscription) {
+      this.networkSubscription.unsubscribe();
+    }
+  }
+
   /**
    * Queue an action to be executed when online
+   * @param type - Type of action to queue
+   * @param data - Data for the action
+   * @returns Observable that resolves when action is queued
    */
-  queueAction<T>(type: 'order', data: CreateOrderRequest): Observable<T> {
+  queueAction(type: 'order', data: CreateOrderRequest): Observable<void> {
     const action: PendingAction = {
       id: this.generateId(),
       type,
@@ -52,13 +63,13 @@ export class OfflineStorageService {
       return this.syncPendingActions().pipe(
         catchError(() => {
           // If sync fails, action remains in queue
-          return of(null as any);
+          return of(undefined);
         })
       );
     }
 
     // Return observable that resolves when action is queued
-    return of(null as any);
+    return of(undefined);
   }
 
   /**
@@ -93,15 +104,16 @@ export class OfflineStorageService {
 
   /**
    * Sync pending actions when online
+   * @returns Observable that resolves when sync is attempted
    */
-  private syncPendingActions(): Observable<any> {
+  private syncPendingActions(): Observable<void> {
     if (!this.networkService.isOnline || this.pendingActions.length === 0) {
-      return of(null);
+      return of(undefined);
     }
 
     // This will be called by the service that actually performs the action
     // For now, we just return an observable
-    return of(null);
+    return of(undefined);
   }
 
   /**
@@ -140,9 +152,10 @@ export class OfflineStorageService {
 
   /**
    * Generate a unique ID for pending actions
+   * @returns Unique identifier string
    */
   private generateId(): string {
-    return `pending_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return `pending_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
   }
 }
 
