@@ -78,12 +78,18 @@
       </div>
 
       <div class="cart-items" *ngIf="cartItems.length > 0">
-        <div class="cart-item" *ngFor="let item of cartItems">
+        <div class="cart-item" *ngFor="let item of cartItems" [class.insufficient-stock]="item.insufficientStock">
           <div class="item-info">
             <span class="item-name">{{ item.productName }}</span>
             <span class="item-details">
               ${{ item.price.toFixed(2) }} × {{ item.quantity }}
             </span>
+            <div class="stock-warning" *ngIf="item.insufficientStock">
+              <span class="warning-icon">⚠️</span>
+              <span class="warning-text">
+                {{ 'products.insufficientStock' | translate: {available: item.availableQuantity ?? 0} }}
+              </span>
+            </div>
           </div>
           <div class="item-actions">
             <span class="item-total">${{ item.subtotal.toFixed(2) }}</span>

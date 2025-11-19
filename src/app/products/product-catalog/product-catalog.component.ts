@@ -145,22 +145,7 @@ export class ProductCatalogComponent implements OnInit {
   }
 
   addToCart(product: Product): void {
-    // Validate available quantity before adding to cart
-    const availableQty = product.availableQuantity ?? product.quantity ?? 0;
-
-    // Check current cart quantity for this product
-    const cartItem = this.cartItems.find(item => item.productId === product.id);
-    const currentCartQty = cartItem ? cartItem.quantity : 0;
-    const requestedQty = currentCartQty + 1;
-
-    if (availableQty < requestedQty) {
-      const errorMsg = this.translationService.instant('product.insufficientStock', {
-        available: availableQty
-      });
-      alert(errorMsg);
-      return;
-    }
-
+    // No stock validation here - validation happens only on order confirmation
     const orderItem: OrderItem = {
       productId: product.id,
       productName: product.name,
@@ -182,19 +167,7 @@ export class ProductCatalogComponent implements OnInit {
       return;
     }
 
-    // Validate against available quantity
-    const product = this.products.find(p => p.id === productId);
-    if (product) {
-      const availableQty = product.availableQuantity ?? product.quantity ?? 0;
-      if (quantity > availableQty) {
-        const errorMsg = this.translationService.instant('product.insufficientStock', {
-          available: availableQty
-        });
-        alert(errorMsg);
-        return;
-      }
-    }
-
+    // No stock validation here - validation happens only on order confirmation
     this.orderService.updateCartItemQuantity(productId, quantity);
   }
 
@@ -226,27 +199,13 @@ export class ProductCatalogComponent implements OnInit {
 
   addBulkToCart(): void {
     let itemsUpdated = 0;
-    const errors: string[] = [];
 
     // Process all products that have bulk quantities set
+    // No stock validation here - validation happens only on order confirmation
     this.bulkQuantities.forEach((quantity, productId) => {
       if (quantity > 0) {
         const product = this.products.find(p => p.id === productId);
         if (product && product.inStock) {
-          // Validate against available quantity
-          const availableQty = product.availableQuantity ?? product.quantity ?? 0;
-
-          if (quantity > availableQty) {
-            errors.push(
-              this.translationService.instant('product.bulkInsufficientStock', {
-                product: product.name,
-                requested: quantity,
-                available: availableQty
-              })
-            );
-            return; // Skip this product
-          }
-
           // Check if item is already in cart
           const existingItem = this.cartItems.find(item => item.productId === productId);
 
@@ -268,11 +227,6 @@ export class ProductCatalogComponent implements OnInit {
         }
       }
     });
-
-    // Show errors if any
-    if (errors.length > 0) {
-      alert(errors.join('\n'));
-    }
 
     if (itemsUpdated > 0) {
       // Save the updated cart as draft on the server

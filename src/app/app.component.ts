@@ -8,8 +8,14 @@ import { ErrorHandlerService } from './core/services/error-handler.service';
 import { NetworkService } from './core/services/network.service';
 import { User, Client } from './core/models/user.model';
 import { OrderItem, CreateOrderRequest, ShippingAddress } from './core/models/order.model';
-import { filter } from 'rxjs/operators';
-import { Subscription } from 'rxjs';
+import { filter, map } from 'rxjs/operators';
+import { Subscription, forkJoin, of } from 'rxjs';
+
+// Extended OrderItem interface for cart display with stock validation
+interface CartItem extends OrderItem {
+  insufficientStock?: boolean;
+  availableQuantity?: number;
+}
 
 @Component({
   selector: 'app-root',
@@ -20,7 +26,7 @@ export class AppComponent implements OnInit, OnDestroy {
   title = 'DARK B2B';
   currentEntity: User | Client | null = null;
   entityType: 'user' | 'client' | null = null;
-  cartItems: OrderItem[] = [];
+  cartItems: CartItem[] = [];
   showCartPanel = false;
   showOrderDialog = false;
   cartTotal = 0;
@@ -169,6 +175,74 @@ export class AppComponent implements OnInit, OnDestroy {
 
     this.isCreatingOrder = true;
 
+    // Validate stock availability for all cart items
+    this.validateCartStock().subscribe({
+      next: (hasInsufficientStock) => {
+        if (hasInsufficientStock) {
+          // Stop order creation and keep the validation results visible
+          this.isCreatingOrder = false;
+          this.cdr.markForCheck();
+          return;
+        }
+
+        // All items have sufficient stock, proceed with order creation
+        this.createOrder();
+      },
+      error: (error) => {
+        this.isCreatingOrder = false;
+        console.error('Error validating stock:', error);
+        const errorMessage = this.errorHandler.getOrderErrorMessage(error);
+        alert(errorMessage);
+      }
+    });
+  }
+
+  /**
+   * Validate stock availability for all items in cart
+   * Returns Observable<boolean> - true if any items have insufficient stock
+   */
+  private validateCartStock() {
+    // Create an array of observables to fetch available quantities
+    const stockChecks = this.cartItems.map(item =>
+      this.productService.getAvailableQuantity(item.productId).pipe(
+        map(availableQty => ({
+          productId: item.productId,
+          requestedQty: item.quantity,
+          availableQty: availableQty
+        }))
+      )
+    );
+
+    return forkJoin(stockChecks).pipe(
+      map(results => {
+        let hasInsufficientStock = false;
+
+        // Update cart items with stock validation results
+        this.cartItems = this.cartItems.map(item => {
+          const stockInfo = results.find(r => r.productId === item.productId);
+          if (stockInfo) {
+            const insufficient = stockInfo.requestedQty > stockInfo.availableQty;
+            if (insufficient) {
+              hasInsufficientStock = true;
+            }
+            return {
+              ...item,
+              insufficientStock: insufficient,
+              availableQuantity: stockInfo.availableQty
+            };
+          }
+          return item;
+        });
+
+        return hasInsufficientStock;
+      })
+    );
+  }
+
+  /**
+   * Create order after stock validation passes
+   */
+  private createOrder(): void {
     // Create order with default/empty shipping address
     const emptyAddress: ShippingAddress = {
       street: '',

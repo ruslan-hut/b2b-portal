@@ -80,7 +80,7 @@
     "crmInventory": "Інвентар CRM",
     "allocated": "Зарезервовано",
     "inventoryDetails": "Деталі інвентарю",
-    "insufficientStock": "Доступно лише {{available}} одиниць",
+    "insufficientStock": "Доступно лише {{available}}",
     "bulkInsufficientStock": "{{product}}: запитано {{requested}}, доступно лише {{available}}"
   },
   "orders": {
