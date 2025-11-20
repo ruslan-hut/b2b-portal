@@ -410,9 +410,16 @@ export class ProductService {
    * Available quantity = CRM quantity - allocated quantity
    * This is the recommended approach per FRONTEND_CHANGES.md
    */
-  getAvailableQuantity(productUid: string): Observable<number> {
+  getAvailableQuantity(productUid: string, storeUid?: string): Observable<number> {
+    // New backend requires store_uid query parameter. If not provided, return 0 and log.
+    if (!storeUid) {
+      console.warn('getAvailableQuantity called without storeUid for product', productUid);
+      return of(0);
+    }
+
+    const params = { store_uid: storeUid };
     return this.http.get<ApiResponse<{ available_quantity: number }>>(
-      `${this.apiUrl}/product/${productUid}/available`
+      `${this.apiUrl}/products/${productUid}/available`, { params }
     ).pipe(
       map(response => {
         if (!response.success) {
@@ -421,12 +428,9 @@ export class ProductService {
         return response.data.available_quantity;
       }),
       catchError(error => {
-        console.error('Error fetching available quantity, falling back to CRM quantity:', error);
-        // Fallback: use product.quantity if available endpoint doesn't exist yet
-        return this.http.get<ApiResponse<BackendProduct>>(`${this.apiUrl}/product/${productUid}`).pipe(
-          map(res => res.success ? res.data.quantity : 0),
-          catchError(() => of(0))
-        );
+        console.error('Error fetching available quantity for store, falling back to 0:', error);
+        // No reliable fallback - product-level quantity was removed in the new backend
+        return of(0);
       })
     );
   }
@@ -436,6 +440,11 @@ export class ProductService {
    * NOW USES AVAILABLE QUANTITY instead of CRM quantity
    */
   validateStock(productId: string, requestedQuantity: number): Observable<boolean> {
+    // Read store UID from stored auth data if present
+    const authRaw = localStorage.getItem('BASE_AUTH_DATA');
+    const authData = authRaw ? JSON.parse(authRaw) : null;
+    const storeUid = authData?.entity?.store_uid;
+
     return this.http.get<ApiResponse<BackendProduct>>(`${this.apiUrl}/product/${productId}`).pipe(
       switchMap(response => {
         if (!response.success) {
@@ -450,7 +459,7 @@ export class ProductService {
         }
 
         // Validate against AVAILABLE quantity, not CRM quantity
-        return this.getAvailableQuantity(productId).pipe(
+        return this.getAvailableQuantity(productId, storeUid).pipe(
           map(availableQty => availableQty >= requestedQuantity),
           catchError(() => of(false))
         );
@@ -470,17 +479,23 @@ export class ProductService {
           return of(undefined);
         }
 
-        // Fetch available quantity and enrich the product
-        return this.getAvailableQuantity(uid).pipe(
+        // Read store UID from stored auth data if present
+        const authRaw = localStorage.getItem('BASE_AUTH_DATA');
+        const authData = authRaw ? JSON.parse(authRaw) : null;
+        const storeUid = authData?.entity?.store_uid;
+
+        // Fetch available quantity for user's store and enrich the product
+        return this.getAvailableQuantity(uid, storeUid).pipe(
           map(availableQty => {
-            const enrichedProduct = { ...product };
+            const enrichedProduct = { ...product } as Product;
             enrichedProduct.availableQuantity = availableQty;
-            enrichedProduct.allocatedQuantity = (product.quantity || 0) - availableQty;
+            // allocatedQuantity can't be computed reliably without CRM quantity per-store, set to 0
+            enrichedProduct.allocatedQuantity = Math.max(0, (product.quantity || 0) - availableQty);
             return enrichedProduct;
           }),
           catchError(() => {
-            // If available quantity fetch fails, use CRM quantity as fallback
-            product.availableQuantity = product.quantity;
+            // If available quantity fetch fails, mark available quantity as 0
+            product.availableQuantity = 0;
             product.allocatedQuantity = 0;
             return of(product);
           })
@@ -500,21 +515,27 @@ export class ProductService {
           return of([]);
         }
 
+        // Read store UID from stored auth data if present
+        const authRaw = localStorage.getItem('BASE_AUTH_DATA');
+        const authData = authRaw ? JSON.parse(authRaw) : null;
+        const storeUid = authData?.entity?.store_uid;
+
         // Fetch available quantities for all products in parallel
         const enrichedProducts$ = products.map(product =>
-          this.getAvailableQuantity(product.id).pipe(
+          this.getAvailableQuantity(product.id, storeUid).pipe(
             map(availableQty => {
-              const enriched = { ...product };
+              const enriched = { ...product } as Product;
               enriched.availableQuantity = availableQty;
-              enriched.allocatedQuantity = (product.quantity || 0) - availableQty;
+              enriched.allocatedQuantity = Math.max(0, (product.quantity || 0) - availableQty);
               // Update inStock based on available quantity
               enriched.inStock = product.active !== false && availableQty > 0;
               return enriched;
             }),
             catchError(() => {
-              // Fallback: use CRM quantity
-              product.availableQuantity = product.quantity;
+              // If availability fetch fails, mark as out of stock for the user's store
+              product.availableQuantity = 0;
               product.allocatedQuantity = 0;
+              product.inStock = false;
               return of(product);
             })
           )

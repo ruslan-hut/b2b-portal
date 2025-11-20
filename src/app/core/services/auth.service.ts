@@ -158,6 +158,11 @@ export class AuthService {
           if (authData) {
             authData.entity = entity;
             authData.entityType = response.data.entity_type;
+            // Persist user's store UID if available (multi-store support)
+            if (response.data.user && (response.data.user as any).store_uid) {
+              // Ensure stored entity reflects store_uid
+              authData.entity = response.data.user as any;
+            }
             this.storeAuthData(authData);
           }
 

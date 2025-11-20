@@ -202,9 +202,13 @@ export class AppComponent implements OnInit, OnDestroy {
    * Returns Observable<boolean> - true if any items have insufficient stock
    */
   private validateCartStock() {
-    // Create an array of observables to fetch available quantities
+    // Read store UID from current entity (if user)
+    const currentUser = this.getUserData();
+    const storeUid = currentUser?.store_uid;
+
+    // Create an array of observables to fetch available quantities for the user's store
     const stockChecks = this.cartItems.map(item =>
-      this.productService.getAvailableQuantity(item.productId).pipe(
+      this.productService.getAvailableQuantity(item.productId, storeUid).pipe(
         map(availableQty => ({
           productId: item.productId,
           requestedQty: item.quantity,

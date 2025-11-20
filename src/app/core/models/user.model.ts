@@ -6,6 +6,8 @@ export interface User {
   first_name: string;
   last_name: string;
   role: string;
+  // Optional store assignment (new in multi-store backend)
+  store_uid?: string;
 }
 
 // Client entity (from /auth/me endpoint)
@@ -90,4 +92,3 @@ export interface ApiResponse<T> {
   data: T;
   message?: string;
 }
-
