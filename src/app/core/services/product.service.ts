@@ -137,19 +137,21 @@ export class ProductService {
   }
 
   getProductById(uid: string): Observable<Product | undefined> {
-    return this.http.get<ApiResponse<BackendProduct>>(`${this.apiUrl}/product/${uid}`).pipe(
+    // The backend removed single-entity GET for products. Use the batch endpoint with a single UID.
+    const payload = { data: [uid] };
+    return this.http.post<ApiResponse<BackendProduct[]>>(`${this.apiUrl}/product/batch`, payload).pipe(
       switchMap(response => {
-        if (!response.success) {
+        if (!response.success || !response.data || response.data.length === 0) {
           throw new Error(response.message || 'Product not found');
         }
 
-        const backendProduct = response.data;
+        const backendProduct = response.data[0];
         const currentLanguage = this.translationService.getCurrentLanguage();
 
-        // Fetch description using current language
-        return this.getProductDescription(uid, currentLanguage).pipe(
-          switchMap(desc => {
-            // If product has a category, fetch its name
+        // Fetch description using batch descriptions helper (returns single-language name/desc)
+        return this.getBatchProductDescriptions([uid], currentLanguage).pipe(
+          switchMap(descriptionsMap => {
+            const desc = descriptionsMap.get(uid);
             const categoryUid = backendProduct.category_uid || backendProduct.category;
             if (categoryUid) {
               return this.getBatchCategoryDescriptions([categoryUid], currentLanguage).pipe(
@@ -165,7 +167,7 @@ export class ProductService {
         );
       }),
       catchError(error => {
-        console.error('Error fetching product:', error);
+        console.error('Error fetching product (batch):', error);
         return of(undefined);
       })
     );
@@ -175,19 +177,22 @@ export class ProductService {
    * Fetch product description (multi-language) - SINGLE product
    */
   getProductDescription(productUid: string, language: string = 'en'): Observable<ProductDescription | null> {
-    return this.http.get<ApiResponse<ProductDescription[]>>(
-      `${this.apiUrl}/product/description/${productUid}`
-    ).pipe(
-      map(response => {
-        if (!response.success || !response.data.length) {
+    // The single product description endpoint was removed. Use the batch descriptions endpoint
+    return this.getBatchProductDescriptions([productUid], language).pipe(
+      map(mapResult => {
+        const desc = mapResult.get(productUid);
+        if (!desc) {
           return null;
         }
-
-        // Find description in requested language, or fallback to first available
-        return response.data.find(d => d.language === language) || response.data[0];
+        return {
+          product_uid: productUid,
+          language,
+          name: desc.name,
+          description: desc.description
+        } as ProductDescription;
       }),
       catchError(error => {
-        console.error('Error fetching product description:', error);
+        console.error('Error fetching product description (batch):', error);
         return of(null);
       })
     );
@@ -262,6 +267,36 @@ export class ProductService {
         console.error('Error fetching batch product descriptions:', error);
         // Return whatever we have from cache even if API fails
         return of(resultMap);
+      })
+    );
+  }
+
+  /**
+   * Get available quantities for multiple products in a single store (batch)
+   * Returns a map: { [productUid]: availableNumber }
+   */
+  getAvailableQuantities(storeUid: string | undefined, productUids: string[]): Observable<{ [key: string]: number }> {
+    if (!storeUid || !productUids || productUids.length === 0) {
+      return of({});
+    }
+
+    const payload = {
+      data: [{ store_uid: storeUid, product_uids: productUids }]
+    };
+
+    return this.http.post<ApiResponse<any>>(`${this.apiUrl}/store/inventory/available`, payload).pipe(
+      map(response => {
+        if (!response.success || !response.data) {
+          return {};
+        }
+
+        // Response is expected to be nested by store_uid then product_uid
+        const storeMap = response.data[storeUid] || {};
+        return storeMap as { [key: string]: number };
+      }),
+      catchError(error => {
+        console.error('Error fetching available quantities (batch):', error);
+        return of({});
       })
     );
   }
@@ -411,25 +446,19 @@ export class ProductService {
    * This is the recommended approach per FRONTEND_CHANGES.md
    */
   getAvailableQuantity(productUid: string, storeUid?: string): Observable<number> {
-    // New backend requires store_uid query parameter. If not provided, return 0 and log.
+    // Use the batch available quantities endpoint for a single product
     if (!storeUid) {
       console.warn('getAvailableQuantity called without storeUid for product', productUid);
       return of(0);
     }
 
-    const params = { store_uid: storeUid };
-    return this.http.get<ApiResponse<{ available_quantity: number }>>(
-      `${this.apiUrl}/products/${productUid}/available`, { params }
-    ).pipe(
-      map(response => {
-        if (!response.success) {
-          throw new Error('Failed to fetch available quantity');
-        }
-        return response.data.available_quantity;
+    return this.getAvailableQuantities(storeUid, [productUid]).pipe(
+      map(mapResult => {
+        const val = mapResult[productUid];
+        return typeof val === 'number' ? val : 0;
       }),
       catchError(error => {
-        console.error('Error fetching available quantity for store, falling back to 0:', error);
-        // No reliable fallback - product-level quantity was removed in the new backend
+        console.error('Error fetching available quantity (batch fallback):', error);
         return of(0);
       })
     );
@@ -439,19 +468,17 @@ export class ProductService {
    * Validate product stock before adding to cart
    * NOW USES AVAILABLE QUANTITY instead of CRM quantity
    */
-  validateStock(productId: string, requestedQuantity: number): Observable<boolean> {
-    // Read store UID from stored auth data if present
-    const authRaw = localStorage.getItem('BASE_AUTH_DATA');
-    const authData = authRaw ? JSON.parse(authRaw) : null;
-    const storeUid = authData?.entity?.store_uid;
-
-    return this.http.get<ApiResponse<BackendProduct>>(`${this.apiUrl}/product/${productId}`).pipe(
-      switchMap(response => {
-        if (!response.success) {
+   validateStock(productId: string, requestedQuantity: number): Observable<boolean> {
+     // Read store UID from stored auth data if present
+     const authRaw = localStorage.getItem('BASE_AUTH_DATA');
+     const authData = authRaw ? JSON.parse(authRaw) : null;
+     const storeUid = authData?.entity?.store_uid;
+    // Use batch product fetch via getProductById (which uses product/batch)
+    return this.getProductById(productId).pipe(
+      switchMap(product => {
+        if (!product) {
           return of(false);
         }
-
-        const product = response.data;
 
         // Product must be active
         if (!product.active) {
@@ -466,83 +493,85 @@ export class ProductService {
       }),
       catchError(() => of(false))
     );
-  }
+   }
 
-  /**
-   * Get product with available quantity information
-   * Enriches the product data with available quantity
-   */
-  getProductWithAvailability(uid: string): Observable<Product | undefined> {
-    return this.getProductById(uid).pipe(
-      switchMap(product => {
-        if (!product) {
-          return of(undefined);
-        }
+   /**
+    * Get product with available quantity information
+    * Enriches the product data with available quantity
+    */
+   getProductWithAvailability(uid: string): Observable<Product | undefined> {
+     return this.getProductById(uid).pipe(
+       switchMap(product => {
+         if (!product) {
+           return of(undefined);
+         }
 
-        // Read store UID from stored auth data if present
-        const authRaw = localStorage.getItem('BASE_AUTH_DATA');
-        const authData = authRaw ? JSON.parse(authRaw) : null;
-        const storeUid = authData?.entity?.store_uid;
+         // Read store UID from stored auth data if present
+         const authRaw = localStorage.getItem('BASE_AUTH_DATA');
+         const authData = authRaw ? JSON.parse(authRaw) : null;
+         const storeUid = authData?.entity?.store_uid;
 
-        // Fetch available quantity for user's store and enrich the product
-        return this.getAvailableQuantity(uid, storeUid).pipe(
+         // Fetch available quantity for user's store and enrich the product
+         return this.getAvailableQuantity(uid, storeUid).pipe(
           map(availableQty => {
             const enrichedProduct = { ...product } as Product;
             enrichedProduct.availableQuantity = availableQty;
-            // allocatedQuantity can't be computed reliably without CRM quantity per-store, set to 0
-            enrichedProduct.allocatedQuantity = Math.max(0, (product.quantity || 0) - availableQty);
+            // allocatedQuantity can't be computed reliably without per-store CRM quantity; set to 0
+            enrichedProduct.allocatedQuantity = 0;
             return enrichedProduct;
           }),
-          catchError(() => {
-            // If available quantity fetch fails, mark available quantity as 0
-            product.availableQuantity = 0;
-            product.allocatedQuantity = 0;
-            return of(product);
-          })
-        );
-      })
-    );
-  }
+           catchError(() => {
+             // If available quantity fetch fails, mark available quantity as 0
+             product.availableQuantity = 0;
+             product.allocatedQuantity = 0;
+             return of(product);
+           })
+         );
+       })
+     );
+   }
 
-  /**
-   * Get products with availability information
-   * Enriches product list with available quantities for each product
-   */
-  getProductsWithAvailability(offset: number = 0, limit: number = 100): Observable<Product[]> {
-    return this.getProducts(offset, limit).pipe(
-      switchMap(products => {
-        if (products.length === 0) {
-          return of([]);
-        }
+   /**
+    * Get products with availability information
+    * Enriches product list with available quantities for each product
+    */
+   getProductsWithAvailability(offset: number = 0, limit: number = 100): Observable<Product[]> {
+     return this.getProducts(offset, limit).pipe(
+       switchMap(products => {
+         if (products.length === 0) {
+           return of([]);
+         }
 
-        // Read store UID from stored auth data if present
-        const authRaw = localStorage.getItem('BASE_AUTH_DATA');
-        const authData = authRaw ? JSON.parse(authRaw) : null;
-        const storeUid = authData?.entity?.store_uid;
-
-        // Fetch available quantities for all products in parallel
-        const enrichedProducts$ = products.map(product =>
-          this.getAvailableQuantity(product.id, storeUid).pipe(
-            map(availableQty => {
+         // Read store UID from stored auth data if present
+         const authRaw = localStorage.getItem('BASE_AUTH_DATA');
+         const authData = authRaw ? JSON.parse(authRaw) : null;
+         const storeUid = authData?.entity?.store_uid;
+        // Use batch endpoint to fetch available quantities for all products in one request
+        const productIds = products.map(p => p.id);
+        return this.getAvailableQuantities(storeUid, productIds).pipe(
+          map(availableMap => {
+            return products.map(product => {
               const enriched = { ...product } as Product;
+              const availableQty = availableMap[product.id] || 0;
               enriched.availableQuantity = availableQty;
-              enriched.allocatedQuantity = Math.max(0, (product.quantity || 0) - availableQty);
-              // Update inStock based on available quantity
+              enriched.allocatedQuantity = 0; // can't compute without per-store CRM quantity
               enriched.inStock = product.active !== false && availableQty > 0;
               return enriched;
-            }),
-            catchError(() => {
-              // If availability fetch fails, mark as out of stock for the user's store
+            });
+          }),
+          // Ensure the catchError returns an Observable<Product[]> explicitly so TS can infer the correct type
+          catchError((): Observable<Product[]> => {
+            // If batch availability fetch fails, mark all as out of stock for the user's store
+            const fallback = products.map(product => {
               product.availableQuantity = 0;
               product.allocatedQuantity = 0;
               product.inStock = false;
-              return of(product);
-            })
-          )
+              return product;
+            });
+            return of(fallback);
+          })
         );
-
-        return combineLatest(enrichedProducts$);
-      })
-    );
-  }
-}
+       })
+     );
+   }
+ }

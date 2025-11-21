@@ -88,7 +88,7 @@ Authorization: Bearer <your-access-token>
 Authorization: Bearer <access-token>
 ```
 
-**Response:**
+**Response (User):**
 ```json
 {
   "status": "success",
@@ -100,7 +100,8 @@ Authorization: Bearer <access-token>
       "email": "admin@example.com",
       "first_name": "John",
       "last_name": "Doe",
-      "role": "admin"
+      "role": "admin",
+      "store_uid": "store-456"
     },
     "token_info": {
       "token_uid": "token-abc123",
@@ -242,7 +243,7 @@ For complete authentication API reference, see [AUTH_API_REFERENCE.md](../AUTH_A
 ## Important Notes
 
 ### Batch Operations Support
-All main entity operations (User, Product, Client, Category, Currency, Order, Attribute) support **batch upsert** and **batch delete** operations using array inputs.
+All main entity operations (User, Product, Client, Category, Currency, Order, Attribute) support **batch upsert**, **batch delete**, and **batch retrieval** operations using array inputs.
 
 ### Upsert Pattern
 All POST endpoints follow the **upsert pattern** (create OR update):
@@ -250,11 +251,47 @@ All POST endpoints follow the **upsert pattern** (create OR update):
 - If entity doesn't exist: **CREATE**
 - No separate create/update endpoints
 
-### Request Format
-All requests that modify data use a standardized format:
+### Batch Retrieval Pattern
+**NEW**: All entities should support batch retrieval to minimize HTTP requests:
+- **Single entity**: `GET /entity/{uid}` - Get one entity (backward compatible)
+- **Multiple entities**: `POST /entity/batch` - Get multiple entities by UIDs (preferred for bulk operations)
+
+**Batch Retrieval Request Format:**
 ```json
 {
-  "data": [ /* array of objects */ ]
+  "data": ["uid1", "uid2", "uid3"]
+}
+```
+
+**Batch Retrieval Response:**
+```json
+{
+  "status": "success",
+  "data": [
+    { "uid": "uid1", "name": "Entity 1", ... },
+    { "uid": "uid2", "name": "Entity 2", ... },
+    { "uid": "uid3", "name": "Entity 3", ... }
+  ],
+  "timestamp": "2023-10-27T10:00:00Z"
+}
+}
+```
+
+**Benefits:**
+- Reduces N+1 query problems
+- Minimizes HTTP overhead
+- Improves frontend performance
+- Example: Load 100 products in 1 request instead of 100 requests
+
+**Currently Implemented:**
+- `POST /product/descriptions/batch` - Get descriptions for multiple products
+- `POST /order/items/batch` - Get items for multiple orders
+
+### Request Format
+All requests that modify or retrieve data use a standardized format:
+```json
+{
+  "data": [ /* array of objects or UIDs */ ]
 }
 ```
 
@@ -299,7 +336,8 @@ All error responses will have the following structure:
               "password": "string",
               "first_name": "string",
               "last_name": "string",
-              "user_role": "string"
+              "user_role": "string",
+              "store_uid": "store-456" // Optional
             }
           ]
         }
@@ -313,49 +351,73 @@ All error responses will have the following structure:
         *   `limit`: (optional) integer, default 100
     *   **Response:** Array of users with metadata
 
-#### Get User by UID
-*   **GET** `/user/{uid}`
-    *   **Response:** Single user object
+#### Get Users Batch
+*   **POST** `/user/batch`
+    *   **Description:** Retrieve multiple users by their UIDs.
+    *   **Request Body:**
+        ```json
+        {
+          "data": ["user-123", "user-456"]
+        }
+        ```
+    *   **Response:** Array of user objects.
 
-#### Delete Users
-*   **DELETE** `/user/{uid}` - Delete single user (backward compatible)
-*   **DELETE** `/user` - Batch delete
+#### Delete Users Batch
+*   **POST** `/user/delete`
+    *   **Description:** Delete multiple users by their UIDs.
     *   **Request Body:**
         ```json
         {
           "data": ["user-123", "user-456", "user-789"]
         }
         ```
+    *   **Response:** Success message.
 
-#### Find User by Email
-*   **GET** `/user/email/{email}`
-    *   **Response:** Single user object
+#### Find Users by Email Batch
+*   **POST** `/user/find/email`
+    *   **Description:** Find multiple users by their email addresses.
+    *   **Request Body:**
+        ```json
+        {
+          "data": ["user1@example.com", "user2@example.com"]
+        }
+        ```
+    *   **Response:** Array of user objects.
 
-#### Find User by Username
-*   **GET** `/user/username/{username}`
-    *   **Response:** Single user object
+#### Find Users by Username Batch
+*   **POST** `/user/find/username`
+    *   **Description:** Find multiple users by their usernames.
+    *   **Request Body:**
+        ```json
+        {
+          "data": ["username1", "username2"]
+        }
+        ```
+    *   **Response:** Array of user objects.
 
 ---
 
 ### Product
 
-#### Product Quantity Management
-**IMPORTANT:** The product quantity system has been refactored to separate CRM inventory from local order allocations:
+#### Product Inventory Management
+**IMPORTANT:** The inventory system uses a **multi-store architecture**:
 
-- **`product.quantity`**: Stores the quantity received from your external CRM system (read-only for order operations)
-- **Order Allocations**: When orders are created with status `"new"`, quantities are allocated in a separate `order_product_allocations` table
-- **Available Quantity**: Calculated as `product.quantity - SUM(allocated_quantities)`
-- **Stock Updates**: Use `/product/stock` endpoint to update CRM quantities. Order creation/deletion does NOT modify `product.quantity`
+- **Products NO LONGER have a global quantity field** - inventory is tracked per-store
+- **Store Inventory**: Each store tracks its own inventory via the `/store/inventory` endpoints
+- **Order Allocations**: When orders are created with status `"new"`, quantities are allocated from the client's assigned store
+- **Available Quantity**: Calculated per-store as `store_inventory.quantity - SUM(allocations WHERE store_uid = X)`
+- **Client-Store Association**: Each client is assigned to a specific store, and orders allocate from that store only
 - **Allocation Lifecycle**:
-  - Created when order status is `"new"` (user confirmed)
+  - Created when order status is `"new"` (user confirmed, from client's store)
   - Maintained during `"processing"` status (CRM fulfilling)
   - Deleted when order status becomes `"confirmed"` (order fulfilled)
 
 This design ensures:
-- CRM data remains untouched by order operations
-- Accurate available inventory calculation
-- Ability to see which orders have reserved which products
-- Simple reconciliation with external CRM systems
+- Multi-location inventory management
+- Per-store stock tracking and allocation
+- Clients always order from their assigned store
+- Real-time available inventory per location
+- See the **[Store](#store)** section for inventory management endpoints
 
 #### Upsert Products (Create or Update)
 *   **POST** `/product`
@@ -366,15 +428,16 @@ This design ensures:
             {
               "uid": "prod-123", // Optional for create, required for update
               "price": 1000,
-              "quantity": 50, // CRM quantity - not modified by order operations
               "category_uid": "cat-456",
-              "active": true // Optional, defaults to true
+              "active": true, // Optional, defaults to true
+              "sort_order": 10, // Optional, defaults to 0
+              "is_new": true // Optional, defaults to false
             }
           ]
         }
         ```
     *   **Response:** Array of created/updated product UIDs
-    *   **Note:** The `quantity` field represents CRM inventory and is NOT automatically decreased when orders are created
+    *   **Note:** Products no longer have a quantity field. Use the Store inventory endpoints to manage stock per location
 
 #### List Products
 *   **GET** `/product`
@@ -383,47 +446,38 @@ This design ensures:
         *   `limit`: (optional) integer, default 100
     *   **Response:** Array of products with metadata
 
-#### Get Product by UID
-*   **GET** `/product/{uid}`
-    *   **Response:** Single product object
+#### Get Products Batch
+*   **POST** `/product/batch`
+    *   **Description:** Retrieve multiple products by their UIDs.
+    *   **Request Body:**
+        ```json
+        {
+          "data": ["prod-123", "prod-456"]
+        }
+        ```
+    *   **Response:** Array of product objects.
 
-#### Delete Products
-*   **DELETE** `/product/{uid}` - Delete single product (backward compatible)
-*   **DELETE** `/product` - Batch delete
+#### Delete Products Batch
+*   **POST** `/product/delete`
+    *   **Description:** Delete multiple products by their UIDs.
     *   **Request Body:**
         ```json
         {
           "data": ["prod-123", "prod-456", "prod-789"]
         }
         ```
+    *   **Response:** Success message.
 
-#### Find Products by Category
-*   **GET** `/product/category/{categoryUID}`
-    *   **Query Parameters:**
-        *   `offset`: (optional) integer, default 0
-        *   `limit`: (optional) integer, default 100
-    *   **Response:** Array of products
-
-#### Update Product Stock (Batch)
-*   **POST** `/product/stock`
-    *   **Description:** Updates CRM quantity for products. This should be used when syncing with external CRM system. Order creation/deletion does NOT affect this value.
+#### Find Products by Category Batch
+*   **POST** `/product/find/category`
+    *   **Description:** Find multiple products by their category UIDs.
     *   **Request Body:**
         ```json
         {
-          "data": [
-            {
-              "uid": "prod-123",
-              "quantity": 50  // New CRM quantity
-            },
-            {
-              "uid": "prod-456",
-              "quantity": 100
-            }
-          ]
+          "data": ["cat-123", "cat-456"]
         }
         ```
-    *   **Response:** Success message
-    *   **Use Case:** Synchronizing inventory from external CRM/ERP systems
+    *   **Response:** Array of product objects.
 
 #### Update Product Active Status (Batch)
 *   **POST** `/product/active`
@@ -468,9 +522,9 @@ This design ensures:
         ```
     *   **Response:** Success message
 
-#### Remove Product Descriptions
-*   **DELETE** `/product/description/{productUID}/{language}` - Delete single (backward compatible)
-*   **DELETE** `/product/description` - Batch delete
+#### Delete Product Descriptions Batch
+*   **POST** `/product/description/delete`
+    *   **Description:** Delete multiple product descriptions.
     *   **Request Body:**
         ```json
         {
@@ -480,22 +534,20 @@ This design ensures:
           ]
         }
         ```
-
-#### Get Product Descriptions
-*   **GET** `/product/description/{productUID}`
-    *   **Response:** Array of product descriptions
+    *   **Response:** Success message.
 
 #### Get Batch Product Descriptions
 *   **POST** `/product/descriptions/batch`
     *   **Description:** Retrieve simplified product descriptions (UID + Name + Description) for multiple products in a specific language. Useful for bulk operations and displaying product names and descriptions in lists.
+    *   **Query Parameters:**
+        *   `language`: (required) string
     *   **Request Body:**
         ```json
         {
-          "product_uids": [
+          "data": [
             "prod-123",
             "prod-456"
-          ],
-          "language": "en"
+          ]
         }
         ```
     *   **Response:**
@@ -524,13 +576,13 @@ This design ensures:
 ### Order
 
 #### Order and Product Allocation System
-**IMPORTANT:** Order operations now use a product allocation system with a simplified status flow:
+**IMPORTANT:** Order operations now use a **store-based product allocation system** with a simplified status flow:
 
 **Order Status Flow:**
 ```
 Frontend:    "draft" (saved cart)  →  "new" (user confirmed)
              ↓                        ↓
-             No allocation           Allocation created
+             No allocation           Allocation created FROM CLIENT'S STORE
 
 External CRM:  "new"  →  "processing"  →  "confirmed"
                ↓          ↓               ↓
@@ -539,13 +591,13 @@ External CRM:  "new"  →  "processing"  →  "confirmed"
 
 **Status Descriptions:**
 - **`"draft"`**: Saved cart, no validation, no allocation
-- **`"new"`**: User confirmed order, stock validated, allocation created
+- **`"new"`**: User confirmed order, stock validated **in client's assigned store**, allocation created
 - **`"processing"`**: CRM processing, allocation exists
 - **`"confirmed"`**: CRM fulfilled order, allocation **deleted**
 
 **Frontend Can Only Create:**
 - **Status `"draft"`** - Save cart for later
-- **Status `"new"`** - Confirm order and reserve inventory
+- **Status `"new"`** - Confirm order and reserve inventory **from client's store**
 
 **External CRM Manages:**
 - **`"new"` → `"processing"`** - Begin processing
@@ -557,27 +609,28 @@ External CRM:  "new"  →  "processing"  →  "confirmed"
 1. Creates order record with status `"draft"`
 2. **Does NOT** validate product availability
 3. **Does NOT** create allocation records
-4. **Does NOT** modify `product.quantity`
+4. **Does NOT** modify store inventory
 
 **When Creating a "New" Order (User Confirmed):**
-1. Validates available quantity: `product.quantity - allocated_quantities`
-2. Creates order record with status `"new"`
-3. Creates allocation records in `order_product_allocations` table
-4. **Does NOT modify** `product.quantity`
+1. Gets client's assigned store UID
+2. Validates available quantity **in that store**: `store_inventory.quantity - allocated_quantities (for that store)`
+3. Creates order record with status `"new"`
+4. Creates allocation records in `order_product_allocations` table **with store_uid**
+5. **Does NOT modify** store inventory quantities
 
 **When CRM Changes Status to "Confirmed":**
 1. Updates order status to `"confirmed"`
 2. **Deletes allocation records** (order fulfilled, inventory shipped)
-3. **Does NOT modify** `product.quantity`
+3. **Does NOT modify** store inventory quantities
 
 **When Deleting/Cancelling an Order:**
 1. Removes allocation records (via CASCADE delete for "new" orders)
 2. Deletes order record
-3. **Does NOT modify** `product.quantity`
+3. **Does NOT modify** store inventory quantities
 
 **When Adding/Updating Order Items:**
 - **Draft Orders (`"draft"`):** Items can be added/updated without validation or allocations
-- **New Orders (`"new"`):** Validates available quantity and creates/updates allocations
+- **New Orders (`"new"`):** Validates available quantity **in client's store** and creates/updates allocations
 - **Processing/Confirmed Orders:** **Cannot be modified from frontend** (managed by CRM)
 
 **When Removing Order Items:**
@@ -589,8 +642,9 @@ External CRM:  "new"  →  "processing"  →  "confirmed"
 - Users can save carts without reserving inventory
 - Clear separation: frontend creates, CRM manages fulfillment
 - Allocations automatically released when order confirmed (fulfilled)
-- Product CRM quantity remains unchanged by order operations
-- Real-time available inventory calculation
+- Store inventory remains unchanged by order operations
+- Real-time available inventory calculation **per store**
+- Each client orders from their assigned store only
 
 #### Upsert Orders (Create or Update)
 *   **POST** `/order`
@@ -624,14 +678,21 @@ External CRM:  "new"  →  "processing"  →  "confirmed"
         - **`status: "draft"`**: Saves cart without validation or allocations
         - **`status: "new"`**: Validates stock and creates allocations (user confirmed)
         - **Other statuses**: Will return error - only "draft" or "new" allowed from frontend
+    *   **Status Transition Behavior (Update Operations):**
+        - **Draft → Draft**: Simple update, no validation or allocation changes
+        - **Draft → New**: Validates stock availability and creates allocations in a transaction
+        - **Draft → Processing/Confirmed**: Returns error (only CRM can set these statuses)
+        - **New → New**: Updates order without allocation changes
+        - **Other transitions**: Managed by CRM through `/order/status` endpoint
     *   **Note:**
         - The `comment` field is optional and can be used to store additional notes about the order
         - Stock validation uses available quantity (CRM quantity - allocated quantity)
         - Creates product allocation records automatically for "new" orders
         - Frontend can only create with "draft" or "new" status
+        - When updating an order and changing status from "draft" to "new", stock is validated and allocations are created atomically
     *   **Example Workflow:**
         1. Create order with `status: "draft"` to save cart → No allocation
-        2. Create order with `status: "new"` to confirm → Allocation created
+        2. Update same order with `status: "new"` to confirm → Stock validated, allocation created
         3. CRM changes to "processing" → Allocation exists
         4. CRM changes to "confirmed" → Allocation deleted
 
@@ -642,42 +703,52 @@ External CRM:  "new"  →  "processing"  →  "confirmed"
         *   `limit`: (optional) integer, default 100
     *   **Response:** Array of orders with metadata
 
-#### Get Order by UID
-*   **GET** `/order/{uid}`
-    *   **Response:** Single order object
+#### Get Orders Batch
+*   **POST** `/order/batch`
+    *   **Description:** Retrieve multiple orders by their UIDs.
+    *   **Request Body:**
+        ```json
+        {
+          "data": ["order-123", "order-456"]
+        }
+        ```
+    *   **Response:** Array of order objects.
 
-#### Delete Orders
-*   **DELETE** `/order/{uid}` - Delete single order (backward compatible)
-*   **DELETE** `/order` - Batch delete
+#### Delete Orders Batch
+*   **POST** `/order/delete`
+    *   **Description:** Delete multiple orders by their UIDs.
     *   **Request Body:**
         ```json
         {
           "data": ["order-123", "order-456", "order-789"]
         }
         ```
+    *   **Response:** Success message.
 
-#### Find Orders by User
-*   **GET** `/order/user/{user_uid}`
-    *   **Path Parameters:**
-        *   `user_uid`: User UID (required)
-    *   **Query Parameters (via request body):**
-        *   `page`: (optional) integer, default 1
-        *   `count`: (optional) integer, default 100
-    *   **Example:** `GET /order/user/123`
-    *   **Response:** Array of orders with pagination metadata
+#### Find Orders by User UIDs Batch
+*   **POST** `/order/find/user`
+    *   **Description:** Find multiple orders by their user UIDs.
+    *   **Request Body:**
+        ```json
+        {
+          "data": ["user-123", "user-456"]
+        }
+        ```
+    *   **Response:** Array of order objects.
 
-#### Find Orders by Status
-*   **GET** `/order/status/{status}`
-    *   **Path Parameters:**
-        *   `status`: Order status code (required) - e.g., "pending", "shipped", "delivered"
-    *   **Query Parameters (via request body):**
-        *   `page`: (optional) integer, default 1
-        *   `count`: (optional) integer, default 100
-    *   **Example:** `GET /order/status/pending`
-    *   **Response:** Array of orders with pagination metadata
+#### Find Orders by Statuses Batch
+*   **POST** `/order/find/status`
+    *   **Description:** Find multiple orders by their statuses.
+    *   **Request Body:**
+        ```json
+        {
+          "data": ["new", "processing"]
+        }
+        ```
+    *   **Response:** Array of order objects.
 
 #### Update Order Status
-*   **PUT** `/order/status` - Batch update order statuses (Array Input)
+*   **POST** `/order/status`
     *   **Primary Use:** This endpoint is primarily used by external CRM systems to transition orders through fulfillment stages
     *   **Request Body:**
         ```json
@@ -733,9 +804,9 @@ External CRM:  "new"  →  "processing"  →  "confirmed"
         - Does NOT modify `product.quantity`
     *   **Response:** Success message
 
-#### Remove Order Items
-*   **DELETE** `/order/{orderUID}/item/{productUID}` - Delete single item (backward compatible)
-*   **DELETE** `/order/items` - Batch delete
+#### Delete Order Items Batch
+*   **POST** `/order/item/delete`
+    *   **Description:** Delete multiple order items.
     *   **Request Body:**
         ```json
         {
@@ -753,17 +824,13 @@ External CRM:  "new"  →  "processing"  →  "confirmed"
         - Does NOT modify `product.quantity`
     *   **Response:** Success message
 
-#### Get Order Items
-*   **GET** `/order/{orderUID}/items`
-    *   **Response:** Array of order items
-
 #### Get Batch Order Items
 *   **POST** `/order/items/batch`
     *   **Description:** Retrieve order items for multiple orders.
     *   **Request Body:**
         ```json
         {
-          "order_uids": [
+          "data": [
             "order-123",
             "order-456"
           ]
@@ -834,22 +901,33 @@ External CRM:  "new"  →  "processing"  →  "confirmed"
         *   `limit`: (optional) integer, default 100
     *   **Response:** Array of order statuses with metadata
 
-#### Get Order Status by Status and Language Code
-*   **GET** `/order_status/{status}/{lang_code}`
-    *   **Response:** Single order status object
-
-#### Delete Order Statuses
-*   **DELETE** `/order_status` - Batch delete
+#### Get Order Statuses Batch
+*   **POST** `/order_status/batch`
+    *   **Description:** Retrieve multiple order statuses by their composite keys.
     *   **Request Body:**
         ```json
         {
-          "data": {
-            "statuses": ["new", "processing"],
-            "lang_codes": ["en", "en"]
-          }
+          "data": [
+            {"status": "new", "language_code": "en"},
+            {"status": "processing", "language_code": "es"}
+          ]
         }
         ```
-    *   **Response:** Success message
+    *   **Response:** Array of order status objects.
+
+#### Delete Order Statuses Batch
+*   **POST** `/order_status/delete`
+    *   **Description:** Delete multiple order statuses by their composite keys.
+    *   **Request Body:**
+        ```json
+        {
+          "data": [
+            {"status": "new", "language_code": "en"},
+            {"status": "processing", "language_code": "es"}
+          ]
+        }
+        ```
+    *   **Response:** Success message.
 
 ---
 
@@ -871,12 +949,14 @@ External CRM:  "new"  →  "processing"  →  "confirmed"
               "discount": 10,
               "currency": "USD",
               "price_type_uid": "string",
+              "store_uid": "store-456", // Required: Assigns client to a specific store
               "active": true // Optional, defaults to true
             }
           ]
         }
         ```
     *   **Response:** Array of created/updated client UIDs
+    *   **Note:** Each client must be assigned to a store via `store_uid`. Orders from this client will allocate inventory from their assigned store
 
 #### List Clients
 *   **GET** `/client`
@@ -885,23 +965,38 @@ External CRM:  "new"  →  "processing"  →  "confirmed"
         *   `limit`: (optional) integer, default 100
     *   **Response:** Array of clients with metadata
 
-#### Get Client by UID
-*   **GET** `/client/{uid}`
-    *   **Response:** Single client object
+#### Get Clients Batch
+*   **POST** `/client/batch`
+    *   **Description:** Retrieve multiple clients by their UIDs.
+    *   **Request Body:**
+        ```json
+        {
+          "data": ["client-123", "client-456"]
+        }
+        ```
+    *   **Response:** Array of client objects.
 
-#### Delete Clients
-*   **DELETE** `/client/{uid}` - Delete single client (backward compatible)
-*   **DELETE** `/client` - Batch delete
+#### Delete Clients Batch
+*   **POST** `/client/delete`
+    *   **Description:** Delete multiple clients by their UIDs.
     *   **Request Body:**
         ```json
         {
           "data": ["client-123", "client-456", "client-789"]
         }
         ```
+    *   **Response:** Success message.
 
-#### Find Client by Email
-*   **GET** `/client/email/{email}`
-    *   **Response:** Single client object
+#### Find Clients by Email Batch
+*   **POST** `/client/find/email`
+    *   **Description:** Find multiple clients by their email addresses.
+    *   **Request Body:**
+        ```json
+        {
+          "data": ["client1@example.com", "client2@example.com"]
+        }
+        ```
+    *   **Response:** Array of client objects.
 
 #### Update Client Active Status (Batch)
 *   **POST** `/client/active`
@@ -922,6 +1017,343 @@ External CRM:  "new"  →  "processing"  →  "confirmed"
         ```
     *   **Response:** Success message
     *   **Description:** Update the active status of one or more clients. Use this to soft-delete or activate client accounts.
+
+---
+
+### Store
+
+#### Multi-Store Inventory System
+**IMPORTANT:** The store system enables multi-location inventory management:
+
+- **Store-Based Inventory**: Each store maintains its own inventory for all products
+- **Client-Store Assignment**: Each client is permanently assigned to a specific store
+- **Store-Based Allocations**: Orders allocate inventory from the client's assigned store only
+- **Available Quantity Per Store**: Real-time calculation: `store_inventory.quantity - SUM(allocations WHERE store_uid = X AND product_uid = Y)`
+- **Independent Stock Levels**: The same product can have different quantities in different stores
+
+**Use Cases:**
+- Multiple warehouse locations
+- Regional distribution centers
+- Physical retail store + online fulfillment center
+- Partner/franchise inventory tracking
+
+#### Upsert Stores (Create or Update)
+*   **POST** `/store`
+    *   **Request Body:**
+        ```json
+        {
+          "data": [
+            {
+              "uid": "store-123", // Optional for create, required for update
+              "name": "Main Warehouse",
+              "active": true // Optional, defaults to true
+            },
+            {
+              "uid": "store-456",
+              "name": "Regional Distribution Center",
+              "active": true
+            }
+          ]
+        }
+        ```
+    *   **Response:** Array of created/updated store UIDs
+    *   **Note:** Uses upsert pattern - if UID exists, updates; otherwise creates
+
+#### List Stores
+*   **GET** `/store`
+    *   **Query Parameters:**
+        *   `offset`: (optional) integer, default 0
+        *   `limit`: (optional) integer, default 100
+    *   **Response:** Array of stores with pagination metadata
+
+#### Upsert Store Inventory
+*   **POST** `/store/inventory`
+    *   **Description:** Create or update inventory for products in specific stores.
+    *   **Request Body:**
+        ```json
+        {
+          "data": [
+            {
+              "store_uid": "store-123",
+              "product_uid": "prod-456",
+              "quantity": 100
+            },
+            {
+              "store_uid": "store-123",
+              "product_uid": "prod-789",
+              "quantity": 50
+            }
+          ]
+        }
+        ```
+    *   **Response:** Success message
+    *   **Validations:**
+        - Store must exist
+        - Product must exist
+        - Quantity must be >= 0
+    *   **Use Case:** Set or update stock levels for products at specific locations.
+
+---
+
+### Batch Operations for Stores and Inventory
+
+The following batch endpoints support efficient multi-entity operations with array-based requests. These endpoints follow the `{"data": [...]}` pattern and significantly reduce HTTP overhead for bulk operations.
+
+#### Get Stores Batch
+*   **POST** `/store/batch`
+    *   **Description:** Retrieve multiple stores by their UIDs in a single request
+    *   **Request Body:**
+        ```json
+        {
+          "data": ["store-uid-1", "store-uid-2", "store-uid-3"]
+        }
+        ```
+    *   **Response:**
+        ```json
+        {
+          "status": "success",
+          "data": [
+            {
+              "uid": "store-uid-1",
+              "name": "Main Warehouse",
+              "active": true,
+              "last_update": "2025-01-21T10:00:00Z"
+            },
+            {
+              "uid": "store-uid-2",
+              "name": "Regional Center",
+              "active": true,
+              "last_update": "2025-01-21T10:00:00Z"
+            }
+          ]
+        }
+        ```
+    *   **Use Case:** Load multiple store details efficiently (e.g., for dropdown lists, reports)
+
+#### Delete Stores Batch
+*   **POST** `/store/delete`
+    *   **Description:** Delete multiple stores by their UIDs in a single request
+    *   **Request Body:**
+        ```json
+        {
+          "data": ["store-uid-1", "store-uid-2", "store-uid-3"]
+        }
+        ```
+    *   **Response:** Success message
+    *   **Use Case:** Bulk cleanup operations, admin management
+
+#### Update Stores Active Status Batch
+*   **POST** `/store/active`
+    *   **Description:** Update active status for multiple stores in a single request
+    *   **Request Body:**
+        ```json
+        {
+          "data": [
+            {
+              "uid": "store-uid-1",
+              "active": false
+            },
+            {
+              "uid": "store-uid-2",
+              "active": true
+            }
+          ]
+        }
+        ```
+    *   **Response:** Success message
+    *   **Use Case:** Bulk activate/deactivate stores
+
+#### Get Inventory by Stores Batch
+*   **POST** `/store/inventory/batch`
+    *   **Description:** Retrieve inventory for multiple stores in a single request
+    *   **Request Body:**
+        ```json
+        {
+          "data": ["store-uid-1", "store-uid-2"]
+        }
+        ```
+    *   **Response:**
+        ```json
+        {
+          "status": "success",
+          "data": {
+            "store-uid-1": [
+              {
+                "store_uid": "store-uid-1",
+                "product_uid": "prod-1",
+                "quantity": 100,
+                "last_update": "2025-01-21T10:00:00Z"
+              },
+              {
+                "store_uid": "store-uid-1",
+                "product_uid": "prod-2",
+                "quantity": 50,
+                "last_update": "2025-01-21T10:00:00Z"
+              }
+            ],
+            "store-uid-2": [
+              {
+                "store_uid": "store-uid-2",
+                "product_uid": "prod-1",
+                "quantity": 75,
+                "last_update": "2025-01-21T10:00:00Z"
+              }
+            ]
+          }
+        }
+        ```
+    *   **Use Case:** Compare inventory across multiple locations
+
+#### Get Inventory by Products Batch
+*   **POST** `/store/inventory/find/product`
+    *   **Description:** Retrieve inventory for multiple products across all stores
+    *   **Request Body:**
+        ```json
+        {
+          "data": ["product-uid-1", "product-uid-2", "product-uid-3"]
+        }
+        ```
+    *   **Response:**
+        ```json
+        {
+          "status": "success",
+          "data": {
+            "product-uid-1": [
+              {
+                "store_uid": "store-1",
+                "product_uid": "product-uid-1",
+                "quantity": 100,
+                "last_update": "2025-01-21T10:00:00Z"
+              },
+              {
+                "store_uid": "store-2",
+                "product_uid": "product-uid-1",
+                "quantity": 75,
+                "last_update": "2025-01-21T10:00:00Z"
+              }
+            ],
+            "product-uid-2": [...]
+          }
+        }
+        ```
+    *   **Use Case:** See which stores stock specific products and their quantities
+
+#### Get Inventory by Store-Products (Nested Batch)
+*   **POST** `/store/inventory/get`
+    *   **Description:** Retrieve inventory for specific store-product combinations using nested arrays
+    *   **Request Body:**
+        ```json
+        {
+          "data": [
+            {
+              "store_uid": "store-uid-1",
+              "product_uids": ["prod-1", "prod-2", "prod-3"]
+            },
+            {
+              "store_uid": "store-uid-2",
+              "product_uids": ["prod-1", "prod-4"]
+            }
+          ]
+        }
+        ```
+    *   **Response:**
+        ```json
+        {
+          "status": "success",
+          "data": {
+            "store-uid-1": [
+              {
+                "store_uid": "store-uid-1",
+                "product_uid": "prod-1",
+                "quantity": 100,
+                "last_update": "2025-01-21T10:00:00Z"
+              },
+              {
+                "store_uid": "store-uid-1",
+                "product_uid": "prod-2",
+                "quantity": 50,
+                "last_update": "2025-01-21T10:00:00Z"
+              }
+            ],
+            "store-uid-2": [...]
+          }
+        }
+        ```
+    *   **Use Case:** Get specific inventory items efficiently (e.g., client checking availability for their cart at their assigned store)
+
+#### Delete Inventory Batch
+*   **POST** `/store/inventory/delete`
+    *   **Description:** Delete multiple store-product inventory entries
+    *   **Request Body:**
+        ```json
+        {
+          "data": [
+            {
+              "store_uid": "store-uid-1",
+              "product_uid": "prod-1"
+            },
+            {
+              "store_uid": "store-uid-1",
+              "product_uid": "prod-2"
+            },
+            {
+              "store_uid": "store-uid-2",
+              "product_uid": "prod-3"
+            }
+          ]
+        }
+        ```
+    *   **Response:** Success message
+    *   **Use Case:** Bulk inventory cleanup, discontinuing products
+
+#### Get Available Quantity Batch (Nested Batch)
+*   **POST** `/store/inventory/available`
+    *   **Description:** Get available quantities (after allocations) for multiple store-product pairs using nested arrays
+    *   **Request Body:**
+        ```json
+        {
+          "data": [
+            {
+              "store_uid": "store-uid-1",
+              "product_uids": ["prod-1", "prod-2"]
+            },
+            {
+              "store_uid": "store-uid-2",
+              "product_uids": ["prod-1", "prod-3"]
+            }
+          ]
+        }
+        ```
+    *   **Response:**
+        ```json
+        {
+          "status": "success",
+          "data": {
+            "store-uid-1": {
+              "prod-1": 85,
+              "prod-2": 45
+            },
+            "store-uid-2": {
+              "prod-1": 60,
+              "prod-3": 30
+            }
+          }
+        }
+        ```
+    *   **Calculation:** For each store-product pair: `available = store_inventory.quantity - SUM(allocations WHERE store_uid = X AND product_uid = Y)`
+    *   **Use Case:** Real-time availability checking for shopping carts, order validation across multiple items and stores
+
+---
+
+### Batch Operations Benefits
+
+The batch endpoints provide significant advantages:
+
+1. **Performance**: Reduce 100 HTTP requests to 1 request
+2. **Efficiency**: Single database query with IN clause vs N queries
+3. **Consistency**: Atomic data retrieval ensures consistent state
+4. **Network**: Minimize HTTP overhead and latency
+5. **Scalability**: Better server resource utilization
 
 ---
 
@@ -967,23 +1399,38 @@ This feature helps with:
         *   `limit`: (optional) integer, default 100
     *   **Response:** Array of categories with metadata
 
-#### Get Category by UID
-*   **GET** `/category/{uid}`
-    *   **Response:** Single category object
+#### Get Categories Batch
+*   **POST** `/category/batch`
+    *   **Description:** Retrieve multiple categories by their UIDs.
+    *   **Request Body:**
+        ```json
+        {
+          "data": ["cat-123", "cat-456"]
+        }
+        ```
+    *   **Response:** Array of category objects.
 
-#### Delete Categories
-*   **DELETE** `/category/{uid}` - Delete single category (backward compatible)
-*   **DELETE** `/category` - Batch delete
+#### Delete Categories Batch
+*   **POST** `/category/delete`
+    *   **Description:** Delete multiple categories by their UIDs.
     *   **Request Body:**
         ```json
         {
           "data": ["cat-123", "cat-456", "cat-789"]
         }
         ```
+    *   **Response:** Success message.
 
-#### Find Categories by Parent
-*   **GET** `/category/parent/{parentUID}`
-    *   **Response:** Array of categories
+#### Find Categories by Parent UIDs Batch
+*   **POST** `/category/find/parent`
+    *   **Description:** Find multiple categories by their parent UIDs.
+    *   **Request Body:**
+        ```json
+        {
+          "data": ["parent-cat-1", "parent-cat-2"]
+        }
+        ```
+    *   **Response:** Array of category objects.
 
 #### Upsert Category Descriptions (Batch)
 *   **POST** `/category/description`
@@ -1008,9 +1455,9 @@ This feature helps with:
         ```
     *   **Response:** Success message
 
-#### Remove Category Descriptions
-*   **DELETE** `/category/description/{categoryUID}/{language}` - Delete single (backward compatible)
-*   **DELETE** `/category/description` - Batch delete
+#### Delete Category Descriptions Batch
+*   **POST** `/category/description/delete`
+    *   **Description:** Delete multiple category descriptions.
     *   **Request Body:**
         ```json
         {
@@ -1020,10 +1467,18 @@ This feature helps with:
           ]
         }
         ```
+    *   **Response:** Success message.
 
-#### Get Category Descriptions
-*   **GET** `/category/description/{categoryUID}`
-    *   **Response:** Array of category descriptions
+#### Get Batch Category Descriptions
+*   **POST** `/category/description/batch`
+    *   **Description:** Retrieve descriptions for multiple categories.
+    *   **Request Body:**
+        ```json
+        {
+          "data": ["cat-123", "cat-456"]
+        }
+        ```
+    *   **Response:** Array of category description objects.
     *   **Response Format:**
         ```json
         {
@@ -1080,19 +1535,27 @@ This feature helps with:
         *   `limit`: (optional) integer, default 100
     *   **Response:** Array of currencies with metadata
 
-#### Get Currency by Code
-*   **GET** `/currency/{code}`
-    *   **Response:** Single currency object
+#### Get Currencies Batch
+*   **POST** `/currency/batch`
+    *   **Description:** Retrieve multiple currencies by their codes.
+    *   **Request Body:**
+        ```json
+        {
+          "data": ["USD", "EUR"]
+        }
+        ```
+    *   **Response:** Array of currency objects.
 
-#### Delete Currencies
-*   **DELETE** `/currency/{code}` - Delete single currency (backward compatible)
-*   **DELETE** `/currency` - Batch delete
+#### Delete Currencies Batch
+*   **POST** `/currency/delete`
+    *   **Description:** Delete multiple currencies by their codes.
     *   **Request Body:**
         ```json
         {
           "data": ["USD", "EUR", "GBP"]
         }
         ```
+    *   **Response:** Success message.
 
 ---
 
@@ -1121,23 +1584,38 @@ This feature helps with:
         *   `limit`: (optional) integer, default 100
     *   **Response:** Array of attributes with metadata
 
-#### Get Attribute by UID
-*   **GET** `/attribute/{uid}`
-    *   **Response:** Single attribute object
+#### Get Attributes Batch
+*   **POST** `/attribute/batch`
+    *   **Description:** Retrieve multiple attributes by their UIDs.
+    *   **Request Body:**
+        ```json
+        {
+          "data": ["attr-123", "attr-456"]
+        }
+        ```
+    *   **Response:** Array of attribute objects.
 
-#### Delete Attributes
-*   **DELETE** `/attribute/{uid}` - Delete single attribute (backward compatible)
-*   **DELETE** `/attribute` - Batch delete
+#### Delete Attributes Batch
+*   **POST** `/attribute/delete`
+    *   **Description:** Delete multiple attributes by their UIDs.
     *   **Request Body:**
         ```json
         {
           "data": ["attr-123", "attr-456", "attr-789"]
         }
         ```
+    *   **Response:** Success message.
 
-#### Find Attributes by Product
-*   **GET** `/attribute/product/{productUID}`
-    *   **Response:** Array of attributes
+#### Find Attributes by Product UIDs Batch
+*   **POST** `/attribute/find/product`
+    *   **Description:** Find multiple attributes by their product UIDs.
+    *   **Request Body:**
+        ```json
+        {
+          "data": ["prod-123", "prod-456"]
+        }
+        ```
+    *   **Response:** Array of attribute objects.
 
 #### Upsert Attribute Descriptions (Batch)
 *   **POST** `/attribute/description`
@@ -1160,9 +1638,9 @@ This feature helps with:
         ```
     *   **Response:** Success message
 
-#### Remove Attribute Descriptions
-*   **DELETE** `/attribute/description/{attributeUID}/{language}` - Delete single (backward compatible)
-*   **DELETE** `/attribute/description` - Batch delete
+#### Delete Attribute Descriptions Batch
+*   **POST** `/attribute/description/delete`
+    *   **Description:** Delete multiple attribute descriptions.
     *   **Request Body:**
         ```json
         {
@@ -1172,10 +1650,18 @@ This feature helps with:
           ]
         }
         ```
+    *   **Response:** Success message.
 
-#### Get Attribute Descriptions
-*   **GET** `/attribute/description/{attributeUID}`
-    *   **Response:** Array of attribute descriptions
+#### Get Batch Attribute Descriptions
+*   **POST** `/attribute/description/batch`
+    *   **Description:** Retrieve descriptions for multiple attributes.
+    *   **Request Body:**
+        ```json
+        {
+          "data": ["attr-123", "attr-456"]
+        }
+        ```
+    *   **Response:** Array of attribute description objects.
 
 #### Upsert Attribute Values (Batch)
 *   **POST** `/attribute/value`
@@ -1198,9 +1684,9 @@ This feature helps with:
         ```
     *   **Response:** Success message
 
-#### Remove Attribute Values
-*   **DELETE** `/attribute/value/{valueUID}/{language}` - Delete single (backward compatible)
-*   **DELETE** `/attribute/value` - Batch delete
+#### Delete Attribute Values Batch
+*   **POST** `/attribute/value/delete`
+    *   **Description:** Delete multiple attribute values.
     *   **Request Body:**
         ```json
         {
@@ -1210,10 +1696,18 @@ This feature helps with:
           ]
         }
         ```
+    *   **Response:** Success message.
 
-#### Get Attribute Values
-*   **GET** `/attribute/value/{valueUID}`
-    *   **Response:** Array of attribute values
+#### Get Batch Attribute Values
+*   **POST** `/attribute/value/batch`
+    *   **Description:** Retrieve values for multiple attributes.
+    *   **Request Body:**
+        ```json
+        {
+          "data": ["val-123", "val-456"]
+        }
+        ```
+    *   **Response:** Array of attribute value objects.
 
 ---
 
@@ -1269,6 +1763,119 @@ The following operations use true database-level upserts (INSERT ... ON DUPLICAT
 - Order Statuses: Based on composite PRIMARY KEY (status + language)
 
 This ensures atomic operations and prevents race conditions.
+
+## Batch Retrieval Endpoints
+
+To minimize HTTP requests and improve performance, the following batch retrieval endpoints should be implemented for all main entities:
+
+**Pattern**: `POST /{entity}/batch`
+**Request Body**: `{ "data": ["uid1", "uid2", "uid3"] }`
+**Response**: Array of entity objects
+
+### Recommended Batch Endpoints
+
+**User**:
+- `POST /user/batch` - Get multiple users by UIDs ✅
+- `POST /user/delete` - Delete multiple users by UIDs ✅
+- `POST /user/find/email` - Find multiple users by emails ✅
+- `POST /user/find/username` - Find multiple users by usernames ✅
+
+**Product**:
+- `POST /product/batch` - Get multiple products by UIDs ✅
+- `POST /product/delete` - Delete multiple products by UIDs ✅
+- `POST /product/find/category` - Find multiple products by category UIDs ✅
+- `POST /product/description/delete` - Delete multiple product descriptions ✅
+- `POST /product/descriptions/batch` - Get descriptions for multiple products ✅ (Already implemented)
+
+**Category**:
+- `POST /category/batch` - Get multiple categories by UIDs ✅
+- `POST /category/delete` - Delete multiple categories by UIDs ✅
+- `POST /category/find/parent` - Find multiple categories by parent UIDs ✅
+- `POST /category/description/batch` - Get descriptions for multiple categories ✅
+- `POST /category/description/delete` - Delete multiple category descriptions ✅
+
+**Client**:
+- `POST /client/batch` - Get multiple clients by UIDs ✅
+- `POST /client/delete` - Delete multiple clients by UIDs ✅
+- `POST /client/find/email` - Find multiple clients by emails ✅
+
+**Store**:
+- `POST /store/batch` - Get multiple stores by UIDs ✅
+- `POST /store/delete` - Delete multiple stores by UIDs ✅
+- `POST /store/active` - Update active status for multiple stores ✅
+- `POST /store/inventory/batch` - Get inventory by stores ✅
+- `POST /store/inventory/find/product` - Get inventory by products ✅
+- `POST /store/inventory/get` - Get inventory by store-products (nested) ✅
+- `POST /store/inventory/delete` - Delete inventory batch ✅
+- `POST /store/inventory/available` - Get available quantity batch (nested) ✅
+
+**Order**:
+- `POST /order/batch` - Get multiple orders by UIDs ✅
+- `POST /order/delete` - Delete multiple orders by UIDs ✅
+- `POST /order/find/user` - Find multiple orders by user UIDs ✅
+- `POST /order/find/status` - Find multiple orders by statuses ✅
+- `POST /order/item/delete` - Delete multiple order items ✅
+- `POST /order/items/batch` - Get items for multiple orders ✅ (Already implemented)
+
+**Attribute**:
+- `POST /attribute/batch` - Get multiple attributes by UIDs ✅
+- `POST /attribute/delete` - Delete multiple attributes by UIDs ✅
+- `POST /attribute/find/product` - Find multiple attributes by product UIDs ✅
+- `POST /attribute/description/batch` - Get descriptions for multiple attributes ✅
+- `POST /attribute/description/delete` - Delete multiple attribute descriptions ✅
+- `POST /attribute/value/batch` - Get values for multiple attributes ✅
+- `POST /attribute/value/delete` - Delete multiple attribute values ✅
+
+**Currency**:
+- `POST /currency/batch` - Get multiple currencies by codes ✅
+- `POST /currency/delete` - Delete multiple currencies by codes ✅
+
+**Order Status**:
+- `POST /order_status/batch` - Get multiple order statuses ✅
+- `POST /order_status/delete` - Delete multiple order statuses ✅
+
+### Implementation Guidelines
+
+For each batch endpoint:
+1. **Input Validation**: Ensure array is not empty, limit to reasonable size (e.g., max 1000 UIDs)
+2. **Efficient Queries**: Use SQL `IN` clause for optimal database performance
+3. **Response Order**: Return entities in same order as input UIDs when possible
+4. **Missing Entities**: Include only found entities, omit missing ones (don't error)
+5. **Error Handling**: Return error only for invalid request format, not for missing entities
+
+**Example Implementation Pattern**:
+```go
+// Repository Layer
+func (r *ProductRepo) GetByUIDs(ctx context.Context, uids []string) ([]entity.Product, error) {
+    query := "SELECT * FROM products WHERE uid IN (?)"
+    // Use SQL IN clause with prepared statement
+    rows, err := r.db.QueryContext(ctx, query, uids)
+    // ... scan and return results
+}
+
+// Core Layer
+func (c *Core) GetProductsByUIDs(ctx context.Context, uids []string) ([]entity.Product, error) {
+    if len(uids) == 0 {
+        return nil, fmt.Errorf("empty UIDs array")
+    }
+    return c.factory.Product().GetByUIDs(ctx, uids)
+}
+
+// Handler Layer
+func GetProductsBatch(logger *slog.Logger, product Core) http.HandlerFunc {
+    return func(w http.ResponseWriter, r *http.Request) {
+        req, err := request.Decode(r)
+        // ... decode request
+
+        var uids []string
+        err = request.DecodeArrayData(req, &uids)
+        // ... error handling
+
+        products, err := product.GetProductsByUIDs(r.Context(), uids)
+        render.JSON(w, r, response.Ok(products))
+    }
+}
+```
 
 ## Authentication Summary
 
