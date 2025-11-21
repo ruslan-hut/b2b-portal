@@ -1559,6 +1559,315 @@ This feature helps with:
 
 ---
 
+### Price Type
+
+Price types define different pricing schemes for products. Each price type is associated with a specific currency and can be assigned to users or clients to control which pricing they see.
+
+**Use Cases:**
+- Multi-currency pricing (Retail USD, Retail EUR, Retail GBP)
+- Customer tier pricing (Retail, Wholesale, VIP)
+- Regional pricing (North America, Europe, Asia)
+- Channel pricing (Online, In-Store, Partner)
+
+#### Upsert Price Types (Create or Update)
+*   **POST** `/price_type`
+    *   **Request Body:**
+        ```json
+        {
+          "data": [
+            {
+              "uid": "retail-price-usd", // Optional for create, required for update
+              "name": "Retail Price (USD)",
+              "currency_code": "USD"
+            },
+            {
+              "uid": "wholesale-price-usd",
+              "name": "Wholesale Price (USD)",
+              "currency_code": "USD"
+            }
+          ]
+        }
+        ```
+    *   **Response:** Success message
+    *   **Note:** Currency must exist before creating price type
+
+#### List Price Types
+*   **GET** `/price_type`
+    *   **Query Parameters:**
+        *   `offset`: (optional) integer, default 0
+        *   `limit`: (optional) integer, default 100
+    *   **Response:** Array of price types with metadata
+
+#### Get Price Types Batch
+*   **POST** `/price_type/batch`
+    *   **Description:** Retrieve multiple price types by their UIDs.
+    *   **Request Body:**
+        ```json
+        {
+          "data": ["retail-price-usd", "wholesale-price-usd"]
+        }
+        ```
+    *   **Response:** Array of price type objects.
+
+#### Delete Price Types Batch
+*   **POST** `/price_type/delete`
+    *   **Description:** Delete multiple price types by their UIDs.
+    *   **Request Body:**
+        ```json
+        {
+          "data": ["retail-price-usd", "wholesale-price-usd"]
+        }
+        ```
+    *   **Response:** Success message.
+    *   **Note:** Deleting a price type will cascade delete all prices associated with it
+
+#### Find Price Types by Currency Codes Batch
+*   **POST** `/price_type/find/currency`
+    *   **Description:** Find multiple price types by their currency codes.
+    *   **Request Body:**
+        ```json
+        {
+          "data": ["USD", "EUR"]
+        }
+        ```
+    *   **Response:** Array of price type objects.
+    *   **Use Case:** Get all pricing schemes available for specific currencies
+
+---
+
+### Price
+
+Prices define the cost of products under specific price types. Each price is identified by a composite key of (price_type_uid, product_uid), allowing the same product to have different prices for different customer tiers or currencies.
+
+**Key Concepts:**
+- **Composite Key**: (price_type_uid, product_uid) uniquely identifies a price
+- **Multi-Price Support**: Same product can have different prices for different price types
+- **User Assignment**: Users/clients are assigned a price_type_uid to determine which prices they see
+- **Currency Association**: Prices inherit currency from their price type
+
+#### Upsert Prices (Create or Update)
+*   **POST** `/price`
+    *   **Request Body:**
+        ```json
+        {
+          "data": [
+            {
+              "price_type_uid": "retail-price-usd",
+              "product_uid": "product-001",
+              "price": 1999
+            },
+            {
+              "price_type_uid": "wholesale-price-usd",
+              "product_uid": "product-001",
+              "price": 1499
+            },
+            {
+              "price_type_uid": "retail-price-usd",
+              "product_uid": "product-002",
+              "price": 2999
+            }
+          ]
+        }
+        ```
+    *   **Response:** Success message
+    *   **Note:** Uses database-level upsert based on composite key (price_type_uid + product_uid)
+
+#### Get All Prices for a Product
+*   **POST** `/price/find/product`
+    *   **Description:** Retrieve all prices for a single product across all price types.
+    *   **Request Body:**
+        ```json
+        {
+          "data": {
+            "product_uid": "product-001"
+          }
+        }
+        ```
+    *   **Response:**
+        ```json
+        {
+          "status": "success",
+          "data": [
+            {
+              "price_type_uid": "retail-price-usd",
+              "product_uid": "product-001",
+              "price": 1999,
+              "last_update": "2025-01-15T10:30:00Z"
+            },
+            {
+              "price_type_uid": "wholesale-price-usd",
+              "product_uid": "product-001",
+              "price": 1499,
+              "last_update": "2025-01-15T10:30:00Z"
+            }
+          ]
+        }
+        ```
+    *   **Use Case:** Admin viewing all pricing tiers for a product
+
+#### Get Prices for Multiple Products (Batch)
+*   **POST** `/price/batch/products`
+    *   **Description:** Retrieve prices for multiple products across all price types.
+    *   **Request Body:**
+        ```json
+        {
+          "data": ["product-001", "product-002", "product-003"]
+        }
+        ```
+    *   **Response:**
+        ```json
+        {
+          "status": "success",
+          "data": {
+            "product-001": [
+              {
+                "price_type_uid": "retail-price-usd",
+                "product_uid": "product-001",
+                "price": 1999,
+                "last_update": "2025-01-15T10:30:00Z"
+              },
+              {
+                "price_type_uid": "wholesale-price-usd",
+                "product_uid": "product-001",
+                "price": 1499,
+                "last_update": "2025-01-15T10:30:00Z"
+              }
+            ],
+            "product-002": [...]
+          }
+        }
+        ```
+    *   **Use Case:** Admin viewing prices for multiple products
+
+#### Get Prices for Multiple Price Types (Batch)
+*   **POST** `/price/batch/price_types`
+    *   **Description:** Retrieve all prices for multiple price types.
+    *   **Request Body:**
+        ```json
+        {
+          "data": ["retail-price-usd", "wholesale-price-usd"]
+        }
+        ```
+    *   **Response:**
+        ```json
+        {
+          "status": "success",
+          "data": {
+            "retail-price-usd": [
+              {
+                "price_type_uid": "retail-price-usd",
+                "product_uid": "product-001",
+                "price": 1999,
+                "last_update": "2025-01-15T10:30:00Z"
+              },
+              {
+                "price_type_uid": "retail-price-usd",
+                "product_uid": "product-002",
+                "price": 2999,
+                "last_update": "2025-01-15T10:30:00Z"
+              }
+            ],
+            "wholesale-price-usd": [...]
+          }
+        }
+        ```
+    *   **Use Case:** Exporting all products for specific pricing tiers
+
+#### Get Prices for Products Under Specific Price Type (Batch)
+*   **POST** `/price/batch/price_type_products`
+    *   **Description:** Retrieve prices for multiple products under one specific price type. **Most commonly used endpoint** for displaying product catalogs with user-specific pricing.
+    *   **Request Body:**
+        ```json
+        {
+          "data": {
+            "price_type_uid": "retail-price-usd",
+            "product_uids": [
+              "product-001",
+              "product-002",
+              "product-003"
+            ]
+          }
+        }
+        ```
+    *   **Response:**
+        ```json
+        {
+          "status": "success",
+          "data": [
+            {
+              "price_type_uid": "retail-price-usd",
+              "product_uid": "product-001",
+              "price": 1999,
+              "last_update": "2025-01-15T10:30:00Z"
+            },
+            {
+              "price_type_uid": "retail-price-usd",
+              "product_uid": "product-002",
+              "price": 2999,
+              "last_update": "2025-01-15T10:30:00Z"
+            },
+            {
+              "price_type_uid": "retail-price-usd",
+              "product_uid": "product-003",
+              "price": 1499,
+              "last_update": "2025-01-15T10:30:00Z"
+            }
+          ]
+        }
+        ```
+    *   **Use Cases:**
+        - Display product catalog with user-specific pricing (use authenticated user's `price_type_uid`)
+        - Shopping cart price calculation
+        - Show wholesale prices to business customers
+        - Show VIP/member prices to premium users
+        - Multi-currency product listings
+
+#### Delete Specific Prices (Batch)
+*   **POST** `/price/delete`
+    *   **Description:** Delete specific prices by their composite keys.
+    *   **Request Body:**
+        ```json
+        {
+          "data": [
+            {
+              "price_type_uid": "retail-price-usd",
+              "product_uid": "product-001"
+            },
+            {
+              "price_type_uid": "wholesale-price-usd",
+              "product_uid": "product-002"
+            }
+          ]
+        }
+        ```
+    *   **Response:** Success message.
+
+#### Delete All Prices for Products (Batch)
+*   **POST** `/price/delete/products`
+    *   **Description:** Delete all prices for multiple products across all price types.
+    *   **Request Body:**
+        ```json
+        {
+          "data": ["product-001", "product-002", "product-003"]
+        }
+        ```
+    *   **Response:** Success message.
+    *   **Use Case:** Product deletion cleanup
+
+#### Delete All Prices for Price Types (Batch)
+*   **POST** `/price/delete/price_types`
+    *   **Description:** Delete all prices for multiple price types across all products.
+    *   **Request Body:**
+        ```json
+        {
+          "data": ["retail-price-usd", "wholesale-price-usd"]
+        }
+        ```
+    *   **Response:** Success message.
+    *   **Use Case:** Price type cleanup before deletion
+
+---
+
 ### Attribute
 
 #### Upsert Attributes (Create or Update)

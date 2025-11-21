@@ -302,6 +302,45 @@ export class ProductService {
   }
 
   /**
+   * Fetch prices for multiple products under a specific price type (batch).
+   * Returns a map: { [productUid]: priceInDollars }
+   */
+  getProductPrices(priceTypeUid: string | undefined, productUids: string[]): Observable<{ [key: string]: number }> {
+    if (!priceTypeUid || !productUids || productUids.length === 0) {
+      return of({});
+    }
+
+    const payload = {
+      data: {
+        price_type_uid: priceTypeUid,
+        product_uids: productUids
+      }
+    };
+
+    return this.http.post<ApiResponse<any>>(`${this.apiUrl}/price/batch/price_type_products`, payload).pipe(
+      map(response => {
+        if (!response.success || !response.data) {
+          return {};
+        }
+
+        // response.data is expected to be an array of price objects: { product_uid, price }
+        const mapResult: { [key: string]: number } = {};
+        for (const p of response.data) {
+          // Convert cents -> dollars for frontend convenience
+          if (typeof p.product_uid === 'string' && typeof p.price === 'number') {
+            mapResult[p.product_uid] = p.price / 100;
+          }
+        }
+        return mapResult;
+      }),
+      catchError(error => {
+        console.error('Error fetching product prices (batch):', error);
+        return of({});
+      })
+    );
+  }
+
+  /**
    * Get description cache from localStorage
    */
   private getDescriptionCache(): DescriptionCache {
@@ -546,31 +585,41 @@ export class ProductService {
          const authRaw = localStorage.getItem('BASE_AUTH_DATA');
          const authData = authRaw ? JSON.parse(authRaw) : null;
          const storeUid = authData?.entity?.store_uid;
+        const priceTypeUid = authData?.entity?.price_type_uid;
         // Use batch endpoint to fetch available quantities for all products in one request
         const productIds = products.map(p => p.id);
         return this.getAvailableQuantities(storeUid, productIds).pipe(
-          map(availableMap => {
-            return products.map(product => {
-              const enriched = { ...product } as Product;
-              const availableQty = availableMap[product.id] || 0;
-              enriched.availableQuantity = availableQty;
-              enriched.allocatedQuantity = 0; // can't compute without per-store CRM quantity
-              enriched.inStock = product.active !== false && availableQty > 0;
-              return enriched;
-            });
+
+          switchMap(availableMap => {
+            // Also fetch prices for the user's price type in parallel (if any)
+            return this.getProductPrices(priceTypeUid, productIds).pipe(
+              map(priceMap => {
+                return products.map(product => {
+                  const enriched = { ...product } as Product;
+                  const availableQty = availableMap[product.id] || 0;
+                  enriched.availableQuantity = availableQty;
+                  enriched.allocatedQuantity = 0; // can't compute without per-store CRM quantity
+                  enriched.inStock = product.active !== false && availableQty > 0;
+                  // Set product.price from priceMap (already converted to dollars)
+                  const p = priceMap[product.id];
+                  enriched.price = typeof p === 'number' ? p : 0; // keep 0 if no price available
+                  return enriched;
+                });
+              })
+            );
           }),
-          // Ensure the catchError returns an Observable<Product[]> explicitly so TS can infer the correct type
-          catchError((): Observable<Product[]> => {
-            // If batch availability fetch fails, mark all as out of stock for the user's store
-            const fallback = products.map(product => {
-              product.availableQuantity = 0;
-              product.allocatedQuantity = 0;
-              product.inStock = false;
-              return product;
-            });
-            return of(fallback);
-          })
-        );
+           // Ensure the catchError returns an Observable<Product[]> explicitly so TS can infer the correct type
+           catchError((): Observable<Product[]> => {
+             // If batch availability fetch fails, mark all as out of stock for the user's store
+             const fallback = products.map(product => {
+               product.availableQuantity = 0;
+               product.allocatedQuantity = 0;
+               product.inStock = false;
+               return product;
+             });
+             return of(fallback);
+           })
+         );
        })
      );
    }

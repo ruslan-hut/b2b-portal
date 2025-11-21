@@ -65,7 +65,16 @@
             </div>
             <div class="product-sku">{{ 'products.sku' | translate }}: {{ product.sku }}</div>
             <div class="product-footer">
-              <div class="product-price">${{ product.price.toFixed(2) }}</div>
+              <div class="product-price">
+                <!-- product.price is in dollars (may be 0 if price is not available for user's price type) -->
+                <ng-container *ngIf="product.price && product.price > 0; else priceNA">
+                  ${{ product.price.toFixed(2) }}
+                </ng-container>
+                <ng-template #priceNA>
+                  {{ 'products.priceNotAvailable' | translate }}
+                </ng-template>
+              </div>
+              <div class="product-available">{{ 'products.available' | translate }}: {{ product.availableQuantity ?? ('common.loading' | translate) }}</div>
               <button
                 class="btn btn-add-to-cart"
                 (click)="addToCart(product)"
@@ -206,13 +215,20 @@
             </button>
           </div>
           <div class="detail-price-section">
-            <div class="detail-price">${{ selectedProduct.price.toFixed(2) }}</div>
+            <div class="detail-price">
+              <ng-container *ngIf="selectedProduct.price && selectedProduct.price > 0; else detailPriceNA">
+                ${{ selectedProduct.price.toFixed(2) }}
+              </ng-container>
+              <ng-template #detailPriceNA>
+                {{ 'products.priceNotAvailable' | translate }}
+              </ng-template>
+            </div>
             <span class="price-label">{{ 'products.price' | translate }}</span>
           </div>
           <div class="detail-stock">
             <span class="stock-indicator" [class.in-stock]="selectedProduct.inStock">
               <ng-container *ngIf="selectedProduct.inStock">
-                ✓ {{ 'products.stock' | translate }}
+                ✓ {{ 'products.stock' | translate }} ({{ selectedProduct.availableQuantity ?? 'N/A' }})
               </ng-container>
               <ng-container *ngIf="!selectedProduct.inStock">
                 ✗ {{ 'products.outOfStock' | translate }}
