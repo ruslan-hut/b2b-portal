@@ -46,6 +46,7 @@
     "orders": "Orders",
     "profile": "Profile",
     "settings": "Settings",
+    "language": "Language",
     "gridView": "Grid View",
     "bulkOrder": "Bulk Order",
     "cart": "Cart"
@@ -59,6 +60,7 @@
     "updateCart": "Update Cart",
     "viewDetails": "View Details",
     "price": "Price",
+    "priceNotAvailable": "Price Not Available",
     "stock": "In Stock",
     "outOfStock": "Out of Stock",
     "category": "Category",

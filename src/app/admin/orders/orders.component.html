@@ -1,0 +1,116 @@
+<div class="orders-container">
+  <div class="header">
+    <h1>Orders Management</h1>
+  </div>
+
+  <div class="filters">
+    <div class="filter-group">
+      <label>Status:</label>
+      <select [(ngModel)]="statusFilter" (change)="onFilterChange()">
+        <option *ngFor="let option of statusOptions" [value]="option.value">
+          {{ option.label }}
+        </option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Store:</label>
+      <select [(ngModel)]="storeFilter" (change)="onFilterChange()">
+        <option *ngFor="let option of storeOptions" [value]="option.value">
+          {{ option.label }}
+        </option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Price Type:</label>
+      <select [(ngModel)]="priceTypeFilter" (change)="onFilterChange()">
+        <option *ngFor="let option of priceTypeOptions" [value]="option.value">
+          {{ option.label }}
+        </option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Search:</label>
+      <input
+        type="text"
+        [(ngModel)]="searchTerm"
+        (input)="onSearchChange()"
+        placeholder="Search by order number or client UID"
+      />
+    </div>
+  </div>
+
+  <div *ngIf="loading" class="loading">Loading orders...</div>
+  <div *ngIf="error" class="error">{{ error }}</div>
+
+  <div *ngIf="!loading && !error" class="orders-table">
+    <table>
+      <thead>
+        <tr>
+          <th>Order Number</th>
+          <th>Client UID</th>
+          <th>Store</th>
+          <th>Price Type</th>
+          <th>Currency</th>
+          <th>Status</th>
+          <th>Total</th>
+          <th>Created</th>
+          <th>Updated</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let order of filteredOrders">
+          <td>{{ order.number || order.uid }}</td>
+          <td>{{ order.client_uid }}</td>
+          <td>{{ getStoreName(order.store_uid) }}</td>
+          <td>{{ getPriceTypeName(order.price_type_uid) }}</td>
+          <td>{{ order.currency_code }}</td>
+          <td>
+            <span [class]="getStatusClass(order.status)">
+              {{ order.status }}
+            </span>
+          </td>
+          <td>{{ order.total | currencyFormat: getCurrency(order.currency_code) }}</td>
+          <td>{{ formatDate(order.created_at) }}</td>
+          <td>{{ formatDate(order.last_update || order.created_at) }}</td>
+          <td class="actions">
+            <button class="btn-edit" (click)="editStatus(order)">Change Status</button>
+            <button class="btn-delete" (click)="deleteOrder(order)">Delete</button>
+          </td>
+        </tr>
+        <tr *ngIf="filteredOrders.length === 0">
+          <td colspan="10" class="no-data">No orders found</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="pagination" *ngIf="totalPages > 1">
+      <button [disabled]="currentPage === 1" (click)="goToPage(currentPage - 1)">Previous</button>
+      <span>Page {{ currentPage }} of {{ totalPages }} ({{ total }} total)</span>
+      <button [disabled]="currentPage === totalPages" (click)="goToPage(currentPage + 1)">Next</button>
+    </div>
+  </div>
+
+  <!-- Status Edit Modal -->
+  <div *ngIf="showStatusModal" class="modal-overlay" (click)="cancelEdit()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <h2>Change Order Status</h2>
+      <div class="order-info">
+        <p><strong>Order:</strong> {{ editingOrder?.number || editingOrder?.uid }}</p>
+        <p><strong>Current Status:</strong> {{ editingOrder?.status }}</p>
+      </div>
+      <div class="form-group">
+        <label>New Status:</label>
+        <select [(ngModel)]="newStatus">
+          <option *ngFor="let option of statusOptions" [value]="option.value" [disabled]="option.value === ''">
+            {{ option.label }}
+          </option>
+        </select>
+      </div>
+      <div class="form-actions">
+        <button type="button" class="btn-cancel" (click)="cancelEdit()">Cancel</button>
+        <button type="button" class="btn-save" (click)="saveStatus()">Save</button>
+      </div>
+    </div>
+  </div>
+</div>

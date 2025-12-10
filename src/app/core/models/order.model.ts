@@ -48,7 +48,10 @@ export interface CreateOrderRequest {
 // Backend API format
 export interface BackendOrderRequest {
   uid?: string;
-  user_uid: string;
+  // Backend migrated from `user_uid` to `client_uid` — prefer `client_uid`
+  client_uid?: string;
+  // Keep user_uid optional for backward compatibility
+  user_uid?: string;
   status?: 'draft' | 'new' | 'processing' | 'confirmed'; // Frontend can only use 'draft' or 'new'
   total: number;
   shipping_address: string;
@@ -67,7 +70,9 @@ export interface BackendOrderRequest {
 export interface BackendOrderResponse {
   uid: string;
   number?: string; // Optional order number from backend
-  user_uid: string;
+  // New API uses client_uid; keep user_uid for compatibility
+  client_uid?: string;
+  user_uid?: string;
   status: string;
   total: number;
   shipping_address: string;

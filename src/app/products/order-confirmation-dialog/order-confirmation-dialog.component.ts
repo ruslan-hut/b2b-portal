@@ -7,6 +7,7 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
 })
 export class OrderConfirmationDialogComponent {
   @Input() total: number = 0;
+  @Input() currencyName: string | undefined = undefined;
   @Output() confirmed = new EventEmitter<void>();
   @Output() closed = new EventEmitter<void>();
 

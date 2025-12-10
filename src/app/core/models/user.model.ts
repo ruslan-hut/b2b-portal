@@ -8,6 +8,8 @@ export interface User {
   role: string;
   // Optional store assignment (new in multi-store backend)
   store_uid?: string;
+  // Optional price type assignment
+  price_type_uid?: string;
 }
 
 // Client entity (from /auth/me endpoint)
@@ -21,6 +23,7 @@ export interface Client {
   discount: number;
   currency: string;
   price_type_uid: string;
+  store_uid: string; // Required: store assigned to client
 }
 
 // Token information

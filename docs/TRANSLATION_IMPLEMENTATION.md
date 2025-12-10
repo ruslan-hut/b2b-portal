@@ -669,7 +669,7 @@ fetch('/assets/i18n/en.json')
 - ✅ Check `angular.json` includes `"src/assets"` in build assets
 - ✅ Verify JSON files have valid syntax (no trailing commas)
 - ✅ Check browser console for fetch errors (404, CORS, etc.)
-- ✅ Verify translation files are in the production build: `dist/b2b-portal/browser/assets/i18n/`
+- ✅ Verify translation files are in the production build: `dist/comex-front/browser/assets/i18n/`
 
 ### Translations Disappearing When Switching Languages
 
@@ -785,7 +785,7 @@ Before deploying to production, verify:
 
 2. **Verify translation files are included:**
    ```bash
-   ls -la dist/b2b-portal/browser/assets/i18n/
+   ls -la dist/comex-front/browser/assets/i18n/
    # Should show: en.json, uk.json
    ```
 
@@ -821,7 +821,7 @@ Ensure your web server properly serves:
 **Example Nginx configuration:**
 ```nginx
 location /b2b/ {
-    alias /path/to/dist/b2b-portal/browser/;
+    alias /path/to/dist/comex-front/browser/;
     try_files $uri $uri/ /b2b/index.html;
 }
 ```
@@ -847,7 +847,7 @@ Test the production build before deploying:
 npm run build
 
 # Serve the production build (requires http-server or similar)
-npx http-server dist/b2b-portal/browser -p 8080 --proxy http://localhost:8080?
+npx http-server dist/comex-front/browser -p 8080 --proxy http://localhost:8080?
 
 # Open browser to: http://localhost:8080/b2b/
 ```
@@ -877,7 +877,7 @@ npx http-server dist/b2b-portal/browser -p 8080 --proxy http://localhost:8080?
 **Step 4: Verify Files Exist**
 ```bash
 # Check build output includes translation files
-find dist/b2b-portal -name "*.json" -type f
+find dist/comex-front -name "*.json" -type f
 ```
 
 **Step 5: Test Translation Loading**

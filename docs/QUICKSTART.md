@@ -5,7 +5,7 @@
 ### 1. Start the Development Server
 
 ```bash
-cd /Users/ruslanhut/CursorProjects/b2b-portal/b2b-portal
+cd frontend
 ng serve
 ```
 
@@ -21,11 +21,11 @@ The application will be available at: **http://localhost:4200/**
 
 When you first access the application, you'll be redirected to the login page.
 
-**Demo Credentials:**
-- Email: any valid email (e.g., `test@example.com`)
-- Password: any password with at least 6 characters (e.g., `password123`)
+**Login Credentials:**
+- **User Login**: Username + password (for staff users)
+- **Client Login**: Phone + PIN code (for client users)
 
-The application uses mock authentication, so any valid email and password (min 6 chars) will work.
+The application uses real backend authentication. Use valid credentials from your backend system.
 
 ### 3. Explore the Features
 
@@ -97,13 +97,15 @@ src/app/
    - View past orders
    - Check order status
 
-## Mock Data
+## API Integration
 
-The application currently uses mock data defined in the services:
+The application uses real API integration with the backend:
 
-- **Products**: 3 sample products (Product A, B, C)
-- **Orders**: 2 sample orders in history
-- **User**: Mock user created on login
+- **Products**: Fetched from `/api/v1/product`
+- **Orders**: Fetched from `/api/v1/order`
+- **Authentication**: JWT-based via `/api/v1/auth/login`
+
+See [API Documentation](./api_documentation.md) for details.
 
 ## Development
 
@@ -127,12 +129,12 @@ ng build --configuration production
 
 Build artifacts will be in `dist/` directory.
 
-## Next Steps for Real Implementation
+## Next Steps
 
-1. **API Integration**
-   - Replace mock data in services with HTTP calls
-   - Configure API base URL in `environment.ts`
-   - Add proper error handling
+1. **Backend Setup**
+   - Ensure backend API is running
+   - Configure API URL in `environment.ts` if needed
+   - Test authentication flow
 
 2. **Testing**
    - Write unit tests for components and services

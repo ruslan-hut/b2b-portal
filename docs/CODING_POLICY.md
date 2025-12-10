@@ -218,6 +218,137 @@ export class ProductService {
 
 ## Styling Guidelines
 
+### Material Icons
+
+This project uses [Google Material Icons](https://fonts.google.com/icons) for all icons throughout the application. Emoji symbols should **not** be used for icons in the UI.
+
+#### Setup
+
+Material Icons are included via CDN in `index.html`:
+
+```html
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+```
+
+Global styles for Material Icons are defined in `styles.scss` to ensure consistent rendering.
+
+#### Usage in Templates
+
+Use Material Icons with the `material-icons` class:
+
+```html
+<!-- Basic icon -->
+<span class="material-icons">shopping_cart</span>
+
+<!-- Icon with custom styling -->
+<span class="material-icons cart-icon">shopping_cart</span>
+
+<!-- Icon in button -->
+<button class="close-btn">
+  <span class="material-icons">close</span>
+</button>
+```
+
+#### Icon Selection
+
+- **Cart/Shopping**: `shopping_cart`
+- **User/Person**: `person`, `account_circle`
+- **Navigation**: `keyboard_arrow_down`, `keyboard_arrow_up`, `arrow_back`, `arrow_forward`
+- **Actions**: `add`, `edit`, `delete`, `close`, `check`, `cancel`
+- **Status**: `check_circle`, `cancel`, `warning`, `error`, `info`
+- **Products**: `inventory_2`, `store`, `category`
+- **Orders**: `receipt`, `list_alt`
+- **Network**: `signal_wifi_off`, `wifi`, `cloud_off`
+- **Language**: `language`, `public`, `translate`
+- **View**: `view_list`, `view_module`, `grid_view`
+- **Search**: `search`
+- **Update**: `refresh`, `sync`
+
+Browse all available icons at [Material Icons](https://fonts.google.com/icons).
+
+#### Styling Material Icons
+
+Material Icons should be styled with proper display and alignment:
+
+```scss
+.material-icons {
+  display: inline-flex;
+  align-items: center;
+  vertical-align: middle;
+  font-size: 24px; // Adjust size as needed
+}
+
+// Component-specific icon styling
+.cart-icon {
+  font-size: 18px;
+  color: #667eea;
+}
+
+// Icon in button
+.close-btn {
+  .material-icons {
+    font-size: 24px;
+  }
+}
+```
+
+#### Best Practices
+
+1. **Always use Material Icons**: Replace all emoji symbols with Material Icons
+2. **Consistent Sizing**: Use consistent font-size values (typically 18px, 20px, 24px, or 48px)
+3. **Color Inheritance**: Icons inherit text color by default; override when needed
+4. **Accessibility**: Include appropriate ARIA labels when icons are interactive
+5. **Alignment**: Use `inline-flex` with `align-items: center` for proper vertical alignment
+6. **Spacing**: Add appropriate gap/margin between icons and text
+
+```html
+<!-- Good: Icon with proper alignment -->
+<button class="btn-cart">
+  <span class="material-icons cart-icon">shopping_cart</span>
+  <span class="cart-text">Cart</span>
+</button>
+
+<!-- Good: Accessible icon button -->
+<button class="close-btn" [attr.aria-label]="'Close dialog'">
+  <span class="material-icons">close</span>
+</button>
+
+<!-- Avoid: Emoji symbols -->
+<button>🛒 Cart</button>
+```
+
+#### Common Patterns
+
+```scss
+// Icon in header/menu
+.menu-icon {
+  font-size: 20px;
+  display: inline-flex;
+  align-items: center;
+  vertical-align: middle;
+}
+
+// Large icon for empty states
+.empty-icon {
+  font-size: 80px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  color: #999;
+}
+
+// Icon with rotation animation
+.expand-icon {
+  font-size: 18px;
+  transition: transform 0.2s ease;
+  
+  &.expanded {
+    transform: rotate(180deg);
+  }
+}
+```
+
 ### SCSS Organization
 
 1. **Component Styles**: Scope styles to components

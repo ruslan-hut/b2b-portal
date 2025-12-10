@@ -1,6 +1,26 @@
 # B2B Portal
 
+[![Angular](https://img.shields.io/badge/Angular-18-DD0031?logo=angular&logoColor=white)](https://angular.io/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.3-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![SCSS](https://img.shields.io/badge/SCSS-CC6699?logo=sass&logoColor=white)](https://sass-lang.com/)
+[![RxJS](https://img.shields.io/badge/RxJS-B7178C?logo=reactivex&logoColor=white)](https://rxjs.dev/)
+![i18n](https://img.shields.io/badge/i18n-EN%20%7C%20UK-green)
+![Responsive](https://img.shields.io/badge/Responsive-Design-blue)
+[![License](https://img.shields.io/badge/License-BSD_3--Clause-blue.svg)](../LICENSE)
+
 A modern B2B portal application built with Angular 18, designed for clients to browse products and create orders.
+
+## Technology Stack
+
+- **Framework**: Angular 18.x with Module-based architecture
+- **Language**: TypeScript 5.3 (strict mode)
+- **Styling**: SCSS with responsive design and gradient themes
+- **Forms**: Reactive Forms with custom validation
+- **State Management**: RxJS BehaviorSubjects
+- **HTTP Client**: Angular HttpClient
+- **Routing**: Angular Router with lazy loading and route guards
+- **Internationalization**: Custom translation system (English, Ukrainian)
+- **Build Tool**: Angular CLI with Webpack
 
 ## Features
 
@@ -51,10 +71,9 @@ src/app/
 
 ### Installation
 
-1. Clone the repository:
+1. Navigate to the frontend directory:
 ```bash
-git clone <repository-url>
-cd b2b-portal/b2b-portal
+cd frontend
 ```
 
 2. Install dependencies:
@@ -126,24 +145,25 @@ Before using authentication, ensure your backend API is running and configured:
    apiUrl: 'http://localhost:8080/api/v1'
    ```
 
-2. **Production**: Set the `API_URL` environment variable or GitHub secret (see [DEPLOYMENT.md](./DEPLOYMENT.md))
+2. **Production**: Set the `API_URL` environment variable or GitHub secret (see [DEPLOYMENT.md](./docs/DEPLOYMENT.md))
 
 ### Troubleshooting Authentication
 
 If you encounter login errors like "Invalid credentials":
 
-📖 **See [AUTHENTICATION_TROUBLESHOOTING.md](./AUTHENTICATION_TROUBLESHOOTING.md)** for comprehensive troubleshooting guide including:
+📖 **See [Frontend Troubleshooting Guide](../docs/FRONTEND_TROUBLESHOOTING.md)** for comprehensive troubleshooting including:
 - Backend connection issues
 - CORS configuration
 - API URL configuration
 - Token management
 - Debug tips and tools
+- Authentication issues
 
 ### Testing with Mock Data (Legacy)
 
 For frontend-only testing without a backend, you can use the mock data:
 
-**See [MOCK_DATA.md](./MOCK_DATA.md) for:**
+**See [MOCK_DATA.md](./docs/MOCK_DATA.md) for:**
 - Mock user credentials
 - Sample product catalog
 - Testing scenarios
@@ -193,7 +213,7 @@ return this.http.get<Product[]>(`${this.apiUrl}/products`).pipe(
 );
 ```
 
-See [MOCK_DATA.md](./MOCK_DATA.md) for complete details on the mock data structure.
+See [MOCK_DATA.md](./docs/MOCK_DATA.md) for complete details on the mock data structure.
 
 ## Configuration
 
@@ -206,7 +226,7 @@ Configure API endpoints and other settings in these files.
 
 ## Coding Standards
 
-Please refer to [CODING_POLICY.md](./CODING_POLICY.md) for detailed coding guidelines including:
+Please refer to [CODING_POLICY.md](./docs/CODING_POLICY.md) for detailed coding guidelines including:
 - TypeScript standards
 - Naming conventions
 - Component structure
@@ -236,6 +256,25 @@ Please refer to [CODING_POLICY.md](./CODING_POLICY.md) for detailed coding guide
 - PWA features
 - Internationalization
 
+## Documentation
+
+For comprehensive frontend documentation, see the [Frontend Documentation Index](docs/README.md):
+
+- **[Quick Start Guide](docs/QUICKSTART.md)** - Fast setup and testing
+- **[Mock Data Guide](docs/MOCK_DATA.md)** - Mock data structure and test credentials
+- **[Coding Policy](docs/CODING_POLICY.md)** - Coding standards and conventions
+- **[API Documentation](docs/api_documentation.md)** - Frontend API integration guide
+- **[Translation Implementation](docs/TRANSLATION_IMPLEMENTATION.md)** - Complete translation system
+- **[Translation Quick Start](docs/TRANSLATION_QUICK_START.md)** - Quick translation setup
+- **[Deployment Guide](docs/DEPLOYMENT.md)** - Frontend deployment instructions
+- **[Frontend CLAUDE Guide](CLAUDE.md)** - Frontend development patterns
+
+### Troubleshooting
+- **[Frontend Troubleshooting](../docs/FRONTEND_TROUBLESHOOTING.md)** - Comprehensive debugging guide
+- **[Frontend API Issues](../docs/FRONTEND_API_ISSUES.md)** - API integration troubleshooting
+
+For project-wide documentation, see the [Main Documentation Index](../docs/README.md).
+
 ## Contributing
 
 1. Create a feature branch
@@ -243,11 +282,11 @@ Please refer to [CODING_POLICY.md](./CODING_POLICY.md) for detailed coding guide
 3. Write/update tests
 4. Submit a pull request
 
-Please follow the coding standards outlined in CODING_POLICY.md.
+Please follow the coding standards outlined in [CODING_POLICY.md](./docs/CODING_POLICY.md).
 
 ## License
 
-This project is licensed under the MIT License.
+This project is licensed under the BSD 3-Clause License - see the [LICENSE](../LICENSE) file for details.
 
 ## Support
 

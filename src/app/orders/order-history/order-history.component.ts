@@ -1,27 +1,56 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
 import { OrderService } from '../../core/services/order.service';
 import { Order, OrderStatus } from '../../core/models/order.model';
 import { TranslationService } from '../../core/services/translation.service';
+import { AuthService } from '../../core/services/auth.service';
+import { CurrencyService } from '../../core/services/currency.service';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-order-history',
   templateUrl: './order-history.component.html',
   styleUrl: './order-history.component.scss'
 })
-export class OrderHistoryComponent implements OnInit {
+export class OrderHistoryComponent implements OnInit, OnDestroy {
   orders: Order[] = [];
   loading = false;
+  currencyName: string | undefined = undefined;
+  private subscriptions = new Subscription();
 
   constructor(
     private orderService: OrderService,
     private router: Router,
     public translationService: TranslationService,
+    private authService: AuthService,
+    private currencyService: CurrencyService,
     private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
     this.loadOrders();
+
+    // Fetch currency name only for clients (not for users/admins)
+    this.subscriptions.add(
+      this.authService.entityType$.subscribe(type => {
+        if (type === 'client') {
+          const entity = this.authService.currentEntityValue;
+          if (entity && (entity as any).uid) {
+            const clientUid = (entity as any).uid;
+            this.currencyService.getCurrencyForClient(clientUid).subscribe(name => {
+              if (name) {
+                this.currencyName = name;
+                this.cdr.detectChanges();
+              }
+            });
+          }
+        }
+      })
+    );
+  }
+
+  ngOnDestroy(): void {
+    this.subscriptions.unsubscribe();
   }
 
   loadOrders(): void {

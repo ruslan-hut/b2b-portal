@@ -2,7 +2,7 @@
   <!-- Offline Indicator -->
   <div class="offline-indicator" *ngIf="!isOnline">
     <div class="offline-content">
-      <span class="offline-icon">📡</span>
+      <span class="material-icons offline-icon">signal_wifi_off</span>
       <span class="offline-message">You are currently offline. Some features may be limited.</span>
     </div>
   </div>
@@ -14,36 +14,76 @@
         <span class="logo-text">{{ title }}</span>
       </div>
 
-      <nav class="main-nav">
-        <a routerLink="/products/catalog" routerLinkActive="active" class="nav-link">
-          {{ 'navigation.products' | translate }}
-        </a>
-        <a routerLink="/orders/history" routerLinkActive="active" class="nav-link">
-          {{ 'navigation.orders' | translate }}
-        </a>
-      </nav>
-
-      <div class="user-menu">
-        <app-language-switcher></app-language-switcher>
-        <button class="btn-view-toggle" *ngIf="showViewToggle" (click)="toggleViewMode()">
-          <ng-container *ngIf="viewMode === 'grid'">
-            📋 {{ 'navigation.bulkOrder' | translate }}
-          </ng-container>
-          <ng-container *ngIf="viewMode === 'bulk'">
-            🔲 {{ 'navigation.gridView' | translate }}
-          </ng-container>
-        </button>
+      <div class="header-actions">
         <button class="btn-cart" (click)="toggleCartPanel()">
-          🛒 {{ 'navigation.cart' | translate }} ({{ cartItems.length }})
+          <span class="material-icons cart-icon">shopping_cart</span>
+          <span class="cart-text">{{ 'navigation.cart' | translate }} ({{ cartItems.length }})</span>
         </button>
-        <div class="user-info">
-          <span class="user-name">{{ getDisplayName() }}</span>
-          <span class="user-company" *ngIf="entityType === 'user' && currentEntity">{{ getUserData()?.username }}</span>
-          <span class="user-company" *ngIf="entityType === 'client' && currentEntity">{{ getClientData()?.phone }}</span>
+
+        <div class="user-menu-wrapper">
+          <button class="btn-user-menu" (click)="toggleUserMenu()" [attr.aria-label]="'User menu'">
+            <div class="user-info">
+              <span class="user-name">{{ getDisplayName() }}</span>
+              <span class="user-company" *ngIf="entityType === 'user' && currentEntity">{{ getUserData()?.username }}</span>
+              <span class="user-company" *ngIf="entityType === 'client' && currentEntity">{{ getClientData()?.phone }}</span>
+            </div>
+            <span class="material-icons user-icon-mobile">person</span>
+            <span class="material-icons menu-arrow" [class.open]="isUserMenuOpen">keyboard_arrow_down</span>
+          </button>
+
+          <div class="user-menu-dropdown" [class.open]="isUserMenuOpen">
+            <div class="menu-section">
+              <div class="menu-item user-info-menu-item">
+                <span class="user-name-display">{{ getDisplayName() }}</span>
+                <span class="user-company-display" *ngIf="entityType === 'user' && currentEntity">{{ getUserData()?.username }}</span>
+                <span class="user-company-display" *ngIf="entityType === 'client' && currentEntity">{{ getClientData()?.phone }}</span>
+              </div>
+            </div>
+
+            <div class="menu-section">
+              <div class="menu-item language-menu-item">
+                <span class="material-icons menu-icon">language</span>
+                <span class="menu-text">{{ 'navigation.language' | translate }}</span>
+                <app-language-switcher></app-language-switcher>
+              </div>
+            </div>
+
+            <div class="menu-section">
+              <a routerLink="/products/catalog" routerLinkActive="active" class="menu-item" (click)="closeUserMenu()">
+                <span class="material-icons menu-icon">inventory_2</span>
+                <span class="menu-text">{{ 'navigation.products' | translate }}</span>
+              </a>
+              <a routerLink="/orders/history" routerLinkActive="active" class="menu-item" (click)="closeUserMenu()">
+                <span class="material-icons menu-icon">receipt</span>
+                <span class="menu-text">{{ 'navigation.orders' | translate }}</span>
+              </a>
+              <a *ngIf="hasAdminAccess()" routerLink="/admin/dashboard" routerLinkActive="active" class="menu-item admin-menu-item" (click)="closeUserMenu()">
+                <span class="material-icons menu-icon">admin_panel_settings</span>
+                <span class="menu-text">Admin Zone</span>
+              </a>
+            </div>
+
+            <div class="menu-section" *ngIf="showViewToggle">
+              <button class="menu-item btn-view-toggle-menu" (click)="toggleViewMode(); closeUserMenu()">
+                <span class="material-icons menu-icon">
+                  <ng-container *ngIf="viewMode === 'grid'">view_list</ng-container>
+                  <ng-container *ngIf="viewMode === 'bulk'">view_module</ng-container>
+                </span>
+                <span class="menu-text">
+                  <ng-container *ngIf="viewMode === 'grid'">{{ 'navigation.bulkOrder' | translate }}</ng-container>
+                  <ng-container *ngIf="viewMode === 'bulk'">{{ 'navigation.gridView' | translate }}</ng-container>
+                </span>
+              </button>
+            </div>
+
+            <div class="menu-section">
+              <button class="menu-item btn-logout-menu" (click)="logout(); closeUserMenu()">
+                <span class="material-icons menu-icon">logout</span>
+                <span class="menu-text">{{ 'common.logout' | translate }}</span>
+              </button>
+            </div>
+          </div>
         </div>
-        <button class="btn-logout" (click)="logout()">
-          {{ 'common.logout' | translate }}
-        </button>
       </div>
     </div>
   </header>
@@ -59,6 +99,7 @@
   <app-order-confirmation-dialog
     *ngIf="showOrderDialog"
     [total]="cartTotal"
+    [currencyName]="currencyName"
     (confirmed)="onOrderConfirmed()"
     (closed)="closeOrderDialog()"
   ></app-order-confirmation-dialog>
@@ -68,12 +109,14 @@
   <div class="cart-panel" [class.open]="showCartPanel">
     <div class="cart-header">
       <h2>{{ 'products.addToCart' | translate }}</h2>
-      <button class="close-btn" (click)="toggleCartPanel()">✕</button>
+      <button class="close-btn" (click)="toggleCartPanel()">
+        <span class="material-icons">close</span>
+      </button>
     </div>
 
     <div class="cart-content">
       <div class="empty-cart" *ngIf="cartItems.length === 0">
-        <div class="empty-icon">🛒</div>
+        <span class="material-icons empty-icon">shopping_cart</span>
         <p>{{ 'messages.cartCleared' | translate }}</p>
       </div>
 
@@ -82,17 +125,17 @@
           <div class="item-info">
             <span class="item-name">{{ item.productName }}</span>
             <span class="item-details">
-              ${{ item.price.toFixed(2) }} × {{ item.quantity }}
+              {{ item.price.toFixed(2) }} × {{ item.quantity }}
             </span>
             <div class="stock-warning" *ngIf="item.insufficientStock">
-              <span class="warning-icon">⚠️</span>
+              <span class="material-icons warning-icon">warning</span>
               <span class="warning-text">
                 {{ 'products.insufficientStock' | translate: {available: item.availableQuantity ?? 0} }}
               </span>
             </div>
           </div>
           <div class="item-actions">
-            <span class="item-total">${{ item.subtotal.toFixed(2) }}</span>
+            <span class="item-total">{{ item.subtotal.toFixed(2) }}</span>
             <button class="remove-btn" (click)="removeFromCart(item.productId)">
               {{ 'common.delete' | translate }}
             </button>
@@ -114,7 +157,7 @@
       </div>
       <div class="cart-total">
         <span class="total-label">{{ 'products.total' | translate }}:</span>
-        <span class="total-amount">${{ cartTotal.toFixed(2) }}</span>
+        <span class="total-amount">{{ cartTotal.toFixed(2) }}{{ currencyName ? ' ' + currencyName : '' }}</span>
       </div>
       <button class="btn-checkout" (click)="proceedToCheckout()" [disabled]="isCreatingOrder">
         {{ isCreatingOrder ? ('common.loading' | translate) : ('products.confirmOrder' | translate) }}

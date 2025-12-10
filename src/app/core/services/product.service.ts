@@ -5,7 +5,7 @@ import { delay, map, catchError, switchMap } from 'rxjs/operators';
 import { Product, ProductCategory, BackendProduct } from '../models/product.model';
 import { ProductMapper } from '../mappers/product.mapper';
 import { environment } from '../../../environments/environment';
-import { MOCK_PRODUCTS, MOCK_CATEGORIES } from '../mock-data/products.mock';
+// Mock data imports removed - using real API in production
 import { TranslationService } from './translation.service';
 
 interface ApiResponse<T> {
@@ -83,7 +83,8 @@ export class ProductService {
 
         const backendProducts = response.data;
 
-        if (backendProducts.length === 0) {
+        // Handle null or undefined data from API
+        if (!backendProducts || !Array.isArray(backendProducts) || backendProducts.length === 0) {
           return of([]);
         }
 
@@ -130,8 +131,9 @@ export class ProductService {
         );
       }),
       catchError(error => {
-        console.error('Error fetching products, using mock data:', error);
-        return of(MOCK_PRODUCTS);
+        console.error('Error fetching products from API:', error);
+        // Return empty array instead of mock data in production
+        return of([]);
       })
     );
   }
@@ -240,13 +242,15 @@ export class ProductService {
 
     // Fetch only missing/expired descriptions
     const payload = {
-      product_uids: uidsToFetch,
-      language: language
+      data: uidsToFetch
     };
+
+    const params = new HttpParams().set('language', language);
 
     return this.http.post<ApiResponse<BatchProductDescription[]>>(
       `${this.apiUrl}/product/descriptions/batch`,
-      payload
+      payload,
+      { params }
     ).pipe(
       map(response => {
         if (!response.success || !response.data) {
@@ -423,47 +427,43 @@ export class ProductService {
       return of(new Map());
     }
 
-    // Fetch category descriptions for all UIDs
-    // Note: The API doesn't have a batch endpoint for categories, so we'll need to fetch individually
-    // or check if the backend returns category names in the product response
-    const categoryDescriptions$ = categoryUids.map(uid => 
-      this.http.get<ApiResponse<Array<{category_uid: string; language: string; name: string; description?: string}>>>(
-        `${this.apiUrl}/category/description/${uid}`
-      ).pipe(
-        map(response => {
-          if (!response.success || !response.data.length) {
-            return null;
-          }
-          // Find description in requested language, or fallback to first available
-          const desc = response.data.find(d => d.language === language) || response.data[0];
-          return { uid, name: desc?.name || uid };
-        }),
-        catchError(error => {
-          console.error(`Error fetching category description for ${uid}:`, error);
-          return of({ uid, name: uid }); // Fallback to UID if fetch fails
-        })
-      )
-    );
+    // Use batch endpoint on backend: POST /category/description/batch with { data: [...] } and language query param
+    const payload = { data: categoryUids };
+    const params = new HttpParams().set('language', language);
 
-    // Combine all requests
-    return categoryDescriptions$.length > 0
-      ? combineLatest(categoryDescriptions$).pipe(
-          map(results => {
-            const map = new Map<string, string>();
-            results.forEach(result => {
-              if (result) {
-                map.set(result.uid, result.name);
-              }
-            });
-            return map;
-          })
-        )
-      : of(new Map());
+    return this.http.post<ApiResponse<Array<{ category_uid: string; language: string; name: string; description?: string }>>>(
+      `${this.apiUrl}/category/description/batch`,
+      payload,
+      { params }
+    ).pipe(
+      map(response => {
+        if (!response.success || !response.data) {
+          return new Map<string, string>();
+        }
+
+        const map = new Map<string, string>();
+
+        // Filter by language and extract names
+        response.data
+          .filter(desc => desc.language === language)
+          .forEach(desc => {
+            map.set(desc.category_uid, desc.name);
+          });
+
+        return map;
+      }),
+      catchError(error => {
+        console.error('Error fetching batch category descriptions:', error);
+        return of(new Map());
+      })
+    );
   }
 
   getCategories(): Observable<ProductCategory[]> {
-    // TODO: Replace with actual API call
-    return of(MOCK_CATEGORIES).pipe(delay(300));
+    // Return empty array - categories are now fetched via getBatchCategoryDescriptions
+    // This method is deprecated and should not be used
+    console.warn('getCategories() is deprecated. Use getBatchCategoryDescriptions() instead.');
+    return of([]);
   }
 
   searchProducts(query: string): Observable<Product[]> {

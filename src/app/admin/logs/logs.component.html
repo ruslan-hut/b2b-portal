@@ -1,0 +1,111 @@
+<div class="logs-container">
+  <div class="header">
+    <h1>Logs</h1>
+    <div class="header-actions">
+      <button class="btn btn-primary" (click)="refresh()" [disabled]="loading">
+        {{ loading ? 'Refreshing...' : 'Refresh' }}
+      </button>
+      <button class="btn btn-secondary" (click)="cleanupLogs()">Cleanup Old Logs</button>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="filters">
+    <div class="filter-group">
+      <label for="level">Level:</label>
+      <select id="level" [(ngModel)]="levelFilter" (change)="onFilterChange()">
+        <option value="">All</option>
+        <option value="DEBUG">DEBUG</option>
+        <option value="INFO">INFO</option>
+        <option value="WARN">WARN</option>
+        <option value="ERROR">ERROR</option>
+      </select>
+    </div>
+
+    <div class="filter-group">
+      <label for="userUid">User UID:</label>
+      <input type="text" id="userUid" [(ngModel)]="userUidFilter" (input)="onFilterChange()" placeholder="Filter by user UID">
+    </div>
+
+    <div class="filter-group">
+      <label for="requestId">Request ID:</label>
+      <input type="text" id="requestId" [(ngModel)]="requestIdFilter" (input)="onFilterChange()" placeholder="Filter by request ID">
+    </div>
+
+    <div class="filter-group">
+      <label for="dateFrom">Date From:</label>
+      <input type="date" id="dateFrom" [(ngModel)]="dateFromFilter" (change)="onFilterChange()">
+    </div>
+
+    <div class="filter-group">
+      <label for="dateTo">Date To:</label>
+      <input type="date" id="dateTo" [(ngModel)]="dateToFilter" (change)="onFilterChange()">
+    </div>
+
+    <div class="filter-group">
+      <label for="search">Search:</label>
+      <input type="text" id="search" [(ngModel)]="searchFilter" (input)="onSearchChange()" placeholder="Search in message">
+    </div>
+  </div>
+
+  <!-- Error Message -->
+  <div *ngIf="error" class="error-message">
+    {{ error }}
+  </div>
+
+  <!-- Loading Indicator -->
+  <div *ngIf="loading" class="loading">
+    Loading logs...
+  </div>
+
+  <!-- Logs Table -->
+  <div *ngIf="!loading && !error" class="logs-table-container">
+    <table class="logs-table">
+      <thead>
+        <tr>
+          <th>Time</th>
+          <th>Level</th>
+          <th>User UID</th>
+          <th>Request ID</th>
+          <th>Message</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let log of logs" [class.expanded]="isRowExpanded(log.id)">
+          <td>{{ formatDate(log.time) }}</td>
+          <td>
+            <span class="level-badge" [ngClass]="getLevelClass(log.level)">
+              {{ log.level }}
+            </span>
+          </td>
+          <td>{{ log.user_uid || '-' }}</td>
+          <td class="request-id">{{ log.request_id || '-' }}</td>
+          <td class="message-cell">
+            <div class="message-preview">{{ log.message }}</div>
+            <div *ngIf="isRowExpanded(log.id)" class="message-full">
+              <div class="message-content">{{ log.message }}</div>
+              <div *ngIf="log.extra" class="extra-content">
+                <strong>Extra:</strong>
+                <pre>{{ formatExtra(log.extra) | json }}</pre>
+              </div>
+            </div>
+          </td>
+          <td>
+            <button class="btn-expand" (click)="toggleRow(log.id)">
+              {{ isRowExpanded(log.id) ? '−' : '+' }}
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- Pagination -->
+    <div class="pagination">
+      <button [disabled]="currentPage === 1" (click)="goToPage(currentPage - 1)">Previous</button>
+      <span>Page {{ currentPage }} of {{ totalPages }} ({{ total }} total)</span>
+      <button [disabled]="currentPage === totalPages" (click)="goToPage(currentPage + 1)">Next</button>
+    </div>
+  </div>
+</div>
+

@@ -4,7 +4,8 @@
 
 export const environment = {
   production: false,
-  apiUrl: 'https://b2b.darkbyrior.com/api/v1'
+  apiUrl: 'http://localhost:8888/api/v1', // Development - connects to Docker backend on port 8888
+  appTitle: 'B2B Portal' // Default application title
 };
 
 /*

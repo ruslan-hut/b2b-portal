@@ -1,0 +1,60 @@
+<div class="admin-container">
+  <nav class="admin-nav" [class.collapsed]="isMenuCollapsed">
+    <div class="nav-header">
+      <div class="header-top">
+        <h2 *ngIf="!isMenuCollapsed">Admin Zone</h2>
+        <button class="toggle-btn" (click)="toggleMenu()" [attr.aria-label]="isMenuCollapsed ? 'Expand menu' : 'Collapse menu'">
+          <span class="material-icons">{{ isMenuCollapsed ? 'chevron_right' : 'chevron_left' }}</span>
+        </button>
+      </div>
+    </div>
+    <ul class="nav-menu">
+      <li>
+        <a routerLink="/admin/dashboard" routerLinkActive="active" [title]="isMenuCollapsed ? 'Dashboard' : ''">
+          <span class="material-icons">dashboard</span>
+          <span class="text" *ngIf="!isMenuCollapsed">Dashboard</span>
+        </a>
+      </li>
+      <li>
+        <a routerLink="/admin/clients" routerLinkActive="active" [title]="isMenuCollapsed ? 'Clients' : ''">
+          <span class="material-icons">people</span>
+          <span class="text" *ngIf="!isMenuCollapsed">Clients</span>
+        </a>
+      </li>
+      <li>
+        <a routerLink="/admin/orders" routerLinkActive="active" [title]="isMenuCollapsed ? 'Orders' : ''">
+          <span class="material-icons">receipt</span>
+          <span class="text" *ngIf="!isMenuCollapsed">Orders</span>
+        </a>
+      </li>
+      <li>
+        <a routerLink="/admin/products" routerLinkActive="active" [title]="isMenuCollapsed ? 'Products' : ''">
+          <span class="material-icons">inventory_2</span>
+          <span class="text" *ngIf="!isMenuCollapsed">Products</span>
+        </a>
+      </li>
+      <li *ngIf="isAdmin">
+        <a routerLink="/admin/users" routerLinkActive="active" [title]="isMenuCollapsed ? 'Users' : ''">
+          <span class="material-icons">person</span>
+          <span class="text" *ngIf="!isMenuCollapsed">Users</span>
+        </a>
+      </li>
+      <li *ngIf="isAdmin">
+        <a routerLink="/admin/tables" routerLinkActive="active" [title]="isMenuCollapsed ? 'Database Tables' : ''">
+          <span class="material-icons">table_chart</span>
+          <span class="text" *ngIf="!isMenuCollapsed">Database Tables</span>
+        </a>
+      </li>
+      <li *ngIf="isAdmin">
+        <a routerLink="/admin/logs" routerLinkActive="active" [title]="isMenuCollapsed ? 'Logs' : ''">
+          <span class="material-icons">description</span>
+          <span class="text" *ngIf="!isMenuCollapsed">Logs</span>
+        </a>
+      </li>
+    </ul>
+  </nav>
+  <main class="admin-content" [class.expanded]="isMenuCollapsed">
+    <router-outlet></router-outlet>
+  </main>
+</div>
+

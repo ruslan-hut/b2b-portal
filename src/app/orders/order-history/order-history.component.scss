@@ -65,6 +65,11 @@
   .empty-icon {
     font-size: 80px;
     margin-bottom: 20px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    color: #999;
   }
 
   h2 {

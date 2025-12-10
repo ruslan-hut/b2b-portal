@@ -1,0 +1,77 @@
+<div class="tables-container">
+  <div class="header">
+    <h1>Database Tables Viewer</h1>
+    <p class="warning">Read-only access. This tool allows viewing database records for debugging and administration purposes.</p>
+  </div>
+
+  <div class="tables-layout">
+    <!-- Tables List -->
+    <div class="tables-sidebar">
+      <h2>Tables</h2>
+      <div *ngIf="loading" class="loading">Loading tables...</div>
+      <div *ngIf="error" class="error">{{ error }}</div>
+      <ul class="tables-list" *ngIf="!loading && !error">
+        <li
+          *ngFor="let table of tables"
+          [class.active]="selectedTable === table.name"
+          (click)="selectTable(table)"
+        >
+          {{ table.name }}
+        </li>
+      </ul>
+    </div>
+
+    <!-- Records Viewer -->
+    <div class="records-viewer" *ngIf="selectedTable">
+      <div class="viewer-header">
+        <h2>Table: {{ selectedTable }}</h2>
+        <div class="search-controls">
+          <input
+            type="text"
+            [(ngModel)]="searchTerm"
+            (input)="onSearchChange()"
+            placeholder="Search records..."
+            class="search-input"
+          />
+        </div>
+      </div>
+
+      <div *ngIf="loadingRecords" class="loading">Loading records...</div>
+      <div *ngIf="error && !loadingRecords" class="error">{{ error }}</div>
+
+      <div *ngIf="!loadingRecords && !error" class="records-table-container">
+        <div *ngIf="records.length === 0" class="no-records">
+          No records found
+        </div>
+        <div *ngIf="records.length > 0" class="records-table-wrapper">
+          <table class="records-table">
+            <thead>
+              <tr>
+                <th *ngFor="let column of columns">{{ column }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let record of records">
+                <td *ngFor="let column of columns" [class]="getValueClass(record[column])">
+                  {{ formatValue(record[column]) }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="pagination" *ngIf="totalPages > 1">
+          <button [disabled]="currentPage === 1" (click)="goToPage(currentPage - 1)">Previous</button>
+          <span>Page {{ currentPage }} of {{ totalPages }} ({{ total }} total records)</span>
+          <button [disabled]="currentPage === totalPages" (click)="goToPage(currentPage + 1)">Next</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- No table selected message -->
+    <div class="no-table-selected" *ngIf="!selectedTable">
+      <p>Select a table from the list to view its records.</p>
+    </div>
+  </div>
+</div>
+

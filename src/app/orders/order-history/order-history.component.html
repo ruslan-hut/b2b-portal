@@ -1,9 +1,6 @@
 <div class="order-history-container">
   <div class="page-header">
     <h1>{{ 'orders.title' | translate }}</h1>
-    <button class="btn btn-primary" (click)="navigateToCatalog()">
-      {{ 'navigation.products' | translate }}
-    </button>
   </div>
 
   <div class="loading-container" *ngIf="loading">
@@ -12,7 +9,7 @@
   </div>
 
   <div class="empty-state" *ngIf="!loading && orders.length === 0">
-    <div class="empty-icon">📦</div>
+    <span class="material-icons empty-icon">inventory_2</span>
     <h2>{{ 'orders.noOrders' | translate }}</h2>
     <p>{{ 'navigation.products' | translate }}</p>
     <button class="btn btn-primary" (click)="navigateToCatalog()">
@@ -45,7 +42,7 @@
             <span class="item-quantity">{{ 'products.quantity' | translate }}: {{ item.quantity }}</span>
           </div>
           <div class="item-price">
-            ${{ item.subtotal.toFixed(2) }}
+            {{ item.subtotal.toFixed(2) }}
           </div>
         </div>
       </div>
@@ -58,7 +55,7 @@
       <div class="order-footer">
         <div class="order-total">
           <span class="total-label">{{ 'products.total' | translate }}:</span>
-          <span class="total-amount">${{ order.totalAmount.toFixed(2) }}</span>
+          <span class="total-amount">{{ order.totalAmount.toFixed(2) }}{{ currencyName ? ' ' + currencyName : '' }}</span>
         </div>
         <button class="btn btn-secondary" (click)="viewOrderDetails(order.id)">
           {{ 'orders.viewDetails' | translate }}

@@ -22,7 +22,7 @@ Visit `http://localhost:4200` and you'll see the **compact language dropdown** (
 npm run build
 ```
 
-The translation files will be automatically included in `dist/b2b-portal/browser/assets/i18n/`
+The translation files will be automatically included in `dist/comex-front/browser/assets/i18n/`
 
 ##  Where to Find the Language Switcher
 

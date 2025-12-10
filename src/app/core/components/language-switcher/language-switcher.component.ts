@@ -11,9 +11,9 @@ export class LanguageSwitcherComponent implements OnInit {
   currentLanguage$: Observable<Language>;
   isDropdownOpen = false;
   
-  languages: { code: Language; label: string; flag: string }[] = [
-    { code: 'en', label: 'English', flag: '🇬🇧' },
-    { code: 'uk', label: 'Українська', flag: '🇺🇦' }
+  languages: { code: Language; label: string }[] = [
+    { code: 'en', label: 'English' },
+    { code: 'uk', label: 'Українська' }
   ];
 
   constructor(private translationService: TranslationService) {
@@ -35,10 +35,9 @@ export class LanguageSwitcherComponent implements OnInit {
     this.closeDropdown();
   }
 
-  getCurrentFlag(): string {
+  getCurrentLanguageCode(): string {
     const currentLang = this.translationService.getCurrentLanguage();
-    const language = this.languages.find(lang => lang.code === currentLang);
-    return language ? language.flag : '🌐';
+    return currentLang.toUpperCase();
   }
 
   getCurrentLanguageLabel(): string {

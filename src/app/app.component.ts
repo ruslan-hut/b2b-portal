@@ -1,4 +1,4 @@
-import { Component, ChangeDetectorRef, OnInit, OnDestroy } from '@angular/core';
+import { Component, ChangeDetectorRef, OnInit, OnDestroy, HostListener } from '@angular/core';
 import { Router, NavigationEnd } from '@angular/router';
 import { AuthService } from './core/services/auth.service';
 import { OrderService } from './core/services/order.service';
@@ -6,6 +6,7 @@ import { ProductService } from './core/services/product.service';
 import { TranslationService } from './core/services/translation.service';
 import { ErrorHandlerService } from './core/services/error-handler.service';
 import { NetworkService } from './core/services/network.service';
+import { CurrencyService } from './core/services/currency.service';
 import { User, Client } from './core/models/user.model';
 import { OrderItem, CreateOrderRequest, ShippingAddress } from './core/models/order.model';
 import { filter, map } from 'rxjs/operators';
@@ -23,7 +24,7 @@ interface CartItem extends OrderItem {
   styleUrl: './app.component.scss'
 })
 export class AppComponent implements OnInit, OnDestroy {
-  title = 'DARK B2B';
+  title: string = 'B2B Portal';
   currentEntity: User | Client | null = null;
   entityType: 'user' | 'client' | null = null;
   cartItems: CartItem[] = [];
@@ -36,6 +37,8 @@ export class AppComponent implements OnInit, OnDestroy {
   isCreatingOrder = false;
   orderComment = '';
   isOnline = true;
+  isUserMenuOpen = false;
+  currencyName: string | undefined = undefined;
   private subscriptions = new Subscription();
 
   constructor(
@@ -46,6 +49,7 @@ export class AppComponent implements OnInit, OnDestroy {
     public translationService: TranslationService,
     private errorHandler: ErrorHandlerService,
     private networkService: NetworkService,
+    private currencyService: CurrencyService,
     private cdr: ChangeDetectorRef
   ) {
     this.subscriptions.add(
@@ -58,6 +62,16 @@ export class AppComponent implements OnInit, OnDestroy {
     this.subscriptions.add(
       this.authService.entityType$.subscribe(type => {
         this.entityType = type;
+        // Fetch currency name only for clients (not for users/admins)
+        if (type === 'client' && this.currentEntity && (this.currentEntity as any).uid) {
+          const clientUid = (this.currentEntity as any).uid;
+          this.currencyService.getCurrencyForClient(clientUid).subscribe(name => {
+            if (name) this.currencyName = name;
+          });
+        } else {
+          // Clear currency name for non-client entities
+          this.currencyName = '';
+        }
       })
     );
 
@@ -91,6 +105,9 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    // Set application title from document title (configured at build time)
+    this.title = document.title || 'B2B Portal';
+
     // Subscribe to network status
     this.subscriptions.add(
       this.networkService.isOnline$.subscribe(isOnline => {
@@ -148,6 +165,18 @@ export class AppComponent implements OnInit, OnDestroy {
     return this.entityType === 'client' ? this.currentEntity as Client : null;
   }
 
+  /**
+   * Check if current user has admin or manager role
+   * @returns true if user has admin or manager role
+   */
+  hasAdminAccess(): boolean {
+    if (this.entityType !== 'user' || !this.currentEntity) {
+      return false;
+    }
+    const user = this.currentEntity as User;
+    return user.role === 'admin' || user.role === 'manager';
+  }
+
   navigateTo(route: string): void {
     this.router.navigate([route]);
   }
@@ -157,7 +186,18 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   removeFromCart(productId: string): void {
-    this.orderService.removeFromCart(productId);
+    this.orderService.removeFromCart(productId).subscribe({
+      next: () => {
+        // Item successfully removed from backend and local cart
+        console.log(`Product ${productId} removed from cart.`);
+        this.cdr.markForCheck(); // Trigger change detection if needed
+      },
+      error: (error) => {
+        console.error(`Error removing product ${productId} from cart:`, error);
+        alert(error.message || 'Failed to remove item from cart. Please try again.');
+        // Optionally, you might want to revert the UI change or re-fetch cart
+      }
+    });
   }
 
   updateQuantity(productId: string, quantity: number): void {
@@ -202,9 +242,10 @@ export class AppComponent implements OnInit, OnDestroy {
    * Returns Observable<boolean> - true if any items have insufficient stock
    */
   private validateCartStock() {
-    // Read store UID from current entity (if user)
+    // Read store UID from current entity (user or client)
     const currentUser = this.getUserData();
-    const storeUid = currentUser?.store_uid;
+    const currentClient = this.getClientData();
+    const storeUid = currentUser?.store_uid || currentClient?.store_uid;
 
     // Create an array of observables to fetch available quantities for the user's store
     const stockChecks = this.cartItems.map(item =>
@@ -300,5 +341,22 @@ export class AppComponent implements OnInit, OnDestroy {
 
   toggleViewMode(): void {
     this.productService.toggleViewMode();
+  }
+
+  toggleUserMenu(): void {
+    this.isUserMenuOpen = !this.isUserMenuOpen;
+  }
+
+  closeUserMenu(): void {
+    this.isUserMenuOpen = false;
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    const target = event.target as HTMLElement;
+    const clickedInside = target.closest('.user-menu-wrapper');
+    if (!clickedInside && this.isUserMenuOpen) {
+      this.closeUserMenu();
+    }
   }
 }

@@ -56,13 +56,15 @@ export class OrderService {
     }
 
     const userUid = this.getCurrentUserId();
-    const params = new HttpParams()
-      .set('offset', offset.toString())
-      .set('limit', limit.toString());
+    // Use batch endpoint: POST /order/find/client with body { data: [clientUid], offset, limit }
+    const payload: any = { data: [userUid] };
+    // Attach pagination if provided
+    if (typeof offset === 'number') payload.offset = offset;
+    if (typeof limit === 'number') payload.limit = limit;
 
-    return this.http.get<ApiResponse<BackendOrderResponse[]>>(
-      `${this.apiUrl}/order/user/${userUid}`,
-      { params }
+    return this.http.post<ApiResponse<BackendOrderResponse[]>>(
+      `${this.apiUrl}/order/find/client`,
+      payload
     ).pipe(
       switchMap(response => {
         if (!response.success) {
@@ -133,13 +135,15 @@ export class OrderService {
    * Fetch specific order by ID
    */
   getOrderById(orderUid: string): Observable<Order | undefined> {
-    return this.http.get<ApiResponse<BackendOrderResponse>>(`${this.apiUrl}/order/${orderUid}`).pipe(
+    // Use batch endpoint for single order retrieval
+    const payload = { data: [orderUid] };
+    return this.http.post<ApiResponse<BackendOrderResponse[]>>(`${this.apiUrl}/order/batch`, payload).pipe(
       switchMap(response => {
-        if (!response.success) {
+        if (!response.success || !response.data || response.data.length === 0) {
           throw new Error(response.message || 'Order not found');
         }
 
-        const orderData = response.data;
+        const orderData = response.data[0];
 
         // Fetch items
         return this.getOrderItems(orderUid).pipe(
@@ -182,12 +186,14 @@ export class OrderService {
    * Fetch items for a specific order - SINGLE order
    */
   private getOrderItems(orderUid: string): Observable<any[]> {
-    return this.http.get<ApiResponse<any[]>>(`${this.apiUrl}/order/${orderUid}/items`).pipe(
+    const payload = { data: [orderUid] };
+    return this.http.post<ApiResponse<any[][]>>(`${this.apiUrl}/order/items/batch`, payload).pipe(
       map(response => {
-        if (!response.success) {
+        if (!response.success || !response.data || response.data.length === 0) {
           return [];
         }
-        return response.data;
+        // Response is an array of arrays; first element corresponds to our single order
+        return response.data[0] || [];
       }),
       catchError(() => of([]))
     );
@@ -202,7 +208,7 @@ export class OrderService {
     }
 
     const payload = {
-      order_uids: orderUids
+      data: orderUids
     };
 
     return this.http.post<ApiResponse<any[][]>>(
@@ -443,11 +449,11 @@ export class OrderService {
    */
   updateOrderStatus(orderUid: string, newStatus: 'new' | 'processing' | 'confirmed'): Observable<void> {
     const payload = {
-      order_uid: orderUid,
-      status: newStatus
+      data: [ { uid: orderUid, status: newStatus } ]
     };
 
-    return this.http.post<ApiResponse<any>>(`${this.apiUrl}/order/status`, payload).pipe(
+    // Admin endpoint
+    return this.http.post<ApiResponse<any>>(`${this.apiUrl}/admin/order/status`, payload).pipe(
       map(response => {
         if (!response.success) {
           throw new Error(response.message || 'Failed to update order status');
@@ -489,9 +495,46 @@ export class OrderService {
     this.currentOrderSubject.next([...currentItems]);
   }
 
-  removeFromCart(productId: string): void {
+  removeFromCart(productId: string): Observable<void> {
     const currentItems = this.currentOrderSubject.value;
-    this.currentOrderSubject.next(currentItems.filter(i => i.productId !== productId));
+    const itemToRemove = currentItems.find(i => i.productId === productId);
+
+    if (!itemToRemove) {
+      console.warn(`[OrderService] Attempted to remove item with productId ${productId} but it was not found in local cart.`);
+      return of(undefined);
+    }
+
+    // Explicitly check if draftOrderUid is a non-empty string
+    if (!this.draftOrderUid || this.draftOrderUid.trim() === '') {
+      console.log(`[OrderService] removeFromCart: No valid draftOrderUid found. Removing item "${productId}" from local cache only.`);
+      this.currentOrderSubject.next(currentItems.filter(i => i.productId !== productId));
+      return of(undefined);
+    }
+
+    // Wrap the payload in a 'data' object as expected by the backend's request.Decode
+    const backendPayload = {
+        data:[
+            {
+                order_uid: this.draftOrderUid, // This should now be a non-empty string
+                product_uid: productId
+            }
+        ]
+    };
+
+    return this.http.post<ApiResponse<any>>(`${this.apiUrl}/order/item/delete`, backendPayload).pipe(
+      map(response => {
+        if (!response.success) {
+          throw new Error(response.message || 'Failed to delete order item from backend.');
+        }
+        this.currentOrderSubject.next(currentItems.filter(i => i.productId !== productId));
+        return undefined;
+      }),
+      catchError(error => {
+        console.error(`[OrderService] Error deleting order item "${productId}" from backend:`, error);
+        // Re-throw the error so the component can handle it
+        return throwError(() => new Error('Failed to delete item from cart. Please try again.'));
+      })
+    );
   }
 
   updateCartItemQuantity(productId: string, quantity: number): void {

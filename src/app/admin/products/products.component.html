@@ -1,0 +1,92 @@
+<div class="products-container">
+  <div class="header">
+    <h1>Products Management</h1>
+  </div>
+
+  <div class="filters">
+    <div class="filter-group">
+      <label>Language:</label>
+      <select [(ngModel)]="selectedLanguage" (change)="onFilterChange()">
+        <option *ngFor="let lang of languages" [value]="lang.value">{{ lang.label }}</option>
+      </select>
+    </div>
+
+    <div class="filter-group">
+      <label>Store:</label>
+      <select [(ngModel)]="selectedStore" (change)="onFilterChange()">
+        <option *ngFor="let store of stores" [value]="store.value">{{ store.label }}</option>
+      </select>
+    </div>
+
+    <div class="filter-group">
+      <label>Price Type:</label>
+      <select [(ngModel)]="selectedPriceType" (change)="onFilterChange()">
+        <option *ngFor="let pt of priceTypes" [value]="pt.value">{{ pt.label }}</option>
+      </select>
+    </div>
+
+    <div class="filter-group">
+      <label>Category:</label>
+      <select [(ngModel)]="selectedCategory" (change)="onFilterChange()">
+        <option *ngFor="let cat of categories" [value]="cat.value">{{ cat.label }}</option>
+      </select>
+    </div>
+
+    <div class="filter-group search-group">
+      <label>Search:</label>
+      <input
+        type="text"
+        [(ngModel)]="searchTerm"
+        (input)="onSearchChange()"
+        placeholder="Search products..."
+      />
+    </div>
+  </div>
+
+  <div *ngIf="loading" class="loading">Loading products...</div>
+  <div *ngIf="error" class="error">{{ error }}</div>
+
+  <div *ngIf="!loading && !error" class="products-table">
+    <table>
+      <thead>
+        <tr>
+          <th>Product UID</th>
+          <th>SKU</th>
+          <th>Product Name</th>
+          <th>Category</th>
+          <th>Price</th>
+          <th>Quantity</th>
+          <th>Active</th>
+          <th>Sort Order</th>
+          <th>Is New</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let product of filteredProducts">
+          <td>{{ product.uid }}</td>
+          <td>{{ product.sku || '-' }}</td>
+          <td>{{ product.product_name || '-' }}</td>
+          <td>{{ product.category_name || product.category_uid || '-' }}</td>
+          <td>{{ formatPrice(product.price) }}</td>
+          <td>{{ product.quantity !== undefined ? product.quantity : '-' }}</td>
+          <td>
+            <span [class.active]="product.active" [class.inactive]="!product.active">
+              {{ product.active ? 'Yes' : 'No' }}
+            </span>
+          </td>
+          <td>{{ product.sort_order || '-' }}</td>
+          <td>{{ product.is_new ? 'Yes' : 'No' }}</td>
+        </tr>
+        <tr *ngIf="filteredProducts.length === 0">
+          <td colspan="9" class="no-data">No products found</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="pagination" *ngIf="totalPages > 1">
+      <button [disabled]="currentPage === 1" (click)="goToPage(currentPage - 1)">Previous</button>
+      <span>Page {{ currentPage }} of {{ totalPages }} ({{ total }} total)</span>
+      <button [disabled]="currentPage === totalPages" (click)="goToPage(currentPage + 1)">Next</button>
+    </div>
+  </div>
+</div>

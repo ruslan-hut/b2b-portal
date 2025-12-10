@@ -1,6 +1,6 @@
 # API Documentation
 
-This document outlines the API endpoints available in the `b2b-back` service.
+This document outlines the API endpoints available in the `comex-back` service.
 
 ## Base Path
 `/api/v1`
@@ -236,7 +236,7 @@ curl -X POST http://localhost:8080/api/v1/auth/logout \
 }
 ```
 
-For complete authentication API reference, see [AUTH_API_REFERENCE.md](../AUTH_API_REFERENCE.md)
+For complete authentication details, see [Backend API Documentation](../../backend/docs/api_documentation.md#authentication).
 
 ---
 
@@ -2177,7 +2177,7 @@ func GetProductsBatch(logger *slog.Logger, product Core) http.HandlerFunc {
         // ... decode request
 
         var uids []string
-        err = request.DecodeArrayData(req, &uids)
+        err = request.DecodeAndValidateArrayData(req, r, &uids)
         // ... error handling
 
         products, err := product.GetProductsByUIDs(r.Context(), uids)
@@ -2198,4 +2198,4 @@ This API uses JWT-based authentication with support for both **Users** (username
 
 **See the [Authentication](#authentication) section above for complete details and examples.**
 
-For detailed authentication documentation, see [AUTH_API_REFERENCE.md](../AUTH_API_REFERENCE.md)
+For detailed authentication documentation, see [Backend API Documentation](../../backend/docs/api_documentation.md#authentication).

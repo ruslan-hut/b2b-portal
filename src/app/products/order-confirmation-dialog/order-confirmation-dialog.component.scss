@@ -38,7 +38,6 @@
   .close-btn {
     background: none;
     border: none;
-    font-size: 28px;
     color: #666;
     cursor: pointer;
     padding: 0;
@@ -48,6 +47,10 @@
     align-items: center;
     justify-content: center;
     transition: color 0.2s ease;
+
+    .material-icons {
+      font-size: 24px;
+    }
 
     &:hover {
       color: #333;
@@ -70,7 +73,6 @@
     align-items: center;
     justify-content: center;
     font-size: 48px;
-    font-weight: 700;
   }
 
   .confirmation-message {
@@ -162,6 +164,10 @@
       width: 64px;
       height: 64px;
       font-size: 36px;
+
+      .material-icons {
+        font-size: 36px;
+      }
     }
 
     .order-total-section {

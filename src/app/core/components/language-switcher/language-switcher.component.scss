@@ -27,15 +27,25 @@
     transform: scale(0.98);
   }
 
-  .flag {
-    font-size: 1.5rem;
-    line-height: 1;
+  .flag-icon {
+    font-size: 18px;
+    display: inline-flex;
+    align-items: center;
+    vertical-align: middle;
+  }
+
+  .language-code {
+    font-size: 0.85rem;
+    font-weight: 600;
   }
 
   .arrow {
-    font-size: 0.7rem;
+    font-size: 16px;
     color: #6c757d;
     transition: transform 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    vertical-align: middle;
   }
 }
 
@@ -93,9 +103,11 @@
     border-bottom: 1px solid #f0f0f0;
   }
 
-  .flag {
-    font-size: 1.3rem;
-    line-height: 1;
+  .flag-icon {
+    font-size: 18px;
+    display: inline-flex;
+    align-items: center;
+    vertical-align: middle;
   }
 
   .label {
@@ -116,12 +128,12 @@
     padding: 0.4rem 0.6rem;
     min-width: 50px;
     
-    .flag {
-      font-size: 1.4rem;
+    .flag-icon {
+      font-size: 16px;
     }
 
     .arrow {
-      font-size: 0.6rem;
+      font-size: 14px;
     }
   }
 
@@ -133,8 +145,8 @@
     padding: 0.65rem 0.85rem;
     font-size: 0.85rem;
 
-    .flag {
-      font-size: 1.2rem;
+    .flag-icon {
+      font-size: 16px;
     }
   }
 }

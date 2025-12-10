@@ -2,6 +2,7 @@ import { NgModule, APP_INITIALIZER } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClientModule, HTTP_INTERCEPTORS } from '@angular/common/http';
 import { TranslatePipe } from './pipes/translate.pipe';
+import { CurrencyFormatPipe } from './pipes/currency-format.pipe';
 import { LanguageSwitcherComponent } from './components/language-switcher/language-switcher.component';
 import { UpdateNotificationComponent } from './components/update-notification/update-notification.component';
 import { TranslationService } from './services/translation.service';
@@ -17,6 +18,7 @@ export function initializeTranslations(translationService: TranslationService) {
 @NgModule({
   declarations: [
     TranslatePipe,
+    CurrencyFormatPipe,
     LanguageSwitcherComponent,
     UpdateNotificationComponent
   ],
@@ -26,6 +28,7 @@ export function initializeTranslations(translationService: TranslationService) {
   ],
   exports: [
     TranslatePipe,
+    CurrencyFormatPipe,
     LanguageSwitcherComponent,
     UpdateNotificationComponent
   ],

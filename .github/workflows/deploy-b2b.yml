@@ -1,8 +1,7 @@
-name: Build & Deploy B2B to b2b.darkbyrior.com
+name: Build & Deploy
 
 on:
-  push:
-    branches: [ main ]
+  workflow_dispatch:
 
 env:
   # Если baseHref/deployUrl уже заданы в angular.json — можно не трогать.
@@ -78,7 +77,6 @@ jobs:
             # Храним только 5 последних релизов
             ls -1dt ${DEPLOY_PATH}/releases/* | tail -n +6 | xargs -r rm -rf
           "
-
-      # Для статики перезагрузка Apache не нужна. Если хотите — раскомментируйте:
+          
       # - name: Reload Apache
       #   run: ssh target "sudo systemctl reload apache2"

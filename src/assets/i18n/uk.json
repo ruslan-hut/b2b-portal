@@ -46,6 +46,7 @@
     "orders": "Замовлення",
     "profile": "Профіль",
     "settings": "Налаштування",
+    "language": "Мова",
     "gridView": "Сітка",
     "bulkOrder": "Оптове замовлення",
     "cart": "Кошик"
@@ -59,6 +60,7 @@
     "updateCart": "Оновити кошик",
     "viewDetails": "Переглянути деталі",
     "price": "Ціна",
+    "priceNotAvailable": "Ціна недоступна",
     "stock": "В наявності",
     "outOfStock": "Немає в наявності",
     "category": "Категорія",

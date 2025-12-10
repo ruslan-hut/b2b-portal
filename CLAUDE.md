@@ -25,9 +25,13 @@ ng generate module module-name                    # New module
 ```
 
 ### Important Notes
-- **Base URL**: Application is configured with `/b2b/` as base href (see angular.json:46)
+- **Base URL**: Application is configured with `/` as base href (see angular.json:47)
 - **Module-based**: NOT using standalone components (configured in angular.json schematics)
-- **Working Directory**: Commands should be run from `b2b-portal` root (not parent directory)
+- **Working Directory**: Commands should be run from `frontend/` directory (not parent directory)
+- **Deployment Modes**: Supports two deployment scenarios (see `../deployment/SCENARIOS.md`):
+  - **Server + Nginx**: Frontend served by Nginx at `/var/www/b2b/current`, backend on port 8888
+  - **Docker Monolith**: Frontend served by backend from `./static` directory
+- **API Integration**: Currently uses mock data; backend API integration in progress
 
 ## Architecture
 
@@ -49,6 +53,13 @@ src/app/
 │   └── order-confirmation/  # Order confirmation page
 ├── orders/                  # Orders module (lazy-loaded)
 │   └── order-history/       # Order history page
+├── admin/                   # Admin zone module (lazy-loaded, admin/manager only)
+│   ├── dashboard/           # Dashboard with statistics
+│   ├── clients/             # Clients management
+│   ├── orders/              # Orders management
+│   ├── products/            # Products management
+│   ├── users/               # Users management (admin only)
+│   └── tables/              # Database tables viewer (admin only)
 └── app.module.ts            # Root module - imports CoreModule
 ```
 
@@ -195,7 +206,35 @@ getErrorMessage(control: FormControl): string {
 /products/catalog        → ProductCatalogComponent (default after login)
 /products/confirm-order  → OrderConfirmationComponent
 /orders/history          → OrderHistoryComponent
+/admin/dashboard         → AdminDashboardComponent (admin/manager only)
+/admin/clients           → AdminClientsComponent (admin/manager only)
+/admin/orders            → AdminOrdersComponent (admin/manager only)
+/admin/products          → AdminProductsComponent (admin/manager only)
+/admin/users             → AdminUsersComponent (admin only)
+/admin/tables            → AdminTablesComponent (admin only)
 ```
+
+### Admin Zone
+
+**Location**: `core/guards/admin.guard.ts`
+
+**Guards**:
+- `adminGuard` - Requires 'admin' or 'manager' role
+- `adminOnlyGuard` - Requires 'admin' role only
+
+**Usage**:
+```typescript
+{
+  path: 'admin',
+  canActivate: [adminGuard],
+  loadChildren: () => import('./admin/admin.module').then(m => m.AdminModule)
+}
+```
+
+**Behavior**:
+- Redirects to login if not authenticated
+- Redirects to products if authenticated but insufficient role
+- Checks user role from AuthService
 
 ## Testing
 
@@ -212,14 +251,53 @@ getErrorMessage(control: FormControl): string {
 ## Production Build Notes
 
 ### Build Configuration
-- Output path: `dist/b2b-portal`
-- Base href: `/b2b/` (configured in angular.json)
+- Output path: `dist/comex-front/browser`
+- Base href: `/` (configured in angular.json:47)
+- Deploy URL: `/` (configured in angular.json:48)
 - Assets include `src/assets` (contains i18n folder)
+- Build command: `npm run build:prod` (runs `set-env.js` before building)
+- Environment variables: `API_URL` (default: `/api/v1`), `APP_TITLE` (optional)
+
+### Deployment Scenarios
+
+The application supports two deployment modes:
+
+**Scenario 1: Server + Nginx**
+- Frontend deployed to: `/var/www/b2b/current` on server
+- Backend runs as systemd service on port 8888
+- Nginx serves frontend and proxies `/api/*` to backend
+- Build command: `npm run build:prod` (uses `API_URL` from environment, default: `/api/v1`)
+- Deployment: Automated via GitHub Actions on push to `master`
+- See: `../deployment/nginx/README.md`
+
+**Scenario 2: Docker Monolith**
+- Frontend built into Docker image at `./static` during multi-stage build
+- Backend serves both frontend and API from single container
+- Build happens during Docker build stage (`Dockerfile`)
+- Backend config: `SERVE_STATIC=true`
+- API URL: Relative `/api/v1` (same origin)
+- See: `../deployment/docker/README.md`
+
+**Key Difference**: Both scenarios use relative `/api/v1` by default. No configuration changes needed for standard deployments.
+
+### Environment Variables (Build Time)
+
+```bash
+# API URL (default: /api/v1 for relative path)
+API_URL=/api/v1                              # Docker deployment (relative)
+API_URL=https://api.portal.example/api/v1   # Server deployment (can be absolute)
+
+# App Title (optional)
+APP_TITLE="B2B Portal"
+```
+
+Set these before running `npm run build:prod`. The `scripts/set-env.js` script will inject them into the build.
 
 ### Critical for Production
-- Translation files MUST be in build output: `dist/b2b-portal/browser/assets/i18n/`
+- Translation files MUST be in build output: `dist/comex-front/browser/assets/i18n/`
 - Relative paths in translation service ensure compatibility with any deployment URL
 - Verify translation files load successfully (check Network tab)
+- API URL must match deployment scenario (relative for same-origin, absolute for cross-origin)
 
 ## Common Patterns
 
@@ -263,11 +341,13 @@ getErrorMessage(control: FormControl): string {
 ## Quick Reference
 
 ### View Current Settings
-- Angular version: 17.1.x
+- Angular version: 17.1.x (see `package.json` for exact version)
 - TypeScript version: 5.3.2
 - Styling: SCSS
 - Forms: Reactive Forms
 - Module type: NgModule (not standalone)
+- Node.js: 18+ required
+- npm: 9+ required
 
 ### File Naming Conventions
 - Components: `kebab-case.component.ts`

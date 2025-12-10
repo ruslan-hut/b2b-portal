@@ -1,5 +1,5 @@
 {
-  "name": "b2b-portal",
+  "name": "comex-front",
   "version": "0.0.0",
   "scripts": {
     "ng": "ng",
@@ -27,9 +27,9 @@
     "zone.js": "~0.14.3"
   },
   "devDependencies": {
-    "@angular-devkit/build-angular": "^17.1.1",
-    "@angular/cli": "^17.1.1",
-    "@angular/compiler-cli": "^17.1.0",
+    "@angular-devkit/build-angular": "^17.3.0",
+    "@angular/cli": "^17.3.0",
+    "@angular/compiler-cli": "^17.3.0",
     "@types/jasmine": "~5.1.0",
     "@types/uuid": "^10.0.0",
     "jasmine-core": "~5.1.0",
@@ -39,5 +39,10 @@
     "karma-jasmine": "~5.1.0",
     "karma-jasmine-html-reporter": "~2.1.0",
     "typescript": "~5.3.2"
+  },
+  "overrides": {
+    "rimraf": "^5.0.0",
+    "glob": "^10.0.0",
+    "pacote": "^19.0.0"
   }
 }

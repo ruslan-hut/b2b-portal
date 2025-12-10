@@ -1,0 +1,249 @@
+.products-container {
+  padding: 0 4px; // Small padding on sides for mobile
+  
+  h1 {
+    margin-bottom: 16px;
+    color: #2c3e50;
+    font-size: 1.5rem;
+    
+    @media (max-width: 768px) {
+      font-size: 1.25rem;
+      margin-bottom: 12px;
+    }
+  }
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 12px;
+  
+  @media (max-width: 768px) {
+    margin-bottom: 12px;
+  }
+}
+
+.filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+  padding: 12px;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+
+  // On very small screens, stack all filters
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+  }
+
+  // On small screens, 2 columns
+  @media (min-width: 481px) and (max-width: 768px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  // On medium screens, 3 columns
+  @media (min-width: 769px) and (max-width: 1024px) {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  // On large screens, auto-fit with min 180px
+  @media (min-width: 1025px) {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  }
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0; // Allow shrinking below content size
+  
+  label {
+    font-weight: 600;
+    color: #2c3e50;
+    font-size: 0.85rem;
+    white-space: nowrap;
+  }
+  
+  input, select {
+    padding: 6px 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    width: 100%;
+    min-width: 0; // Allow full width flexibility
+    box-sizing: border-box;
+  }
+  
+  select {
+    background-color: white;
+    cursor: pointer;
+    
+    &:hover {
+      border-color: #3498db;
+    }
+    
+    &:focus {
+      outline: none;
+      border-color: #3498db;
+      box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+    }
+  }
+  
+  .btn-clear {
+    padding: 6px 10px;
+    background-color: #95a5a6;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    
+    &:hover {
+      background-color: #7f8c8d;
+    }
+  }
+
+}
+
+// Search group spans more columns on medium screens
+.search-group {
+  @media (min-width: 769px) and (max-width: 1024px) {
+    grid-column: span 2;
+  }
+  
+  @media (min-width: 1025px) {
+    grid-column: span 1;
+  }
+}
+
+.products-table {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  overflow-x: auto;
+  margin-bottom: 16px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+  
+  thead {
+    background-color: #34495e;
+    color: white;
+    
+    th {
+      padding: 10px 8px;
+      text-align: left;
+      font-weight: 600;
+      font-size: 0.85rem;
+      white-space: nowrap;
+      
+      @media (max-width: 768px) {
+        padding: 8px 6px;
+        font-size: 0.8rem;
+      }
+    }
+  }
+  
+  tbody {
+    tr {
+      border-bottom: 1px solid #ecf0f1;
+      
+      &:hover {
+        background-color: #f8f9fa;
+      }
+    }
+    
+    td {
+      padding: 10px 8px;
+      color: #2c3e50;
+      
+      @media (max-width: 768px) {
+        padding: 8px 6px;
+        font-size: 0.85rem;
+      }
+    }
+  }
+}
+
+.active {
+  color: #27ae60;
+  font-weight: 600;
+}
+
+.inactive {
+  color: #e74c3c;
+  font-weight: 600;
+}
+
+.no-data {
+  text-align: center;
+  padding: 40px;
+  color: #7f8c8d;
+}
+
+.pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border-top: 1px solid #ecf0f1;
+  flex-wrap: wrap;
+  gap: 8px;
+  
+  span {
+    font-size: 0.9rem;
+    
+    @media (max-width: 768px) {
+      font-size: 0.85rem;
+      width: 100%;
+      text-align: center;
+      order: -1; // Show on top on mobile
+    }
+  }
+  
+  button {
+    padding: 6px 12px;
+    background-color: #3498db;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    
+    @media (max-width: 768px) {
+      padding: 6px 10px;
+      font-size: 0.8rem;
+    }
+    
+    &:hover:not(:disabled) {
+      background-color: #2980b9;
+    }
+    
+    &:disabled {
+      background-color: #bdc3c7;
+      cursor: not-allowed;
+    }
+  }
+}
+
+.loading, .error {
+  padding: 20px;
+  text-align: center;
+  background-color: white;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.error {
+  color: #e74c3c;
+}
+

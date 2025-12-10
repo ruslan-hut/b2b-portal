@@ -1,0 +1,177 @@
+.admin-container {
+  display: flex;
+  min-height: 100vh;
+  background-color: #f5f5f5;
+}
+
+.admin-nav {
+  width: 250px;
+  background-color: #2c3e50;
+  color: white;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  transition: width 0.3s ease;
+  overflow: hidden;
+  position: relative;
+  z-index: 100;
+
+  &.collapsed {
+    width: 60px;
+  }
+
+  // On mobile, overlay when expanded
+  @media (max-width: 768px) {
+    position: fixed;
+    height: 100vh;
+    left: 0;
+    top: 0;
+    z-index: 1000;
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.2);
+
+    &.collapsed {
+      width: 60px;
+    }
+
+    // Overlay backdrop when expanded on mobile
+    &:not(.collapsed)::after {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 250px;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: -1;
+    }
+  }
+}
+
+.nav-header {
+  padding: 15px;
+  border-bottom: 1px solid #34495e;
+  transition: padding 0.3s ease;
+
+  .admin-nav.collapsed & {
+    padding: 15px 10px;
+  }
+}
+
+.header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+    white-space: nowrap;
+    transition: opacity 0.2s ease;
+    flex: 1;
+
+    .admin-nav.collapsed & {
+      display: none;
+    }
+  }
+}
+
+.toggle-btn {
+  background-color: #34495e;
+  border: none;
+  color: white;
+  cursor: pointer;
+  padding: 8px 10px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+  flex-shrink: 0;
+  min-width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:hover {
+    background-color: #3d566e;
+  }
+
+  .material-icons {
+    font-size: 24px;
+    transition: transform 0.3s ease;
+  }
+}
+
+
+.nav-menu {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  flex: 1;
+  
+  li {
+    border-bottom: 1px solid #34495e;
+    
+    a {
+      display: flex;
+      align-items: center;
+      padding: 15px 20px;
+      color: #ecf0f1;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+      
+      .admin-nav.collapsed & {
+        padding: 15px;
+        justify-content: center;
+      }
+      
+      .material-icons {
+        font-size: 24px;
+        margin-right: 12px;
+        flex-shrink: 0;
+        min-width: 24px;
+        text-align: center;
+        vertical-align: middle;
+
+        .admin-nav.collapsed & {
+          margin-right: 0;
+        }
+      }
+      
+      .text {
+        transition: opacity 0.2s ease;
+
+        .admin-nav.collapsed & {
+          display: none;
+        }
+      }
+      
+      &:hover {
+        background-color: #34495e;
+      }
+      
+      &.active {
+        background-color: #3498db;
+        font-weight: 600;
+      }
+    }
+  }
+}
+
+.admin-content {
+  flex: 1;
+  padding: 30px;
+  overflow-y: auto;
+  transition: margin-left 0.3s ease;
+
+  &.expanded {
+    // Content expands when menu is collapsed
+  }
+
+  @media (max-width: 768px) {
+    padding: 15px;
+    margin-left: 60px; // Account for collapsed menu on mobile
+    min-height: 100vh;
+  }
+}
+

@@ -1,7 +1,13 @@
 import { Order, OrderItem, BackendOrderRequest, BackendOrderResponse, ShippingAddress, OrderStatus } from '../models/order.model';
-import { v4 as uuidv4 } from 'uuid';
 
 export class OrderMapper {
+  /**
+   * Generate a simple unique id fallback to avoid adding external deps in frontend code here.
+   */
+  private static generateUid(): string {
+    return 'uid-' + Date.now().toString(36) + '-' + Math.random().toString(36).substring(2, 10);
+  }
+
   /**
    * Convert frontend order to backend format
    */
@@ -14,7 +20,7 @@ export class OrderMapper {
     status?: 'draft' | 'new', // Frontend can only use 'draft' or 'new'
     orderUid?: string // Optional UID for updating existing orders
   ): BackendOrderRequest {
-    const uid = orderUid || uuidv4();
+    const uid = orderUid || this.generateUid();
 
     // Calculate total in cents
     const total = items.reduce((sum, item) => sum + item.subtotal, 0) * 100;
@@ -25,7 +31,8 @@ export class OrderMapper {
 
     return {
       uid: uid,
-      user_uid: userId,
+      // Backend migrated from `user_uid` to `client_uid` — send client_uid to match API
+      client_uid: userId,
       status: status || 'new', // Default to 'new' for backward compatibility
       total: total,
       shipping_address: shippingAddressStr,
@@ -39,7 +46,7 @@ export class OrderMapper {
         discount: 0,
         total: Math.round(item.subtotal * 100) // Convert to cents
       }))
-    };
+    } as BackendOrderRequest;
   }
 
   /**
@@ -50,7 +57,8 @@ export class OrderMapper {
       id: response.uid,
       orderNumber: this.generateOrderNumber(response.uid),
       number: response.number, // Optional order number from backend
-      userId: response.user_uid,
+      // Accept `client_uid` (new) or fallback to `user_uid` (older API)
+      userId: (response as any).client_uid || (response as any).user_uid,
       items: items.map(item => ({
         productId: item.product_uid,
         productName: item.product_name || 'Unknown Product',
