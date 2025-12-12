@@ -83,7 +83,13 @@
     "allocated": "Allocated",
     "inventoryDetails": "Inventory Details",
     "insufficientStock": "Only {{available}} items available",
-    "bulkInsufficientStock": "{{product}}: requested {{requested}}, only {{available}} available"
+    "bulkInsufficientStock": "{{product}}: requested {{requested}}, only {{available}} available",
+    "details": "Product Details",
+    "stockStatus": "Stock Status",
+    "status": "Status",
+    "active": "Active",
+    "inactive": "Inactive",
+    "noDescription": "No description available"
   },
   "orders": {
     "title": "Order History",
@@ -94,6 +100,7 @@
     "total": "Total",
     "items": "Items",
     "viewDetails": "View Details",
+    "hideDetails": "Hide Details",
     "noOrders": "No orders found",
     "draft": "Draft",
     "new": "New",

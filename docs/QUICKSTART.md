@@ -2,17 +2,34 @@
 
 ## Running the Application
 
-### 1. Start the Development Server
+### 1. Configure Local Development (Optional)
 
+If you want to connect to a custom dev backend URL without committing it to git:
+
+```bash
+cd frontend
+cp src/environments/environment.local.example.ts src/environments/environment.local.ts
+# Edit environment.local.ts and set your backend URL
+```
+
+See [LOCAL_DEVELOPMENT.md](./LOCAL_DEVELOPMENT.md) for detailed instructions.
+
+### 2. Start the Development Server
+
+**Default development** (uses `environment.ts`):
 ```bash
 cd frontend
 ng serve
 ```
 
-Or with the npm cache workaround used during installation:
-
+Or with npm:
 ```bash
 npm start
+```
+
+**Local development** (uses `environment.local.ts` - your custom config):
+```bash
+ng serve --configuration=local
 ```
 
 The application will be available at: **http://localhost:4200/**

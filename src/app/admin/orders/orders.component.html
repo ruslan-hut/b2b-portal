@@ -34,7 +34,7 @@
         type="text"
         [(ngModel)]="searchTerm"
         (input)="onSearchChange()"
-        placeholder="Search by order number or client UID"
+        placeholder="Search by order number, client UID, or client name"
       />
     </div>
   </div>
@@ -46,34 +46,36 @@
     <table>
       <thead>
         <tr>
+            <th>Created</th>
           <th>Order Number</th>
-          <th>Client UID</th>
+            <th>Status</th>
+          <th>Client Name</th>
           <th>Store</th>
           <th>Price Type</th>
-          <th>Currency</th>
-          <th>Status</th>
           <th>Total</th>
-          <th>Created</th>
+            <th>Currency</th>
           <th>Updated</th>
           <th>Actions</th>
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let order of filteredOrders">
+        <tr *ngFor="let order of filteredOrders"
+            class="clickable-row"
+            (click)="viewOrderDetail(order)">
+            <td>{{ formatDate(order.created_at) }}</td>
           <td>{{ order.number || order.uid }}</td>
-          <td>{{ order.client_uid }}</td>
-          <td>{{ getStoreName(order.store_uid) }}</td>
-          <td>{{ getPriceTypeName(order.price_type_uid) }}</td>
-          <td>{{ order.currency_code }}</td>
-          <td>
+            <td>
             <span [class]="getStatusClass(order.status)">
               {{ order.status }}
             </span>
-          </td>
-          <td>{{ order.total | currencyFormat: getCurrency(order.currency_code) }}</td>
-          <td>{{ formatDate(order.created_at) }}</td>
+            </td>
+          <td>{{ getClientName(order.client_uid) }}</td>
+          <td>{{ getStoreName(order.store_uid) }}</td>
+          <td>{{ getPriceTypeName(order.price_type_uid) }}</td>
+          <td>{{ (order.total/100).toFixed(2) }}</td>
+            <td>{{ order.currency_code }}</td>
           <td>{{ formatDate(order.last_update || order.created_at) }}</td>
-          <td class="actions">
+          <td class="actions" (click)="$event.stopPropagation()">
             <button class="btn-edit" (click)="editStatus(order)">Change Status</button>
             <button class="btn-delete" (click)="deleteOrder(order)">Delete</button>
           </td>

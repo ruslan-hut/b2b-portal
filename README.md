@@ -6,7 +6,7 @@
 [![RxJS](https://img.shields.io/badge/RxJS-B7178C?logo=reactivex&logoColor=white)](https://rxjs.dev/)
 ![i18n](https://img.shields.io/badge/i18n-EN%20%7C%20UK-green)
 ![Responsive](https://img.shields.io/badge/Responsive-Design-blue)
-[![License](https://img.shields.io/badge/License-BSD_3--Clause-blue.svg)](../LICENSE)
+[![License](https://img.shields.io/badge/License-BSD_3--Clause-blue.svg)](LICENSE)
 
 A modern B2B portal application built with Angular 18, designed for clients to browse products and create orders.
 
@@ -140,24 +140,20 @@ Password/PIN: 1234
 
 Before using authentication, ensure your backend API is running and configured:
 
-1. **Development**: Update `src/environments/environment.ts`:
+1. **Local Development** (Recommended): Use `environment.local.ts` for your personal dev settings:
+   ```bash
+   cp src/environments/environment.local.example.ts src/environments/environment.local.ts
+   # Edit environment.local.ts with your backend URL
+   ng serve --configuration=local
+   ```
+   See [LOCAL_DEVELOPMENT.md](./docs/LOCAL_DEVELOPMENT.md) for details.
+
+2. **Default Development**: Update `src/environments/environment.ts`:
    ```typescript
    apiUrl: 'http://localhost:8080/api/v1'
    ```
 
-2. **Production**: Set the `API_URL` environment variable or GitHub secret (see [DEPLOYMENT.md](./docs/DEPLOYMENT.md))
-
-### Troubleshooting Authentication
-
-If you encounter login errors like "Invalid credentials":
-
-📖 **See [Frontend Troubleshooting Guide](../docs/FRONTEND_TROUBLESHOOTING.md)** for comprehensive troubleshooting including:
-- Backend connection issues
-- CORS configuration
-- API URL configuration
-- Token management
-- Debug tips and tools
-- Authentication issues
+3. **Production**: Set the `API_URL` environment variable or GitHub secret (see [DEPLOYMENT.md](./docs/DEPLOYMENT.md))
 
 ### Testing with Mock Data (Legacy)
 
@@ -286,7 +282,7 @@ Please follow the coding standards outlined in [CODING_POLICY.md](./docs/CODING_
 
 ## License
 
-This project is licensed under the BSD 3-Clause License - see the [LICENSE](../LICENSE) file for details.
+This project is licensed under the BSD 3-Clause License - see the [LICENSE](LICENSE) file for details.
 
 ## Support
 

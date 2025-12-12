@@ -41,6 +41,9 @@ export class ProductCatalogComponent implements OnInit {
   // Image preview modal state
   selectedImageForPreview: { url: string; alt: string } | null = null;
 
+  // Product details overlay state
+  selectedProductForDetails: Product | null = null;
+
   // Currency name to display near Price label
   currencyName: string | undefined = undefined;
 
@@ -310,13 +313,18 @@ export class ProductCatalogComponent implements OnInit {
         return this.bulkQuantities.size > 0;
     }
 
-    isInCart(productId: string): boolean {
-        return this.cartItems.some(item => item.productId === productId);
-    }
+  isInCart(productId: string): boolean {
+    return this.cartItems.some(item => item.productId === productId);
+  }
 
-    getCartTotal(): number {
-        return this.cartItems.reduce((total, item) => total + item.subtotal, 0);
-    }
+  getCartQuantity(productId: string): number {
+    const cartItem = this.cartItems.find(item => item.productId === productId);
+    return cartItem ? cartItem.quantity : 0;
+  }
+
+  getCartTotal(): number {
+    return this.cartItems.reduce((total, item) => total + item.subtotal, 0);
+  }
 
     /**
      * Handle image load errors by setting a placeholder image
@@ -432,10 +440,27 @@ export class ProductCatalogComponent implements OnInit {
         };
     }
 
-    /**
-     * Close full-size image preview
-     */
-    closeImagePreview(): void {
-        this.selectedImageForPreview = null;
+  /**
+   * Close full-size image preview
+   */
+  closeImagePreview(): void {
+    this.selectedImageForPreview = null;
+  }
+
+  /**
+   * Open product details overlay
+   */
+  openProductDetails(product: Product, event?: Event): void {
+    if (event) {
+      event.stopPropagation();
     }
+    this.selectedProductForDetails = product;
+  }
+
+  /**
+   * Close product details overlay
+   */
+  closeProductDetails(): void {
+    this.selectedProductForDetails = null;
+  }
 }

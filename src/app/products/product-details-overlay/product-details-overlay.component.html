@@ -1,0 +1,64 @@
+<div class="overlay-backdrop" (click)="onOverlayClick($event)" *ngIf="product">
+  <div class="overlay-content" (click)="$event.stopPropagation()">
+    <div class="overlay-header">
+      <h2>{{ 'products.details' | translate }}</h2>
+      <button class="close-btn" (click)="onClose()" [attr.aria-label]="'common.close' | translate">
+        <span class="material-icons">close</span>
+      </button>
+    </div>
+
+    <div class="overlay-body">
+      <div class="product-image-section">
+        <img
+          [src]="product.imageUrl || 'assets/images/product-placeholder.svg'"
+          [alt]="product.name"
+          (error)="onImageError($event)"
+          class="product-image-large"
+        />
+        
+        <div class="product-details-below-image">
+          <div class="product-sku">{{ 'products.sku' | translate }}: {{ product.sku }}</div>
+
+          <div class="product-price-section">
+            <h4 class="section-label">{{ 'products.price' | translate }}</h4>
+            <div class="price-display">
+              <ng-container *ngIf="product.price && product.price > 0; else priceNA">
+                <span class="price-amount">{{ product.price.toFixed(2) }}</span>
+                <span class="price-currency" *ngIf="currencyName">{{ currencyName }}</span>
+              </ng-container>
+              <ng-template #priceNA>
+                <span class="price-not-available">{{ 'products.priceNotAvailable' | translate }}</span>
+              </ng-template>
+            </div>
+          </div>
+
+          <div class="product-status-section">
+            <h4 class="section-label">{{ 'products.stockStatus' | translate }}</h4>
+            <div class="stock-status">
+              <span class="status-dot" [class.available]="product.inStock" [class.unavailable]="!product.inStock"></span>
+              <span class="status-text">
+                <ng-container *ngIf="product.inStock">
+                  {{ 'products.stock' | translate }}
+                </ng-container>
+                <ng-container *ngIf="!product.inStock">
+                  {{ 'products.outOfStock' | translate }}
+                </ng-container>
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="product-info-section">
+        <div class="product-category-badge">{{ product.category }}</div>
+        <h3 class="product-name">{{ product.name }}</h3>
+
+        <div class="product-description-section">
+          <h4 class="section-label">{{ 'products.description' | translate }}</h4>
+          <div class="product-description" [innerHTML]="sanitizedDescription"></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>

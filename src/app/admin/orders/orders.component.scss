@@ -69,12 +69,21 @@ table {
   tbody {
     tr {
       border-bottom: 1px solid #ecf0f1;
-      
+
       &:hover {
         background-color: #f8f9fa;
       }
+
+      &.clickable-row {
+        cursor: pointer;
+        transition: background-color 0.2s;
+
+        &:hover {
+          background-color: #e8f4f8;
+        }
+      }
     }
-    
+
     td {
       padding: 12px;
       color: #2c3e50;

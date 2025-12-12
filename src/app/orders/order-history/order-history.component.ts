@@ -16,6 +16,7 @@ export class OrderHistoryComponent implements OnInit, OnDestroy {
   orders: Order[] = [];
   loading = false;
   currencyName: string | undefined = undefined;
+  expandedOrders = new Map<string, boolean>(); // Track which orders are expanded
   private subscriptions = new Subscription();
 
   constructor(
@@ -117,8 +118,13 @@ export class OrderHistoryComponent implements OnInit, OnDestroy {
   }
 
   viewOrderDetails(orderId: string): void {
-    // TODO: Navigate to order details page when implemented
-    console.log('View order details:', orderId);
+    // Toggle the expanded state for this order
+    const currentState = this.expandedOrders.get(orderId) || false;
+    this.expandedOrders.set(orderId, !currentState);
+  }
+
+  isOrderExpanded(orderId: string): boolean {
+    return this.expandedOrders.get(orderId) || false;
   }
 
   navigateToCatalog(): void {

@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
+import { Router } from '@angular/router';
 import { environment } from '../../../environments/environment';
 import { Currency } from '../../core/models/currency.model';
 import { CurrencyService } from '../../core/services/currency.service';
@@ -80,12 +81,14 @@ export class OrdersComponent implements OnInit {
   currencies: { [code: string]: Currency } = {};
   stores: { [uid: string]: Store } = {};
   priceTypes: { [uid: string]: PriceType } = {};
+  clients: { [uid: string]: any } = {};
 
   constructor(
     private http: HttpClient,
     private currencyService: CurrencyService,
     private storeService: StoreService,
-    private priceTypeService: PriceTypeService
+    private priceTypeService: PriceTypeService,
+    private router: Router
   ) {}
 
   ngOnInit(): void {
@@ -149,14 +152,33 @@ export class OrdersComponent implements OnInit {
 
         const currencyCodes = [...new Set(this.orders.map(order => order.currency_code))];
         return this.currencyService.getCurrenciesByCodes(currencyCodes);
-      })
-    ).subscribe({
-      next: (currencies) => {
+      }),
+      switchMap((currencies) => {
         currencies.forEach(currency => {
           if (!this.currencies[currency.code]) {
             this.currencies[currency.code] = currency;
           }
         });
+
+        // Fetch clients
+        const clientUIDs = [...new Set(this.orders.map(order => order.client_uid))];
+
+        if (clientUIDs.length > 0) {
+          return this.http.post<ApiResponse<any[]>>(
+            `${environment.apiUrl}/client/batch`,
+            { data: clientUIDs }
+          );
+        }
+
+        return forkJoin({ data: [] });
+      })
+    ).subscribe({
+      next: (clientsResponse: any) => {
+        if (clientsResponse.data) {
+          clientsResponse.data.forEach((client: any) => {
+            this.clients[client.uid] = client;
+          });
+        }
 
         this.applySearch();
         this.loading = false;
@@ -182,6 +204,10 @@ export class OrdersComponent implements OnInit {
     return this.priceTypes[uid]?.name || uid;
   }
 
+  getClientName(uid: string): string {
+    return this.clients[uid]?.name || uid;
+  }
+
   getCurrency(code: string): Currency | null {
     return this.currencies[code] || null;
   }
@@ -196,7 +222,8 @@ export class OrdersComponent implements OnInit {
     this.filteredOrders = this.orders.filter(order =>
       order.number?.toLowerCase().includes(search) ||
       order.uid.toLowerCase().includes(search) ||
-      order.client_uid.toLowerCase().includes(search)
+      order.client_uid.toLowerCase().includes(search) ||
+      this.getClientName(order.client_uid).toLowerCase().includes(search)
     );
   }
 
@@ -271,5 +298,9 @@ export class OrdersComponent implements OnInit {
       this.currentPage = page;
       this.loadOrders();
     }
+  }
+
+  viewOrderDetail(order: AdminOrder): void {
+    this.router.navigate(['/admin/orders', order.uid]);
   }
 }

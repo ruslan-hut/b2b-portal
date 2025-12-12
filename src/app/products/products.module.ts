@@ -4,12 +4,14 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 import { ProductsRoutingModule } from './products-routing.module';
 import { ProductCatalogComponent } from './product-catalog/product-catalog.component';
+import { ProductDetailsOverlayComponent } from './product-details-overlay/product-details-overlay.component';
 import { CoreModule } from '../core/core.module';
 
 
 @NgModule({
   declarations: [
-    ProductCatalogComponent
+    ProductCatalogComponent,
+    ProductDetailsOverlayComponent
   ],
   imports: [
     CommonModule,

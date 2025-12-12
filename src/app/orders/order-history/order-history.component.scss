@@ -185,6 +185,13 @@
     }
   }
 
+  // Remove bottom border from header when collapsed
+  &.collapsed .order-header {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+  }
+
   .order-items {
     margin-bottom: 20px;
 

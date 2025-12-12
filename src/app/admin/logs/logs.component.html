@@ -82,7 +82,7 @@
           <td>{{ log.user_uid || '-' }}</td>
           <td class="request-id">{{ log.request_id || '-' }}</td>
           <td class="message-cell">
-            <div class="message-preview">{{ log.message }}</div>
+            <div *ngIf="!isRowExpanded(log.id)" class="message-preview">{{ log.message }}</div>
             <div *ngIf="isRowExpanded(log.id)" class="message-full">
               <div class="message-content">{{ log.message }}</div>
               <div *ngIf="log.extra" class="extra-content">

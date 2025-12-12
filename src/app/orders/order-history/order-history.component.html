@@ -18,7 +18,7 @@
   </div>
 
   <div class="orders-list" *ngIf="!loading && orders.length > 0">
-    <div class="order-card" *ngFor="let order of orders">
+    <div class="order-card" [class.collapsed]="!isOrderExpanded(order.id)" *ngFor="let order of orders">
       <div class="order-header">
         <div class="order-info">
           <h3>{{ getOrderTitle(order) }}</h3>
@@ -35,7 +35,7 @@
         </div>
       </div>
 
-      <div class="order-items">
+      <div class="order-items" *ngIf="isOrderExpanded(order.id)">
         <div class="item" *ngFor="let item of order.items">
           <div class="item-info">
             <span class="item-name">{{ item.productName }}</span>
@@ -47,7 +47,7 @@
         </div>
       </div>
 
-      <div class="order-comment" *ngIf="order.comment">
+      <div class="order-comment" *ngIf="isOrderExpanded(order.id) && order.comment">
         <div class="comment-label">{{ 'orders.comment' | translate }}:</div>
         <div class="comment-text">{{ order.comment }}</div>
       </div>
@@ -58,7 +58,8 @@
           <span class="total-amount">{{ order.totalAmount.toFixed(2) }}{{ currencyName ? ' ' + currencyName : '' }}</span>
         </div>
         <button class="btn btn-secondary" (click)="viewOrderDetails(order.id)">
-          {{ 'orders.viewDetails' | translate }}
+          <span *ngIf="!isOrderExpanded(order.id)">{{ 'orders.viewDetails' | translate }}</span>
+          <span *ngIf="isOrderExpanded(order.id)">{{ 'orders.hideDetails' | translate }}</span>
         </button>
       </div>
     </div>
