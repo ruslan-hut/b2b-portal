@@ -19,10 +19,6 @@ Complete documentation for the Comex B2B Portal (Angular application).
 
 ### Deployment
 - **[Deployment Guide](./DEPLOYMENT.md)** - Frontend deployment instructions
-- **[Deployment Scenarios](../../deployment/README.md)** - Server + Nginx vs Docker deployment
-
-### Troubleshooting
-- **[Frontend Troubleshooting](../../docs/FRONTEND_TROUBLESHOOTING.md)** - Comprehensive debugging guide
 
 ## 🚀 Getting Started
 
@@ -112,9 +108,6 @@ JWT-based authentication with dual login support:
 - **AuthGuard**: Protects routes requiring authentication
 - **Token Storage**: localStorage (`authToken`, `currentUser`)
 
-### Test Credentials
-For testing, use real backend API credentials. See [Backend API Documentation](../../backend/docs/api_documentation.md) for authentication details.
-
 ## 🧪 Testing
 
 ### API Integration
@@ -203,23 +196,7 @@ The frontend uses **real API integration** with the backend service.
 
 See [API Documentation](./api_documentation.md) for integration details.
 
-## 🐛 Troubleshooting
-
-### Common Issues
-- **Translation keys visible**: Verify APP_INITIALIZER in `core.module.ts`
-- **404 on translations**: Use relative paths (`assets/i18n/en.json`)
-- **Auth not persisting**: Check localStorage for `currentUser` and `authToken`
-- **Routes not protected**: Ensure AuthGuard is applied
-
-See [Frontend Troubleshooting](../../docs/FRONTEND_TROUBLESHOOTING.md) for comprehensive debugging guide.
-
 ## 📖 Additional Resources
-
-### Project Documentation
-- [Main Project README](../../README.md)
-- [Backend Documentation](../../backend/docs/README.md)
-- [Deployment Documentation](../../deployment/README.md)
-- [Main Documentation Index](../../docs/README.md)
 
 ### External Resources
 - [Angular Documentation](https://angular.io/docs)
