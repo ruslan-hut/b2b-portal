@@ -6,7 +6,7 @@
 [![RxJS](https://img.shields.io/badge/RxJS-B7178C?logo=reactivex&logoColor=white)](https://rxjs.dev/)
 ![i18n](https://img.shields.io/badge/i18n-EN%20%7C%20UK-green)
 ![Responsive](https://img.shields.io/badge/Responsive-Design-blue)
-[![License](https://img.shields.io/badge/License-BSD_3--Clause-blue.svg)](../LICENSE)
+[![License](https://img.shields.io/badge/License-BSD_3--Clause-blue.svg)](LICENSE)
 
 A modern B2B portal application built with Angular 21, designed for clients to browse products and create orders.
 
@@ -155,27 +155,6 @@ Before using authentication, ensure your backend API is running and configured:
 
 3. **Production**: Set the `API_URL` environment variable or GitHub secret (see [DEPLOYMENT.md](./docs/DEPLOYMENT.md))
 
-### Troubleshooting Authentication
-
-If you encounter login errors like "Invalid credentials":
-
-📖 **See [Frontend Troubleshooting Guide](../docs/FRONTEND_TROUBLESHOOTING.md)** for comprehensive troubleshooting including:
-- Backend connection issues
-- CORS configuration
-- API URL configuration
-- Token management
-- Debug tips and tools
-- Authentication issues
-
-### Testing with Mock Data (Legacy)
-
-For frontend-only testing without a backend, you can use the mock data:
-
-**See [MOCK_DATA.md](./docs/MOCK_DATA.md) for:**
-- Mock user credentials
-- Sample product catalog
-- Testing scenarios
-
 ### Key Features
 
 1. **Product Browsing**
@@ -200,29 +179,6 @@ For frontend-only testing without a backend, you can use the mock data:
    - See order status and details
    - Track order timeline
 
-## API Integration
-
-Currently, the application uses mock data located in `src/app/core/mock-data/`. To integrate with a real API:
-
-1. Update the service files in `src/app/core/services/`
-2. Replace mock implementations with HTTP calls
-3. Configure API base URL in environment files
-4. Add proper error handling and retry logic
-
-Example:
-```typescript
-// Before (mock)
-return of(MOCK_PRODUCTS).pipe(delay(500));
-
-// After (real API)
-return this.http.get<Product[]>(`${this.apiUrl}/products`).pipe(
-  retry(1),
-  catchError(this.handleError)
-);
-```
-
-See [MOCK_DATA.md](./docs/MOCK_DATA.md) for complete details on the mock data structure.
-
 ## Configuration
 
 ### Environment Files
@@ -242,34 +198,11 @@ Please refer to [CODING_POLICY.md](./docs/CODING_POLICY.md) for detailed coding 
 - Styling guidelines
 - Git workflow
 
-## Project Status
-
-### Completed 
-- Angular project setup
-- Authentication module with login page
-- Product catalog with search and cart functionality
-- Order confirmation page with shipping form
-- Order history page
-- Routing and navigation
-- Service layer with mock data
-- Responsive UI design
-
-### Pending 
-- Real API integration
-- Unit tests
-- E2E tests
-- State management (if needed for complexity)
-- Error logging and monitoring
-- Performance optimization
-- PWA features
-- Internationalization
-
 ## Documentation
 
 For comprehensive frontend documentation, see the [Frontend Documentation Index](docs/README.md):
 
 - **[Quick Start Guide](docs/QUICKSTART.md)** - Fast setup and testing
-- **[Mock Data Guide](docs/MOCK_DATA.md)** - Mock data structure and test credentials
 - **[Coding Policy](docs/CODING_POLICY.md)** - Coding standards and conventions
 - **[API Documentation](docs/api_documentation.md)** - Frontend API integration guide
 - **[Translation Implementation](docs/TRANSLATION_IMPLEMENTATION.md)** - Complete translation system
@@ -277,11 +210,7 @@ For comprehensive frontend documentation, see the [Frontend Documentation Index]
 - **[Deployment Guide](docs/DEPLOYMENT.md)** - Frontend deployment instructions
 - **[Frontend CLAUDE Guide](CLAUDE.md)** - Frontend development patterns
 
-### Troubleshooting
-- **[Frontend Troubleshooting](../docs/FRONTEND_TROUBLESHOOTING.md)** - Comprehensive debugging guide
-- **[Frontend API Issues](../docs/FRONTEND_API_ISSUES.md)** - API integration troubleshooting
-
-For project-wide documentation, see the [Main Documentation Index](../docs/README.md).
+For project-wide documentation, see the [Main Documentation Index](docs/README.md).
 
 ## Contributing
 
@@ -294,7 +223,7 @@ Please follow the coding standards outlined in [CODING_POLICY.md](./docs/CODING_
 
 ## License
 
-This project is licensed under the BSD 3-Clause License - see the [LICENSE](../LICENSE) file for details.
+This project is licensed under the BSD 3-Clause License - see the [LICENSE](LICENSE) file for details.
 
 ## Support
 
