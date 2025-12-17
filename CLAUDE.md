@@ -151,6 +151,130 @@ productService.toggleViewMode()        // Switches between grid/bulk display
 - Products: `core/mock-data/products.mock.ts` (15 products, 3 categories)
 - Orders: `core/mock-data/orders.mock.ts`
 
+### Money Values and Pricing (CRITICAL)
+
+**PRIMARY CONCEPT: All money calculations are performed on the backend. The frontend only displays values received from the API.**
+
+**All monetary values in the backend API are in cents** for precision:
+- Product prices are stored and transmitted as **integers** (e.g., 1999 = $19.99)
+- When displaying prices, divide by 100: `(price / 100).toFixed(2)`
+- **DO NOT perform calculations on the frontend** - all totals, discounts, VAT amounts come pre-calculated from the backend
+
+**Example conversion**:
+```typescript
+// Display price from API (backend provides value in cents)
+displayPrice(priceInCents: number): string {
+  return (priceInCents / 100).toFixed(2);
+}
+
+// When sending order data to API, only send product UIDs and quantities
+// Backend calculates all prices, discounts, VAT, and totals
+```
+
+### Discount and VAT Features
+
+**CRITICAL: The backend is the single source of truth for all pricing calculations.**
+
+The application supports multi-level discount and VAT calculation, but **all calculations are performed on the backend**:
+
+**Client Model** (from API):
+- `discount` (number, 0-100): Default discount percentage for client
+- `vat_rate` (number, 0-100): VAT rate percentage (e.g., 20 for 20% VAT)
+- `vat_number` (string, optional): VAT registration number
+
+**Order Model** (from API - all values pre-calculated by backend):
+- `discount_percent` (number, 0-100): Snapshot of client discount at order creation
+- `vat_rate` (number, 0-100): Snapshot of VAT rate at order creation
+- `subtotal` (number): Order subtotal before VAT (calculated by backend)
+- `total_vat` (number): Total VAT amount (calculated by backend)
+- `total` (number): Final total including VAT (calculated by backend)
+- `original_total` (number): Original total before discount (calculated by backend)
+- `discount_amount` (number): Total discount amount saved (calculated by backend)
+
+**Order Item Model** (from API - all values pre-calculated by backend):
+- `sku` (string, optional): Product SKU for display
+- `product_name` (string, optional): Product name for display
+- `price` (number): Unit price in cents (integer, from backend)
+- `discount` (number, 0-100): Item-level discount percentage (from backend)
+- `price_discount` (number): Price after discount in cents (calculated by backend)
+- `tax` (number): VAT amount for this item (calculated by backend)
+- `total` (number): Item total (calculated by backend)
+
+**Frontend Responsibilities**:
+- **Display** values received from the backend API
+- **Format** monetary values for display (convert cents to currency format)
+- **Send** only product UIDs and quantities when creating orders
+- **DO NOT** calculate discounts, VAT, or totals on the frontend
+
+### Preview Pricing Pattern (Product Catalog)
+
+**CRITICAL IMPLEMENTATION**: The product catalog uses a two-tier pricing system to provide good UX while maintaining backend authority:
+
+**1. Preview Prices (Non-Authoritative)**:
+- Shown for products NOT in cart or during quantity changes (before backend response)
+- Calculated locally using `calculatePreviewPriceWithVat()` in `product-catalog.component.ts:664-676`
+- Formula: `originalPrice × (1 - discount/100) × (1 + vatRate/100)`
+- Purpose: Instant visual feedback, clearly marked as preview/estimate
+- **These are NOT saved or sent to backend**
+
+**2. Authoritative Prices (Backend-Calculated)**:
+- Shown for items in cart after backend response
+- Source: `cartItem.subtotal / cartItem.quantity` for unit price
+- Source: `cartItem.subtotal` for item total
+- Retrieved from backend via `saveDraftCart()` API call
+- **These are the ONLY prices used for checkout and display**
+
+**Implementation Pattern**:
+```typescript
+// In product-catalog.component.ts
+
+getPriceWithVat(product: Product): number {
+  const cartItem = this.cartItems.find(item => item.productId === product.id);
+  const bulkQty = this.getBulkQuantity(product.id);
+
+  if (cartItem && cartItem.subtotal && cartItem.quantity > 0) {
+    // Check for quantity mismatch (user changed qty but backend hasn't responded)
+    if (bulkQty > 0 && bulkQty !== cartItem.quantity) {
+      // Show preview during update
+      return this.calculatePreviewPriceWithVat(product.price);
+    }
+    // Use backend-calculated value (AUTHORITATIVE)
+    return cartItem.subtotal / cartItem.quantity;
+  }
+  // Item not in cart - show PREVIEW
+  return this.calculatePreviewPriceWithVat(product.price);
+}
+
+private calculatePreviewPriceWithVat(originalPrice: number): number {
+  // PREVIEW ONLY - not authoritative
+  let priceAfterDiscount = originalPrice;
+  if (this.currentDiscount > 0) {
+    priceAfterDiscount = originalPrice * (1 - this.currentDiscount / 100);
+  }
+  return priceAfterDiscount * (1 + this.currentVatRate / 100);
+}
+```
+
+**Key Files**:
+- `frontend/src/app/products/product-catalog/product-catalog.component.ts:634-676` - Price display methods
+- `frontend/src/app/core/services/order.service.ts:590-614` - Cart state management
+
+**Price Flicker Prevention**:
+- Detect quantity mismatches: `bulkQty !== cartItem.quantity`
+- Show preview during update to avoid wrong price display
+- Switch to authoritative price after backend response
+
+**Backend Calculation Flow** (when creating/updating orders):
+1. Backend receives product UIDs and quantities from frontend
+2. Backend retrieves product prices from database
+3. Backend applies client discount to calculate `price_discount`
+4. Backend calculates subtotal: `quantity × price_discount`
+5. Backend calculates VAT: `subtotal × (vat_rate / 100)`
+6. Backend calculates total: `subtotal + VAT`
+7. Backend sums all items for order totals
+8. Backend returns complete order with all calculated values
+9. Frontend updates cart display with authoritative values
+
 ## Styling Guidelines
 
 ### Color Scheme

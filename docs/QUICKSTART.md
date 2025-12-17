@@ -199,5 +199,7 @@ npm install
 
 For detailed coding guidelines, see [CODING_POLICY.md](./CODING_POLICY.md)
 
-For project overview, see [README.md](./README.md)
+For documentation overview, see [README.md](./README.md)
+
+For project overview, see [Frontend README](../README.md)
 

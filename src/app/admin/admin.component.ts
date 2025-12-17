@@ -4,9 +4,10 @@ import { AuthService } from '../core/services/auth.service';
 import { User } from '../core/models/user.model';
 
 @Component({
-  selector: 'app-admin',
-  templateUrl: './admin.component.html',
-  styleUrls: ['./admin.component.scss']
+    selector: 'app-admin',
+    templateUrl: './admin.component.html',
+    styleUrls: ['./admin.component.scss'],
+    standalone: false
 })
 export class AdminComponent implements OnInit {
   isAdmin = false;

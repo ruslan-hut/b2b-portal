@@ -20,6 +20,10 @@ export interface AdminOrder {
   currency_code: string;
   status: string;
   total: number;
+  discount_percent?: number; // Client discount percentage (0-100)
+  vat_rate?: number; // VAT rate percentage (0-100)
+  subtotal?: number; // Subtotal without VAT
+  total_vat?: number; // Total VAT amount
   shipping_address: string;
   billing_address?: string;
   comment?: string;
@@ -39,9 +43,10 @@ interface ApiResponse<T> {
 }
 
 @Component({
-  selector: 'app-orders',
-  templateUrl: './orders.component.html',
-  styleUrls: ['./orders.component.scss']
+    selector: 'app-orders',
+    templateUrl: './orders.component.html',
+    styleUrls: ['./orders.component.scss'],
+    standalone: false
 })
 export class OrdersComponent implements OnInit {
   orders: AdminOrder[] = [];

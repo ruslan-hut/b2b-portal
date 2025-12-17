@@ -1,4 +1,9 @@
 .tables-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+
   h1 {
     margin-bottom: 10px;
     color: #2c3e50;
@@ -13,12 +18,19 @@
     border-left: 4px solid #e67e22;
     border-radius: 4px;
   }
+
+  .header {
+    flex-shrink: 0;
+  }
 }
 
 .tables-layout {
   display: flex;
   gap: 20px;
-  min-height: 600px;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  align-items: stretch;
 }
 
 .tables-sidebar {
@@ -28,12 +40,16 @@
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   padding: 20px;
   flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 
   h2 {
     margin-top: 0;
     margin-bottom: 15px;
     color: #2c3e50;
     font-size: 1.1rem;
+    flex-shrink: 0;
   }
 }
 
@@ -41,6 +57,8 @@
   list-style: none;
   padding: 0;
   margin: 0;
+  overflow-y: auto;
+  flex: 1;
 
   li {
     padding: 10px 12px;
@@ -71,6 +89,9 @@
   padding: 20px;
   display: flex;
   flex-direction: column;
+  min-height: 0;
+  min-width: 0; // Allow horizontal overflow
+  max-height: 100%;
 }
 
 .viewer-header {
@@ -79,8 +100,8 @@
   align-items: center;
   margin-bottom: 20px;
   padding-bottom: 15px;
-  border-bottom: 15px;
   border-bottom: 1px solid #ecf0f1;
+  flex-shrink: 0;
 
   h2 {
     margin: 0;
@@ -104,17 +125,46 @@
 
 .records-table-container {
   flex: 1;
-  overflow: auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  // No overflow property - let the wrapper handle scrolling
 }
 
 .records-table-wrapper {
-  overflow-x: auto;
-  overflow-y: auto;
-  max-height: 600px;
+  flex: 1;
+  overflow: auto;
+  min-height: 0;
+  min-width: 0; // Allow horizontal scrolling in flex container
+  position: relative;
+
+  // Enable smooth scrolling
+  -webkit-overflow-scrolling: touch;
+
+  // Custom scrollbar styling
+  &::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+
+    &:hover {
+      background: #555;
+    }
+  }
 }
 
 .records-table {
   width: 100%;
+  min-width: max-content; // Ensure table doesn't shrink below natural width
   border-collapse: collapse;
   font-size: 0.9rem;
 
@@ -131,6 +181,7 @@
       font-weight: 600;
       white-space: nowrap;
       border-right: 1px solid #2c3e50;
+      min-width: 80px; // Minimum column width
     }
   }
 
@@ -146,7 +197,8 @@
     td {
       padding: 8px;
       white-space: nowrap;
-      max-width: 200px;
+      min-width: 80px; // Minimum column width
+      max-width: 300px; // Increased max width for better readability
       overflow: hidden;
       text-overflow: ellipsis;
     }
@@ -173,11 +225,63 @@
   color: #2c3e50;
 }
 
-.no-records, .no-table-selected {
+.value-percentage {
+  color: #9b59b6;
+  font-family: monospace;
+  text-align: right;
+  font-weight: 600;
+
+  &::before {
+    content: '';
+    display: inline-block;
+    width: 4px;
+    height: 4px;
+    background-color: #9b59b6;
+    border-radius: 50%;
+    margin-right: 6px;
+    vertical-align: middle;
+  }
+}
+
+.value-money {
+  color: #16a085;
+  font-family: monospace;
+  text-align: right;
+  font-weight: 500;
+
+  &::before {
+    content: '';
+    display: inline-block;
+    width: 4px;
+    height: 4px;
+    background-color: #16a085;
+    border-radius: 50%;
+    margin-right: 6px;
+    vertical-align: middle;
+  }
+}
+
+.no-records {
   text-align: center;
   padding: 60px 20px;
   color: #7f8c8d;
   font-size: 1.1rem;
+}
+
+.no-table-selected {
+  flex: 1;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 60px 20px;
+  color: #7f8c8d;
+  font-size: 1.1rem;
+  min-height: 0;
+  max-height: 100%;
 }
 
 .pagination {
@@ -187,6 +291,7 @@
   padding: 15px 0;
   margin-top: 20px;
   border-top: 1px solid #ecf0f1;
+  flex-shrink: 0;
 
   button {
     padding: 8px 16px;
@@ -222,5 +327,80 @@
 
 .loading {
   color: #3498db;
+}
+
+// Responsive styles for smaller screens
+@media (max-width: 1024px) {
+  .tables-sidebar {
+    width: 200px; // Narrower sidebar on tablets
+  }
+
+  .search-controls {
+    .search-input {
+      min-width: 200px;
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .tables-layout {
+    flex-direction: column; // Stack sidebar and content vertically
+  }
+
+  .tables-sidebar {
+    width: 100%;
+    max-height: 200px; // Limit height when horizontal
+  }
+
+  .search-controls {
+    flex-direction: column;
+
+    .search-input {
+      min-width: 100%;
+      width: 100%;
+    }
+  }
+
+  .viewer-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+
+    h2 {
+      width: 100%;
+    }
+  }
+
+  .records-table {
+    font-size: 0.85rem; // Slightly smaller font on mobile
+
+    thead th,
+    tbody td {
+      padding: 6px; // Reduce padding on mobile
+      min-width: 60px; // Smaller minimum width
+    }
+  }
+
+  .pagination {
+    flex-direction: column;
+    gap: 10px;
+
+    span {
+      order: -1; // Show page info first
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .records-table {
+    font-size: 0.8rem; // Even smaller font on small phones
+
+    thead th,
+    tbody td {
+      padding: 4px;
+      min-width: 50px;
+      font-size: 0.75rem;
+    }
+  }
 }
 

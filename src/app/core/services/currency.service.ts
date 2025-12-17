@@ -44,7 +44,8 @@ export class CurrencyService {
   /**
    * Get currency (code+name) for a client UID using backend helper endpoint.
    * Returns currency name string or null on failure.
-   * @deprecated Use getCurrencyObjectForClient() instead to get full Currency object with sign
+   * @deprecated Currency is now available in AppSettings (loaded from /auth/me endpoint).
+   * Use AppSettingsService.getCurrency() instead. This method makes redundant API calls.
    */
   getCurrencyForClient(clientUid: string): Observable<string | null> {
     if (!clientUid) return of(null);
@@ -67,6 +68,8 @@ export class CurrencyService {
   /**
    * Get full Currency object for a client UID
    * Returns Currency object or null on failure
+   * @deprecated Currency is now available in AppSettings (loaded from /auth/me endpoint).
+   * Use AppSettingsService.getCurrency() instead. This method makes redundant API calls.
    */
   getCurrencyObjectForClient(clientUid: string): Observable<Currency | null> {
     if (!clientUid) return of(null);

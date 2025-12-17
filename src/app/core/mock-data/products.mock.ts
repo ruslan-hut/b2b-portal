@@ -13,7 +13,10 @@ export const MOCK_PRODUCTS: Product[] = [
     "quantity": 100,
     "availableQuantity": 85,
     "allocatedQuantity": 15,
-    "active": true
+    "active": true,
+    "isNew": true,
+    "isHotSale": false,
+    "sortOrder": 1
   },
   {
     "id": "2",
@@ -27,7 +30,10 @@ export const MOCK_PRODUCTS: Product[] = [
     "quantity": 50,
     "availableQuantity": 42,
     "allocatedQuantity": 8,
-    "active": true
+    "active": true,
+    "isNew": false,
+    "isHotSale": true,
+    "sortOrder": 2
   },
   {
     "id": "3",
@@ -41,7 +47,10 @@ export const MOCK_PRODUCTS: Product[] = [
     "quantity": 30,
     "availableQuantity": 5,
     "allocatedQuantity": 25,
-    "active": true
+    "active": true,
+    "isNew": true,
+    "isHotSale": true,
+    "sortOrder": 0
   },
   {
     "id": "4",

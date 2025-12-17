@@ -1,0 +1,183 @@
+<div class="order-detail-container">
+  <div class="detail-header">
+    <button class="btn-back" (click)="goBack()">&larr; {{ 'orders.backToOrders' | translate }}</button>
+    <h2>{{ 'orders.orderDetails' | translate }}</h2>
+    @if (!loading && !error && order) {
+      <button class="btn-export" (click)="exportToExcel()">
+        {{ 'orders.exportToExcel' | translate }}
+      </button>
+    }
+  </div>
+
+  @if (loading) {
+    <div class="loading">{{ 'common.loading' | translate }}</div>
+  }
+  @if (error) {
+    <div class="error">{{ error }}</div>
+  }
+
+  @if (!loading && !error && order) {
+    <div class="detail-content">
+      <div class="section order-info">
+        <h3>{{ 'orders.orderInformation' | translate }}</h3>
+        <div class="info-grid">
+          <div><strong>{{ 'orders.orderNumber' | translate }}:</strong> {{ order.number || order.id }}</div>
+          <div><strong>{{ 'orders.status' | translate }}:</strong>
+          <span class="status-badge" [ngClass]="getStatusClass(order.status)">
+            {{ getTranslatedStatus(order.status) }}
+          </span>
+        </div>
+        <div>
+          <strong>{{ 'orders.created' | translate }}:</strong> {{ formatDate(order.createdAt) }}
+        </div>
+        <div>
+          <strong>{{ 'orders.updated' | translate }}:</strong> {{ formatDate(order.updatedAt || order.createdAt) }}
+        </div>
+        @if (order.comment) {
+          <div>
+            <strong>{{ 'orders.comment' | translate }}:</strong> {{ order.comment }}
+          </div>
+        }
+      </div>
+    </div>
+    <div class="section delivery-info">
+      <h3>{{ 'orders.deliveryAddress' | translate }}</h3>
+      @if (hasDeliveryAddress()) {
+        <div class="info-grid">
+          @if (order.addressText) {
+            <div>
+              <strong>{{ 'orders.street' | translate }}:</strong> {{ order.addressText }}
+            </div>
+          }
+          @if (order.city) {
+            <div>
+              <strong>{{ 'orders.city' | translate }}:</strong> {{ order.city }}
+            </div>
+          }
+          @if (order.zipcode) {
+            <div>
+              <strong>{{ 'orders.zipCode' | translate }}:</strong> {{ order.zipcode }}
+            </div>
+          }
+          @if (order.countryCode) {
+            <div>
+              <strong>{{ 'orders.country' | translate }}:</strong> {{ order.countryCode }}
+            </div>
+          }
+        </div>
+      } @else {
+        <p class="no-data">{{ 'orders.noAddressProvided' | translate }}</p>
+      }
+    </div>
+    <div class="section items-section">
+      <h3>{{ 'orders.orderItems' | translate }}</h3>
+      <table class="items-table">
+        <thead>
+          <tr>
+            <th>{{ 'orders.sku' | translate }}</th>
+            <th>{{ 'orders.productName' | translate }}</th>
+            <th>{{ 'products.quantity' | translate }}</th>
+            <th>{{ 'orders.basePrice' | translate }}</th>
+            <th>{{ 'orders.priceWithVat' | translate }}</th>
+            <th>{{ 'orders.discount' | translate }} (%)</th>
+            <th>{{ 'orders.priceAfterDiscount' | translate }}</th>
+            <th>{{ 'orders.total' | translate }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of order.items; track item) {
+            <tr>
+              <td>{{ item.sku || '-' }}</td>
+              <td>{{ item.productName }}</td>
+              <td>{{ item.quantity }}</td>
+              <td>{{ item.price.toFixed(2) }}{{ currencyName ? ' ' + currencyName : '' }}</td>
+              <td>{{ (item.priceWithVat || 0).toFixed(2) }}{{ currencyName ? ' ' + currencyName : '' }}</td>
+              <td>{{ item.discount !== undefined ? item.discount + '%' : '-' }}</td>
+              <td>{{ (item.priceAfterDiscountWithVat || 0).toFixed(2) }}{{ currencyName ? ' ' + currencyName : '' }}</td>
+              <td>{{ item.subtotal.toFixed(2) }}{{ currencyName ? ' ' + currencyName : '' }}</td>
+            </tr>
+          }
+          @if (order.items.length === 0) {
+            <tr>
+              <td colspan="8" class="no-data">{{ 'orders.noItems' | translate }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    <!-- Order Totals Section -->
+    <div class="section totals-section">
+      <h3>{{ 'orders.orderTotals' | translate }}</h3>
+      <div class="totals-breakdown">
+        @if (hasDiscount()) {
+          <div class="total-row">
+            <span class="total-label">{{ 'products.originalPrice' | translate }}:</span>
+            <span class="total-value">{{ getOriginalTotal().toFixed(2) }}{{ currencyName ? ' ' + currencyName : '' }}</span>
+          </div>
+        }
+        @if (hasDiscount()) {
+          <div class="total-row discount-row">
+            <span class="total-label">{{ 'products.discount' | translate }} ({{ order.discountPercent }}%):</span>
+            <span class="total-value discount-value">-{{ getDiscountAmount().toFixed(2) }}{{ currencyName ? ' ' + currencyName : '' }}</span>
+          </div>
+        }
+        <div class="total-row subtotal-row" [class.first-row]="!hasDiscount()">
+          <span class="total-label">{{ 'products.subtotal' | translate }}:</span>
+          <span class="total-value">{{ getSubtotal().toFixed(2) }}{{ currencyName ? ' ' + currencyName : '' }}</span>
+        </div>
+        @if (getVatAmount() > 0) {
+          <div class="total-row vat-row">
+            <span class="total-label">{{ 'products.vat' | translate }}@if (order.vatRate) {
+              <span> ({{ order.vatRate }}%)</span>
+            }:</span>
+            <span class="total-value">{{ getVatAmount().toFixed(2) }}{{ currencyName ? ' ' + currencyName : '' }}</span>
+          </div>
+        }
+        <div class="total-row final-total-row">
+          <span class="total-label">{{ 'products.total' | translate }}:</span>
+          <span class="total-value final-total">{{ getFinalTotal().toFixed(2) }}{{ currencyName ? ' ' + currencyName : '' }}</span>
+        </div>
+      </div>
+    </div>
+    <!-- Status history section -->
+    <div class="section items-section history-section">
+      <h3>{{ 'orders.statusHistory' | translate }}</h3>
+      @if (historyLoading) {
+        <div class="loading">{{ 'common.loading' | translate }}</div>
+      }
+      @if (!historyLoading) {
+        <table class="items-table history-table">
+          <thead>
+            <tr>
+              <th>{{ 'orders.date' | translate }}</th>
+              <th>{{ 'orders.user' | translate }}</th>
+              <th>{{ 'orders.status' | translate }}</th>
+              <th>{{ 'orders.comment' | translate }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (h of history; track h) {
+              <tr>
+                <td>{{ formatDate(h.created_at) }}</td>
+                <td>{{ (h.user_firstname || '') + ' ' + (h.user_lastname || '') || '-' }}</td>
+                <td>
+                  <span class="status-badge" [ngClass]="getStatusClass(h.status)">
+                    {{ getTranslatedStatus(h.status) }}
+                  </span>
+                </td>
+                <td>{{ h.comment || '-' }}</td>
+              </tr>
+            }
+            @if (history.length === 0) {
+              <tr>
+                <td colspan="4" class="no-data">{{ 'orders.noHistory' | translate }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    </div>
+  </div>
+}
+</div>
+

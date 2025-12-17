@@ -3,67 +3,73 @@
     <h1>Dashboard</h1>
     <div class="store-filter">
       <label for="store-select">Filter by Store:</label>
-      <select 
-        id="store-select" 
-        [(ngModel)]="selectedStoreUID" 
+      <select
+        id="store-select"
+        [(ngModel)]="selectedStoreUID"
         (change)="onStoreChange()"
         [disabled]="loadingStores"
         class="store-select">
         <option [value]="null">All Stores</option>
-        <option *ngFor="let store of stores" [value]="store.uid">
-          {{ store.name || store.uid }}
-        </option>
+        @for (store of stores; track store) {
+          <option [value]="store.uid">
+            {{ store.name || store.uid }}
+          </option>
+        }
       </select>
     </div>
   </div>
 
-  <div *ngIf="loading" class="loading">
-    Loading statistics...
-  </div>
+  @if (loading) {
+    <div class="loading">
+      Loading statistics...
+    </div>
+  }
 
-  <div *ngIf="error" class="error">
-    {{ error }}
-    <button (click)="loadDashboardStats()">Retry</button>
-  </div>
+  @if (error) {
+    <div class="error">
+      {{ error }}
+      <button (click)="loadDashboardStats()">Retry</button>
+    </div>
+  }
 
-  <div *ngIf="!loading && !error && stats" class="stats-grid">
-    <!-- Orders Statistics -->
-    <div class="stat-card orders-card">
-      <h2>Orders</h2>
-      <div class="stat-value">{{ getTotalOrders() }}</div>
-      <div class="stat-details">
-        <div class="stat-item">
-          <span class="label">Draft:</span>
-          <span class="value">{{ getOrderStatusCount('draft') }}</span>
-        </div>
-        <div class="stat-item">
-          <span class="label">New:</span>
-          <span class="value">{{ getOrderStatusCount('new') }}</span>
-        </div>
-        <div class="stat-item">
-          <span class="label">Processing:</span>
-          <span class="value">{{ getOrderStatusCount('processing') }}</span>
-        </div>
-        <div class="stat-item">
-          <span class="label">Confirmed:</span>
-          <span class="value">{{ getOrderStatusCount('confirmed') }}</span>
+  @if (!loading && !error && stats) {
+    <div class="stats-grid">
+      <!-- Orders Statistics -->
+      <div class="stat-card orders-card">
+        <h2>Orders</h2>
+        <div class="stat-value">{{ getTotalOrders() }}</div>
+        <div class="stat-details">
+          <div class="stat-item">
+            <span class="label">Draft:</span>
+            <span class="value">{{ getOrderStatusCount('draft') }}</span>
+          </div>
+          <div class="stat-item">
+            <span class="label">New:</span>
+            <span class="value">{{ getOrderStatusCount('new') }}</span>
+          </div>
+          <div class="stat-item">
+            <span class="label">Processing:</span>
+            <span class="value">{{ getOrderStatusCount('processing') }}</span>
+          </div>
+          <div class="stat-item">
+            <span class="label">Confirmed:</span>
+            <span class="value">{{ getOrderStatusCount('confirmed') }}</span>
+          </div>
         </div>
       </div>
+      <!-- Clients Statistics -->
+      <div class="stat-card clients-card">
+        <h2>Clients</h2>
+        <div class="stat-value">{{ stats.total_clients }}</div>
+        <div class="stat-description">Total registered clients</div>
+      </div>
+      <!-- Products Statistics -->
+      <div class="stat-card products-card">
+        <h2>Products</h2>
+        <div class="stat-value">{{ stats.total_products }}</div>
+        <div class="stat-description">Total products in catalog</div>
+      </div>
     </div>
-
-    <!-- Clients Statistics -->
-    <div class="stat-card clients-card">
-      <h2>Clients</h2>
-      <div class="stat-value">{{ stats.total_clients }}</div>
-      <div class="stat-description">Total registered clients</div>
-    </div>
-
-    <!-- Products Statistics -->
-    <div class="stat-card products-card">
-      <h2>Products</h2>
-      <div class="stat-value">{{ stats.total_products }}</div>
-      <div class="stat-description">Total products in catalog</div>
-    </div>
-  </div>
+  }
 </div>
 

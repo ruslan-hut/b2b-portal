@@ -52,8 +52,13 @@
       font-size: 24px;
     }
 
-    &:hover {
+    &:hover:not(:disabled) {
       color: #333;
+    }
+
+    &:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
     }
   }
 }
@@ -66,6 +71,19 @@
     width: 80px;
     height: 80px;
     margin: 0 auto 24px;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 48px;
+  }
+
+  .info-icon {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 24px;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
     border-radius: 50%;
@@ -73,6 +91,26 @@
     align-items: center;
     justify-content: center;
     font-size: 48px;
+  }
+
+  .loading-container {
+    padding: 20px 0;
+
+    .spinner {
+      width: 60px;
+      height: 60px;
+      margin: 0 auto 24px;
+      border: 4px solid #f3f4f6;
+      border-top: 4px solid #667eea;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    .loading-message {
+      font-size: 16px;
+      color: #666;
+      margin: 0;
+    }
   }
 
   .confirmation-message {
@@ -109,9 +147,10 @@
   padding: 16px 24px 24px;
   display: flex;
   justify-content: center;
+  gap: 12px;
 
   .btn {
-    padding: 14px 48px;
+    padding: 14px 32px;
     font-size: 16px;
     font-weight: 600;
     border: none;
@@ -123,9 +162,30 @@
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       color: white;
 
-      &:hover {
+      &:hover:not(:disabled) {
         transform: translateY(-2px);
         box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+      }
+
+      &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+    }
+
+    &.btn-secondary {
+      background: #f3f4f6;
+      color: #666;
+      border: 1px solid #e5e7eb;
+
+      &:hover:not(:disabled) {
+        background: #e5e7eb;
+        color: #333;
+      }
+
+      &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
       }
     }
   }
@@ -151,6 +211,15 @@
   }
 }
 
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 @media (max-width: 576px) {
   .dialog-content {
     width: 95%;
@@ -160,7 +229,8 @@
   .dialog-body {
     padding: 24px 16px;
 
-    .success-icon {
+    .success-icon,
+    .info-icon {
       width: 64px;
       height: 64px;
       font-size: 36px;
@@ -170,9 +240,26 @@
       }
     }
 
+    .loading-container {
+      .spinner {
+        width: 48px;
+        height: 48px;
+        border-width: 3px;
+      }
+    }
+
     .order-total-section {
       flex-direction: column;
       gap: 8px;
+    }
+  }
+
+  .dialog-footer {
+    flex-direction: column;
+
+    .btn {
+      width: 100%;
+      padding: 12px 24px;
     }
   }
 }

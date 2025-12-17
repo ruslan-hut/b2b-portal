@@ -2,24 +2,27 @@ import { User } from '../models/user.model';
 
 export const MOCK_USERS: User[] = [
   {
-    id: '1',
+    uid: '1',
+    username: 'admin',
     email: 'admin@example.com',
-    name: 'John Admin',
-    companyName: 'TechCorp Solutions',
+    first_name: 'John',
+    last_name: 'Admin',
     role: 'admin'
   },
   {
-    id: '2',
+    uid: '2',
+    username: 'client',
     email: 'client@example.com',
-    name: 'Jane Smith',
-    companyName: 'ABC Retail Inc',
+    first_name: 'Jane',
+    last_name: 'Smith',
     role: 'client'
   },
   {
-    id: '3',
+    uid: '3',
+    username: 'demo',
     email: 'demo@example.com',
-    name: 'Demo User',
-    companyName: 'Demo Company',
+    first_name: 'Demo',
+    last_name: 'User',
     role: 'client'
   }
 ];

@@ -63,35 +63,83 @@
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   overflow-x: auto;
+  position: relative;
+
+  // Custom scrollbar styling
+  &::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+
+    &:hover {
+      background: #555;
+    }
+  }
 }
 
 table {
   width: 100%;
+  min-width: max-content; // Prevent table from shrinking
   border-collapse: collapse;
-  
+
   thead {
     background-color: #34495e;
     color: white;
-    
+
     th {
       padding: 12px;
       text-align: left;
       font-weight: 600;
+      white-space: nowrap;
+      min-width: 80px;
+
+      &:first-child {
+        position: sticky;
+        left: 0;
+        z-index: 11;
+        background-color: #34495e;
+        box-shadow: 2px 0 4px rgba(0, 0, 0, 0.1);
+      }
     }
   }
-  
+
   tbody {
     tr {
       border-bottom: 1px solid #ecf0f1;
-      
+
       &:hover {
         background-color: #f8f9fa;
       }
     }
-    
+
     td {
       padding: 12px;
       color: #2c3e50;
+      white-space: nowrap;
+      min-width: 80px;
+
+      &:first-child {
+        position: sticky;
+        left: 0;
+        z-index: 9;
+        background-color: white;
+        box-shadow: 2px 0 4px rgba(0, 0, 0, 0.05);
+      }
+
+      tr:hover & {
+        &:first-child {
+          background-color: #f8f9fa;
+        }
+      }
     }
   }
 }
@@ -280,5 +328,70 @@ table {
 
 .error {
   color: #e74c3c;
+}
+
+// Responsive styles for smaller screens
+@media (max-width: 768px) {
+  .header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .filters {
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .filter-group {
+    flex-direction: column;
+    align-items: stretch;
+
+    input {
+      min-width: 100%;
+    }
+  }
+
+  table {
+    font-size: 0.85rem;
+
+    thead th,
+    tbody td {
+      padding: 8px;
+      min-width: 60px;
+    }
+  }
+
+  .actions {
+    flex-direction: column;
+
+    button {
+      width: 100%;
+    }
+  }
+
+  .pagination {
+    flex-direction: column;
+    gap: 10px;
+    text-align: center;
+  }
+
+  .modal-content {
+    padding: 20px;
+    width: 95%;
+  }
+}
+
+@media (max-width: 480px) {
+  table {
+    font-size: 0.8rem;
+
+    thead th,
+    tbody td {
+      padding: 6px;
+      min-width: 50px;
+      font-size: 0.75rem;
+    }
+  }
 }
 

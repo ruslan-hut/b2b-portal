@@ -346,3 +346,42 @@
     }
   }
 }
+
+// Discount price display styles
+.product-price-section {
+  .original-price {
+    font-size: 0.9em;
+    color: #999;
+    margin-bottom: 4px;
+
+    .strikethrough {
+      text-decoration: line-through;
+    }
+  }
+
+  .discounted-price-section {
+    font-size: 1.2em;
+    font-weight: 600;
+
+    &.has-discount {
+      color: #e74c3c;
+      font-weight: bold;
+    }
+  }
+
+  .savings-info {
+    margin-top: 8px;
+    font-size: 0.9em;
+    color: #27ae60;
+    font-weight: 600;
+
+    .savings-label {
+      margin-right: 4px;
+    }
+
+    .savings-percent {
+      color: #666;
+      font-weight: 500;
+    }
+  }
+}

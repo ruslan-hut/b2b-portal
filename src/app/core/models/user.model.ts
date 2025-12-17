@@ -21,6 +21,8 @@ export interface Client {
   pin_code: string;
   address: string;
   discount: number;
+  vat_rate?: number; // VAT rate percentage (0-100)
+  vat_number?: string; // VAT registration number (if registered)
   currency: string;
   price_type_uid: string;
   store_uid: string; // Required: store assigned to client

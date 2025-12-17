@@ -2,9 +2,10 @@ import { Component, OnInit } from '@angular/core';
 import { AdminService, TableInfo, TableRecord, TableRecordsResponse } from '../../core/services/admin.service';
 
 @Component({
-  selector: 'app-tables',
-  templateUrl: './tables.component.html',
-  styleUrls: ['./tables.component.scss']
+    selector: 'app-tables',
+    templateUrl: './tables.component.html',
+    styleUrls: ['./tables.component.scss'],
+    standalone: false
 })
 export class TablesComponent implements OnInit {
   tables: TableInfo[] = [];
@@ -102,17 +103,31 @@ export class TablesComponent implements OnInit {
     }
   }
 
-  formatValue(value: any): string {
+  formatValue(value: any, column?: string): string {
     if (value === null || value === undefined) {
       return '-';
     }
     if (typeof value === 'object') {
       return JSON.stringify(value);
     }
+
+    // Format percentage fields
+    if (column && this.isPercentageColumn(column)) {
+      return `${value}%`;
+    }
+
+    // Format currency/money fields
+    if (column && this.isMoneyColumn(column)) {
+      const numValue = typeof value === 'number' ? value : parseFloat(value);
+      if (!isNaN(numValue)) {
+        return (numValue / 100).toFixed(2);
+      }
+    }
+
     return String(value);
   }
 
-  getValueClass(value: any): string {
+  getValueClass(value: any, column?: string): string {
     if (value === null || value === undefined) {
       return 'value-null';
     }
@@ -122,7 +137,65 @@ export class TablesComponent implements OnInit {
     if (typeof value === 'boolean') {
       return 'value-boolean';
     }
+
+    // Special class for percentage columns
+    if (column && this.isPercentageColumn(column)) {
+      return 'value-percentage';
+    }
+
+    // Special class for money columns
+    if (column && this.isMoneyColumn(column)) {
+      return 'value-money';
+    }
+
     return 'value-text';
+  }
+
+  private isPercentageColumn(column: string): boolean {
+    const percentageColumns = [
+      'discount',
+      'discount_percent',
+      'vat_rate',
+      'default_vat_rate'
+    ];
+    return percentageColumns.includes(column.toLowerCase());
+  }
+
+  private isMoneyColumn(column: string): boolean {
+    const moneyColumns = [
+      'price',
+      'total',
+      'subtotal',
+      'total_vat',
+      'tax',
+      'price_discount',
+      'value'
+    ];
+    return moneyColumns.includes(column.toLowerCase());
+  }
+
+  getColumnLabel(column: string): string {
+    // Convert snake_case to Title Case with better labels
+    const labels: { [key: string]: string } = {
+      'vat_rate': 'VAT Rate (%)',
+      'vat_number': 'VAT Number',
+      'default_vat_rate': 'Default VAT Rate (%)',
+      'discount_percent': 'Discount (%)',
+      'price_discount': 'Price (Discounted)',
+      'total_vat': 'Total VAT',
+      'subtotal': 'Subtotal (Net)',
+      'tax': 'VAT Amount'
+    };
+
+    if (labels[column.toLowerCase()]) {
+      return labels[column.toLowerCase()];
+    }
+
+    // Default: Convert snake_case to Title Case
+    return column
+      .split('_')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
   }
 }
 

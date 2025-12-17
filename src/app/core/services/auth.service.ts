@@ -13,6 +13,7 @@ import {
   ApiResponse
 } from '../models/user.model';
 import { environment } from '../../../environments/environment';
+import { AppSettingsService } from './app-settings.service';
 
 interface AuthData {
   entityType: 'user' | 'client';
@@ -37,7 +38,10 @@ export class AuthService {
 
   private refreshTokenTimeout?: any;
 
-  constructor(private http: HttpClient) {
+  constructor(
+    private http: HttpClient,
+    private appSettingsService: AppSettingsService
+  ) {
     const authData = this.getStoredAuthData();
     this.currentEntitySubject = new BehaviorSubject<User | Client | null>(
       authData ? authData.entity : null
@@ -136,43 +140,46 @@ export class AuthService {
 
   /**
    * Get current user/client information from server
+   * Also loads AppSettings which includes currency, store, price type
    */
   getCurrentEntity(): Observable<User | Client> {
     return this.http.get<AuthMeResponse>(`${this.apiUrl}/auth/me`).pipe(
-      map(response => {
-
+      switchMap(response => {
         // Support both 'status: success' and 'success: true' formats
         const isSuccess = response.status === 'success' || (response as any).success === true;
 
-        if (isSuccess) {
-          const entity = response.data.entity_type === 'user'
-            ? response.data.user!
-            : response.data.client!;
-
-          // Update local state
-          this.currentEntitySubject.next(entity);
-          this.entityTypeSubject.next(response.data.entity_type);
-
-          // Update stored auth data
-          const authData = this.getStoredAuthData();
-          if (authData) {
-            authData.entity = entity;
-            authData.entityType = response.data.entity_type;
-            // Persist user's store UID if available (multi-store support)
-            if (response.data.user && (response.data.user as any).store_uid) {
-              // Ensure stored entity reflects store_uid
-              authData.entity = response.data.user as any;
-            }
-            this.storeAuthData(authData);
-          }
-
-          return entity;
+        if (!isSuccess) {
+          console.error('Response not successful:', response);
+          return throwError(() => new Error('Failed to get current entity'));
         }
-        console.error('Response not successful:', response);
-        throw new Error('Failed to get current entity');
+
+        // Load AppSettings (which includes entity and all related data)
+        return this.appSettingsService.loadSettings().pipe(
+          map(settings => {
+            const entity = settings.entity;
+
+            // Update local state
+            this.currentEntitySubject.next(entity);
+            this.entityTypeSubject.next(settings.entity_type);
+
+            // Update stored auth data
+            const authData = this.getStoredAuthData();
+            if (authData) {
+              authData.entity = entity;
+              authData.entityType = settings.entity_type;
+              // Persist user's store UID if available (multi-store support)
+              if (settings.entity_type === 'user' && (entity as any).store_uid) {
+                // Ensure stored entity reflects store_uid
+                authData.entity = entity as any;
+              }
+              this.storeAuthData(authData);
+            }
+
+            return entity;
+          })
+        );
       }),
       catchError(error => {
-
         return throwError(() => error);
       })
     );
@@ -296,6 +303,21 @@ export class AuthService {
     // Start refresh token timer
     this.startRefreshTokenTimer(response.data.expires_at);
 
+    // Load AppSettings after successful login
+    // This will fetch entity, currency, store, price type in one call
+    this.appSettingsService.loadSettings().subscribe({
+      next: (settings) => {
+        // Update current entity from AppSettings
+        if (settings.entity) {
+          this.currentEntitySubject.next(settings.entity);
+        }
+      },
+      error: (error) => {
+        console.error('Failed to load app settings after login:', error);
+        // Continue with getCurrentEntity() as fallback
+      }
+    });
+
     return this.getCurrentEntity();
   }
 
@@ -304,6 +326,8 @@ export class AuthService {
     this.currentEntitySubject.next(null);
     this.entityTypeSubject.next(null);
     this.stopRefreshTokenTimer();
+    // Clear AppSettings on logout
+    this.appSettingsService.clearSettings();
   }
 
   private storeAuthData(authData: AuthData): void {

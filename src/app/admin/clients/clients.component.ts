@@ -10,6 +10,8 @@ export interface AdminClient {
   pin_code: string;
   address: string;
   discount: number;
+  vat_rate?: number; // VAT rate percentage (0-100)
+  vat_number?: string; // VAT registration number
   price_type_uid: string;
   store_uid: string;
   active: boolean;
@@ -28,9 +30,10 @@ interface ApiResponse<T> {
 }
 
 @Component({
-  selector: 'app-clients',
-  templateUrl: './clients.component.html',
-  styleUrls: ['./clients.component.scss']
+    selector: 'app-clients',
+    templateUrl: './clients.component.html',
+    styleUrls: ['./clients.component.scss'],
+    standalone: false
 })
 export class ClientsComponent implements OnInit {
   clients: AdminClient[] = [];
@@ -129,6 +132,8 @@ export class ClientsComponent implements OnInit {
       phone: '',
       address: '',
       discount: 0,
+      vat_rate: 0,
+      vat_number: '',
       price_type_uid: '',
       store_uid: '',
       active: true
@@ -150,6 +155,8 @@ export class ClientsComponent implements OnInit {
       pin_code: this.editForm.pin_code || '',
       address: this.editForm.address || '',
       discount: this.editForm.discount || 0,
+      vat_rate: this.editForm.vat_rate || 0,
+      vat_number: this.editForm.vat_number || '',
       price_type_uid: this.editForm.price_type_uid,
       store_uid: this.editForm.store_uid,
       active: this.editForm.active !== undefined ? this.editForm.active : true

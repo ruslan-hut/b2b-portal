@@ -216,6 +216,7 @@ If the application cannot connect to the API after deployment:
 
 ## Related Documentation
 
-- [README.md](./README.md) - Project overview and setup
-- [CLAUDE.md](./CLAUDE.md) - Development guidelines
-- [api_documentation.md](./api_documentation.md) - API reference
+- [README.md](./README.md) - Documentation overview
+- [Frontend README](../README.md) - Project overview and setup
+- [CLAUDE.md](../CLAUDE.md) - Development guidelines
+- [api_documentation.md](./api_documentation.md) - Frontend API reference

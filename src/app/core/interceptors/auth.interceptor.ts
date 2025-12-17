@@ -31,7 +31,7 @@ export class AuthInterceptor implements HttpInterceptor {
     return next.handle(request).pipe(
       catchError(error => {
         if (error instanceof HttpErrorResponse && error.status === 401) {
-          return this.handle401Error(request, next);
+          return this.handle401Error(request, next, error);
         }
         return throwError(() => error);
       })
@@ -51,11 +51,26 @@ export class AuthInterceptor implements HttpInterceptor {
     });
   }
 
-  private handle401Error(request: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
+  private handle401Error(request: HttpRequest<any>, next: HttpHandler, error: HttpErrorResponse): Observable<HttpEvent<any>> {
     // Don't try to refresh on login or refresh endpoints
     if (request.url.includes('/auth/login') || request.url.includes('/auth/refresh')) {
       this.router.navigate(['/auth/login']);
-      return throwError(() => new Error('Unauthorized'));
+      return throwError(() => error);
+    }
+
+    // Check if this is an authorization error (not authentication)
+    // Authorization errors (like "not a client") should not trigger token refresh
+    // Only authentication errors (token expired/revoked) should trigger refresh
+    if (error?.error?.message) {
+      const errorMessage = error.error.message.toLowerCase();
+      // If error is about authorization/permissions (not token), don't refresh
+      if (errorMessage.includes('not a client') || 
+          errorMessage.includes('not authenticated or not a client') ||
+          errorMessage.includes('access denied') ||
+          errorMessage.includes('forbidden')) {
+        // This is an authorization error, not authentication - don't refresh token
+        return throwError(() => error);
+      }
     }
 
     if (!this.isRefreshing) {
@@ -65,8 +80,11 @@ export class AuthInterceptor implements HttpInterceptor {
       return this.authService.refreshToken().pipe(
         switchMap((response: any) => {
           this.isRefreshing = false;
-          this.refreshTokenSubject.next(response.data.access_token);
-          return next.handle(this.addToken(request, response.data.access_token));
+          const newToken = response.data.access_token;
+          // Ensure token is stored before notifying other requests
+          this.refreshTokenSubject.next(newToken);
+          // Use the new token from the response (already stored by handleLoginSuccess)
+          return next.handle(this.addToken(request, newToken));
         }),
         catchError((err) => {
           this.isRefreshing = false;

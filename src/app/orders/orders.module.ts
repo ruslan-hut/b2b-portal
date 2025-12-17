@@ -1,17 +1,21 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 
 import { OrdersRoutingModule } from './orders-routing.module';
 import { OrderHistoryComponent } from './order-history/order-history.component';
+import { OrderDetailComponent } from './order-detail/order-detail.component';
 import { CoreModule } from '../core/core.module';
 
 
 @NgModule({
   declarations: [
-    OrderHistoryComponent
+    OrderHistoryComponent,
+    OrderDetailComponent
   ],
   imports: [
     CommonModule,
+    FormsModule,
     OrdersRoutingModule,
     CoreModule
   ]

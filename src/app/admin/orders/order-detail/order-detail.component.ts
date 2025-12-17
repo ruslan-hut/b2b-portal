@@ -17,8 +17,18 @@ interface OrderDetail {
   currency_code: string;
   status: string;
   total: number;
+  discount_percent?: number; // Client discount percentage (0-100)
+  vat_rate?: number; // VAT rate percentage (0-100)
+  subtotal?: number; // Subtotal without VAT
+  total_vat?: number; // Total VAT amount
+  original_total?: number; // Original total before discount
+  discount_amount?: number; // Total discount amount saved
   shipping_address: string;
   billing_address?: string;
+  country_code?: string; // ISO country code (e.g., "UA", "PL")
+  zipcode?: string; // Postal code
+  city?: string; // City name
+  address_text?: string; // Street address
   comment?: string;
   created_at: string;
   last_update?: string;
@@ -27,10 +37,15 @@ interface OrderDetail {
 interface OrderItem {
   order_uid: string;
   product_uid: string;
+  product_sku: string; // Product SKU (from backend)
   quantity: number;
-  price: number;
-  discount: number;
-  total: number;
+  price: number; // Base price in cents (without VAT or discount)
+  price_with_vat: number; // Base price with VAT (calculated by backend)
+  discount: number; // Discount percentage (0-100)
+  price_discount?: number; // Price after discount in cents (without VAT)
+  price_after_discount_with_vat: number; // Price after discount with VAT (calculated by backend)
+  tax?: number; // VAT amount for this item
+  total: number; // Total with VAT (quantity × price_after_discount_with_vat)
 }
 
 interface Client {
@@ -40,6 +55,8 @@ interface Client {
   phone: string;
   address: string;
   discount: number;
+  vat_rate?: number; // VAT rate percentage (0-100)
+  vat_number?: string; // VAT registration number
   active: boolean;
 }
 
@@ -65,9 +82,10 @@ interface ApiResponse<T> {
 }
 
 @Component({
-  selector: 'app-order-detail',
-  templateUrl: './order-detail.component.html',
-  styleUrl: './order-detail.component.scss'
+    selector: 'app-order-detail',
+    templateUrl: './order-detail.component.html',
+    styleUrl: './order-detail.component.scss',
+    standalone: false
 })
 export class OrderDetailComponent implements OnInit {
   orderUID: string = '';
@@ -214,10 +232,6 @@ export class OrderDetailComponent implements OnInit {
     return this.products[uid]?.name || 'Unknown Product';
   }
 
-  getProductSKU(uid: string): string {
-    return this.products[uid]?.sku || '-';
-  }
-
   // Return null by default; Orders list component manages currency lookup.
   getCurrency(code: string): Currency | null {
     return null;
@@ -239,5 +253,13 @@ export class OrderDetailComponent implements OnInit {
 
   getStatusClass(status: string): string {
     return `status-${status.toLowerCase()}`;
+  }
+
+  hasDeliveryAddress(): boolean {
+    return !!this.order &&
+      (!!this.order.address_text ||
+       !!this.order.city ||
+       !!this.order.zipcode ||
+       !!this.order.country_code);
   }
 }

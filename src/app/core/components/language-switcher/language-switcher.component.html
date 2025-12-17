@@ -1,5 +1,5 @@
 <div class="language-switcher">
-  <button 
+  <button
     class="language-toggle"
     (click)="toggleDropdown()"
     [attr.aria-label]="'Select language'">
@@ -7,17 +7,18 @@
     <span class="language-code">{{ getCurrentLanguageCode() }}</span>
     <span class="material-icons arrow">keyboard_arrow_down</span>
   </button>
-  
+
   <div class="language-dropdown" [class.open]="isDropdownOpen">
-    <button 
-      *ngFor="let language of languages"
-      class="language-option"
-      [class.active]="(currentLanguage$ | async) === language.code"
-      (click)="selectLanguage(language.code)"
-      [attr.aria-label]="'Switch to ' + language.label">
-      <span class="material-icons flag-icon">public</span>
-      <span class="label">{{ language.label }}</span>
-    </button>
+    @for (language of languages; track language) {
+      <button
+        class="language-option"
+        [class.active]="(currentLanguage$ | async) === language.code"
+        (click)="selectLanguage(language.code)"
+        [attr.aria-label]="'Switch to ' + language.label">
+        <span class="material-icons flag-icon">public</span>
+        <span class="label">{{ language.label }}</span>
+      </button>
+    }
   </div>
 </div>
 

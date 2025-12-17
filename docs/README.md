@@ -35,7 +35,7 @@ New to the frontend? Start here:
 
 ## 🏗️ Architecture Overview
 
-The frontend uses **Angular 18** with a **module-based architecture** (not standalone components):
+The frontend uses **Angular 21** with a **module-based architecture** (not standalone components):
 
 ```
 src/app/
@@ -56,7 +56,7 @@ src/app/
 - **Lazy Loading**: Feature modules loaded on-demand
 - **State Management**: RxJS BehaviorSubjects (not NgRx)
 - **Translation System**: Custom i18n with APP_INITIALIZER
-- **Mock Data**: Services simulate API calls with Observables
+- **API Integration**: Services use real API calls via HttpClient
 
 See [Frontend CLAUDE Guide](../CLAUDE.md) for detailed architecture.
 

@@ -7,25 +7,31 @@
     <div class="filter-group">
       <label>Status:</label>
       <select [(ngModel)]="statusFilter" (change)="onFilterChange()">
-        <option *ngFor="let option of statusOptions" [value]="option.value">
-          {{ option.label }}
-        </option>
+        @for (option of statusOptions; track option) {
+          <option [value]="option.value">
+            {{ option.label }}
+          </option>
+        }
       </select>
     </div>
     <div class="filter-group">
       <label>Store:</label>
       <select [(ngModel)]="storeFilter" (change)="onFilterChange()">
-        <option *ngFor="let option of storeOptions" [value]="option.value">
-          {{ option.label }}
-        </option>
+        @for (option of storeOptions; track option) {
+          <option [value]="option.value">
+            {{ option.label }}
+          </option>
+        }
       </select>
     </div>
     <div class="filter-group">
       <label>Price Type:</label>
       <select [(ngModel)]="priceTypeFilter" (change)="onFilterChange()">
-        <option *ngFor="let option of priceTypeOptions" [value]="option.value">
-          {{ option.label }}
-        </option>
+        @for (option of priceTypeOptions; track option) {
+          <option [value]="option.value">
+            {{ option.label }}
+          </option>
+        }
       </select>
     </div>
     <div class="filter-group">
@@ -35,84 +41,107 @@
         [(ngModel)]="searchTerm"
         (input)="onSearchChange()"
         placeholder="Search by order number, client UID, or client name"
-      />
+        />
     </div>
   </div>
 
-  <div *ngIf="loading" class="loading">Loading orders...</div>
-  <div *ngIf="error" class="error">{{ error }}</div>
+  @if (loading) {
+    <div class="loading">Loading orders...</div>
+  }
+  @if (error) {
+    <div class="error">{{ error }}</div>
+  }
 
-  <div *ngIf="!loading && !error" class="orders-table">
-    <table>
-      <thead>
-        <tr>
+  @if (!loading && !error) {
+    <div class="orders-table">
+      <table>
+        <thead>
+          <tr>
             <th>Created</th>
-          <th>Order Number</th>
+            <th>Order Number</th>
             <th>Status</th>
-          <th>Client Name</th>
-          <th>Store</th>
-          <th>Price Type</th>
-          <th>Total</th>
+            <th>Client Name</th>
+            <th>Store</th>
+            <th>Price Type</th>
+            <th title="Client discount percentage applied to this order (0-100%)">Discount</th>
+            <th title="VAT rate percentage used for this order (0-100%)">VAT Rate</th>
+            <th title="Order subtotal before VAT (net amount)">Subtotal (Net)</th>
+            <th title="Total VAT amount calculated for this order">VAT Amount</th>
+            <th title="Order total including VAT (gross amount)">Total (Gross)</th>
             <th>Currency</th>
-          <th>Updated</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let order of filteredOrders"
-            class="clickable-row"
-            (click)="viewOrderDetail(order)">
-            <td>{{ formatDate(order.created_at) }}</td>
-          <td>{{ order.number || order.uid }}</td>
-            <td>
-            <span [class]="getStatusClass(order.status)">
-              {{ order.status }}
-            </span>
-            </td>
-          <td>{{ getClientName(order.client_uid) }}</td>
-          <td>{{ getStoreName(order.store_uid) }}</td>
-          <td>{{ getPriceTypeName(order.price_type_uid) }}</td>
-          <td>{{ (order.total/100).toFixed(2) }}</td>
-            <td>{{ order.currency_code }}</td>
-          <td>{{ formatDate(order.last_update || order.created_at) }}</td>
-          <td class="actions" (click)="$event.stopPropagation()">
-            <button class="btn-edit" (click)="editStatus(order)">Change Status</button>
-            <button class="btn-delete" (click)="deleteOrder(order)">Delete</button>
-          </td>
-        </tr>
-        <tr *ngIf="filteredOrders.length === 0">
-          <td colspan="10" class="no-data">No orders found</td>
-        </tr>
-      </tbody>
-    </table>
-
-    <div class="pagination" *ngIf="totalPages > 1">
-      <button [disabled]="currentPage === 1" (click)="goToPage(currentPage - 1)">Previous</button>
-      <span>Page {{ currentPage }} of {{ totalPages }} ({{ total }} total)</span>
-      <button [disabled]="currentPage === totalPages" (click)="goToPage(currentPage + 1)">Next</button>
+            <th>Updated</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (order of filteredOrders; track order) {
+            <tr
+              class="clickable-row"
+              (click)="viewOrderDetail(order)">
+              <td>{{ formatDate(order.created_at) }}</td>
+              <td>{{ order.number || order.uid }}</td>
+              <td>
+                <span [class]="getStatusClass(order.status)">
+                  {{ order.status }}
+                </span>
+              </td>
+              <td>{{ getClientName(order.client_uid) }}</td>
+              <td>{{ getStoreName(order.store_uid) }}</td>
+              <td>{{ getPriceTypeName(order.price_type_uid) }}</td>
+              <td>{{ order.discount_percent !== undefined ? order.discount_percent + '%' : '-' }}</td>
+              <td>{{ order.vat_rate !== undefined ? order.vat_rate + '%' : '-' }}</td>
+              <td>{{ order.subtotal !== undefined ? (order.subtotal/100).toFixed(2) : '-' }}</td>
+              <td>{{ order.total_vat !== undefined ? (order.total_vat/100).toFixed(2) : '-' }}</td>
+              <td>{{ (order.total/100).toFixed(2) }}</td>
+              <td>{{ order.currency_code }}</td>
+              <td>{{ formatDate(order.last_update || order.created_at) }}</td>
+              <td class="actions" (click)="$event.stopPropagation()">
+                <button class="btn-edit" (click)="editStatus(order)">Change Status</button>
+                <button class="btn-delete" (click)="deleteOrder(order)">Delete</button>
+              </td>
+            </tr>
+          }
+          @if (filteredOrders.length === 0) {
+            <tr>
+              <td colspan="14" class="no-data">No orders found</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+      @if (totalPages > 1) {
+        <div class="pagination">
+          <button [disabled]="currentPage === 1" (click)="goToPage(currentPage - 1)">Previous</button>
+          <span>Page {{ currentPage }} of {{ totalPages }} ({{ total }} total)</span>
+          <button [disabled]="currentPage === totalPages" (click)="goToPage(currentPage + 1)">Next</button>
+        </div>
+      }
     </div>
-  </div>
+  }
 
   <!-- Status Edit Modal -->
-  <div *ngIf="showStatusModal" class="modal-overlay" (click)="cancelEdit()">
-    <div class="modal-content" (click)="$event.stopPropagation()">
-      <h2>Change Order Status</h2>
-      <div class="order-info">
-        <p><strong>Order:</strong> {{ editingOrder?.number || editingOrder?.uid }}</p>
-        <p><strong>Current Status:</strong> {{ editingOrder?.status }}</p>
-      </div>
-      <div class="form-group">
-        <label>New Status:</label>
-        <select [(ngModel)]="newStatus">
-          <option *ngFor="let option of statusOptions" [value]="option.value" [disabled]="option.value === ''">
-            {{ option.label }}
-          </option>
-        </select>
-      </div>
-      <div class="form-actions">
-        <button type="button" class="btn-cancel" (click)="cancelEdit()">Cancel</button>
-        <button type="button" class="btn-save" (click)="saveStatus()">Save</button>
+  @if (showStatusModal) {
+    <div class="modal-overlay" (click)="cancelEdit()">
+      <div class="modal-content" (click)="$event.stopPropagation()">
+        <h2>Change Order Status</h2>
+        <div class="order-info">
+          <p><strong>Order:</strong> {{ editingOrder?.number || editingOrder?.uid }}</p>
+          <p><strong>Current Status:</strong> {{ editingOrder?.status }}</p>
+        </div>
+        <div class="form-group">
+          <label>New Status:</label>
+          <select [(ngModel)]="newStatus">
+            @for (option of statusOptions; track option) {
+              <option [value]="option.value" [disabled]="option.value === ''">
+                {{ option.label }}
+              </option>
+            }
+          </select>
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn-cancel" (click)="cancelEdit()">Cancel</button>
+          <button type="button" class="btn-save" (click)="saveStatus()">Save</button>
+        </div>
       </div>
     </div>
-  </div>
+  }
 </div>

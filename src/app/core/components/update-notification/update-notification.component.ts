@@ -4,9 +4,10 @@ import { filter, map } from 'rxjs/operators';
 import { Subscription } from 'rxjs';
 
 @Component({
-  selector: 'app-update-notification',
-  templateUrl: './update-notification.component.html',
-  styleUrl: './update-notification.component.scss'
+    selector: 'app-update-notification',
+    templateUrl: './update-notification.component.html',
+    styleUrl: './update-notification.component.scss',
+    standalone: false
 })
 export class UpdateNotificationComponent implements OnInit, OnDestroy {
   updateAvailable = false;

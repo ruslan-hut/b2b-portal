@@ -26,7 +26,7 @@ This is a B2B portal application built with Angular that allows clients to brows
 
 ## Technology Stack
 
-- **Framework**: Angular 17+ (module-based architecture)
+- **Framework**: Angular 21+ (module-based architecture)
 - **Language**: TypeScript (strict mode enabled)
 - **Styling**: SCSS
 - **Forms**: Reactive Forms
@@ -693,6 +693,6 @@ Closes #123
 
 ---
 
-**Last Updated**: January 2025
-**Version**: 1.1.0
+**Last Updated**: December 2025
+**Version**: 1.2.0
 

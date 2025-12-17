@@ -5,18 +5,26 @@ import { Order, OrderStatus } from '../../core/models/order.model';
 import { TranslationService } from '../../core/services/translation.service';
 import { AuthService } from '../../core/services/auth.service';
 import { CurrencyService } from '../../core/services/currency.service';
+import { AppSettingsService } from '../../core/services/app-settings.service';
 import { Subscription } from 'rxjs';
 
 @Component({
-  selector: 'app-order-history',
-  templateUrl: './order-history.component.html',
-  styleUrl: './order-history.component.scss'
+    selector: 'app-order-history',
+    templateUrl: './order-history.component.html',
+    styleUrl: './order-history.component.scss',
+    standalone: false
 })
 export class OrderHistoryComponent implements OnInit, OnDestroy {
   orders: Order[] = [];
+  filteredOrders: Order[] = [];
   loading = false;
   currencyName: string | undefined = undefined;
-  expandedOrders = new Map<string, boolean>(); // Track which orders are expanded
+  
+  // Filter properties
+  statusFilter: OrderStatus | '' = '';
+  dateFromFilter: string = '';
+  dateToFilter: string = '';
+  
   private subscriptions = new Subscription();
 
   constructor(
@@ -25,29 +33,21 @@ export class OrderHistoryComponent implements OnInit, OnDestroy {
     public translationService: TranslationService,
     private authService: AuthService,
     private currencyService: CurrencyService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private appSettingsService: AppSettingsService
   ) {}
 
   ngOnInit(): void {
+    // Load orders for both Users and Clients
+    // Users need StoreUID and PriceTypeUID assigned to access orders
     this.loadOrders();
 
-    // Fetch currency name only for clients (not for users/admins)
-    this.subscriptions.add(
-      this.authService.entityType$.subscribe(type => {
-        if (type === 'client') {
-          const entity = this.authService.currentEntityValue;
-          if (entity && (entity as any).uid) {
-            const clientUid = (entity as any).uid;
-            this.currencyService.getCurrencyForClient(clientUid).subscribe(name => {
-              if (name) {
-                this.currencyName = name;
-                this.cdr.detectChanges();
-              }
-            });
-          }
-        }
-      })
-    );
+    // Get currency name from AppSettings
+    const settings = this.appSettingsService.getSettingsValue();
+    if (settings && settings.currency) {
+      this.currencyName = settings.currency.name;
+      this.cdr.detectChanges();
+    }
   }
 
   ngOnDestroy(): void {
@@ -65,23 +65,7 @@ export class OrderHistoryComponent implements OnInit, OnDestroy {
           return bTime - aTime; // newest first
         });
 
-        // Preload full details for each order to ensure items and product names are present in cards.
-        // getOrderHistory already tries to batch items, but in some cases extra enrichment may arrive later
-        // so we explicitly fetch each order's full details and replace the entry.
-        this.orders.forEach((order, idx) => {
-          this.orderService.getOrderById(order.id).subscribe({
-            next: (full) => {
-              if (full) {
-                this.orders[idx] = full;
-                this.cdr.detectChanges();
-              }
-            },
-            error: (err) => {
-              console.error('Failed to preload order details for', order.id, err);
-            }
-          });
-        });
-
+        this.applyFilters();
         this.loading = false;
         // Manually trigger change detection to ensure UI updates
         this.cdr.detectChanges();
@@ -89,9 +73,52 @@ export class OrderHistoryComponent implements OnInit, OnDestroy {
       error: (error) => {
         console.error('Error loading orders:', error);
         this.loading = false;
+        // If 401/400 error, user might not have StoreUID/PriceTypeUID assigned
+        if (error.status === 401 || error.status === 400) {
+          console.warn('Unable to load orders. Users need StoreUID and PriceTypeUID assigned.');
+        }
         this.cdr.detectChanges();
       }
     });
+  }
+
+  applyFilters(): void {
+    let filtered = [...this.orders];
+
+    // Filter by status
+    if (this.statusFilter) {
+      filtered = filtered.filter(order => order.status === this.statusFilter);
+    }
+
+    // Filter by date range
+    if (this.dateFromFilter) {
+      const fromDate = new Date(this.dateFromFilter);
+      fromDate.setHours(0, 0, 0, 0);
+      const fromTime = fromDate.getTime();
+      filtered = filtered.filter(order => {
+        const orderTime = (order.updatedAt || order.createdAt).getTime();
+        return orderTime >= fromTime;
+      });
+    }
+
+    if (this.dateToFilter) {
+      const toDate = new Date(this.dateToFilter);
+      toDate.setHours(23, 59, 59, 999);
+      const toTime = toDate.getTime();
+      filtered = filtered.filter(order => {
+        const orderTime = (order.updatedAt || order.createdAt).getTime();
+        return orderTime <= toTime;
+      });
+    }
+
+    this.filteredOrders = filtered;
+  }
+
+  clearFilters(): void {
+    this.statusFilter = '';
+    this.dateFromFilter = '';
+    this.dateToFilter = '';
+    this.applyFilters();
   }
 
   getStatusClass(status: OrderStatus): string {
@@ -118,13 +145,7 @@ export class OrderHistoryComponent implements OnInit, OnDestroy {
   }
 
   viewOrderDetails(orderId: string): void {
-    // Toggle the expanded state for this order
-    const currentState = this.expandedOrders.get(orderId) || false;
-    this.expandedOrders.set(orderId, !currentState);
-  }
-
-  isOrderExpanded(orderId: string): boolean {
-    return this.expandedOrders.get(orderId) || false;
+    this.router.navigate(['/orders/detail', orderId]);
   }
 
   navigateToCatalog(): void {
@@ -134,5 +155,16 @@ export class OrderHistoryComponent implements OnInit, OnDestroy {
   getOrderTitle(order: Order): string {
     const dateStr = new Date(order.createdAt).toLocaleDateString();
     return order.number ? `${dateStr} - ${order.number}` : dateStr;
+  }
+
+  getStatusOptions(): Array<{ value: OrderStatus | ''; label: string }> {
+    return [
+      { value: '', label: this.translationService.instant('orders.allStatuses') || 'All Statuses' },
+      { value: OrderStatus.DRAFT, label: this.translationService.instant('orders.draft') },
+      { value: OrderStatus.NEW, label: this.translationService.instant('orders.new') },
+      { value: OrderStatus.PROCESSING, label: this.translationService.instant('orders.processing') },
+      { value: OrderStatus.CONFIRMED, label: this.translationService.instant('orders.confirmed') },
+      { value: OrderStatus.CANCELLED, label: this.translationService.instant('orders.cancelled') }
+    ];
   }
 }

@@ -1,14 +1,16 @@
-<div class="update-notification" *ngIf="updateAvailable">
-  <div class="update-content">
-    <span class="material-icons update-icon">refresh</span>
-    <div class="update-message">
-      <strong>{{ 'pwa.updateAvailable' | translate }}</strong>
-      <span>{{ 'pwa.updateMessage' | translate }}</span>
-    </div>
-    <div class="update-actions">
-      <button class="btn-reload" (click)="reloadApp()">{{ 'pwa.reload' | translate }}</button>
-      <button class="btn-dismiss" (click)="dismiss()">{{ 'pwa.later' | translate }}</button>
+@if (updateAvailable) {
+  <div class="update-notification">
+    <div class="update-content">
+      <span class="material-icons update-icon">refresh</span>
+      <div class="update-message">
+        <strong>{{ 'pwa.updateAvailable' | translate }}</strong>
+        <span>{{ 'pwa.updateMessage' | translate }}</span>
+      </div>
+      <div class="update-actions">
+        <button class="btn-reload" (click)="reloadApp()">{{ 'pwa.reload' | translate }}</button>
+        <button class="btn-dismiss" (click)="dismiss()">{{ 'pwa.later' | translate }}</button>
+      </div>
     </div>
   </div>
-</div>
+}
 

@@ -66,6 +66,21 @@
       font-weight: 700;
     }
   }
+
+  .cart-summary-section {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+
+    app-cart-address {
+      flex-shrink: 0;
+
+      ::ng-deep .cart-address {
+        margin-bottom: 0;
+        padding: 8px 12px;
+      }
+    }
+  }
 }
 
 .loading-container {
@@ -209,6 +224,20 @@
         box-shadow: 0 3px 12px rgba(102, 126, 234, 0.5);
       }
     }
+
+    /* Position product badges (new / hot sale) in top-right corner when badges are inside .product-image
+       Keep other .product-badges usages (in lists, detail views, bulk views) unaffected. */
+    .product-badges {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 6px;
+      margin: 0;
+      z-index: 3;
+    }
   }
 
   .product-info {
@@ -291,6 +320,36 @@
           transform: none;
         }
       }
+    }
+  }
+}
+
+.product-badges {
+  position: relative; /* make badges a positioning context */
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 10px;
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: 16px;
+    color: white;
+
+    &.badge-new {
+      background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+      box-shadow: 0 2px 6px rgba(40, 167, 69, 0.3);
+    }
+
+    &.badge-hot-sale {
+      background: linear-gradient(135deg, #ff6b6b 0%, #ff4757 100%);
+      color: white;
+      box-shadow: 0 2px 6px rgba(255, 71, 87, 0.3);
     }
   }
 }
@@ -395,6 +454,25 @@
     display: flex;
     align-items: center;
     gap: 16px;
+
+    app-cart-address {
+      flex-shrink: 0;
+
+      ::ng-deep .cart-address {
+        margin-bottom: 0;
+        padding: 8px 12px;
+        background: transparent;
+        border: none;
+      }
+
+      ::ng-deep .address-header {
+        display: none;
+      }
+
+      ::ng-deep .address-content {
+        gap: 8px;
+      }
+    }
   }
 
   .bulk-info {
@@ -577,28 +655,21 @@
     }
 
     .card-image-section {
-      flex-shrink: 0;
-      width: 120px;
+      flex: 1;
+      min-width: 0;
       display: flex;
       justify-content: center;
       align-items: center;
-      padding: 8px;
-      background: white;
-      border-radius: 8px;
-      border: 1px solid #e1e8ed;
 
       .card-product-image {
-        max-width: 100%;
-        max-height: 120px;
-        width: auto;
+        width: 75%;
         height: auto;
         object-fit: contain;
-        border-radius: 6px;
         cursor: pointer;
         transition: transform 0.2s ease;
 
         &:hover {
-          transform: scale(1.05);
+          transform: scale(1.02);
         }
 
         &:active {
@@ -1277,6 +1348,102 @@
       .detail-price-section .detail-price {
         font-size: 24px;
       }
+    }
+  }
+}
+
+// Discount and price display styles
+.product-price {
+  .original-price {
+    font-size: 0.85em;
+    color: #999;
+    margin-bottom: 2px;
+
+    .strikethrough {
+      text-decoration: line-through;
+    }
+  }
+
+  .price-amount {
+    font-size: 1.1em;
+    font-weight: 600;
+    color: #333;
+
+    &.discounted {
+      color: #e74c3c;
+      font-size: 1.3em;
+      font-weight: bold;
+    }
+  }
+}
+
+// Bulk table price cell
+.price-cell {
+  .price-with-discount {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+
+    .original-price {
+      font-size: 0.85em;
+      color: #999;
+      text-decoration: line-through;
+    }
+
+    .discounted-price {
+      font-weight: 600;
+
+      &.has-discount {
+        color: #333;
+        font-weight: bold;
+        font-size: 1.05em;
+      }
+    }
+  }
+}
+
+// Mobile cards
+.card-price-container {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+
+  .original-price {
+    font-size: 0.85em;
+    color: #999;
+    text-decoration: line-through;
+  }
+
+  .card-price {
+    font-weight: 600;
+
+    &.has-discount {
+      color: #333;
+      font-weight: bold;
+    }
+  }
+}
+
+// Bulk detail section
+.detail-price-section {
+  .original-price {
+    font-size: 0.9em;
+    color: #999;
+    margin-bottom: 4px;
+
+    .strikethrough {
+      text-decoration: line-through;
+    }
+  }
+
+  .discounted-price {
+    font-weight: 600;
+
+    &.has-discount {
+      color: #333;
+      font-size: 1.1em;
+      font-weight: bold;
     }
   }
 }

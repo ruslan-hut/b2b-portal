@@ -16,10 +16,14 @@
           class="form-control"
           [class.is-invalid]="submitted && f['identifier'] && f['identifier'].errors"
           [placeholder]="'auth.identifierPlaceholder' | translate"
-        />
-        <div class="invalid-feedback" *ngIf="submitted && f['identifier'] && f['identifier'].errors">
-          <div *ngIf="f['identifier'].errors['required']">{{ 'validation.required' | translate }}</div>
-        </div>
+          />
+        @if (submitted && f['identifier'] && f['identifier'].errors) {
+          <div class="invalid-feedback">
+            @if (f['identifier'].errors['required']) {
+              <div>{{ 'validation.required' | translate }}</div>
+            }
+          </div>
+        }
       </div>
 
       <div class="form-group">
@@ -31,21 +35,35 @@
           class="form-control"
           [class.is-invalid]="submitted && f['credential'] && f['credential'].errors"
           [placeholder]="'auth.credentialPlaceholder' | translate"
-        />
-        <div class="invalid-feedback" *ngIf="submitted && f['credential'] && f['credential'].errors">
-          <div *ngIf="f['credential'].errors['required']">{{ 'validation.required' | translate }}</div>
-          <div *ngIf="f['credential'].errors['minlength']">{{ 'validation.minLength' | translate: {min: 4} }}</div>
-        </div>
+          />
+        @if (submitted && f['credential'] && f['credential'].errors) {
+          <div class="invalid-feedback">
+            @if (f['credential'].errors['required']) {
+              <div>{{ 'validation.required' | translate }}</div>
+            }
+            @if (f['credential'].errors['minlength']) {
+              <div>{{ 'validation.minLength' | translate: {min: 4} }}</div>
+            }
+          </div>
+        }
       </div>
 
-      <div class="alert alert-danger" *ngIf="errorMessage">
-        {{ errorMessage }}
-      </div>
+      @if (errorMessage) {
+        <div class="alert alert-danger">
+          {{ errorMessage }}
+        </div>
+      }
 
       <button type="submit" class="btn btn-primary" [disabled]="loading">
-        <span *ngIf="loading" class="spinner"></span>
-        <span *ngIf="!loading">{{ 'auth.loginButton' | translate }}</span>
-        <span *ngIf="loading">{{ 'common.loading' | translate }}</span>
+        @if (loading) {
+          <span class="spinner"></span>
+        }
+        @if (!loading) {
+          <span>{{ 'auth.loginButton' | translate }}</span>
+        }
+        @if (loading) {
+          <span>{{ 'common.loading' | translate }}</span>
+        }
       </button>
     </form>
 

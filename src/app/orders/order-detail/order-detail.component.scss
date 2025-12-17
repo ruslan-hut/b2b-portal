@@ -1,0 +1,272 @@
+.order-detail-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 20px;
+
+  .detail-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 30px;
+
+    .btn-back {
+      padding: 10px 16px;
+      border: 2px solid #e1e8ed;
+      background: white;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      color: #333;
+      transition: all 0.3s ease;
+
+      &:hover {
+        background-color: #f8f9fa;
+        border-color: #dee2e6;
+      }
+    }
+
+    .btn-export {
+      padding: 10px 20px;
+      border: none;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      margin-left: auto;
+
+      &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+      }
+
+      &:active {
+        transform: translateY(0);
+      }
+    }
+
+    h2 {
+      margin: 0;
+      font-size: 32px;
+      font-weight: 700;
+      color: #333;
+    }
+  }
+
+  .section {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+
+    h3 {
+      margin-top: 0;
+      margin-bottom: 16px;
+      font-size: 20px;
+      font-weight: 700;
+      color: #333;
+    }
+  }
+
+  .info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 16px;
+
+    div {
+      font-size: 14px;
+      color: #333;
+      line-height: 1.6;
+
+      strong {
+        color: #666;
+        margin-right: 8px;
+      }
+    }
+  }
+
+  .items-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 16px;
+
+    thead {
+      background: #34495e;
+      color: white;
+
+      th {
+        padding: 12px;
+        text-align: left;
+        font-weight: 600;
+        font-size: 14px;
+      }
+    }
+
+    tbody {
+      tr {
+        border-bottom: 1px solid #ecf0f1;
+
+        &:hover {
+          background-color: #f8f9fa;
+        }
+      }
+
+      td {
+        padding: 12px;
+        font-size: 14px;
+        color: #333;
+      }
+    }
+
+    .no-data {
+      text-align: center;
+      padding: 40px 20px;
+      color: #7f8c8d;
+      font-style: italic;
+    }
+  }
+
+  .status-badge {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+
+    &.status-draft {
+      background-color: #ecf0f1;
+      color: #95a5a6;
+    }
+
+    &.status-new {
+      background-color: #d6eaf8;
+      color: #3498db;
+    }
+
+    &.status-processing {
+      background-color: #fef5e7;
+      color: #f39c12;
+    }
+
+    &.status-confirmed {
+      background-color: #d5f4e6;
+      color: #27ae60;
+    }
+
+    &.status-cancelled {
+      background-color: #fadbd8;
+      color: #e74c3c;
+    }
+  }
+
+  .loading, .error {
+    padding: 20px;
+    background: white;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    text-align: center;
+    font-size: 16px;
+  }
+
+  .loading {
+    color: #666;
+  }
+
+  .error {
+    color: #e74c3c;
+    background-color: #fadbd8;
+  }
+
+  .totals-section {
+    .totals-breakdown {
+      max-width: 400px;
+      margin-left: auto;
+    }
+
+    .total-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 4px 0;
+
+      &:last-child {
+        border-bottom: none;
+      }
+
+      &:has(+ .final-total-row) {
+        border-bottom: none;
+      }
+    }
+
+    .total-label {
+      color: #7f8c8d;
+    }
+
+    .total-value {
+      font-weight: 500;
+      color: #2c3e50;
+    }
+
+    .discount-row {
+      .discount-value {
+        color: #27ae60;
+      }
+    }
+
+    .final-total-row {
+      border-top: 2px solid #34495e;
+      margin-top: 8px;
+      padding-top: 12px;
+
+      .total-label {
+        font-weight: 600;
+        color: #2c3e50;
+      }
+
+      .final-total {
+        font-size: 1.2em;
+        font-weight: 700;
+        color: #2c3e50;
+      }
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .order-detail-container {
+    padding: 20px 10px;
+
+    .detail-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 15px;
+
+      .btn-back {
+        width: 100%;
+      }
+
+      .btn-export {
+        width: 100%;
+        margin-left: 0;
+      }
+    }
+
+    .info-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .items-table {
+      font-size: 12px;
+
+      thead th,
+      tbody td {
+        padding: 8px 4px;
+      }
+    }
+  }
+}
+

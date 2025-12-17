@@ -1,0 +1,325 @@
+<div class="profile-container">
+  <div class="page-header">
+    <button class="btn btn-back" (click)="navigateBack()">
+      <span class="arrow-icon">&larr;</span>
+      {{ 'common.back' | translate }}
+    </button>
+    <h1>{{ 'profile.title' | translate }}</h1>
+  </div>
+
+  <!-- Loading State -->
+  @if (profileLoading) {
+    <div class="loading-container">
+      <div class="spinner-large"></div>
+      <p>{{ 'common.loading' | translate }}</p>
+    </div>
+  }
+
+  @if (!profileLoading && client) {
+    <div class="profile-content">
+      <!-- Personal Information Section -->
+      <section class="profile-section">
+        <h2>{{ 'profile.personalInfo' | translate }}</h2>
+        <!-- Read-only fields notice -->
+        <div class="readonly-notice">
+          <span class="info-icon">i</span>
+          {{ 'profile.readonlyNotice' | translate }}
+        </div>
+        <!-- Read-only Information -->
+        <div class="readonly-fields">
+          <div class="field-group">
+            <label>{{ 'profile.store' | translate }}</label>
+            <span class="field-value">{{ storeName || '-' }}</span>
+          </div>
+          <div class="field-group">
+            <label>{{ 'profile.priceType' | translate }}</label>
+            <span class="field-value">{{ priceTypeName || '-' }}</span>
+          </div>
+          <div class="field-group">
+            <label>{{ 'profile.discount' | translate }}</label>
+            <span class="field-value">{{ client.discount || 0 }}%</span>
+          </div>
+          @if (client.vat_rate) {
+            <div class="field-group">
+              <label>{{ 'profile.vatRate' | translate }}</label>
+              <span class="field-value">{{ client.vat_rate }}%</span>
+            </div>
+          }
+        </div>
+        <!-- Editable Form -->
+        <form [formGroup]="profileForm" (ngSubmit)="saveProfile()" class="profile-form">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="name">{{ 'profile.name' | translate }} *</label>
+              <input
+                type="text"
+                id="name"
+                formControlName="name"
+                [class.invalid]="profileForm.get('name')?.invalid && profileForm.get('name')?.touched"
+                >
+              @if (profileForm.get('name')?.invalid && profileForm.get('name')?.touched) {
+                <span class="error-message">
+                  {{ 'profile.nameRequired' | translate }}
+                </span>
+              }
+            </div>
+            <div class="form-group">
+              <label for="email">{{ 'profile.email' | translate }}</label>
+              <input
+                type="email"
+                id="email"
+                formControlName="email"
+                [class.invalid]="profileForm.get('email')?.invalid && profileForm.get('email')?.touched"
+                >
+              @if (profileForm.get('email')?.hasError('email') && profileForm.get('email')?.touched) {
+                <span class="error-message">
+                  {{ 'profile.invalidEmail' | translate }}
+                </span>
+              }
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="phone">{{ 'profile.phone' | translate }} *</label>
+              <input
+                type="tel"
+                id="phone"
+                formControlName="phone"
+                [class.invalid]="profileForm.get('phone')?.invalid && profileForm.get('phone')?.touched"
+                >
+              @if (profileForm.get('phone')?.hasError('required') && profileForm.get('phone')?.touched) {
+                <span class="error-message">
+                  {{ 'profile.phoneRequired' | translate }}
+                </span>
+              }
+              @if (profileForm.get('phone')?.hasError('pattern') && profileForm.get('phone')?.touched) {
+                <span class="error-message">
+                  {{ 'profile.phoneDigitsOnly' | translate }}
+                </span>
+              }
+              @if ((profileForm.get('phone')?.hasError('minlength') || profileForm.get('phone')?.hasError('maxlength')) && profileForm.get('phone')?.touched) {
+                <span class="error-message">
+                  {{ 'profile.phoneLengthError' | translate }}
+                </span>
+              }
+            </div>
+            <div class="form-group">
+              <label for="vat_number">{{ 'profile.vatNumber' | translate }}</label>
+              <input
+                type="text"
+                id="vat_number"
+                formControlName="vat_number"
+                placeholder="{{ 'profile.vatNumberPlaceholder' | translate }}"
+                readonly
+                >
+            </div>
+          </div>
+          <!-- Success/Error Messages -->
+          @if (profileSuccess) {
+            <div class="message success">
+              {{ 'profile.saveSuccess' | translate }}
+            </div>
+          }
+          @if (profileError) {
+            <div class="message error">
+              {{ profileError }}
+            </div>
+          }
+          <div class="form-actions">
+            <button
+              type="submit"
+              class="btn btn-primary"
+              [disabled]="profileForm.invalid || profileSaving"
+              >
+              @if (profileSaving) {
+                <span class="spinner-small"></span>
+              }
+              {{ profileSaving ? ('common.saving' | translate) : ('profile.saveChanges' | translate) }}
+            </button>
+          </div>
+        </form>
+      </section>
+      <!-- Addresses Section -->
+      <section class="profile-section addresses-section">
+        <div class="section-header">
+          <h2>{{ 'profile.addresses' | translate }}</h2>
+          <button class="btn btn-primary" (click)="openAddAddressModal()">
+            + {{ 'profile.addAddress' | translate }}
+          </button>
+        </div>
+        <!-- Address Loading -->
+        @if (addressesLoading) {
+          <div class="loading-container small">
+            <div class="spinner-small"></div>
+          </div>
+        }
+        <!-- Address Error -->
+        @if (addressError) {
+          <div class="message error">
+            {{ addressError }}
+          </div>
+        }
+        <!-- No Addresses -->
+        @if (!addressesLoading && addresses.length === 0) {
+          <div class="empty-addresses">
+            <p>{{ 'profile.noAddresses' | translate }}</p>
+          </div>
+        }
+        <!-- Addresses List -->
+        @if (!addressesLoading && addresses.length > 0) {
+          <div class="addresses-list">
+            @for (address of addresses; track address) {
+              <div class="address-card" [class.is-default]="address.is_default">
+                <div class="address-header">
+                  <div class="address-country">
+                    <strong>{{ getCountryName(address.country_code) }}</strong>
+                    @if (address.is_default) {
+                      <span class="default-badge">
+                        {{ 'profile.defaultBadge' | translate }}
+                      </span>
+                    }
+                  </div>
+                  <div class="address-actions">
+                    @if (!address.is_default) {
+                      <button
+                        class="btn btn-icon"
+                        (click)="setDefaultAddress(address)"
+                        [title]="'profile.setDefault' | translate"
+                        >
+                        <span class="star-icon">&#9734;</span>
+                      </button>
+                    }
+                    <button
+                      class="btn btn-icon"
+                      (click)="openEditAddressModal(address)"
+                      [title]="'common.edit' | translate"
+                      >
+                      <span class="edit-icon">&#9998;</span>
+                    </button>
+                    <button
+                      class="btn btn-icon btn-danger"
+                      (click)="deleteAddress(address)"
+                      [title]="'common.delete' | translate"
+                      >
+                      <span class="delete-icon">&times;</span>
+                    </button>
+                  </div>
+                </div>
+                <div class="address-details">
+                  <p>{{ formatAddress(address) }}</p>
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </section>
+    </div>
+  }
+
+  <!-- Address Modal -->
+  @if (showAddressModal) {
+    <div class="modal-overlay" (click)="closeAddressModal()">
+      <div class="modal-content" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>{{ editingAddress ? ('profile.editAddress' | translate) : ('profile.addAddress' | translate) }}</h3>
+          <button class="btn btn-close" (click)="closeAddressModal()">&times;</button>
+        </div>
+        <form [formGroup]="addressForm" (ngSubmit)="saveAddress()" class="address-form">
+          <div class="form-group country-autocomplete">
+            <label for="country_search">{{ 'profile.country' | translate }} *</label>
+            <div class="autocomplete-wrapper">
+              <input
+                #countryInput
+                type="text"
+                id="country_search"
+                [(ngModel)]="countrySearchText"
+                [ngModelOptions]="{standalone: true}"
+                (ngModelChange)="onCountrySearchChange($event)"
+                (focus)="onCountryInputFocus()"
+                (blur)="onCountryInputBlur()"
+                placeholder="{{ 'profile.selectCountry' | translate }}"
+                [class.invalid]="addressForm.get('country_code')?.invalid && addressForm.get('country_code')?.touched"
+                autocomplete="off"
+                >
+              @if (countrySearchText) {
+                <button
+                  type="button"
+                  class="btn-clear"
+                  (mousedown)="$event.preventDefault()"
+                  (click)="clearCountrySelection()"
+                >&times;</button>
+              }
+              @if (showCountryDropdown && filteredCountries.length > 0) {
+                <div class="autocomplete-dropdown">
+                  @for (country of filteredCountries; track country) {
+                    <div
+                      class="autocomplete-item"
+                      (mousedown)="$event.preventDefault()"
+                      (click)="selectCountry(country)"
+                      [class.selected]="selectedCountry?.country_code === country.country_code"
+                      >
+                      <span class="country-code">{{ country.country_code }}</span>
+                      <span class="country-name">{{ country.name }}</span>
+                    </div>
+                  }
+                </div>
+              }
+              @if (showCountryDropdown && filteredCountries.length === 0 && countrySearchText) {
+                <div class="autocomplete-dropdown">
+                  <div class="autocomplete-no-results">
+                    {{ 'profile.noCountryFound' | translate }}
+                  </div>
+                </div>
+              }
+            </div>
+            @if (addressForm.get('country_code')?.invalid && addressForm.get('country_code')?.touched) {
+              <span class="error-message">
+                {{ 'validation.required' | translate }}
+              </span>
+            }
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="city">{{ 'profile.city' | translate }}</label>
+              <input type="text" id="city" formControlName="city">
+            </div>
+            <div class="form-group">
+              <label for="zipcode">{{ 'profile.zipcode' | translate }}</label>
+              <input type="text" id="zipcode" formControlName="zipcode">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="address_text">{{ 'profile.addressText' | translate }}</label>
+            <textarea
+              id="address_text"
+              formControlName="address_text"
+              rows="3"
+              placeholder="{{ 'profile.addressPlaceholder' | translate }}"
+            ></textarea>
+          </div>
+          <div class="form-group checkbox-group">
+            <label class="checkbox-label">
+              <input type="checkbox" formControlName="is_default">
+              <span>{{ 'profile.setAsDefault' | translate }}</span>
+            </label>
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="btn btn-secondary" (click)="closeAddressModal()">
+              {{ 'common.cancel' | translate }}
+            </button>
+            <button
+              type="submit"
+              class="btn btn-primary"
+              [disabled]="addressForm.invalid || addressSaving"
+              >
+              @if (addressSaving) {
+                <span class="spinner-small"></span>
+              }
+              {{ addressSaving ? ('common.saving' | translate) : ('common.save' | translate) }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+</div>

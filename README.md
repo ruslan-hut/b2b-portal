@@ -1,19 +1,19 @@
 # B2B Portal
 
-[![Angular](https://img.shields.io/badge/Angular-18-DD0031?logo=angular&logoColor=white)](https://angular.io/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.3-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Angular](https://img.shields.io/badge/Angular-21-DD0031?logo=angular&logoColor=white)](https://angular.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![SCSS](https://img.shields.io/badge/SCSS-CC6699?logo=sass&logoColor=white)](https://sass-lang.com/)
 [![RxJS](https://img.shields.io/badge/RxJS-B7178C?logo=reactivex&logoColor=white)](https://rxjs.dev/)
 ![i18n](https://img.shields.io/badge/i18n-EN%20%7C%20UK-green)
 ![Responsive](https://img.shields.io/badge/Responsive-Design-blue)
-[![License](https://img.shields.io/badge/License-BSD_3--Clause-blue.svg)](LICENSE)
+[![License](https://img.shields.io/badge/License-BSD_3--Clause-blue.svg)](../LICENSE)
 
-A modern B2B portal application built with Angular 18, designed for clients to browse products and create orders.
+A modern B2B portal application built with Angular 21, designed for clients to browse products and create orders.
 
 ## Technology Stack
 
-- **Framework**: Angular 18.x with Module-based architecture
-- **Language**: TypeScript 5.3 (strict mode)
+- **Framework**: Angular 21.x with Module-based architecture
+- **Language**: TypeScript 5.9 (strict mode)
 - **Styling**: SCSS with responsive design and gradient themes
 - **Forms**: Reactive Forms with custom validation
 - **State Management**: RxJS BehaviorSubjects
@@ -55,8 +55,8 @@ src/app/
 
 ## Technology Stack
 
-- **Framework**: Angular 18.x
-- **Language**: TypeScript 5.x (strict mode)
+- **Framework**: Angular 21.x
+- **Language**: TypeScript 5.9 (strict mode)
 - **Styling**: SCSS
 - **Forms**: Reactive Forms
 - **State Management**: RxJS BehaviorSubjects
@@ -66,8 +66,8 @@ src/app/
 
 ### Prerequisites
 
-- Node.js (v18 or higher)
-- npm (v9 or higher)
+- Node.js (v22 or higher)
+- npm (v10 or higher)
 
 ### Installation
 
@@ -154,6 +154,18 @@ Before using authentication, ensure your backend API is running and configured:
    ```
 
 3. **Production**: Set the `API_URL` environment variable or GitHub secret (see [DEPLOYMENT.md](./docs/DEPLOYMENT.md))
+
+### Troubleshooting Authentication
+
+If you encounter login errors like "Invalid credentials":
+
+📖 **See [Frontend Troubleshooting Guide](../docs/FRONTEND_TROUBLESHOOTING.md)** for comprehensive troubleshooting including:
+- Backend connection issues
+- CORS configuration
+- API URL configuration
+- Token management
+- Debug tips and tools
+- Authentication issues
 
 ### Testing with Mock Data (Legacy)
 
@@ -282,7 +294,7 @@ Please follow the coding standards outlined in [CODING_POLICY.md](./docs/CODING_
 
 ## License
 
-This project is licensed under the BSD 3-Clause License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the BSD 3-Clause License - see the [LICENSE](../LICENSE) file for details.
 
 ## Support
 

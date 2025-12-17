@@ -26,9 +26,9 @@ export const environment = {
 ```
 
 **Common backend URLs:**
-- Docker backend: `http://localhost:8888/api/v1`
-- Local Go backend: `http://localhost:8080/api/v1`
-- Remote dev server: `https://dev-api.example.com/api/v1`
+- Docker backend: `http://localhost:8888/api/v1` (no proxy needed)
+- Local Go backend: `http://localhost:8080/api/v1` (no proxy needed)
+- Remote dev server: Use `/api/v1` (relative path) - proxy will forward to remote server
 
 ### 3. Run with Local Configuration
 
@@ -70,6 +70,7 @@ When you use `--configuration=local`, Angular replaces `environment.ts` with `en
 2. **Local Development** (`ng serve --configuration=local`)
    - Uses `environment.local.ts`
    - Your custom API URL
+   - **Proxy enabled**: Requests to `/api/*` are proxied to remote server (configured in `proxy.conf.json`)
    - File is gitignored, won't be committed
 
 3. **Production** (`ng build --configuration=production`)
@@ -101,8 +102,32 @@ If you can't connect to your backend:
 
 1. **Check backend is running**: Verify your backend server is running
 2. **Check URL**: Ensure the `apiUrl` in `environment.local.ts` is correct
-3. **Check CORS**: If using a different origin, ensure CORS is configured on the backend
-4. **Check network**: Use browser DevTools Network tab to see API requests
+3. **For remote servers**: Use `/api/v1` (relative path) in `environment.local.ts` - the proxy will handle forwarding
+4. **Check proxy configuration**: If using remote server, verify `proxy.conf.json` has correct target URL
+5. **Check CORS**: For local backends on different ports, ensure CORS is configured. For remote servers, use the proxy (no CORS needed)
+6. **Check network**: Use browser DevTools Network tab to see API requests
+
+### Using Remote Backend (CORS Solution)
+
+If you need to connect to a remote backend (e.g., `https://b2b.example.com`):
+
+1. **Set relative URL in environment.local.ts**:
+   ```typescript
+   apiUrl: '/api/v1' // Use relative path
+   ```
+
+2. **Configure proxy** (already set up in `proxy.conf.json`):
+   - The proxy forwards `/api/*` requests to the remote server
+   - This avoids CORS issues since requests appear to come from the same origin
+
+3. **Run with local configuration**:
+   ```bash
+   npm run local
+   # or
+   ng serve --configuration=local
+   ```
+
+4. **Verify proxy is working**: Check browser console - requests should go to `http://localhost:4200/api/v1/*` (not the remote URL directly)
 
 ### Example: Connecting to Different Backend Ports
 

@@ -6,9 +6,10 @@ import { TranslationService } from '../../core/services/translation.service';
 import { UserLoginRequest, ClientLoginRequest } from '../../core/models/user.model';
 
 @Component({
-  selector: 'app-login',
-  templateUrl: './login.component.html',
-  styleUrl: './login.component.scss'
+    selector: 'app-login',
+    templateUrl: './login.component.html',
+    styleUrl: './login.component.scss',
+    standalone: false
 })
 export class LoginComponent implements OnInit {
   loginForm!: FormGroup;
@@ -35,9 +36,11 @@ export class LoginComponent implements OnInit {
     // Get return URL from route parameters or default to '/products/catalog'
     this.returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/products/catalog';
 
-    // Redirect if already logged in
+    // Redirect if already logged in based on entity type
     if (this.authService.isAuthenticated()) {
-      this.router.navigate([this.returnUrl]);
+      const entityType = this.authService.entityTypeValue;
+      const targetUrl = entityType === 'user' ? '/admin/dashboard' : '/products/catalog';
+      this.router.navigate([targetUrl]);
     }
   }
 
@@ -93,8 +96,11 @@ export class LoginComponent implements OnInit {
       next: (response) => {
 
         if (response.success) {
-          console.log('Login successful, navigating to:', this.returnUrl);
-          this.router.navigate([this.returnUrl]);
+          // Navigate based on entity type: Users go to admin zone, Clients go to catalog
+          const entityType = this.authService.entityTypeValue;
+          const targetUrl = entityType === 'user' ? '/admin/dashboard' : '/products/catalog';
+          console.log('Login successful, navigating to:', targetUrl);
+          this.router.navigate([targetUrl]);
         } else {
           console.warn('Login response status not success:', response.status_message);
           this.errorMessage = this.translationService.instant('auth.loginError');

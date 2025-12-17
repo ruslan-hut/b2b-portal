@@ -4,98 +4,172 @@
     <h2>Order Details</h2>
   </div>
 
-  <div *ngIf="loading" class="loading">Loading order details...</div>
-  <div *ngIf="error" class="error">{{ error }}</div>
+  @if (loading) {
+    <div class="loading">Loading order details...</div>
+  }
+  @if (error) {
+    <div class="error">{{ error }}</div>
+  }
 
-  <div *ngIf="!loading && !error && order" class="detail-content">
-    <div class="section order-info">
-      <h3>Order Information</h3>
-      <div class="info-grid">
-        <div><strong>Order:</strong> {{ order.number || order.uid }}</div>
-        <div><strong>Status: </strong> <span [class]="getStatusClass(order.status)">{{ order.status }}</span></div>
-        <div><strong>Total:</strong> {{ order.total | currencyFormat: getCurrency(order.currency_code) }}</div>
-        <div><strong>Created:</strong> {{ formatDate(order.created_at) }}</div>
-        <div><strong>Updated:</strong> {{ formatDate(order.last_update || order.created_at) }}</div>
-        <div *ngIf="order.comment"><strong>Comment:</strong> {{ order.comment }}</div>
-      </div>
-    </div>
-
-    <div class="section client-info">
-      <h3>Client Information</h3>
-      <div *ngIf="client; else noClient">
+  @if (!loading && !error && order) {
+    <div class="detail-content">
+      <div class="section order-info">
+        <h3>Order Information</h3>
         <div class="info-grid">
-          <div><strong>Name:</strong> {{ client.name }}</div>
-          <div><strong>Email:</strong> {{ client.email }}</div>
-          <div><strong>Phone:</strong> {{ client.phone }}</div>
-          <div><strong>Discount:</strong> {{ client.discount || 0 }}%</div>
+          <div><strong>Order:</strong> {{ order.number || order.uid }}</div>
+          <div><strong>Status: </strong> <span [class]="getStatusClass(order.status)">{{ order.status }}</span></div>
+          <div><strong>Created:</strong> {{ formatDate(order.created_at) }}</div>
+          <div><strong>Updated:</strong> {{ formatDate(order.last_update || order.created_at) }}</div>
+          @if (order.comment) {
+            <div><strong>Comment:</strong> {{ order.comment }}</div>
+          }
         </div>
       </div>
-      <ng-template #noClient>
-        <div class="no-data">Client information not available</div>
-      </ng-template>
-    </div>
-
-    <div class="section shipping-info">
-      <h3>Shipping</h3>
-      <div class="info-grid">
-        <div><strong>Shipping Address:</strong> {{ order.shipping_address || '-' }}</div>
+      <div class="section client-info">
+        <h3>Client Information</h3>
+        @if (client) {
+          <div>
+            <div class="info-grid">
+              <div><strong>Name:</strong> {{ client.name }}</div>
+              <div><strong>Email:</strong> {{ client.email }}</div>
+              <div><strong>Phone:</strong> {{ client.phone }}</div>
+              <div><strong>Discount:</strong> {{ client.discount || 0 }}%</div>
+              <div><strong>VAT Rate:</strong> {{ client.vat_rate !== undefined ? client.vat_rate + '%' : '-' }}</div>
+              <div><strong>VAT Number:</strong> {{ client.vat_number || '-' }}</div>
+            </div>
+          </div>
+        } @else {
+          <div class="no-data">Client information not available</div>
+        }
+      </div>
+      <div class="section shipping-info">
+        <h3>Delivery Address</h3>
+        @if (hasDeliveryAddress()) {
+          <div class="info-grid">
+            @if (order.address_text) {
+              <div>
+                <strong>Street:</strong> {{ order.address_text }}
+              </div>
+            }
+            @if (order.city) {
+              <div>
+                <strong>City:</strong> {{ order.city }}
+              </div>
+            }
+            @if (order.zipcode) {
+              <div>
+                <strong>Zip Code:</strong> {{ order.zipcode }}
+              </div>
+            }
+            @if (order.country_code) {
+              <div>
+                <strong>Country:</strong> {{ order.country_code }}
+              </div>
+            }
+          </div>
+        } @else {
+          <p class="no-data">No address provided</p>
+        }
+      </div>
+      <div class="section items-section">
+        <h3>Order Items</h3>
+        <table class="items-table">
+          <thead>
+            <tr>
+              <th>SKU</th>
+              <th>Product Name</th>
+              <th>Quantity</th>
+              <th title="Base unit price without discount or VAT">Base Price</th>
+              <th title="Base price with VAT (before discount)">Price + VAT</th>
+              <th title="Discount percentage applied to this item">Discount (%)</th>
+              <th title="Unit price after discount, with VAT">Price w/ Discount + VAT</th>
+              <th title="Total including VAT for this item">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of items; track item) {
+              <tr>
+                <td>{{ item.product_sku || '-' }}</td>
+                <td>{{ getProductName(item.product_uid) }}</td>
+                <td>{{ item.quantity }}</td>
+                <td>{{ (item.price/100).toFixed(2) }}</td>
+                <td>{{ (item.price_with_vat/100).toFixed(2) }}</td>
+                <td>{{ item.discount !== undefined ? item.discount + '%' : '-' }}</td>
+                <td>{{ (item.price_after_discount_with_vat/100).toFixed(2) }}</td>
+                <td>{{ (item.total/100).toFixed(2) }}</td>
+              </tr>
+            }
+            @if (items.length === 0) {
+              <tr>
+                <td colspan="8" class="no-data">No items found for this order</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <!-- Order Totals Section -->
+      <div class="section totals-section">
+        <h3>Order Totals</h3>
+        <div class="totals-breakdown">
+          @if (order.discount_percent && order.discount_percent > 0 && order.original_total) {
+            <div class="total-row">
+              <span class="total-label">Original Total:</span>
+              <span class="total-value">{{ (order.original_total/100).toFixed(2) }}</span>
+            </div>
+          }
+          @if (order.discount_percent && order.discount_percent > 0 && order.discount_amount) {
+            <div class="total-row discount-row">
+              <span class="total-label">Discount ({{ order.discount_percent }}%):</span>
+              <span class="total-value discount-value">-{{ (order.discount_amount/100).toFixed(2) }}</span>
+            </div>
+          }
+          <div class="total-row subtotal-row">
+            <span class="total-label">Subtotal (Net):</span>
+            <span class="total-value">{{ order.subtotal !== undefined ? (order.subtotal/100).toFixed(2) : '-' }}</span>
+          </div>
+          @if (order.total_vat && order.total_vat > 0) {
+            <div class="total-row vat-row">
+              <span class="total-label">VAT@if (order.vat_rate) {
+                <span> ({{ order.vat_rate }}%)</span>
+              }:</span>
+              <span class="total-value">{{ (order.total_vat/100).toFixed(2) }}</span>
+            </div>
+          }
+          <div class="total-row final-total-row">
+            <span class="total-label">Total (Gross):</span>
+            <span class="total-value final-total">{{ (order.total/100).toFixed(2) }}</span>
+          </div>
+        </div>
+      </div>
+      <!-- Status history section (use same styling as items section) -->
+      <div class="section items-section history-section">
+        <h3>Status History</h3>
+        <table class="items-table history-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>User</th>
+              <th>Status</th>
+              <th>Comment</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (h of history; track h) {
+              <tr>
+                <td>{{ formatDate(h.created_at) }}</td>
+                <td>{{ (h.user_firstname || '') + ' ' + (h.user_lastname || '') }}</td>
+                <td>{{ h.status }}</td>
+                <td>{{ h.comment || '-' }}</td>
+              </tr>
+            }
+            @if (history.length === 0 && !historyLoading) {
+              <tr>
+                <td colspan="4" class="no-data">No history entries</td>
+              </tr>
+            }
+          </tbody>
+        </table>
       </div>
     </div>
-
-    <div class="section items-section">
-      <h3>Order Items</h3>
-      <table class="items-table">
-        <thead>
-          <tr>
-            <th>SKU</th>
-            <th>Product Name</th>
-            <th>Quantity</th>
-            <th>Unit Price</th>
-            <th>Discount</th>
-            <th>Subtotal</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let item of items">
-            <td>{{ getProductSKU(item.product_uid) }}</td>
-            <td>{{ getProductName(item.product_uid) }}</td>
-            <td>{{ item.quantity }}</td>
-            <td>{{ (item.price/100).toFixed(2) }}</td>
-            <td>{{ item.discount | number:'1.2-2' }}</td>
-            <td>{{ calculateSubtotal(item) | currencyFormat: getCurrency(order.currency_code) }}</td>
-          </tr>
-          <tr *ngIf="items.length === 0">
-            <td colspan="6" class="no-data">No items found for this order</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <!-- Status history section (use same styling as items section) -->
-    <div class="section items-section history-section">
-      <h3>Status History</h3>
-      <table class="items-table history-table">
-        <thead>
-          <tr>
-            <th>Date</th>
-            <th>User</th>
-            <th>Status</th>
-            <th>Comment</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let h of history">
-            <td>{{ formatDate(h.created_at) }}</td>
-            <td>{{ (h.user_firstname || '') + ' ' + (h.user_lastname || '') }}</td>
-            <td>{{ h.status }}</td>
-            <td>{{ h.comment || '-' }}</td>
-          </tr>
-          <tr *ngIf="history.length === 0 && !historyLoading">
-            <td colspan="4" class="no-data">No history entries</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-  </div>
+  }
 </div>

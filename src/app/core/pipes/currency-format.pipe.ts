@@ -2,7 +2,8 @@ import { Pipe, PipeTransform } from '@angular/core';
 import { Currency } from '../models/currency.model';
 
 @Pipe({
-  name: 'currencyFormat'
+    name: 'currencyFormat',
+    standalone: false
 })
 export class CurrencyFormatPipe implements PipeTransform {
   /**

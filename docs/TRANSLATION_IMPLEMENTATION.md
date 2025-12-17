@@ -905,3 +905,9 @@ fetch('assets/i18n/en.json')
 | Relative paths | `translation.service.ts` (lines 51-52) | Works with any base URL |
 | Observable subscription | `translate.pipe.ts` (line 20) | Updates on translation load |
 
+### Related Documentation
+
+- [Translation Quick Start](./TRANSLATION_QUICK_START.md) - Quick guide
+- [Frontend README](../README.md) - Project overview
+- [Coding Policy](./CODING_POLICY.md) - Coding standards
+

@@ -3,8 +3,10 @@ import { TranslationService } from '../services/translation.service';
 import { Subscription } from 'rxjs';
 
 @Pipe({
-  name: 'translate',
-  pure: false // Make it impure so it updates when language changes
+    name: 'translate',
+    pure: false // Make it impure so it updates when language changes
+    ,
+    standalone: false
 })
 export class TranslatePipe implements PipeTransform, OnDestroy {
   private lastValue: string = '';

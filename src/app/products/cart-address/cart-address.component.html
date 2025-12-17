@@ -1,0 +1,112 @@
+<div class="cart-address">
+  <!--  <div class="address-header">-->
+  <!--    <span class="address-label">{{ 'cart.deliveryAddress' | translate }}</span>-->
+<!--  </div>-->
+
+@if (address) {
+  <div class="address-content">
+    <div class="address-preview">
+      <span class="material-icons address-icon">location_on</span>
+      <div class="address-details">
+        <span class="address-text" [title]="address.shipping_address">
+          {{ getCompactAddress() }}
+        </span>
+        @if (address.address_text) {
+          <span class="address-full">
+            {{ address.address_text }}
+          </span>
+        }
+      </div>
+    </div>
+    <button
+      class="btn-change"
+      (click)="openAddressDialog()"
+      [disabled]="!isDraft"
+      [title]="isDraft ? ('cart.changeAddress' | translate) : ('cart.addressLocked' | translate)"
+      >
+      <span class="material-icons">edit</span>
+      {{ 'cart.changeAddress' | translate }}
+    </button>
+  </div>
+} @else {
+  <div class="no-address">
+    <span class="material-icons no-address-icon">location_off</span>
+    <span class="no-address-text">{{ 'cart.noAddressSelected' | translate }}</span>
+    <button
+      class="btn-select"
+      (click)="openAddressDialog()"
+      [disabled]="!isDraft"
+      >
+      {{ 'cart.selectAddress' | translate }}
+    </button>
+  </div>
+}
+
+</div>
+
+<!-- Address Selection Dialog -->
+@if (showAddressDialog) {
+  <div class="address-dialog-overlay" (click)="closeAddressDialog()">
+    <div class="address-dialog" (click)="$event.stopPropagation()">
+      <div class="dialog-header">
+        <h3>{{ 'cart.selectAddress' | translate }}</h3>
+        <button class="btn-close" (click)="closeAddressDialog()">
+          <span class="material-icons">close</span>
+        </button>
+      </div>
+      <div class="dialog-content">
+        @if (loadingAddresses) {
+          <div class="loading">
+            <div class="spinner"></div>
+            <span>{{ 'common.loading' | translate }}</span>
+          </div>
+        }
+        @if (!loadingAddresses) {
+          <div class="address-list">
+            @if (addresses.length === 0) {
+              <div class="no-addresses">
+                <span class="material-icons">location_off</span>
+                <p>{{ 'cart.noAddressesFound' | translate }}</p>
+              </div>
+            }
+            @for (addr of addresses; track addr) {
+              <div
+                class="address-item"
+                [class.selected]="isSelected(addr)"
+                [class.default]="addr.is_default"
+                (click)="selectAddress(addr)"
+                >
+                <div class="address-item-content">
+                  <div class="address-item-header">
+                    <span class="address-city">{{ addr.city || addr.country_code }}</span>
+                    @if (addr.is_default) {
+                      <span class="default-badge">
+                        {{ 'cart.defaultAddress' | translate }}
+                      </span>
+                    }
+                  </div>
+                  @if (addr.address_text) {
+                    <div class="address-item-text">
+                      {{ addr.address_text }}
+                    </div>
+                  }
+                  <div class="address-item-details">
+                    @if (addr.zipcode) {
+                      <span>{{ addr.zipcode }}</span>
+                    }
+                    @if (addr.country_code) {
+                      <span>{{ addr.country_code }}</span>
+                    }
+                  </div>
+                </div>
+                @if (isSelected(addr)) {
+                  <span class="material-icons check-icon">check_circle</span>
+                }
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+}

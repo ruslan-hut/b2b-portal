@@ -499,8 +499,82 @@
           }
 
           .item-details {
+            display: flex;
+            align-items: center;
+            gap: 12px;
             font-size: 14px;
             color: #666;
+
+            .item-price {
+              font-weight: 600;
+              color: #333;
+              min-width: 60px;
+              text-align: left;
+            }
+
+            .quantity-control {
+              display: inline-flex;
+              align-items: center;
+              gap: 8px;
+              background: #f5f7fa;
+              border-radius: 8px;
+              padding: 4px;
+              border: 1px solid rgba(0, 0, 0, 0.04);
+            }
+
+            .qty-btn {
+              display: inline-flex;
+              align-items: center;
+              justify-content: center;
+              width: 32px;
+              height: 32px;
+              border-radius: 6px;
+              border: none;
+              background: white;
+              color: #333;
+              font-weight: 700;
+              cursor: pointer;
+              box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+              transition: 0.15s ease, transform 0.08s ease;
+              padding: 0;
+            }
+
+            .qty-btn:hover:not(:disabled) {
+              background: #f0f4ff;
+              transform: translateY(-1px);
+            }
+
+            .qty-btn:disabled {
+              opacity: 0.5;
+              cursor: not-allowed;
+              background: #fafafa;
+            }
+
+            .qty-input {
+              width: 56px;
+              min-width: 48px;
+              padding: 6px 8px;
+              text-align: center;
+              border: 1px solid #e1e8ed;
+              border-radius: 6px;
+              background: white;
+              font-size: 14px;
+              color: #333;
+              outline: none;
+              -moz-appearance: textfield; /* hide number arrows in Firefox */
+            }
+
+            /* Remove arrows in WebKit */
+            .qty-input::-webkit-outer-spin-button,
+            .qty-input::-webkit-inner-spin-button {
+              -webkit-appearance: none;
+              margin: 0;
+            }
+
+            .qty-input:focus {
+              border-color: #667eea;
+              box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.08);
+            }
           }
 
           .stock-warning {
@@ -568,12 +642,65 @@
     .comment-section {
       margin-bottom: 20px;
 
-      .comment-label {
-        display: block;
-        font-size: 14px;
-        font-weight: 600;
-        color: #333;
-        margin-bottom: 8px;
+      .comment-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        cursor: pointer;
+        padding: 8px 0;
+        user-select: none;
+        transition: background-color 0.2s ease;
+        border-radius: 4px;
+        margin: -8px -4px 8px;
+        padding: 8px 4px;
+
+        &:hover {
+          background-color: #f5f5f5;
+        }
+
+        .comment-label {
+          margin: 0;
+          font-size: 14px;
+          font-weight: 600;
+          color: #333;
+          flex: 1;
+        }
+
+        .comment-toggle {
+          background: none;
+          border: none;
+          cursor: pointer;
+          padding: 4px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: #666;
+          transition: color 0.2s ease;
+          border-radius: 4px;
+
+          &:hover {
+            color: #333;
+            background-color: #e0e0e0;
+          }
+
+          .material-icons {
+            font-size: 20px;
+            transition: transform 0.2s ease;
+          }
+        }
+      }
+
+      .comment-content {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.3s ease-out, opacity 0.2s ease-out;
+        opacity: 0;
+
+        &.expanded {
+          max-height: 200px;
+          opacity: 1;
+          margin-top: 8px;
+        }
       }
 
       .comment-textarea {
@@ -740,3 +867,103 @@
   }
 }
 
+// Cart totals breakdown
+.cart-totals-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  margin-bottom: 16px;
+
+  .total-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.95em;
+
+    .total-label {
+      color: #666;
+      font-weight: 500;
+    }
+
+    .total-amount {
+      font-weight: 600;
+      color: #333;
+    }
+
+    &.original-total-row {
+      .original-price-amount {
+        text-decoration: line-through;
+        color: #999;
+      }
+    }
+
+    &.discount-row {
+      .discount-amount {
+        color: #27ae60;
+        font-weight: 700;
+      }
+    }
+
+    &.subtotal-row {
+      &.has-discount-above {
+        border-top: 1px solid #e0e0e0;
+        padding-top: 8px;
+        margin-top: 4px;
+      }
+    }
+
+    &.vat-row {
+      border-top: 1px solid #e0e0e0;
+      padding-top: 8px;
+      margin-top: 4px;
+    }
+
+    &.final-total-row {
+      border-top: 2px solid #667eea;
+      padding-top: 12px;
+      margin-top: 8px;
+      font-size: 1.1em;
+
+      .total-label {
+        color: #333;
+        font-weight: 700;
+      }
+
+      .total-emphasis {
+        color: #667eea;
+        font-size: 1.2em;
+        font-weight: 700;
+      }
+    }
+  }
+}
+
+// Cart item price display
+.item-details {
+  .price-info {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    margin-bottom: 8px;
+
+    .item-price-original {
+      font-size: 0.85em;
+      color: #999;
+      text-decoration: line-through;
+    }
+
+    .item-price {
+      font-weight: 600;
+      font-size: 0.95em;
+
+      &.discounted {
+        color: #e74c3c;
+        font-weight: bold;
+      }
+    }
+  }
+}

@@ -3,9 +3,10 @@ import { TranslationService, Language } from '../../services/translation.service
 import { Observable } from 'rxjs';
 
 @Component({
-  selector: 'app-language-switcher',
-  templateUrl: './language-switcher.component.html',
-  styleUrls: ['./language-switcher.component.scss']
+    selector: 'app-language-switcher',
+    templateUrl: './language-switcher.component.html',
+    styleUrls: ['./language-switcher.component.scss'],
+    standalone: false
 })
 export class LanguageSwitcherComponent implements OnInit {
   currentLanguage$: Observable<Language>;

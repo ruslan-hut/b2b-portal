@@ -2,11 +2,12 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, of, BehaviorSubject, combineLatest } from 'rxjs';
 import { delay, map, catchError, switchMap } from 'rxjs/operators';
-import { Product, ProductCategory, BackendProduct } from '../models/product.model';
+import { Product, ProductCategory, BackendProduct, FrontendProduct } from '../models/product.model';
 import { ProductMapper } from '../mappers/product.mapper';
 import { environment } from '../../../environments/environment';
 // Mock data imports removed - using real API in production
 import { TranslationService } from './translation.service';
+import { AppSettingsService } from './app-settings.service';
 
 interface ApiResponse<T> {
   success: boolean;
@@ -54,7 +55,8 @@ export class ProductService {
 
   constructor(
     private http: HttpClient,
-    private translationService: TranslationService
+    private translationService: TranslationService,
+    private appSettingsService: AppSettingsService
   ) { }
 
   getViewMode(): 'grid' | 'bulk' {
@@ -68,6 +70,71 @@ export class ProductService {
   toggleViewMode(): void {
     const currentMode = this.viewModeSubject.value;
     this.viewModeSubject.next(currentMode === 'grid' ? 'bulk' : 'grid');
+  }
+
+  /**
+   * Get products with calculated prices from frontend endpoint
+   * Returns products with all price variants (base, with VAT, with discount, final)
+   * No calculations needed on frontend - all done by backend
+   */
+  getFrontendProducts(offset: number = 0, limit: number = 100, category?: string): Observable<Product[]> {
+    const currentLanguage = this.translationService.getCurrentLanguage();
+    let params = new HttpParams()
+      .set('offset', offset.toString())
+      .set('limit', limit.toString())
+      .set('language', currentLanguage);
+    
+    if (category) {
+      params = params.set('category', category);
+    }
+
+    return this.http.get<ApiResponse<FrontendProduct[]>>(`${this.apiUrl}/frontend/products`, { params }).pipe(
+      map(response => {
+        if (!response.success || !response.data || !Array.isArray(response.data)) {
+          return [];
+        }
+
+        // Map frontend products to Product model
+        return response.data.map(fp => {
+          // Use category_name if available, otherwise fall back to category_uid
+          const categoryName = fp.category_name || fp.category_uid || 'Uncategorized';
+          
+          return {
+            id: fp.uid,
+            name: fp.name,
+            description: fp.description,
+            price: fp.price_final / 100, // Convert from cents to dollars - use final price
+            category: categoryName,
+            imageUrl: fp.image,
+            inStock: fp.available_quantity > 0,
+            sku: fp.sku,
+            availableQuantity: fp.available_quantity,
+            active: true, // Frontend endpoint only returns active products
+            isNew: fp.is_new,
+            isHotSale: fp.is_hot_sale,
+            sortOrder: fp.sort_order,
+            // Store calculated prices for display
+            basePrice: fp.base_price / 100,
+            priceWithVat: fp.price_with_vat / 100,
+            priceWithDiscount: fp.price_with_discount / 100,
+            priceFinal: fp.price_final / 100,
+            vatRate: fp.vat_rate,
+            discountPercent: fp.discount_percent,
+          } as Product & {
+            basePrice: number;
+            priceWithVat: number;
+            priceWithDiscount: number;
+            priceFinal: number;
+            vatRate: number;
+            discountPercent: number;
+          };
+        });
+      }),
+      catchError(error => {
+        console.error('Error fetching frontend products:', error);
+        return of([]);
+      })
+    );
   }
 
   getProducts(offset: number = 0, limit: number = 100): Observable<Product[]> {
@@ -508,10 +575,9 @@ export class ProductService {
    * NOW USES AVAILABLE QUANTITY instead of CRM quantity
    */
    validateStock(productId: string, requestedQuantity: number): Observable<boolean> {
-     // Read store UID from stored auth data if present
-     const authRaw = localStorage.getItem('BASE_AUTH_DATA');
-     const authData = authRaw ? JSON.parse(authRaw) : null;
-     const storeUid = authData?.entity?.store_uid;
+     // Get store UID from AppSettings
+     const settings = this.appSettingsService.getSettingsValue();
+     const storeUid = settings?.store?.uid;
     // Use batch product fetch via getProductById (which uses product/batch)
     return this.getProductById(productId).pipe(
       switchMap(product => {
@@ -545,10 +611,9 @@ export class ProductService {
            return of(undefined);
          }
 
-         // Read store UID from stored auth data if present
-         const authRaw = localStorage.getItem('BASE_AUTH_DATA');
-         const authData = authRaw ? JSON.parse(authRaw) : null;
-         const storeUid = authData?.entity?.store_uid;
+         // Get store UID from AppSettings
+         const settings = this.appSettingsService.getSettingsValue();
+         const storeUid = settings?.store?.uid;
 
          // Fetch available quantity for user's store and enrich the product
          return this.getAvailableQuantity(uid, storeUid).pipe(
@@ -573,6 +638,11 @@ export class ProductService {
    /**
     * Get products with availability information
     * Enriches product list with available quantities for each product
+    *
+    * @deprecated Use getFrontendProducts() instead for client-facing catalog.
+    * This method makes multiple API calls (products + inventory + prices) which
+    * is less efficient than the unified /frontend/products endpoint.
+    * Kept for potential admin/non-client use cases.
     */
    getProductsWithAvailability(offset: number = 0, limit: number = 100): Observable<Product[]> {
      return this.getProducts(offset, limit).pipe(
@@ -581,11 +651,10 @@ export class ProductService {
            return of([]);
          }
 
-         // Read store UID from stored auth data if present
-         const authRaw = localStorage.getItem('BASE_AUTH_DATA');
-         const authData = authRaw ? JSON.parse(authRaw) : null;
-         const storeUid = authData?.entity?.store_uid;
-        const priceTypeUid = authData?.entity?.price_type_uid;
+         // Get store UID and price type UID from AppSettings
+         const settings = this.appSettingsService.getSettingsValue();
+         const storeUid = settings?.store?.uid;
+        const priceTypeUid = settings?.price_type?.uid;
         // Use batch endpoint to fetch available quantities for all products in one request
         const productIds = products.map(p => p.id);
         return this.getAvailableQuantities(storeUid, productIds).pipe(

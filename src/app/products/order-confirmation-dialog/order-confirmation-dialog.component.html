@@ -1,26 +1,39 @@
-<div class="dialog-overlay" (click)="onClose()">
+<div class="dialog-overlay" (click)="!isConfirming && onClose()">
   <div class="dialog-content" (click)="$event.stopPropagation()">
-    <div class="dialog-header">
-      <h2>{{ 'products.orderConfirmed' | translate }}</h2>
-      <button class="close-btn" (click)="onClose()">
-        <span class="material-icons">close</span>
-      </button>
-    </div>
-
-    <div class="dialog-body">
-      <span class="material-icons success-icon">check_circle</span>
-      <p class="confirmation-message">{{ 'products.orderConfirmationMessage' | translate }}</p>
-
-      <div class="order-total-section">
-        <span class="total-label">{{ 'products.total' | translate }}:</span>
-        <span class="total-amount">{{ total.toFixed(2) }}{{ currencyName ? ' ' + currencyName : '' }}</span>
+    <!-- Success State - After order is created -->
+    @if (isSuccess) {
+      <div class="dialog-header">
+        <h2>{{ 'products.orderConfirmed' | translate }}</h2>
+        <button class="close-btn" (click)="onClose()">
+          <span class="material-icons">close</span>
+        </button>
       </div>
-    </div>
+      <div class="dialog-body">
+        <span class="material-icons success-icon">check_circle</span>
+        <p class="confirmation-message">{{ 'products.orderConfirmationMessage' | translate }}</p>
+        <div class="order-total-section">
+          <span class="total-label">{{ 'products.total' | translate }}:</span>
+          <span class="total-amount">{{ total.toFixed(2) }}{{ currencyName ? ' ' + currencyName : '' }}</span>
+        </div>
+      </div>
+      <div class="dialog-footer">
+        <button class="btn btn-primary" (click)="onClose()">
+          {{ 'common.ok' | translate }}
+        </button>
+      </div>
+    }
 
-    <div class="dialog-footer">
-      <button class="btn btn-primary" (click)="onConfirm()">
-        {{ 'common.ok' | translate }}
-      </button>
-    </div>
+    <!-- Loading State - While order is being created -->
+    @if (!isSuccess && isConfirming) {
+      <div class="dialog-header">
+        <h2>{{ 'products.confirmOrder' | translate }}</h2>
+      </div>
+      <div class="dialog-body">
+        <div class="loading-container">
+          <div class="spinner"></div>
+          <p class="loading-message">{{ 'products.creatingOrder' | translate }}</p>
+        </div>
+      </div>
+    }
   </div>
 </div>

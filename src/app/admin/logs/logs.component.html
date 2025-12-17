@@ -49,63 +49,76 @@
   </div>
 
   <!-- Error Message -->
-  <div *ngIf="error" class="error-message">
-    {{ error }}
-  </div>
+  @if (error) {
+    <div class="error-message">
+      {{ error }}
+    </div>
+  }
 
   <!-- Loading Indicator -->
-  <div *ngIf="loading" class="loading">
-    Loading logs...
-  </div>
+  @if (loading) {
+    <div class="loading">
+      Loading logs...
+    </div>
+  }
 
   <!-- Logs Table -->
-  <div *ngIf="!loading && !error" class="logs-table-container">
-    <table class="logs-table">
-      <thead>
-        <tr>
-          <th>Time</th>
-          <th>Level</th>
-          <th>User UID</th>
-          <th>Request ID</th>
-          <th>Message</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let log of logs" [class.expanded]="isRowExpanded(log.id)">
-          <td>{{ formatDate(log.time) }}</td>
-          <td>
-            <span class="level-badge" [ngClass]="getLevelClass(log.level)">
-              {{ log.level }}
-            </span>
-          </td>
-          <td>{{ log.user_uid || '-' }}</td>
-          <td class="request-id">{{ log.request_id || '-' }}</td>
-          <td class="message-cell">
-            <div *ngIf="!isRowExpanded(log.id)" class="message-preview">{{ log.message }}</div>
-            <div *ngIf="isRowExpanded(log.id)" class="message-full">
-              <div class="message-content">{{ log.message }}</div>
-              <div *ngIf="log.extra" class="extra-content">
-                <strong>Extra:</strong>
-                <pre>{{ formatExtra(log.extra) | json }}</pre>
-              </div>
-            </div>
-          </td>
-          <td>
-            <button class="btn-expand" (click)="toggleRow(log.id)">
-              {{ isRowExpanded(log.id) ? '−' : '+' }}
-            </button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-
-    <!-- Pagination -->
-    <div class="pagination">
-      <button [disabled]="currentPage === 1" (click)="goToPage(currentPage - 1)">Previous</button>
-      <span>Page {{ currentPage }} of {{ totalPages }} ({{ total }} total)</span>
-      <button [disabled]="currentPage === totalPages" (click)="goToPage(currentPage + 1)">Next</button>
+  @if (!loading && !error) {
+    <div class="logs-table-container">
+      <table class="logs-table">
+        <thead>
+          <tr>
+            <th>Time</th>
+            <th>Level</th>
+            <th>User UID</th>
+            <th>Request ID</th>
+            <th>Message</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (log of logs; track log) {
+            <tr [class.expanded]="isRowExpanded(log.id)">
+              <td>{{ formatDate(log.time) }}</td>
+              <td>
+                <span class="level-badge" [ngClass]="getLevelClass(log.level)">
+                  {{ log.level }}
+                </span>
+              </td>
+              <td>{{ log.user_uid || '-' }}</td>
+              <td class="request-id">{{ log.request_id || '-' }}</td>
+              <td class="message-cell">
+                @if (!isRowExpanded(log.id)) {
+                  <div class="message-preview">{{ log.message }}</div>
+                }
+                @if (isRowExpanded(log.id)) {
+                  <div class="message-full">
+                    <div class="message-content">{{ log.message }}</div>
+                    @if (log.extra) {
+                      <div class="extra-content">
+                        <strong>Extra:</strong>
+                        <pre>{{ formatExtra(log.extra) | json }}</pre>
+                      </div>
+                    }
+                  </div>
+                }
+              </td>
+              <td>
+                <button class="btn-expand" (click)="toggleRow(log.id)">
+                  {{ isRowExpanded(log.id) ? '−' : '+' }}
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+      <!-- Pagination -->
+      <div class="pagination">
+        <button [disabled]="currentPage === 1" (click)="goToPage(currentPage - 1)">Previous</button>
+        <span>Page {{ currentPage }} of {{ totalPages }} ({{ total }} total)</span>
+        <button [disabled]="currentPage === totalPages" (click)="goToPage(currentPage + 1)">Next</button>
+      </div>
     </div>
-  </div>
+  }
 </div>
 
