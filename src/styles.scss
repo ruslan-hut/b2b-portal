@@ -5,13 +5,54 @@
   box-sizing: border-box;
 }
 
+/* CSS Custom Properties for consistent styling */
+:root {
+  /* Border radius - standardized across components */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-pill: 9999px;
+
+  /* Touch targets - minimum 44px for accessibility */
+  --touch-target-min: 44px;
+
+  /* Colors */
+  --color-primary: #667eea;
+  --color-primary-dark: #5568d3;
+  --color-secondary: #764ba2;
+  --color-success: #28a745;
+  --color-danger: #dc3545;
+  --color-warning: #ff6b6b;
+  --color-text-primary: #333;
+  --color-text-secondary: #666;
+  --color-border: #e1e8ed;
+  --color-background: #f5f7fa;
+
+  /* Spacing */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+
+  /* Safe areas for notched devices */
+  --safe-area-top: env(safe-area-inset-top, 0);
+  --safe-area-bottom: env(safe-area-inset-bottom, 0);
+  --safe-area-left: env(safe-area-inset-left, 0);
+  --safe-area-right: env(safe-area-inset-right, 0);
+}
+
 body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   line-height: 1.6;
-  color: #333;
-  background: #f5f7fa;
+  color: var(--color-text-primary);
+  background: var(--color-background);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* Prevent text size adjustment on orientation change */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -21,6 +62,8 @@ h1, h2, h3, h4, h5, h6 {
 
 button {
   font-family: inherit;
+  /* Improve touch response */
+  touch-action: manipulation;
 }
 
 /* Utility Classes */
@@ -33,14 +76,60 @@ button {
 /* Form Resets */
 input, textarea, select {
   font-family: inherit;
+  /* Standardized border-radius */
+  border-radius: var(--radius-md);
+  /* Improve touch response */
+  touch-action: manipulation;
 }
 
-/* Remove default button styles */
+/* Focus styles - visible for keyboard navigation */
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* Remove outline for mouse/touch users */
+button:focus:not(:focus-visible),
+input:focus:not(:focus-visible),
+textarea:focus:not(:focus-visible),
+select:focus:not(:focus-visible),
+a:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Legacy browsers - remove default outline */
 button:focus,
 input:focus,
 textarea:focus,
 select:focus {
   outline: none;
+}
+
+/* Ensure touch targets are at least 44px */
+button,
+[role="button"],
+input[type="checkbox"],
+input[type="radio"],
+select {
+  min-height: var(--touch-target-min);
+}
+
+/* Improve tap highlight on mobile */
+a,
+button,
+input,
+select,
+textarea {
+  -webkit-tap-highlight-color: rgba(102, 126, 234, 0.2);
+}
+
+/* Prevent pull-to-refresh on overscroll */
+html {
+  overscroll-behavior: none;
 }
 
 /* Material Icons global styles */
@@ -59,4 +148,31 @@ select:focus {
   -webkit-font-feature-settings: 'liga';
   -webkit-font-smoothing: antialiased;
   vertical-align: middle;
+}
+
+/* Mobile-specific improvements */
+@media (max-width: 768px) {
+  /* Prevent iOS zoom on input focus */
+  input[type="text"],
+  input[type="email"],
+  input[type="tel"],
+  input[type="password"],
+  input[type="number"],
+  input[type="search"],
+  textarea,
+  select {
+    font-size: 16px;
+  }
+
+  /* Reduce container padding on mobile */
+  .container {
+    padding: 0 16px;
+  }
+}
+
+/* Extra small screens */
+@media (max-width: 480px) {
+  .container {
+    padding: 0 12px;
+  }
 }

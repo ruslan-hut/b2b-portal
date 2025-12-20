@@ -24,7 +24,8 @@ export class OrderHistoryComponent implements OnInit, OnDestroy {
   statusFilter: OrderStatus | '' = '';
   dateFromFilter: string = '';
   dateToFilter: string = '';
-  
+  filtersExpanded: boolean = false;
+
   private subscriptions = new Subscription();
 
   constructor(
@@ -56,30 +57,34 @@ export class OrderHistoryComponent implements OnInit, OnDestroy {
 
   loadOrders(): void {
     this.loading = true;
-    this.orderService.getOrderHistory().subscribe({
-      next: (orders) => {
-        // Sort by updatedAt (newest first). Fallback to createdAt if updatedAt missing
-        this.orders = orders.sort((a, b) => {
-          const aTime = (a.updatedAt || a.createdAt).getTime();
-          const bTime = (b.updatedAt || b.createdAt).getTime();
-          return bTime - aTime; // newest first
-        });
+    this.cdr.markForCheck();
 
-        this.applyFilters();
-        this.loading = false;
-        // Manually trigger change detection to ensure UI updates
-        this.cdr.detectChanges();
-      },
-      error: (error) => {
-        console.error('Error loading orders:', error);
-        this.loading = false;
-        // If 401/400 error, user might not have StoreUID/PriceTypeUID assigned
-        if (error.status === 401 || error.status === 400) {
-          console.warn('Unable to load orders. Users need StoreUID and PriceTypeUID assigned.');
+    this.subscriptions.add(
+      this.orderService.getOrderHistory().subscribe({
+        next: (orders) => {
+          // Sort by updatedAt (newest first). Fallback to createdAt if updatedAt missing
+          this.orders = orders.sort((a, b) => {
+            const aTime = (a.updatedAt || a.createdAt).getTime();
+            const bTime = (b.updatedAt || b.createdAt).getTime();
+            return bTime - aTime; // newest first
+          });
+
+          this.applyFilters();
+          this.loading = false;
+          // Manually trigger change detection to ensure UI updates
+          this.cdr.detectChanges();
+        },
+        error: (error) => {
+          console.error('Error loading orders:', error);
+          this.loading = false;
+          // If 401/400 error, user might not have StoreUID/PriceTypeUID assigned
+          if (error.status === 401 || error.status === 400) {
+            console.warn('Unable to load orders. Users need StoreUID and PriceTypeUID assigned.');
+          }
+          this.cdr.detectChanges();
         }
-        this.cdr.detectChanges();
-      }
-    });
+      })
+    );
   }
 
   applyFilters(): void {
@@ -119,6 +124,14 @@ export class OrderHistoryComponent implements OnInit, OnDestroy {
     this.dateFromFilter = '';
     this.dateToFilter = '';
     this.applyFilters();
+  }
+
+  toggleFilters(): void {
+    this.filtersExpanded = !this.filtersExpanded;
+  }
+
+  hasActiveFilters(): boolean {
+    return !!(this.statusFilter || this.dateFromFilter || this.dateToFilter);
   }
 
   getStatusClass(status: OrderStatus): string {

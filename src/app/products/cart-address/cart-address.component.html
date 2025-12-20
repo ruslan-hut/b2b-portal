@@ -4,7 +4,11 @@
 <!--  </div>-->
 
 @if (address) {
-  <div class="address-content">
+  <div
+    class="address-content"
+    [class.clickable]="isDraft"
+    (click)="isDraft ? openAddressDialog() : null"
+  >
     <div class="address-preview">
       <span class="material-icons address-icon">location_on</span>
       <div class="address-details">
@@ -18,27 +22,37 @@
         }
       </div>
     </div>
+    <!-- Desktop only button -->
     <button
       class="btn-change"
-      (click)="openAddressDialog()"
+      (click)="openAddressDialog(); $event.stopPropagation()"
       [disabled]="!isDraft"
       [title]="isDraft ? ('cart.changeAddress' | translate) : ('cart.addressLocked' | translate)"
       >
       <span class="material-icons">edit</span>
       {{ 'cart.changeAddress' | translate }}
     </button>
+    <!-- Mobile expand indicator -->
+    <span class="mobile-expand-icon material-icons">chevron_right</span>
   </div>
 } @else {
-  <div class="no-address">
+  <div
+    class="no-address"
+    [class.clickable]="isDraft"
+    (click)="isDraft ? openAddressDialog() : null"
+  >
     <span class="material-icons no-address-icon">location_off</span>
     <span class="no-address-text">{{ 'cart.noAddressSelected' | translate }}</span>
+    <!-- Desktop only button -->
     <button
       class="btn-select"
-      (click)="openAddressDialog()"
+      (click)="openAddressDialog(); $event.stopPropagation()"
       [disabled]="!isDraft"
       >
       {{ 'cart.selectAddress' | translate }}
     </button>
+    <!-- Mobile expand indicator -->
+    <span class="mobile-expand-icon material-icons">chevron_right</span>
   </div>
 }
 

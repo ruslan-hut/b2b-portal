@@ -15,6 +15,17 @@ export interface ClientAddress {
   last_update?: string;
 }
 
+// Discount information for scale-based discounts
+export interface DiscountInfo {
+  current_balance: number;           // Current balance in cents
+  current_discount: number;          // Current discount percentage
+  next_threshold?: number;           // Next tier threshold in cents
+  amount_to_next?: number;           // Amount to reach next tier
+  next_discount?: number;            // Discount percentage at next tier
+  has_next_tier: boolean;            // Whether there's a higher tier
+  is_fixed_discount: boolean;        // Whether using fixed discount mode
+}
+
 export interface AppSettings {
   entity: User | Client;
   entity_type: 'user' | 'client';
@@ -23,6 +34,7 @@ export interface AppSettings {
   price_type?: PriceType;
   effective_vat_rate: number; // Calculated VAT rate: client.vat_rate if vat_number exists, else store.default_vat_rate
   addresses?: ClientAddress[]; // Client addresses (only for clients)
+  discount_info?: DiscountInfo; // Discount tier info (only for clients)
   token_info?: {
     token_uid: string;
     issued_at: string;

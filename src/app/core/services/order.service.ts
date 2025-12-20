@@ -469,7 +469,8 @@ export class OrderService {
             priceDiscount: item.price_discount / 100,
             tax: item.tax / 100,
             subtotal: item.subtotal / 100,
-            discount: cartData.discount_percent
+            discount: cartData.discount_percent,
+            availableQuantity: item.available_quantity
           })),
           totalAmount: cartData.totals.total / 100,
           discountPercent: cartData.discount_percent,

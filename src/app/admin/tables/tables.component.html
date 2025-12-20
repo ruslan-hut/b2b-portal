@@ -5,26 +5,26 @@
   </div>
 
   <div class="tables-layout">
-    <!-- Tables List -->
-    <div class="tables-sidebar">
-      <h2>Tables</h2>
+    <!-- Table Selector -->
+    <div class="table-selector-row">
+      <label class="table-selector-label">Table:</label>
       @if (loading) {
-        <div class="loading">Loading tables...</div>
+        <span class="loading-inline">Loading tables...</span>
       }
-      @if (error) {
-        <div class="error">{{ error }}</div>
+      @if (error && !selectedTable) {
+        <span class="error-inline">{{ error }}</span>
       }
-      @if (!loading && !error) {
-        <ul class="tables-list">
+      @if (!loading) {
+        <select
+          class="table-selector"
+          [value]="selectedTable"
+          (change)="onTableSelect($any($event.target).value)"
+          >
+          <option value="" disabled selected>Select a table...</option>
           @for (table of tables; track table) {
-            <li
-              [class.active]="selectedTable === table.name"
-              (click)="selectTable(table)"
-              >
-              {{ table.name }}
-            </li>
+            <option [value]="table.name">{{ table.name }}</option>
           }
-        </ul>
+        </select>
       }
     </div>
 
@@ -32,15 +32,28 @@
     @if (selectedTable) {
       <div class="records-viewer">
         <div class="viewer-header">
-          <h2>Table: {{ selectedTable }}</h2>
           <div class="search-controls">
-            <input
-              type="text"
-              [(ngModel)]="searchTerm"
-              (input)="onSearchChange()"
-              placeholder="Search records..."
-              class="search-input"
-              />
+            <select
+              [(ngModel)]="searchField"
+              class="field-selector"
+              >
+              <option value="">All fields</option>
+              @for (column of columns; track column) {
+                <option [value]="column">{{ getColumnLabel(column) }}</option>
+              }
+            </select>
+            <div class="search-input-wrapper">
+              <input
+                type="text"
+                [(ngModel)]="searchTerm"
+                (keyup.enter)="onSearchChange()"
+                placeholder="Search records..."
+                class="search-input"
+                />
+              <button type="button" class="search-icon-btn" (click)="onSearchChange()">
+                <span class="material-icons">search</span>
+              </button>
+            </div>
           </div>
         </div>
         @if (loadingRecords) {
@@ -94,12 +107,6 @@
       </div>
     }
 
-    <!-- No table selected message -->
-    @if (!selectedTable) {
-      <div class="no-table-selected">
-        <p>Select a table from the list to view its records.</p>
-      </div>
-    }
   </div>
 </div>
 

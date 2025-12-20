@@ -127,6 +127,14 @@
   }
 }
 
+// Mobile expand icon - hidden on desktop
+.mobile-expand-icon {
+  display: none;
+  color: #999;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
 // Dialog styles
 .address-dialog-overlay {
   position: fixed;
@@ -315,4 +323,220 @@
 .check-icon {
   color: var(--primary-color, #1976d2);
   flex-shrink: 0;
+}
+
+// Mobile responsive styles
+@media (max-width: 768px) {
+  .cart-address {
+    padding: 0;
+    margin-bottom: 8px;
+    border-radius: 8px;
+  }
+
+  .address-header {
+    margin-bottom: 6px;
+  }
+
+  .address-label {
+    font-size: 0.8125rem;
+  }
+
+  .address-content {
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    min-height: 44px;
+
+    &.clickable {
+      cursor: pointer;
+
+      &:active {
+        background: #f5f7fa;
+      }
+    }
+  }
+
+  .address-preview {
+    gap: 8px;
+    flex: 1;
+  }
+
+  .address-icon {
+    font-size: 20px;
+  }
+
+  .address-text {
+    font-size: 0.875rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.4;
+  }
+
+  .address-full {
+    font-size: 0.75rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.4;
+  }
+
+  // Hide button on mobile
+  .btn-change {
+    display: none;
+  }
+
+  // Show expand icon on mobile
+  .mobile-expand-icon {
+    display: block;
+  }
+
+  .no-address {
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    text-align: left;
+    padding: 10px 12px;
+    min-height: 44px;
+
+    &.clickable {
+      cursor: pointer;
+
+      &:active {
+        background: #f5f7fa;
+      }
+    }
+  }
+
+  .no-address-icon {
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+
+  .no-address-text {
+    font-size: 0.875rem;
+    flex: 1;
+  }
+
+  // Hide button on mobile
+  .btn-select {
+    display: none;
+  }
+
+  // Dialog mobile styles
+  .address-dialog-overlay {
+    padding: 0;
+    align-items: flex-end;
+  }
+
+  .address-dialog {
+    max-width: 100%;
+    max-height: 80vh;
+    border-radius: 12px 12px 0 0;
+    margin-bottom: env(safe-area-inset-bottom, 0);
+  }
+
+  .dialog-header {
+    padding: 12px 14px;
+
+    h3 {
+      font-size: 0.9375rem;
+    }
+  }
+
+  .btn-close {
+    min-width: 44px;
+    min-height: 44px;
+    padding: 8px;
+
+    .material-icons {
+      font-size: 24px;
+    }
+  }
+
+  .dialog-content {
+    padding: 10px;
+  }
+
+  .loading {
+    padding: 20px;
+    gap: 10px;
+  }
+
+  .no-addresses {
+    padding: 20px;
+
+    .material-icons {
+      font-size: 36px;
+    }
+
+    p {
+      font-size: 0.875rem;
+    }
+  }
+
+  .address-list {
+    gap: 6px;
+  }
+
+  .address-item {
+    padding: 10px 12px;
+    min-height: 52px;
+    border-radius: 8px;
+    gap: 10px;
+
+    &:active {
+      background: var(--hover-bg, #f0f4ff);
+    }
+  }
+
+  .address-item-header {
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-bottom: 2px;
+  }
+
+  .address-city {
+    font-size: 0.875rem;
+  }
+
+  .default-badge {
+    font-size: 0.5625rem;
+    padding: 2px 5px;
+  }
+
+  .address-item-text {
+    font-size: 0.8125rem;
+    white-space: normal;
+    line-height: 1.4;
+    margin-bottom: 2px;
+  }
+
+  .address-item-details {
+    font-size: 0.75rem;
+  }
+
+  .check-icon {
+    font-size: 20px;
+  }
+}
+
+// Extra small screens
+@media (max-width: 480px) {
+  .cart-address {
+    padding: 8px;
+  }
+
+  .address-dialog {
+    max-height: 85vh;
+  }
+
+  .dialog-content {
+    padding: 8px;
+  }
+
+  .address-item {
+    padding: 8px 10px;
+  }
 }

@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { AdminService, TableInfo, TableRecord, TableRecordsResponse } from '../../core/services/admin.service';
 
 @Component({
@@ -9,7 +9,7 @@ import { AdminService, TableInfo, TableRecord, TableRecordsResponse } from '../.
 })
 export class TablesComponent implements OnInit {
   tables: TableInfo[] = [];
-  selectedTable: string | null = null;
+  selectedTable = '';
   records: TableRecord[] = [];
   columns: string[] = [];
   loading = false;
@@ -24,8 +24,12 @@ export class TablesComponent implements OnInit {
   
   // Search
   searchTerm = '';
+  searchField = '';
 
-  constructor(private adminService: AdminService) {}
+  constructor(
+    private adminService: AdminService,
+    private cdr: ChangeDetectorRef
+  ) {}
 
   ngOnInit(): void {
     this.loadTables();
@@ -39,11 +43,13 @@ export class TablesComponent implements OnInit {
       next: (tables) => {
         this.tables = tables;
         this.loading = false;
+        this.cdr.detectChanges();
       },
       error: (err) => {
         console.error('Failed to load tables:', err);
         this.error = 'Failed to load database tables';
         this.loading = false;
+        this.cdr.detectChanges();
       }
     });
   }
@@ -52,7 +58,18 @@ export class TablesComponent implements OnInit {
     this.selectedTable = table.name;
     this.currentPage = 1;
     this.searchTerm = '';
+    this.searchField = '';
+    this.columns = [];
+    this.records = [];
+    this.cdr.detectChanges();
     this.loadTableRecords();
+  }
+
+  onTableSelect(tableName: string): void {
+    const table = this.tables.find(t => t.name === tableName);
+    if (table) {
+      this.selectTable(table);
+    }
   }
 
   loadTableRecords(): void {
@@ -67,26 +84,29 @@ export class TablesComponent implements OnInit {
       this.selectedTable,
       this.currentPage,
       this.pageSize,
-      this.searchTerm || undefined
+      this.searchTerm || undefined,
+      this.searchField || undefined
     ).subscribe({
       next: (response: TableRecordsResponse) => {
         this.records = response.data || [];
         this.total = response.metadata?.total || this.records.length;
         this.totalPages = response.metadata?.total_pages || Math.ceil(this.total / this.pageSize);
-        
+
         // Extract column names from first record
         if (this.records.length > 0) {
           this.columns = Object.keys(this.records[0]);
         } else {
           this.columns = [];
         }
-        
+
         this.loadingRecords = false;
+        this.cdr.detectChanges();
       },
       error: (err) => {
         console.error('Failed to load table records:', err);
         this.error = 'Failed to load table records';
         this.loadingRecords = false;
+        this.cdr.detectChanges();
       }
     });
   }

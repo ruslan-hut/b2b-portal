@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
@@ -108,7 +108,8 @@ export class OrderDetailComponent implements OnInit {
     private router: Router,
     private http: HttpClient,
     private productService: ProductService,
-    private translationService: TranslationService
+    private translationService: TranslationService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -181,6 +182,7 @@ export class OrderDetailComponent implements OnInit {
         }
 
         this.loading = false;
+        this.cdr.detectChanges();
         // Load status history after order and items are loaded
         this.loadHistory();
       },
@@ -188,6 +190,7 @@ export class OrderDetailComponent implements OnInit {
         console.error('Failed to load order detail:', err);
         this.error = 'Failed to load order details';
         this.loading = false;
+        this.cdr.detectChanges();
       }
     });
   }
@@ -203,11 +206,13 @@ export class OrderDetailComponent implements OnInit {
         const map = resp.data || {};
         this.history = map[this.orderUID] || [];
         this.historyLoading = false;
+        this.cdr.detectChanges();
       },
       error: (err) => {
         console.error('Failed to load order history', err);
         this.history = [];
         this.historyLoading = false;
+        this.cdr.detectChanges();
       }
     });
   }

@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { LogService, LogEntry, LogFilters } from '../../core/services/log.service';
 
 @Component({
@@ -30,7 +30,10 @@ export class LogsComponent implements OnInit {
   // Expanded rows
   expandedRows = new Set<number>();
 
-  constructor(private logService: LogService) {}
+  constructor(
+    private logService: LogService,
+    private cdr: ChangeDetectorRef
+  ) {}
 
   ngOnInit(): void {
     this.loadLogs();
@@ -69,11 +72,13 @@ export class LogsComponent implements OnInit {
         this.total = response.metadata?.total || this.logs.length;
         this.totalPages = response.metadata?.total_pages || Math.ceil(this.total / this.pageSize);
         this.loading = false;
+        this.cdr.detectChanges();
       },
       error: (err) => {
         console.error('Failed to load logs:', err);
         this.error = 'Failed to load logs';
         this.loading = false;
+        this.cdr.detectChanges();
       }
     });
   }

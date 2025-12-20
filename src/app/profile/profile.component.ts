@@ -7,6 +7,7 @@ import { ClientService, ClientAddress, ClientProfileUpdate, AddressUpsertRequest
 import { TranslationService } from '../core/services/translation.service';
 import { AppSettingsService } from '../core/services/app-settings.service';
 import { Client } from '../core/models/user.model';
+import { DiscountInfo } from '../core/models/app-settings.model';
 
 @Component({
     selector: 'app-profile',
@@ -37,6 +38,8 @@ export class ProfileComponent implements OnInit, OnDestroy {
   client: Client | null = null;
   storeName = '';
   priceTypeName = '';
+  discountInfo: DiscountInfo | null = null;
+  currencySymbol = '';
 
   // Countries for autocomplete
   countries: Country[] = [];
@@ -100,6 +103,16 @@ export class ProfileComponent implements OnInit, OnDestroy {
       }
       if (settings.price_type) {
         this.priceTypeName = settings.price_type.name || settings.price_type.uid;
+      }
+
+      // Get discount info
+      if (settings.discount_info) {
+        this.discountInfo = settings.discount_info;
+      }
+
+      // Get currency symbol for formatting balance
+      if (settings.currency) {
+        this.currencySymbol = settings.currency.sign || settings.currency.code || '';
       }
     } else {
       // Redirect non-clients
@@ -433,6 +446,12 @@ export class ProfileComponent implements OnInit, OnDestroy {
     if (address.city) parts.push(address.city);
     if (address.zipcode) parts.push(address.zipcode);
     return parts.join(', ') || '-';
+  }
+
+  // Format balance from cents to currency display
+  formatBalance(cents: number): string {
+    const amount = (cents / 100).toFixed(2);
+    return `${this.currencySymbol} ${amount}`;
   }
 
   navigateBack(): void {

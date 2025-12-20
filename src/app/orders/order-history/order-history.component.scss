@@ -60,12 +60,57 @@
 
 .filters-section {
   margin-bottom: 30px;
-  padding: 20px;
   background: white;
   border-radius: 12px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+
+  .filters-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+
+    &:hover {
+      background: #f8f9fa;
+    }
+
+    .filters-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      color: #333;
+
+      .filter-icon {
+        font-size: 20px;
+        color: #667eea;
+      }
+
+      .active-filters-badge {
+        width: 8px;
+        height: 8px;
+        background: #667eea;
+        border-radius: 50%;
+      }
+    }
+
+    .expand-icon {
+      font-size: 24px;
+      color: #666;
+      transition: transform 0.2s ease;
+    }
+  }
+
+  &.expanded .filters-header {
+    border-bottom: 1px solid #e1e8ed;
+  }
 
   .filters-container {
+    padding: 20px;
     display: flex;
     flex-wrap: wrap;
     gap: 15px;
@@ -195,9 +240,15 @@
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   padding: 24px;
   transition: all 0.3s ease;
+  cursor: pointer;
 
   &:hover {
     box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
+    border-color: #667eea;
+  }
+
+  &:active {
+    background: #fafbfc;
   }
 
   .order-header {
@@ -343,26 +394,15 @@
       }
     }
 
-    .btn {
-      padding: 10px 20px;
-      font-size: 14px;
-      font-weight: 600;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: all 0.3s ease;
-
-      &.btn-secondary {
-        background-color: #f8f9fa;
-        color: #333;
-        border: 2px solid #e1e8ed;
-
-        &:hover {
-          background-color: #e9ecef;
-          border-color: #dee2e6;
-        }
-      }
+    .chevron-icon {
+      color: #999;
+      font-size: 24px;
+      transition: color 0.2s ease;
     }
+  }
+
+  &:hover .chevron-icon {
+    color: #667eea;
   }
 }
 
@@ -373,34 +413,287 @@
 }
 
 @media (max-width: 768px) {
+  .order-history-container {
+    padding: 16px 12px;
+  }
+
   .page-header {
     flex-direction: column;
     align-items: flex-start;
-    gap: 15px;
+    gap: 8px;
+    margin-bottom: 16px;
+
+    h1 {
+      font-size: 22px;
+    }
+  }
+
+  .loading-container {
+    padding: 40px 16px;
+
+    .spinner-large {
+      width: 40px;
+      height: 40px;
+      margin-bottom: 16px;
+    }
+
+    p {
+      font-size: 14px;
+    }
   }
 
   .filters-section {
+    margin-bottom: 12px;
+    border-radius: 8px;
+
+    .filters-header {
+      padding: 12px;
+      min-height: 44px;
+
+      .filters-title {
+        font-size: 14px;
+        gap: 6px;
+
+        .filter-icon {
+          font-size: 18px;
+        }
+
+        .active-filters-badge {
+          width: 6px;
+          height: 6px;
+        }
+      }
+
+      .expand-icon {
+        font-size: 22px;
+      }
+    }
+
     .filters-container {
+      padding: 12px;
       flex-direction: column;
       align-items: stretch;
+      gap: 10px;
 
       .filter-group {
         min-width: 100%;
+        gap: 4px;
+
+        label {
+          font-size: 12px;
+        }
+
+        .filter-select,
+        .filter-input {
+          padding: 10px 12px;
+          font-size: 16px; // Prevents iOS zoom
+          border-radius: 8px;
+        }
       }
 
       .btn {
         width: 100%;
+        min-height: 44px;
+        padding: 10px 16px;
+        font-size: 14px;
       }
     }
   }
 
-  .order-footer {
-    flex-direction: column;
-    gap: 15px;
-    align-items: flex-start;
+  .no-matches {
+    padding: 24px 12px;
+    border-radius: 8px;
+    margin-bottom: 12px;
+
+    p {
+      font-size: 14px;
+    }
+  }
+
+  .empty-state {
+    padding: 40px 16px;
+
+    .empty-icon {
+      font-size: 56px;
+      margin-bottom: 16px;
+    }
+
+    h2 {
+      font-size: 18px;
+      margin-bottom: 8px;
+    }
+
+    p {
+      font-size: 14px;
+      margin-bottom: 20px;
+    }
 
     .btn {
-      width: 100%;
+      padding: 12px 24px;
+      font-size: 14px;
+      min-height: 44px;
+    }
+  }
+
+  .orders-list {
+    gap: 8px;
+  }
+
+  .order-card {
+    padding: 12px;
+    border-radius: 8px;
+
+    &:hover {
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .order-header {
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 10px;
+
+      .order-info {
+        h3 {
+          font-size: 15px;
+          margin-bottom: 2px;
+        }
+
+        .order-date {
+          font-size: 12px;
+        }
+
+        .order-updated {
+          margin-top: 2px;
+
+          small {
+            font-size: 11px;
+            color: #999;
+          }
+        }
+      }
+
+      .order-status {
+        .status-badge {
+          padding: 4px 8px;
+          font-size: 10px;
+        }
+      }
+    }
+
+    .order-items {
+      margin-bottom: 10px;
+
+      .item {
+        padding: 8px 0;
+
+        .item-info {
+          .item-name {
+            font-size: 13px;
+            margin-bottom: 2px;
+          }
+
+          .item-quantity {
+            font-size: 11px;
+          }
+        }
+
+        .item-price {
+          font-size: 13px;
+        }
+      }
+    }
+
+    .order-comment {
+      margin-bottom: 10px;
+      padding: 8px 10px;
+
+      .comment-label {
+        font-size: 10px;
+        margin-bottom: 4px;
+      }
+
+      .comment-text {
+        font-size: 12px;
+      }
+    }
+
+    .order-footer {
+      flex-direction: row;
+      gap: 8px;
+      align-items: center;
+      padding-top: 10px;
+
+      .order-total {
+        flex: 1;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+
+        .total-label {
+          font-size: 13px;
+          margin-right: 0;
+        }
+
+        .total-amount {
+          font-size: 18px;
+        }
+      }
+
+      .chevron-icon {
+        font-size: 22px;
+        flex-shrink: 0;
+      }
+    }
+  }
+}
+
+// Extra small screens
+@media (max-width: 480px) {
+  .order-history-container {
+    padding: 12px 10px;
+  }
+
+  .filters-section {
+    .filters-header {
+      padding: 10px;
+    }
+
+    .filters-container {
+      padding: 10px;
+      gap: 8px;
+
+      .filter-group {
+        .filter-select,
+        .filter-input {
+          padding: 10px;
+        }
+      }
+    }
+  }
+
+  .order-card {
+    padding: 10px;
+
+    .order-header {
+      gap: 6px;
+      margin-bottom: 8px;
+
+      .order-info h3 {
+        font-size: 14px;
+      }
+    }
+
+    .order-footer {
+      gap: 6px;
+      padding-top: 8px;
+
+      .order-total .total-amount {
+        font-size: 16px;
+      }
+
+      .chevron-icon {
+        font-size: 20px;
+      }
     }
   }
 }

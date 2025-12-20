@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { environment } from '../../../environments/environment';
@@ -93,7 +93,8 @@ export class OrdersComponent implements OnInit {
     private currencyService: CurrencyService,
     private storeService: StoreService,
     private priceTypeService: PriceTypeService,
-    private router: Router
+    private router: Router,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -118,6 +119,7 @@ export class OrdersComponent implements OnInit {
           { value: '', label: 'All Price Types' },
           ...Object.values(priceTypes).map(pt => ({ value: pt.uid, label: pt.name })).sort((a, b) => a.label.localeCompare(b.label))
         ];
+        this.cdr.detectChanges();
 
         this.loadOrders(); // Now load the orders
       },
@@ -125,6 +127,7 @@ export class OrdersComponent implements OnInit {
         console.error('Failed to load filter data:', err);
         this.error = 'Failed to load filter data';
         this.loading = false;
+        this.cdr.detectChanges();
       }
     });
   }
@@ -187,11 +190,13 @@ export class OrdersComponent implements OnInit {
 
         this.applySearch();
         this.loading = false;
+        this.cdr.detectChanges();
       },
       error: (err) => {
         console.error('Failed to load orders:', err);
         this.error = 'Failed to load orders';
         this.loading = false;
+        this.cdr.detectChanges();
       }
     });
   }

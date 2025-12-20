@@ -100,22 +100,18 @@ export class AdminService {
     tableName: string,
     page: number = 1,
     count: number = 100,
-    search?: string
+    search?: string,
+    field?: string
   ): Observable<TableRecordsResponse> {
     const url = `${this.apiUrl}/admin/tables/${tableName}/records`;
-    
-    let params = new HttpParams()
-      .set('page', page.toString())
-      .set('count', count.toString());
-    
-    if (search) {
-      params = params.set('search', search);
-    }
 
     return this.http.post<TableRecordsResponse>(url, {
       page,
       count,
-      search
+      data: {
+        search,
+        field
+      }
     });
   }
 

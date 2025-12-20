@@ -22,26 +22,38 @@
   }
 
   @if (!loading && orders.length > 0) {
-    <div class="filters-section">
-      <div class="filters-container">
-        <div class="filter-group">
-          <label for="status-filter">{{ 'orders.status' | translate }}:</label>
-          <select id="status-filter" [(ngModel)]="statusFilter" (change)="applyFilters()" class="filter-select">
-            @for (option of getStatusOptions(); track option) {
-              <option [value]="option.value">{{ option.label }}</option>
-            }
-          </select>
+    <div class="filters-section" [class.expanded]="filtersExpanded">
+      <div class="filters-header" (click)="toggleFilters()">
+        <div class="filters-title">
+          <span class="material-icons filter-icon">filter_list</span>
+          <span>{{ 'common.filter' | translate }}</span>
+          @if (hasActiveFilters()) {
+            <span class="active-filters-badge"></span>
+          }
         </div>
-        <div class="filter-group">
-          <label for="date-from">{{ 'orders.dateFrom' | translate }}:</label>
-          <input type="date" id="date-from" [(ngModel)]="dateFromFilter" (change)="applyFilters()" class="filter-input">
-        </div>
-        <div class="filter-group">
-          <label for="date-to">{{ 'orders.dateTo' | translate }}:</label>
-          <input type="date" id="date-to" [(ngModel)]="dateToFilter" (change)="applyFilters()" class="filter-input">
-        </div>
-        <button class="btn btn-secondary" (click)="clearFilters()">{{ 'orders.clearFilters' | translate }}</button>
+        <span class="material-icons expand-icon">{{ filtersExpanded ? 'expand_less' : 'expand_more' }}</span>
       </div>
+      @if (filtersExpanded) {
+        <div class="filters-container">
+          <div class="filter-group">
+            <label for="status-filter">{{ 'orders.status' | translate }}:</label>
+            <select id="status-filter" [(ngModel)]="statusFilter" (change)="applyFilters()" class="filter-select">
+              @for (option of getStatusOptions(); track option) {
+                <option [value]="option.value">{{ option.label }}</option>
+              }
+            </select>
+          </div>
+          <div class="filter-group">
+            <label for="date-from">{{ 'orders.dateFrom' | translate }}:</label>
+            <input type="date" id="date-from" [(ngModel)]="dateFromFilter" (change)="applyFilters()" class="filter-input">
+          </div>
+          <div class="filter-group">
+            <label for="date-to">{{ 'orders.dateTo' | translate }}:</label>
+            <input type="date" id="date-to" [(ngModel)]="dateToFilter" (change)="applyFilters()" class="filter-input">
+          </div>
+          <button class="btn btn-secondary" (click)="clearFilters()">{{ 'orders.clearFilters' | translate }}</button>
+        </div>
+      }
     </div>
   }
 
@@ -54,12 +66,11 @@
   @if (!loading && filteredOrders.length > 0) {
     <div class="orders-list">
       @for (order of filteredOrders; track order) {
-        <div class="order-card">
+        <div class="order-card" (click)="viewOrderDetails(order.id)">
           <div class="order-header">
             <div class="order-info">
               <h3>{{ getOrderTitle(order) }}</h3>
               <span class="order-date">{{ order.createdAt | date: 'medium' }}</span>
-              <!-- Show last updated if available -->
               @if (order.updatedAt) {
                 <div class="order-updated">
                   <small>{{ 'orders.lastUpdated' | translate }}: {{ order.updatedAt | date: 'short' }}</small>
@@ -77,9 +88,7 @@
               <span class="total-label">{{ 'products.total' | translate }}:</span>
               <span class="total-amount">{{ order.totalAmount.toFixed(2) }}{{ currencyName ? ' ' + currencyName : '' }}</span>
             </div>
-            <button class="btn btn-secondary" (click)="viewOrderDetails(order.id)">
-              {{ 'orders.viewDetails' | translate }}
-            </button>
+            <span class="chevron-icon material-icons">chevron_right</span>
           </div>
         </div>
       }

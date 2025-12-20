@@ -1,0 +1,329 @@
+<div class="cart-page">
+  <!-- Header -->
+  <div class="cart-page-header">
+    <button class="btn-back" (click)="goBack()">
+      <span class="material-icons">arrow_back</span>
+      <span class="back-text">{{ 'navigation.products' | translate }}</span>
+    </button>
+    <h1 class="cart-title">
+      <span class="material-icons cart-title-icon">shopping_cart</span>
+      {{ 'navigation.cart' | translate }}
+      <span class="cart-count">({{ cartItems.length }})</span>
+    </h1>
+  </div>
+
+  <!-- Empty Cart State -->
+  @if (cartItems.length === 0) {
+    <div class="empty-cart-container">
+      <div class="empty-cart">
+        <span class="material-icons empty-icon">shopping_cart</span>
+        <h2>{{ 'messages.cartCleared' | translate }}</h2>
+        <p class="empty-description">{{ 'messages.cartEmpty' | translate }}</p>
+        <button class="btn-continue-shopping" (click)="goBack()">
+          <span class="material-icons">storefront</span>
+          {{ 'navigation.products' | translate }}
+        </button>
+      </div>
+    </div>
+  }
+
+  <!-- Cart Content -->
+  @if (cartItems.length > 0) {
+    <div class="cart-page-content">
+      <!-- Cart Items Section -->
+      <div class="cart-items-section">
+        <!-- Desktop View -->
+        <div class="cart-items-list cart-items-desktop">
+          @for (item of cartItems; track item.productId) {
+            <div class="cart-item-card" [class.insufficient-stock]="item.insufficientStock">
+              <div class="item-main">
+                <div class="item-info">
+                  <h3 class="item-name">{{ item.productName }}</h3>
+                  @if (item.sku) {
+                    <span class="item-sku">SKU: {{ item.sku }}</span>
+                  }
+                </div>
+                <div class="item-pricing">
+                  <div class="price-per-unit">
+                    @if (hasDiscount) {
+                      <span class="price-original">{{ item.price.toFixed(2) }}</span>
+                    }
+                    <span class="price-current" [class.discounted]="hasDiscount">
+                      {{ (item.priceDiscount || item.price).toFixed(2) }}
+                    </span>
+                    <span class="price-unit">/ {{ 'products.unit' | translate }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="item-controls">
+                <div class="quantity-control" role="group" aria-label="Quantity controls">
+                  <button
+                    class="qty-btn"
+                    type="button"
+                    (click)="updateQuantity(item.productId, item.quantity - 1)"
+                    [disabled]="item.quantity <= 1"
+                  >
+                    <span class="material-icons">remove</span>
+                  </button>
+                  <input
+                    class="qty-input"
+                    type="number"
+                    min="1"
+                    [ngModel]="item.quantity"
+                    (ngModelChange)="updateQuantity(item.productId, $event)"
+                    aria-label="Quantity"
+                  />
+                  <button
+                    class="qty-btn"
+                    type="button"
+                    (click)="updateQuantity(item.productId, item.quantity + 1)"
+                  >
+                    <span class="material-icons">add</span>
+                  </button>
+                </div>
+                <div class="item-subtotal">
+                  <span class="subtotal-label">{{ 'products.total' | translate }}:</span>
+                  <span class="subtotal-value">{{ item.subtotal.toFixed(2) }}</span>
+                </div>
+                <button class="btn-remove" (click)="removeFromCart(item.productId)">
+                  <span class="material-icons">delete_outline</span>
+                </button>
+              </div>
+
+              @if (item.insufficientStock) {
+                <div class="stock-warning">
+                  <span class="material-icons warning-icon">warning</span>
+                  <span class="warning-text">
+                    {{ 'products.insufficientStock' | translate: {available: item.availableQuantity ?? 0} }}
+                  </span>
+                </div>
+              }
+            </div>
+          }
+        </div>
+
+        <!-- Mobile View - Expandable Cards -->
+        <div class="cart-items-list cart-items-mobile">
+          @for (item of visibleMobileItems; track item.productId) {
+            <div
+              class="cart-item-card-mobile"
+              [class.expanded]="isItemExpanded(item.productId)"
+              [class.insufficient-stock]="item.insufficientStock"
+            >
+              <!-- Collapsed Row -->
+              <div class="item-collapsed" (click)="toggleItemExpanded(item.productId)">
+                <div class="item-collapsed-info">
+                  <span class="item-name">{{ item.productName }}</span>
+                  @if (item.insufficientStock) {
+                    <span class="item-warning-badge">
+                      <span class="material-icons">warning</span>
+                    </span>
+                  }
+                </div>
+                <div class="item-collapsed-right">
+                  <span class="item-qty-badge">{{ item.quantity }}</span>
+                  <span class="item-subtotal">{{ item.subtotal.toFixed(2) }}</span>
+                  <span class="expand-icon material-icons">
+                    {{ isItemExpanded(item.productId) ? 'expand_less' : 'expand_more' }}
+                  </span>
+                </div>
+              </div>
+
+              <!-- Expanded Content -->
+              @if (isItemExpanded(item.productId)) {
+                <div class="item-expanded" (click)="$event.stopPropagation()">
+                  <!-- Price Row -->
+                  <div class="expanded-row">
+                    <span class="row-label">{{ 'products.price' | translate }}:</span>
+                    <div class="row-value price-value">
+                      @if (hasDiscount) {
+                        <span class="price-original">{{ item.price.toFixed(2) }}</span>
+                      }
+                      <span class="price-current" [class.discounted]="hasDiscount">
+                        {{ (item.priceDiscount || item.price).toFixed(2) }}
+                      </span>
+                    </div>
+                  </div>
+
+                  <!-- Quantity Controls -->
+                  <div class="expanded-row">
+                    <span class="row-label">{{ 'products.quantity' | translate }}:</span>
+                    <div class="quantity-control" role="group" aria-label="Quantity controls">
+                      <button
+                        class="qty-btn"
+                        type="button"
+                        (click)="updateQuantity(item.productId, item.quantity - 1)"
+                        [disabled]="item.quantity <= 1"
+                      >
+                        <span class="material-icons">remove</span>
+                      </button>
+                      <input
+                        class="qty-input"
+                        type="number"
+                        min="1"
+                        [ngModel]="item.quantity"
+                        (ngModelChange)="updateQuantity(item.productId, $event)"
+                        (click)="$event.stopPropagation()"
+                        aria-label="Quantity"
+                      />
+                      <button
+                        class="qty-btn"
+                        type="button"
+                        (click)="updateQuantity(item.productId, item.quantity + 1)"
+                      >
+                        <span class="material-icons">add</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Stock Warning -->
+                  @if (item.insufficientStock) {
+                    <div class="stock-warning">
+                      <span class="material-icons warning-icon">warning</span>
+                      <span class="warning-text">
+                        {{ 'products.insufficientStock' | translate: {available: item.availableQuantity ?? 0} }}
+                      </span>
+                    </div>
+                  }
+
+                  <!-- Total Row -->
+                  <div class="expanded-row total-row">
+                    <span class="row-label">{{ 'products.total' | translate }}:</span>
+                    <span class="row-value total-value">{{ item.subtotal.toFixed(2) }}</span>
+                  </div>
+
+                  <!-- Delete Button -->
+                  <button class="btn-delete" (click)="removeFromCart(item.productId)">
+                    <span class="material-icons">delete</span>
+                    {{ 'common.delete' | translate }}
+                  </button>
+                </div>
+              }
+            </div>
+          }
+
+          <!-- Show More Button -->
+          @if (hasMoreMobileItems && !showAllMobileItems) {
+            <button class="btn-show-more" (click)="toggleShowAllMobileItems()">
+              <span class="material-icons">expand_more</span>
+              {{ 'orders.showMore' | translate }} ({{ remainingMobileItemsCount }})
+            </button>
+          }
+
+          <!-- Show Less Button -->
+          @if (hasMoreMobileItems && showAllMobileItems) {
+            <button class="btn-show-less" (click)="toggleShowAllMobileItems()">
+              <span class="material-icons">expand_less</span>
+              {{ 'orders.showLess' | translate }}
+            </button>
+          }
+        </div>
+      </div>
+
+      <!-- Order Summary Section -->
+      <div class="order-summary-section">
+        <div class="order-summary-card">
+          <h2 class="summary-title">{{ 'orders.orderTotals' | translate }}</h2>
+
+          <!-- Cart Totals Breakdown -->
+          <div class="cart-totals-breakdown">
+            @if (hasDiscount) {
+              <div class="total-row original-total-row">
+                <span class="total-label">{{ 'products.originalPrice' | translate }}:</span>
+                <span class="total-amount original-price-amount">{{ cartOriginalTotal.toFixed(2) }}</span>
+              </div>
+              <div class="total-row discount-row">
+                <span class="total-label">{{ 'products.discount' | translate }} ({{ currentDiscount }}%):</span>
+                <span class="total-amount discount-amount">-{{ cartDiscountAmount.toFixed(2) }}</span>
+              </div>
+            }
+            <div class="total-row subtotal-row" [class.has-discount-above]="hasDiscount">
+              <span class="total-label">{{ 'products.subtotal' | translate }}:</span>
+              <span class="total-amount">{{ cartSubtotal.toFixed(2) }}</span>
+            </div>
+            <div class="total-row vat-row">
+              <span class="total-label">{{ 'products.vat' | translate }} ({{ currentVatRate }}%):</span>
+              <span class="total-amount">{{ cartVatAmount.toFixed(2) }}</span>
+            </div>
+            <div class="total-row final-total-row">
+              <span class="total-label">{{ 'products.total' | translate }}:</span>
+              <span class="total-amount total-emphasis">
+                {{ cartTotal.toFixed(2) }}{{ currencyName ? ' ' + currencyName : '' }}
+              </span>
+            </div>
+          </div>
+
+          <!-- Delivery Address Selection -->
+          @if (entityType === 'client') {
+            <div class="address-section">
+              <app-cart-address
+                [address]="currentAddress"
+                [isDraft]="true"
+                (addressChange)="onAddressChange($event)"
+              ></app-cart-address>
+            </div>
+          }
+
+          <!-- Order Comment -->
+          <div class="comment-section">
+            <div class="comment-header" (click)="commentSectionExpanded = !commentSectionExpanded">
+              <label class="comment-label">{{ 'orders.comment' | translate }}:</label>
+              <button
+                type="button"
+                class="comment-toggle"
+                [attr.aria-expanded]="commentSectionExpanded"
+                aria-label="Toggle comment section"
+              >
+                <span class="material-icons">{{ commentSectionExpanded ? 'expand_less' : 'expand_more' }}</span>
+              </button>
+            </div>
+            <div class="comment-content" [class.expanded]="commentSectionExpanded">
+              <textarea
+                id="orderComment"
+                [(ngModel)]="orderComment"
+                [placeholder]="'orders.commentPlaceholder' | translate"
+                class="comment-textarea"
+                rows="3"
+              ></textarea>
+            </div>
+          </div>
+
+          <!-- Stock Warning -->
+          @if (hasInsufficientStock) {
+            <div class="cart-stock-warning">
+              <span class="material-icons">warning</span>
+              <span>{{ 'errors.insufficientStock' | translate }}</span>
+            </div>
+          }
+
+          <!-- Checkout Button -->
+          <button
+            class="btn-checkout"
+            (click)="proceedToCheckout()"
+            [disabled]="isCreatingOrder || hasInsufficientStock || (entityType === 'client' && !hasSelectedAddress())"
+          >
+            @if (isCreatingOrder) {
+              <span class="material-icons spinner">sync</span>
+              {{ 'common.loading' | translate }}
+            } @else {
+              <span class="material-icons">check_circle</span>
+              {{ 'products.confirmOrder' | translate }}
+            }
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Order Confirmation Dialog -->
+  @if (showOrderDialog) {
+    <app-order-confirmation-dialog
+      [total]="cartTotal"
+      [currencyName]="currencyName"
+      [isConfirming]="isCreatingOrder"
+      [isSuccess]="isOrderSuccess"
+      (closed)="closeOrderDialog()"
+    ></app-order-confirmation-dialog>
+  }
+</div>

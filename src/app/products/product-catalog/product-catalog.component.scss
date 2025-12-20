@@ -15,18 +15,56 @@
     display: flex;
     gap: 12px;
 
-    .search-input {
+    .search-input-wrapper {
       flex: 7;
-      padding: 14px 20px;
-      font-size: 15px;
-      border: 2px solid #e1e8ed;
-      border-radius: 12px;
-      outline: none;
-      transition: all 0.3s ease;
-      box-sizing: border-box;
+      position: relative;
+      display: flex;
+      align-items: center;
 
-      &:focus {
-        border-color: #667eea;
+      .search-input {
+        width: 100%;
+        padding: 14px 50px 14px 20px;
+        font-size: 15px;
+        border: 2px solid #e1e8ed;
+        border-radius: 12px;
+        outline: none;
+        transition: all 0.3s ease;
+        box-sizing: border-box;
+
+        &:focus {
+          border-color: #667eea;
+        }
+      }
+
+      .search-icon-btn {
+        position: absolute;
+        right: 8px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 36px;
+        height: 36px;
+        border: none;
+        border-radius: 8px;
+        background: transparent;
+        color: #667eea;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+
+        .material-icons {
+          font-size: 22px;
+        }
+
+        &:hover {
+          color: #764ba2;
+          background: rgba(102, 126, 234, 0.1);
+        }
+
+        &:active {
+          transform: translateY(-50%) scale(0.95);
+        }
       }
     }
 
@@ -411,18 +449,56 @@
     display: flex;
     gap: 12px;
 
-    .search-input-bulk {
+    .search-input-wrapper {
       flex: 7;
-      padding: 12px 18px;
-      font-size: 15px;
-      border: 2px solid #e1e8ed;
-      border-radius: 8px;
-      outline: none;
-      transition: all 0.3s ease;
-      box-sizing: border-box;
+      position: relative;
+      display: flex;
+      align-items: center;
 
-      &:focus {
-        border-color: #667eea;
+      .search-input-bulk {
+        width: 100%;
+        padding: 12px 50px 12px 18px;
+        font-size: 15px;
+        border: 2px solid #e1e8ed;
+        border-radius: 8px;
+        outline: none;
+        transition: all 0.3s ease;
+        box-sizing: border-box;
+
+        &:focus {
+          border-color: #667eea;
+        }
+      }
+
+      .search-icon-btn {
+        position: absolute;
+        right: 6px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 32px;
+        height: 32px;
+        border: none;
+        border-radius: 6px;
+        background: transparent;
+        color: #667eea;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+
+        .material-icons {
+          font-size: 20px;
+        }
+
+        &:hover {
+          color: #764ba2;
+          background: rgba(102, 126, 234, 0.1);
+        }
+
+        &:active {
+          transform: translateY(-50%) scale(0.95);
+        }
       }
     }
 
@@ -487,30 +563,6 @@
         font-size: 18px;
         font-weight: 700;
       }
-    }
-  }
-
-  .btn-add-bulk {
-    padding: 12px 28px;
-    font-size: 14px;
-    font-weight: 600;
-    border: none;
-    border-radius: 8px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    white-space: nowrap;
-
-    &:hover:not(:disabled) {
-      transform: translateY(-2px);
-      box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
-    }
-
-    &:disabled {
-      background: #ccc;
-      cursor: not-allowed;
-      transform: none;
     }
   }
 }
@@ -617,6 +669,31 @@
       align-items: flex-end;
       gap: 6px;
       flex-shrink: 0;
+
+      .card-price-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+
+        .card-quantity-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 3px;
+          padding: 3px 8px;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          border-radius: 10px;
+          color: white;
+          font-size: 12px;
+          font-weight: 600;
+          margin: 0;
+
+          .quantity-icon {
+            font-size: 14px;
+            display: inline-flex;
+            align-items: center;
+          }
+        }
+      }
 
       .card-price {
         font-size: 16px;
@@ -1258,9 +1335,15 @@
     .search-filter-container {
       flex-direction: column;
 
-      .search-input,
+      .search-input-wrapper,
       .category-selector {
         width: 100%;
+      }
+
+      .search-input-wrapper {
+        .search-input {
+          width: 100%;
+        }
       }
     }
 
@@ -1312,9 +1395,15 @@
       min-width: 100%;
       flex-direction: column;
 
-      .search-input-bulk,
+      .search-input-wrapper,
       .category-selector-bulk {
         width: 100%;
+      }
+
+      .search-input-wrapper {
+        .search-input-bulk {
+          width: 100%;
+        }
       }
     }
 
@@ -1326,10 +1415,6 @@
 
     .bulk-info {
       text-align: center;
-    }
-
-    .btn-add-bulk {
-      width: 100%;
     }
   }
 
@@ -1445,5 +1530,131 @@
       font-size: 1.1em;
       font-weight: bold;
     }
+  }
+}
+
+// Scroll to Top Button - hidden on desktop by default
+.btn-scroll-to-top {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .btn-scroll-to-top {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    bottom: calc(20px + env(safe-area-inset-bottom, 0));
+    right: 16px;
+    width: 48px;
+    height: 48px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    border-radius: 50%;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    cursor: pointer;
+    z-index: 100;
+    transition: all 0.3s ease;
+    animation: fadeInUp 0.3s ease;
+
+    .material-icons {
+      font-size: 28px;
+      color: white;
+    }
+
+    &:hover {
+      transform: scale(1.1);
+      box-shadow: 0 6px 16px rgba(102, 126, 234, 0.5);
+    }
+
+    &:active {
+      transform: scale(0.95);
+    }
+  }
+
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
+
+// Floating Show More Button
+.btn-floating-show-more {
+  position: fixed;
+  bottom: calc(24px + env(safe-area-inset-bottom, 0));
+  left: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  padding: 0;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 6px 24px rgba(102, 126, 234, 0.5);
+  z-index: 100;
+  animation: floatIn 0.3s ease;
+
+  .material-icons {
+    font-size: 28px;
+  }
+
+  .spinner {
+    animation: spin 1s linear infinite;
+  }
+
+  &:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 28px rgba(102, 126, 234, 0.6);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+  }
+
+  &:disabled {
+    opacity: 0.8;
+    cursor: not-allowed;
+  }
+
+  @media (max-width: 768px) {
+    left: 16px;
+    bottom: calc(20px + env(safe-area-inset-bottom, 0)); // Same level as scroll-to-top button
+    width: 48px;
+    height: 48px;
+
+    .material-icons {
+      font-size: 24px;
+    }
+  }
+}
+
+@keyframes floatIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
   }
 }

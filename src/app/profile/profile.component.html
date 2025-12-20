@@ -19,26 +19,56 @@
     <div class="profile-content">
       <!-- Personal Information Section -->
       <section class="profile-section">
-        <h2>{{ 'profile.personalInfo' | translate }}</h2>
-        <!-- Read-only fields notice -->
-        <div class="readonly-notice">
-          <span class="info-icon">i</span>
-          {{ 'profile.readonlyNotice' | translate }}
+        <div class="section-header">
+          <h2>{{ 'profile.personalInfo' | translate }}</h2>
+          <button
+            type="button"
+            class="btn btn-primary"
+            [disabled]="profileForm.invalid || profileSaving"
+            (click)="saveProfile()"
+            >
+            @if (profileSaving) {
+              <span class="spinner-small"></span>
+            }
+            {{ profileSaving ? ('common.saving' | translate) : ('profile.saveChanges' | translate) }}
+          </button>
         </div>
+        <!-- Read-only fields notice -->
+<!--        <div class="readonly-notice">-->
+<!--          <span class="info-icon">i</span>-->
+<!--          {{ 'profile.readonlyNotice' | translate }}-->
+<!--        </div>-->
         <!-- Read-only Information -->
         <div class="readonly-fields">
-          <div class="field-group">
-            <label>{{ 'profile.store' | translate }}</label>
-            <span class="field-value">{{ storeName || '-' }}</span>
-          </div>
-          <div class="field-group">
-            <label>{{ 'profile.priceType' | translate }}</label>
-            <span class="field-value">{{ priceTypeName || '-' }}</span>
-          </div>
+<!--          <div class="field-group">-->
+<!--            <label>{{ 'profile.store' | translate }}</label>-->
+<!--            <span class="field-value">{{ storeName || '-' }}</span>-->
+<!--          </div>-->
+<!--          <div class="field-group">-->
+<!--            <label>{{ 'profile.priceType' | translate }}</label>-->
+<!--            <span class="field-value">{{ priceTypeName || '-' }}</span>-->
+<!--          </div>-->
           <div class="field-group">
             <label>{{ 'profile.discount' | translate }}</label>
-            <span class="field-value">{{ client.discount || 0 }}%</span>
+            <span class="field-value">{{ discountInfo?.current_discount || client.discount || 0 }}%</span>
           </div>
+          @if (discountInfo && !discountInfo.is_fixed_discount) {
+            <div class="field-group">
+              <label>{{ 'profile.balance' | translate }}</label>
+              <span class="field-value">{{ formatBalance(discountInfo.current_balance) }}</span>
+            </div>
+            @if (discountInfo.has_next_tier) {
+              <div class="field-group discount-progress">
+                <label>{{ 'profile.nextTier' | translate }}</label>
+                <div class="progress-info">
+                  <span class="field-value">{{ discountInfo.next_discount }}%</span>
+                  <span class="progress-detail">
+                    {{ 'profile.amountToNext' | translate }}: {{ formatBalance(discountInfo.amount_to_next || 0) }}
+                  </span>
+                </div>
+              </div>
+            }
+          }
           @if (client.vat_rate) {
             <div class="field-group">
               <label>{{ 'profile.vatRate' | translate }}</label>
@@ -125,18 +155,6 @@
               {{ profileError }}
             </div>
           }
-          <div class="form-actions">
-            <button
-              type="submit"
-              class="btn btn-primary"
-              [disabled]="profileForm.invalid || profileSaving"
-              >
-              @if (profileSaving) {
-                <span class="spinner-small"></span>
-              }
-              {{ profileSaving ? ('common.saving' | translate) : ('profile.saveChanges' | translate) }}
-            </button>
-          </div>
         </form>
       </section>
       <!-- Addresses Section -->
@@ -297,10 +315,11 @@
               placeholder="{{ 'profile.addressPlaceholder' | translate }}"
             ></textarea>
           </div>
-          <div class="form-group checkbox-group">
-            <label class="checkbox-label">
+          <div class="form-group switch-group">
+            <span class="switch-label">{{ 'profile.setAsDefault' | translate }}</span>
+            <label class="switch">
               <input type="checkbox" formControlName="is_default">
-              <span>{{ 'profile.setAsDefault' | translate }}</span>
+              <span class="slider"></span>
             </label>
           </div>
           <div class="modal-actions">

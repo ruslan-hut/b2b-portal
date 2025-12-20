@@ -1,12 +1,15 @@
 <div class="order-detail-container">
   <div class="detail-header">
-    <button class="btn-back" (click)="goBack()">&larr; {{ 'orders.backToOrders' | translate }}</button>
+    <div class="header-actions">
+      <button class="btn-back" (click)="goBack()">&larr; {{ 'orders.backToOrders' | translate }}</button>
+      @if (!loading && !error && order) {
+        <button class="btn-export" (click)="exportToExcel()">
+          <span class="material-icons">download</span>
+          <span class="btn-export-text">Excel</span>
+        </button>
+      }
+    </div>
     <h2>{{ 'orders.orderDetails' | translate }}</h2>
-    @if (!loading && !error && order) {
-      <button class="btn-export" (click)="exportToExcel()">
-        {{ 'orders.exportToExcel' | translate }}
-      </button>
-    }
   </div>
 
   @if (loading) {
@@ -70,8 +73,9 @@
       }
     </div>
     <div class="section items-section">
-      <h3>{{ 'orders.orderItems' | translate }}</h3>
-      <table class="items-table">
+      <h3>{{ 'orders.orderItems' | translate }} ({{ order.items.length }})</h3>
+      <!-- Desktop table view -->
+      <table class="items-table items-table-desktop">
         <thead>
           <tr>
             <th>{{ 'orders.sku' | translate }}</th>
@@ -90,11 +94,11 @@
               <td>{{ item.sku || '-' }}</td>
               <td>{{ item.productName }}</td>
               <td>{{ item.quantity }}</td>
-              <td>{{ item.price.toFixed(2) }}{{ currencyName ? ' ' + currencyName : '' }}</td>
-              <td>{{ (item.priceWithVat || 0).toFixed(2) }}{{ currencyName ? ' ' + currencyName : '' }}</td>
+              <td>{{ item.price.toFixed(2) }}</td>
+              <td>{{ (item.priceWithVat || 0).toFixed(2) }}</td>
               <td>{{ item.discount !== undefined ? item.discount + '%' : '-' }}</td>
-              <td>{{ (item.priceAfterDiscountWithVat || 0).toFixed(2) }}{{ currencyName ? ' ' + currencyName : '' }}</td>
-              <td>{{ item.subtotal.toFixed(2) }}{{ currencyName ? ' ' + currencyName : '' }}</td>
+              <td>{{ (item.priceAfterDiscountWithVat || 0).toFixed(2) }}</td>
+              <td>{{ item.subtotal.toFixed(2) }}</td>
             </tr>
           }
           @if (order.items.length === 0) {
@@ -104,6 +108,66 @@
           }
         </tbody>
       </table>
+      <!-- Mobile card view -->
+      <div class="items-cards-mobile">
+        @if (order.items.length === 0) {
+          <div class="no-data-card">{{ 'orders.noItems' | translate }}</div>
+        }
+        @for (item of getVisibleItems(); track item; let i = $index) {
+          <div class="item-card" [class.expanded]="isItemExpanded(i)" (click)="toggleItemExpanded(i)">
+            <!-- Collapsed view: name, qty, total -->
+            <div class="item-card-collapsed">
+              <div class="collapsed-main">
+                <span class="collapsed-name">{{ item.productName }}</span>
+                <span class="collapsed-sku">{{ item.sku || '' }}</span>
+              </div>
+              <div class="collapsed-right">
+                <span class="collapsed-qty">{{ item.quantity }}</span>
+                <span class="collapsed-total">{{ item.subtotal.toFixed(2) }}</span>
+              </div>
+              <span class="expand-icon material-icons">{{ isItemExpanded(i) ? 'expand_less' : 'expand_more' }}</span>
+            </div>
+            <!-- Expanded details -->
+            @if (isItemExpanded(i)) {
+              <div class="item-card-expanded">
+                <div class="detail-row">
+                  <span class="detail-label">{{ 'orders.basePrice' | translate }}</span>
+                  <span class="detail-value">{{ item.price.toFixed(2) }}{{ currencyName ? ' ' + currencyName : '' }}</span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">{{ 'orders.priceWithVat' | translate }}</span>
+                  <span class="detail-value">{{ (item.priceWithVat || 0).toFixed(2) }}{{ currencyName ? ' ' + currencyName : '' }}</span>
+                </div>
+                @if (item.discount !== undefined && item.discount > 0) {
+                  <div class="detail-row discount-row">
+                    <span class="detail-label">{{ 'orders.discount' | translate }}</span>
+                    <span class="detail-value discount-value">-{{ item.discount }}%</span>
+                  </div>
+                }
+                <div class="detail-row">
+                  <span class="detail-label">{{ 'orders.priceAfterDiscount' | translate }}</span>
+                  <span class="detail-value">{{ (item.priceAfterDiscountWithVat || 0).toFixed(2) }}{{ currencyName ? ' ' + currencyName : '' }}</span>
+                </div>
+                <div class="detail-row total-row">
+                  <span class="detail-label">{{ 'orders.total' | translate }}</span>
+                  <span class="detail-value total-value">{{ item.subtotal.toFixed(2) }}{{ currencyName ? ' ' + currencyName : '' }}</span>
+                </div>
+              </div>
+            }
+          </div>
+        }
+        @if (hasMoreItems()) {
+          <button class="btn-show-more" (click)="toggleShowAllItems()">
+            @if (showAllItems) {
+              <span class="material-icons">expand_less</span>
+              {{ 'orders.showLess' | translate }}
+            } @else {
+              <span class="material-icons">expand_more</span>
+              {{ 'orders.showMore' | translate }} ({{ getRemainingItemsCount() }})
+            }
+          </button>
+        }
+      </div>
     </div>
     <!-- Order Totals Section -->
     <div class="section totals-section">
@@ -127,7 +191,7 @@
         </div>
         @if (getVatAmount() > 0) {
           <div class="total-row vat-row">
-            <span class="total-label">{{ 'products.vat' | translate }}@if (order.vatRate) {
+            <span class="total-label">{{ 'products.vat' | translate }}@if (order?.vatRate) {
               <span> ({{ order.vatRate }}%)</span>
             }:</span>
             <span class="total-value">{{ getVatAmount().toFixed(2) }}{{ currencyName ? ' ' + currencyName : '' }}</span>
@@ -146,7 +210,8 @@
         <div class="loading">{{ 'common.loading' | translate }}</div>
       }
       @if (!historyLoading) {
-        <table class="items-table history-table">
+        <!-- Desktop table view -->
+        <table class="items-table history-table history-table-desktop">
           <thead>
             <tr>
               <th>{{ 'orders.date' | translate }}</th>
@@ -175,6 +240,30 @@
             }
           </tbody>
         </table>
+        <!-- Mobile card view -->
+        <div class="history-cards-mobile">
+          @if (history.length === 0) {
+            <div class="no-data-card">{{ 'orders.noHistory' | translate }}</div>
+          }
+          @for (h of history; track h) {
+            <div class="history-card">
+              <div class="history-card-header">
+                <span class="history-date">{{ formatDate(h.created_at) }}</span>
+                <span class="status-badge" [ngClass]="getStatusClass(h.status)">
+                  {{ getTranslatedStatus(h.status) }}
+                </span>
+              </div>
+              @if ((h.user_firstname || h.user_lastname)) {
+                <div class="history-user">
+                  {{ (h.user_firstname || '') + ' ' + (h.user_lastname || '') }}
+                </div>
+              }
+              @if (h.comment) {
+                <div class="history-comment">{{ h.comment }}</div>
+              }
+            </div>
+          }
+        </div>
       }
     </div>
   </div>

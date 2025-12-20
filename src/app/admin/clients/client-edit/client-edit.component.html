@@ -1,0 +1,427 @@
+<div class="client-edit-container">
+  <div class="page-header">
+    <button class="btn btn-back" (click)="navigateBack()">
+      <span class="arrow-icon">&larr;</span>
+      Back to Clients
+    </button>
+    <h1>{{ isEditMode ? 'Edit Client' : 'Create Client' }}</h1>
+    <button
+      type="button"
+      class="btn btn-primary btn-save"
+      [disabled]="clientForm.invalid || saving"
+      (click)="saveClient()"
+    >
+      @if (saving) {
+        <span class="spinner-small"></span>
+      }
+      {{ saving ? 'Saving...' : (isEditMode ? 'Save Changes' : 'Create Client') }}
+    </button>
+  </div>
+
+  <!-- Loading State -->
+  @if (loading) {
+    <div class="loading-container">
+      <div class="spinner-large"></div>
+      <p>Loading client...</p>
+    </div>
+  }
+
+  <!-- Error Message -->
+  @if (error) {
+    <div class="message error">{{ error }}</div>
+  }
+
+  <!-- Success Message -->
+  @if (successMessage) {
+    <div class="message success">{{ successMessage }}</div>
+  }
+
+  <!-- Unsaved Changes Warning -->
+  @if (hasUnsavedChanges) {
+    <div class="message warning">
+      You have unsaved changes. Don't forget to save before leaving.
+    </div>
+  }
+
+  @if (!loading) {
+    <form [formGroup]="clientForm" (ngSubmit)="saveClient()" class="client-form">
+      <!-- Basic Information Section -->
+      <section class="form-section">
+        <h2>Basic Information</h2>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="name">Name *</label>
+            <input
+              type="text"
+              id="name"
+              formControlName="name"
+              [class.invalid]="isFieldInvalid('name')"
+              placeholder="Client name"
+            >
+            @if (isFieldInvalid('name')) {
+              <span class="error-message">{{ getFieldError('name') }}</span>
+            }
+          </div>
+          <div class="form-group">
+            <label for="active">Status</label>
+            <div class="switch-wrapper">
+              <span class="switch-text" [class.active]="clientForm.get('active')?.value">
+                {{ clientForm.get('active')?.value ? 'Active' : 'Inactive' }}
+              </span>
+              <label class="switch">
+                <input type="checkbox" formControlName="active">
+                <span class="slider"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="store_uid">Store *</label>
+            <select
+              id="store_uid"
+              formControlName="store_uid"
+              [class.invalid]="isFieldInvalid('store_uid')"
+            >
+              <option value="">Select a store</option>
+              @for (store of stores; track store.value) {
+                <option [value]="store.value">{{ store.label }}</option>
+              }
+            </select>
+            @if (isFieldInvalid('store_uid')) {
+              <span class="error-message">{{ getFieldError('store_uid') }}</span>
+            }
+          </div>
+          <div class="form-group">
+            <label for="price_type_uid">Price Type *</label>
+            <select
+              id="price_type_uid"
+              formControlName="price_type_uid"
+              [class.invalid]="isFieldInvalid('price_type_uid')"
+            >
+              <option value="">Select a price type</option>
+              @for (pt of priceTypes; track pt.value) {
+                <option [value]="pt.value">{{ pt.label }}</option>
+              }
+            </select>
+            @if (isFieldInvalid('price_type_uid')) {
+              <span class="error-message">{{ getFieldError('price_type_uid') }}</span>
+            }
+          </div>
+        </div>
+      </section>
+
+      <!-- Contact Information Section -->
+      <section class="form-section">
+        <h2>Contact Information</h2>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="phone">Phone *</label>
+            <input
+              type="tel"
+              id="phone"
+              formControlName="phone"
+              [class.invalid]="isFieldInvalid('phone')"
+              placeholder="e.g., 380501234567"
+            >
+            @if (isFieldInvalid('phone')) {
+              <span class="error-message">{{ getFieldError('phone') }}</span>
+            }
+            <span class="field-hint">8-15 digits only</span>
+          </div>
+          <div class="form-group">
+            <label for="email">Email</label>
+            <input
+              type="email"
+              id="email"
+              formControlName="email"
+              [class.invalid]="isFieldInvalid('email')"
+              placeholder="client@example.com"
+            >
+            @if (isFieldInvalid('email')) {
+              <span class="error-message">{{ getFieldError('email') }}</span>
+            }
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="pin_code">PIN Code</label>
+            <div class="input-with-button">
+              <input
+                type="text"
+                id="pin_code"
+                formControlName="pin_code"
+                placeholder="Optional PIN code"
+              >
+              <button type="button" class="btn btn-generate" (click)="generatePinCode()" title="Generate 6-digit PIN">
+                Generate
+              </button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="address">Legacy Address</label>
+            <textarea
+              id="address"
+              formControlName="address"
+              rows="2"
+              placeholder="Legacy address field (use Addresses section below)"
+            ></textarea>
+          </div>
+        </div>
+      </section>
+
+      <!-- Financial Settings Section -->
+      <section class="form-section">
+        <h2>Financial Settings</h2>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="fixed_discount">Discount Mode</label>
+            <div class="radio-group">
+              <label class="radio-label">
+                <input
+                  type="radio"
+                  [value]="true"
+                  formControlName="fixed_discount"
+                >
+                <span>Fixed Discount</span>
+              </label>
+              <label class="radio-label">
+                <input
+                  type="radio"
+                  [value]="false"
+                  formControlName="fixed_discount"
+                >
+                <span>Scale-based (by turnover)</span>
+              </label>
+            </div>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="discount">Fixed Discount (%)</label>
+            <input
+              type="number"
+              id="discount"
+              formControlName="discount"
+              [class.invalid]="isFieldInvalid('discount')"
+              min="0"
+              max="100"
+              [attr.disabled]="!clientForm.get('fixed_discount')?.value ? null : null"
+            >
+            @if (isFieldInvalid('discount')) {
+              <span class="error-message">{{ getFieldError('discount') }}</span>
+            }
+            <span class="field-hint">Used when Fixed Discount mode is selected</span>
+          </div>
+          <div class="form-group">
+            <label for="balance">Balance (turnover in cents)</label>
+            <input
+              type="number"
+              id="balance"
+              formControlName="balance"
+              min="0"
+              readonly
+              class="readonly-field"
+            >
+            <span class="field-hint">Current monthly purchase turnover (set by CRM)</span>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="vat_rate">VAT Rate (%)</label>
+            <input
+              type="number"
+              id="vat_rate"
+              formControlName="vat_rate"
+              min="0"
+              max="100"
+              step="0.01"
+              readonly
+              class="readonly-field"
+            >
+            <span class="field-hint">Managed by CRM</span>
+          </div>
+          <div class="form-group">
+            <label for="vat_number">VAT Number</label>
+            <input
+              type="text"
+              id="vat_number"
+              formControlName="vat_number"
+              placeholder="e.g., PL1234567890"
+            >
+            <span class="field-hint">If empty, store's default VAT rate is used</span>
+          </div>
+        </div>
+      </section>
+
+    </form>
+
+    <!-- Addresses Section (only in edit mode) -->
+    @if (isEditMode) {
+      <section class="form-section addresses-section">
+        <div class="section-header">
+          <h2>Addresses</h2>
+          <button class="btn btn-primary btn-sm" (click)="openAddAddressModal()">
+            + Add Address
+          </button>
+        </div>
+
+        @if (addressesLoading) {
+          <div class="loading-container small">
+            <div class="spinner-small"></div>
+          </div>
+        }
+
+        @if (!addressesLoading && addresses.length === 0) {
+          <div class="empty-addresses">
+            <p>No addresses found for this client.</p>
+          </div>
+        }
+
+        @if (!addressesLoading && addresses.length > 0) {
+          <div class="addresses-list">
+            @for (address of addresses; track address.uid) {
+              <div class="address-card" [class.is-default]="address.is_default">
+                <div class="address-header">
+                  <div class="address-country">
+                    <strong>{{ getCountryName(address.country_code) }}</strong>
+                    @if (address.is_default) {
+                      <span class="default-badge">Default</span>
+                    }
+                  </div>
+                  <div class="address-actions">
+                    @if (!address.is_default) {
+                      <button
+                        class="btn btn-icon"
+                        (click)="setDefaultAddress(address)"
+                        title="Set as default"
+                      >
+                        <span class="star-icon">&#9734;</span>
+                      </button>
+                    }
+                    <button
+                      class="btn btn-icon"
+                      (click)="openEditAddressModal(address)"
+                      title="Edit"
+                    >
+                      <span class="edit-icon">&#9998;</span>
+                    </button>
+                    <button
+                      class="btn btn-icon btn-danger"
+                      (click)="deleteAddress(address)"
+                      title="Delete"
+                    >
+                      <span class="delete-icon">&times;</span>
+                    </button>
+                  </div>
+                </div>
+                <div class="address-details">
+                  <p>{{ formatAddress(address) }}</p>
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </section>
+    }
+  }
+
+  <!-- Address Modal -->
+  @if (showAddressModal) {
+    <div class="modal-overlay" (click)="closeAddressModal()">
+      <div class="modal-content" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>{{ editingAddress ? 'Edit Address' : 'Add Address' }}</h3>
+          <button class="btn btn-close" (click)="closeAddressModal()">&times;</button>
+        </div>
+        <form [formGroup]="addressForm" (ngSubmit)="saveAddress()" class="address-form">
+          <div class="form-group country-autocomplete">
+            <label for="country_search">Country *</label>
+            <div class="autocomplete-wrapper">
+              <input
+                type="text"
+                id="country_search"
+                [(ngModel)]="countrySearchText"
+                [ngModelOptions]="{standalone: true}"
+                (ngModelChange)="onCountrySearchChange($event)"
+                (focus)="onCountryInputFocus()"
+                (blur)="onCountryInputBlur()"
+                placeholder="Search country..."
+                [class.invalid]="addressForm.get('country_code')?.invalid && addressForm.get('country_code')?.touched"
+                autocomplete="off"
+              >
+              @if (countrySearchText) {
+                <button
+                  type="button"
+                  class="btn-clear"
+                  (mousedown)="$event.preventDefault()"
+                  (click)="clearCountrySelection()"
+                >&times;</button>
+              }
+              @if (showCountryDropdown && filteredCountries.length > 0) {
+                <div class="autocomplete-dropdown">
+                  @for (country of filteredCountries; track country.country_code) {
+                    <div
+                      class="autocomplete-item"
+                      (mousedown)="$event.preventDefault()"
+                      (click)="selectCountry(country)"
+                      [class.selected]="selectedCountry?.country_code === country.country_code"
+                    >
+                      <span class="country-code">{{ country.country_code }}</span>
+                      <span class="country-name">{{ country.name }}</span>
+                    </div>
+                  }
+                </div>
+              }
+              @if (showCountryDropdown && filteredCountries.length === 0 && countrySearchText) {
+                <div class="autocomplete-dropdown">
+                  <div class="autocomplete-no-results">No country found</div>
+                </div>
+              }
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="city">City</label>
+              <input type="text" id="city" formControlName="city">
+            </div>
+            <div class="form-group">
+              <label for="zipcode">Zipcode</label>
+              <input type="text" id="zipcode" formControlName="zipcode">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="address_text">Address</label>
+            <textarea
+              id="address_text"
+              formControlName="address_text"
+              rows="3"
+              placeholder="Street, building, apartment..."
+            ></textarea>
+          </div>
+          <div class="form-group checkbox-group">
+            <label class="checkbox-label">
+              <input type="checkbox" formControlName="is_default">
+              <span>Set as default address</span>
+            </label>
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="btn btn-secondary" (click)="closeAddressModal()">
+              Cancel
+            </button>
+            <button
+              type="submit"
+              class="btn btn-primary"
+              [disabled]="addressForm.invalid || addressSaving"
+            >
+              @if (addressSaving) {
+                <span class="spinner-small"></span>
+              }
+              {{ addressSaving ? 'Saving...' : 'Save' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+</div>

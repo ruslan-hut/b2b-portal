@@ -41,6 +41,7 @@ export interface OrderItem {
   isNew?: boolean;   // New product badge
   barcode?: string;
   sortOrder?: number; // Display order priority
+  availableQuantity?: number; // Available stock quantity from backend
 }
 
 export interface ShippingAddress {

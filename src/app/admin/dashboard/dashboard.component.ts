@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { AdminService, DashboardStats } from '../../core/services/admin.service';
 
 interface Store {
@@ -21,7 +21,10 @@ export class DashboardComponent implements OnInit {
   selectedStoreUID: string | null = null;
   loadingStores = false;
 
-  constructor(private adminService: AdminService) {}
+  constructor(
+    private adminService: AdminService,
+    private cdr: ChangeDetectorRef
+  ) {}
 
   ngOnInit(): void {
     this.loadStores();
@@ -34,11 +37,12 @@ export class DashboardComponent implements OnInit {
       next: (stores) => {
         this.stores = stores || [];
         this.loadingStores = false;
+        this.cdr.detectChanges();
       },
       error: (err) => {
         console.error('Failed to load stores:', err);
         this.loadingStores = false;
-        // Continue even if stores fail to load
+        this.cdr.detectChanges();
       }
     });
   }
@@ -51,11 +55,13 @@ export class DashboardComponent implements OnInit {
       next: (stats) => {
         this.stats = stats;
         this.loading = false;
+        this.cdr.detectChanges();
       },
       error: (err) => {
         console.error('Failed to load dashboard stats:', err);
         this.error = 'Failed to load dashboard statistics';
         this.loading = false;
+        this.cdr.detectChanges();
       }
     });
   }

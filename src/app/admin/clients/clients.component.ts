@@ -1,5 +1,6 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { Router } from '@angular/router';
 import { environment } from '../../../environments/environment';
 
 export interface AdminClient {
@@ -12,6 +13,8 @@ export interface AdminClient {
   discount: number;
   vat_rate?: number; // VAT rate percentage (0-100)
   vat_number?: string; // VAT registration number
+  balance?: number; // Current monthly purchase turnover in cents
+  fixed_discount?: boolean; // If true, use discount field; if false, use scale lookup
   price_type_uid: string;
   store_uid: string;
   active: boolean;
@@ -40,23 +43,22 @@ export class ClientsComponent implements OnInit {
   filteredClients: AdminClient[] = [];
   loading = false;
   error: string | null = null;
-  
+
   // Pagination
   currentPage = 1;
   pageSize = 20;
   total = 0;
   totalPages = 1;
-  
+
   // Filters
   activeFilter: 'all' | 'active' | 'inactive' = 'all';
   searchTerm = '';
-  
-  // Edit/Create
-  editingClient: AdminClient | null = null;
-  showEditModal = false;
-  editForm: Partial<AdminClient> = {};
 
-  constructor(private http: HttpClient) {}
+  constructor(
+    private http: HttpClient,
+    private router: Router,
+    private cdr: ChangeDetectorRef
+  ) {}
 
   ngOnInit(): void {
     this.loadClients();
@@ -67,7 +69,12 @@ export class ClientsComponent implements OnInit {
     this.error = null;
 
     const offset = (this.currentPage - 1) * this.pageSize;
-    const url = `${environment.apiUrl}/admin/clients?offset=${offset}&limit=${this.pageSize}`;
+    let url = `${environment.apiUrl}/admin/clients?offset=${offset}&limit=${this.pageSize}`;
+
+    // Add search parameter if search term is set
+    if (this.searchTerm.trim()) {
+      url += `&search=${encodeURIComponent(this.searchTerm.trim())}`;
+    }
 
     this.http.get<ApiResponse<AdminClient[]>>(url).subscribe({
       next: (response) => {
@@ -76,11 +83,13 @@ export class ClientsComponent implements OnInit {
         this.totalPages = response.metadata?.total_pages || Math.ceil(this.total / this.pageSize);
         this.applyFilters();
         this.loading = false;
+        this.cdr.detectChanges();
       },
       error: (err) => {
         console.error('Failed to load clients:', err);
         this.error = 'Failed to load clients';
         this.loading = false;
+        this.cdr.detectChanges();
       }
     });
   }
@@ -88,92 +97,34 @@ export class ClientsComponent implements OnInit {
   applyFilters(): void {
     let filtered = [...this.clients];
 
-    // Apply active filter
+    // Apply active filter (client-side, since backend search doesn't filter by active status)
     if (this.activeFilter === 'active') {
       filtered = filtered.filter(c => c.active);
     } else if (this.activeFilter === 'inactive') {
       filtered = filtered.filter(c => !c.active);
     }
 
-    // Apply search filter
-    if (this.searchTerm.trim()) {
-      const search = this.searchTerm.toLowerCase();
-      filtered = filtered.filter(c =>
-        c.name.toLowerCase().includes(search) ||
-        c.email.toLowerCase().includes(search) ||
-        c.phone.includes(search)
-      );
-    }
-
+    // Note: Search filtering is now done on the backend
     this.filteredClients = filtered;
   }
 
   onFilterChange(): void {
     this.currentPage = 1;
     this.applyFilters();
+    this.cdr.detectChanges();
   }
 
   onSearchChange(): void {
     this.currentPage = 1;
-    this.applyFilters();
+    this.loadClients();  // Reload from backend with search parameter
   }
 
   editClient(client: AdminClient): void {
-    this.editingClient = client;
-    this.editForm = { ...client };
-    this.showEditModal = true;
+    this.router.navigate(['/admin/clients', client.uid]);
   }
 
   createClient(): void {
-    this.editingClient = null;
-    this.editForm = {
-      name: '',
-      email: '',
-      phone: '',
-      address: '',
-      discount: 0,
-      vat_rate: 0,
-      vat_number: '',
-      price_type_uid: '',
-      store_uid: '',
-      active: true
-    };
-    this.showEditModal = true;
-  }
-
-  saveClient(): void {
-    if (!this.editForm.name || !this.editForm.phone || !this.editForm.store_uid || !this.editForm.price_type_uid) {
-      alert('Please fill in all required fields');
-      return;
-    }
-
-    const clientData = {
-      uid: this.editingClient?.uid || '',
-      name: this.editForm.name,
-      email: this.editForm.email || '',
-      phone: this.editForm.phone,
-      pin_code: this.editForm.pin_code || '',
-      address: this.editForm.address || '',
-      discount: this.editForm.discount || 0,
-      vat_rate: this.editForm.vat_rate || 0,
-      vat_number: this.editForm.vat_number || '',
-      price_type_uid: this.editForm.price_type_uid,
-      store_uid: this.editForm.store_uid,
-      active: this.editForm.active !== undefined ? this.editForm.active : true
-    };
-
-    this.http.post<ApiResponse<string[]>>(`${environment.apiUrl}/admin/clients`, {
-      data: [clientData]
-    }).subscribe({
-      next: () => {
-        this.showEditModal = false;
-        this.loadClients();
-      },
-      error: (err) => {
-        console.error('Failed to save client:', err);
-        alert('Failed to save client');
-      }
-    });
+    this.router.navigate(['/admin/clients/new']);
   }
 
   toggleActive(client: AdminClient): void {
@@ -211,17 +162,16 @@ export class ClientsComponent implements OnInit {
     });
   }
 
-  cancelEdit(): void {
-    this.showEditModal = false;
-    this.editingClient = null;
-    this.editForm = {};
-  }
-
   goToPage(page: number): void {
     if (page >= 1 && page <= this.totalPages) {
       this.currentPage = page;
       this.loadClients();
     }
   }
-}
 
+  // Format balance from cents to display
+  formatBalance(cents: number | undefined): string {
+    if (cents === undefined || cents === null) return '-';
+    return (cents / 100).toFixed(2);
+  }
+}

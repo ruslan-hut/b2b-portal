@@ -8,19 +8,24 @@
           class="category-selector"
           >
           <option value="">{{ 'products.allCategories' | translate }}</option>
-          @for (category of allCategories; track category) {
-            <option [value]="category">
-              {{ category }}
+          @for (category of allCategories; track category.uid) {
+            <option [value]="category.uid">
+              {{ category.name }}
             </option>
           }
         </select>
-        <input
-          type="text"
-          [(ngModel)]="searchQuery"
-          (ngModelChange)="onSearchChange()"
-          [placeholder]="'products.searchPlaceholder' | translate"
-          class="search-input"
-          />
+        <div class="search-input-wrapper">
+          <input
+            type="text"
+            [(ngModel)]="searchQuery"
+            (keyup.enter)="onSearchChange()"
+            [placeholder]="'products.searchPlaceholder' | translate"
+            class="search-input"
+            />
+          <button type="button" class="search-icon-btn" (click)="onSearchChange()">
+            <span class="material-icons">search</span>
+          </button>
+        </div>
       </div>
       <div class="cart-total-info">
         {{ 'products.total' | translate }}: <span class="cart-total-amount">{{ getCartTotal().toFixed(2) }}{{ currencyName ? ' ' + currencyName : '' }}</span>
@@ -105,6 +110,7 @@
           </div>
         </div>
       }
+
     </div>
   }
 
@@ -120,31 +126,29 @@
               class="category-selector-bulk"
               >
               <option value="">{{ 'products.allCategories' | translate }}</option>
-              @for (category of allCategories; track category) {
-                <option [value]="category">
-                  {{ category }}
+              @for (category of allCategories; track category.uid) {
+                <option [value]="category.uid">
+                  {{ category.name }}
                 </option>
               }
             </select>
-            <input
-              type="text"
-              [(ngModel)]="searchQuery"
-              (ngModelChange)="onSearchChange()"
-              [placeholder]="'products.searchPlaceholder' | translate"
-              class="search-input-bulk"
-              />
+            <div class="search-input-wrapper">
+              <input
+                type="text"
+                [(ngModel)]="searchQuery"
+                (keyup.enter)="onSearchChange()"
+                [placeholder]="'products.searchPlaceholder' | translate"
+                class="search-input-bulk"
+                />
+              <button type="button" class="search-icon-btn" (click)="onSearchChange()">
+                <span class="material-icons">search</span>
+              </button>
+            </div>
           </div>
           <div class="bulk-actions-right">
             <div class="bulk-info">
               <span class="cart-total-label">{{ 'products.total' | translate }}: <span class="cart-total-value">{{ getCartTotal().toFixed(2) }}{{ currencyName ? ' ' + currencyName : '' }}</span></span>
             </div>
-            <button
-              class="btn btn-add-bulk"
-              (click)="addBulkToCart()"
-              [disabled]="!hasBulkItems()"
-              >
-              {{ 'products.updateCart' | translate }}
-            </button>
           </div>
         </div>
         <!-- Desktop Table View -->
@@ -207,7 +211,7 @@
                         type="number"
                         class="quantity-input"
                         [value]="getBulkQuantity(product.id)"
-                        (input)="setBulkQuantity(product.id, +$any($event.target).value)"
+                        (input)="setBulkQuantity(product, +$any($event.target).value)"
                         (focus)="selectProduct(product)"
                         min="0"
                         [disabled]="!product.inStock"
@@ -260,22 +264,24 @@
                     </div>
                   }
                   <div class="card-category">{{ product.category }}</div>
-                  @if (getBulkQuantity(product.id) > 0) {
-                    <div class="card-quantity-badge">
-                      <span class="material-icons quantity-icon">shopping_cart</span>
-                      <span class="quantity-badge-text">{{ getBulkQuantity(product.id) }}</span>
-                    </div>
-                  }
                 </div>
                 <div class="card-header-right">
-                  <div class="card-price-container">
-                    @if (hasDiscount()) {
-                      <div class="original-price">
-                        {{ getOriginalPriceWithVat(product).toFixed(2) }}
+                  <div class="card-price-row">
+                    @if (getBulkQuantity(product.id) > 0) {
+                      <div class="card-quantity-badge">
+                        <span class="material-icons quantity-icon">shopping_cart</span>
+                        <span class="quantity-badge-text">{{ getBulkQuantity(product.id) }}</span>
                       </div>
                     }
-                    <div class="card-price" [class.has-discount]="hasDiscount()">
-                      {{ getPriceWithVat(product).toFixed(2) }}
+                    <div class="card-price-container">
+                      @if (hasDiscount()) {
+                        <div class="original-price">
+                          {{ getOriginalPriceWithVat(product).toFixed(2) }}
+                        </div>
+                      }
+                      <div class="card-price" [class.has-discount]="hasDiscount()">
+                        {{ getPriceWithVat(product).toFixed(2) }}
+                      </div>
                     </div>
                   </div>
                   <span class="status-dot" [class.available]="product.inStock" [class.unavailable]="!product.inStock"></span>
@@ -392,6 +398,7 @@
           </div>
         </div>
       }
+
     </div>
   }
 
@@ -427,5 +434,28 @@
       [product]="selectedProductForDetails"
       (closed)="closeProductDetails()"
     ></app-product-details-overlay>
+  }
+
+  <!-- Scroll to Top Button (Mobile) -->
+  @if (showScrollToTop) {
+    <button class="btn-scroll-to-top" (click)="scrollToTop()" aria-label="Scroll to top">
+      <span class="material-icons">keyboard_arrow_up</span>
+    </button>
+  }
+
+  <!-- Floating Show More Button -->
+  @if (showFloatingShowMore && !loading) {
+    <button
+      class="btn-floating-show-more"
+      (click)="loadMoreProducts()"
+      [disabled]="loadingMore"
+      aria-label="Load more products"
+    >
+      @if (loadingMore) {
+        <span class="material-icons spinner">sync</span>
+      } @else {
+        <span class="material-icons">expand_more</span>
+      }
+    </button>
   }
 </div>

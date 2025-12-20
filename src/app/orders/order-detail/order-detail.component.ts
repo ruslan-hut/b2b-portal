@@ -1,6 +1,7 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
+import { Subscription } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { OrderService } from '../../core/services/order.service';
 import { Order, OrderStatus } from '../../core/models/order.model';
@@ -31,7 +32,7 @@ interface ApiResponse<T> {
     styleUrl: './order-detail.component.scss',
     standalone: false
 })
-export class OrderDetailComponent implements OnInit {
+export class OrderDetailComponent implements OnInit, OnDestroy {
   orderId: string = '';
   order: Order | null = null;
   loading = true;
@@ -45,6 +46,49 @@ export class OrderDetailComponent implements OnInit {
   historyDesc = true; // default: newest first
   historyLoading = false;
 
+  // Mobile card expansion state
+  expandedItems: Set<number> = new Set();
+
+  // Show all items toggle (for orders with 5+ items)
+  showAllItems: boolean = false;
+  readonly itemsPreviewLimit = 5;
+
+  private subscriptions = new Subscription();
+
+  toggleItemExpanded(index: number): void {
+    if (this.expandedItems.has(index)) {
+      this.expandedItems.delete(index);
+    } else {
+      this.expandedItems.add(index);
+    }
+  }
+
+  isItemExpanded(index: number): boolean {
+    return this.expandedItems.has(index);
+  }
+
+  toggleShowAllItems(): void {
+    this.showAllItems = !this.showAllItems;
+  }
+
+  getVisibleItems(): any[] {
+    if (!this.order?.items) return [];
+    if (this.showAllItems || this.order.items.length <= this.itemsPreviewLimit) {
+      return this.order.items;
+    }
+    return this.order.items.slice(0, this.itemsPreviewLimit);
+  }
+
+  hasMoreItems(): boolean {
+    if (!this.order?.items) return false;
+    return this.order.items.length > this.itemsPreviewLimit;
+  }
+
+  getRemainingItemsCount(): number {
+    if (!this.order?.items) return 0;
+    return this.order.items.length - this.itemsPreviewLimit;
+  }
+
   constructor(
     private route: ActivatedRoute,
     private router: Router,
@@ -53,8 +97,13 @@ export class OrderDetailComponent implements OnInit {
     private translationService: TranslationService,
     private currencyService: CurrencyService,
     private authService: AuthService,
-    private appSettingsService: AppSettingsService
+    private appSettingsService: AppSettingsService,
+    private cdr: ChangeDetectorRef
   ) {}
+
+  ngOnDestroy(): void {
+    this.subscriptions.unsubscribe();
+  }
 
   ngOnInit(): void {
     this.orderId = this.route.snapshot.params['id'];
@@ -70,46 +119,58 @@ export class OrderDetailComponent implements OnInit {
   loadOrderDetail(): void {
     this.loading = true;
     this.error = null;
+    this.cdr.markForCheck();
 
-    this.orderService.getOrderById(this.orderId).subscribe({
-      next: (order) => {
-        if (!order) {
-          this.error = 'Order not found';
+    this.subscriptions.add(
+      this.orderService.getOrderById(this.orderId).subscribe({
+        next: (order) => {
+          if (!order) {
+            this.error = 'Order not found';
+            this.loading = false;
+            this.cdr.detectChanges();
+            return;
+          }
+
+          this.order = order;
           this.loading = false;
-          return;
+          this.cdr.detectChanges();
+          // Load status history after order is loaded
+          this.loadHistory();
+        },
+        error: (err) => {
+          console.error('Failed to load order detail:', err);
+          this.error = 'Failed to load order details';
+          this.loading = false;
+          this.cdr.detectChanges();
         }
-
-        this.order = order;
-        this.loading = false;
-        // Load status history after order is loaded
-        this.loadHistory();
-      },
-      error: (err) => {
-        console.error('Failed to load order detail:', err);
-        this.error = 'Failed to load order details';
-        this.loading = false;
-      }
-    });
+      })
+    );
   }
 
   loadHistory(): void {
     if (!this.orderId) return;
     this.historyLoading = true;
-    this.http.post<ApiResponse<Record<string, OrderStatusHistory[]>>>(
-      `${environment.apiUrl}/order/history?limit=${this.historyLimit}&offset=${this.historyOffset}&sort=${this.historyDesc ? 'desc' : 'asc'}`,
-      { data: [this.orderId] }
-    ).subscribe({
-      next: (resp) => {
-        const map = resp.data || {};
-        this.history = map[this.orderId] || [];
-        this.historyLoading = false;
-      },
-      error: (err) => {
-        console.error('Failed to load order history', err);
-        this.history = [];
-        this.historyLoading = false;
-      }
-    });
+    this.cdr.markForCheck();
+
+    this.subscriptions.add(
+      this.http.post<ApiResponse<Record<string, OrderStatusHistory[]>>>(
+        `${environment.apiUrl}/order/history?limit=${this.historyLimit}&offset=${this.historyOffset}&sort=${this.historyDesc ? 'desc' : 'asc'}`,
+        { data: [this.orderId] }
+      ).subscribe({
+        next: (resp) => {
+          const map = resp.data || {};
+          this.history = map[this.orderId] || [];
+          this.historyLoading = false;
+          this.cdr.detectChanges();
+        },
+        error: (err) => {
+          console.error('Failed to load order history', err);
+          this.history = [];
+          this.historyLoading = false;
+          this.cdr.detectChanges();
+        }
+      })
+    );
   }
 
   formatDate(date: Date | string): string {

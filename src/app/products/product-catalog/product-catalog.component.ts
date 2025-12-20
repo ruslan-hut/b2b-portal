@@ -1,6 +1,6 @@
-import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, HostListener } from '@angular/core';
 import { Router } from '@angular/router';
-import { ProductService } from '../../core/services/product.service';
+import { ProductService, FrontendCategory } from '../../core/services/product.service';
 import { OrderService } from '../../core/services/order.service';
 import { ProductImageCacheService } from '../../core/services/product-image-cache.service';
 import { Product } from '../../core/models/product.model';
@@ -13,7 +13,8 @@ import { AuthService } from '../../core/services/auth.service';
 import { PriceFormattingService } from '../../core/services/price-formatting.service';
 import { StoreService } from '../../core/services/store.service';
 import { AppSettingsService } from '../../core/services/app-settings.service';
-import { Subscription } from "rxjs";
+import { Subscription, Subject } from "rxjs";
+import { debounceTime, distinctUntilChanged } from "rxjs/operators";
 
 @Component({
     selector: 'app-product-catalog',
@@ -36,8 +37,16 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
   // Category grouping
   productsByCategory: Map<string, Product[]> = new Map();
   categories: string[] = [];
-  allCategories: string[] = [];
+  allCategories: FrontendCategory[] = [];
   selectedCategory: string = '';
+
+  // Pagination
+  readonly pageSize = 100;
+  currentPage = 1;
+  totalProducts = 0;
+  totalPages = 0;
+  hasMoreProducts = false;
+  loadingMore = false;
 
   // Description expansion tracking
   expandedDescriptions: Set<string> = new Set();
@@ -65,6 +74,17 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
   currentAddress: CartAddress | null = null;
   selectedAddressUid: string | undefined;
 
+  // Scroll to top button visibility
+  showScrollToTop: boolean = false;
+  private scrollThreshold: number = 300;
+
+  // Floating "Show more" button visibility (shows when near bottom)
+  showFloatingShowMore: boolean = false;
+  private bottomThreshold: number = 200; // pixels from bottom to trigger
+
+  // Search debouncing
+  private searchSubject = new Subject<string>();
+
   private subscriptions = new Subscription();
 
   constructor(
@@ -85,15 +105,22 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    // console.log('[ProductCatalog] ngOnInit start');
-    // console.log('[ProductCatalog] currentEntityValue at init:', this.authService.currentEntityValue);
-    // try {
-    //   console.log('[ProductCatalog] BASE_AUTH_DATA at init:', localStorage.getItem('BASE_AUTH_DATA'));
-    // } catch (e) {
-    //   // ignore
-    // }
+    // Load categories for filter dropdown
+    this.loadCategories();
 
+    // Load first page of products
     this.loadProducts();
+
+    // Subscribe to search changes with debouncing
+    this.subscriptions.add(
+      this.searchSubject.pipe(
+        debounceTime(400), // Wait 400ms after user stops typing
+        distinctUntilChanged() // Only emit if value changed
+      ).subscribe(() => {
+        this.loadProducts();
+      })
+    );
+
     this.orderService.currentOrder$.subscribe(items => {
       this.cartItems = items;
     });
@@ -165,52 +192,159 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.subscriptions.unsubscribe();
+    this.searchSubject.complete();
   }
 
+  @HostListener('window:scroll', [])
+  onWindowScroll(): void {
+    this.showScrollToTop = window.scrollY > this.scrollThreshold;
+
+    // Check if near bottom of page to show floating "Show more" button (mobile only)
+    // On desktop, button is always visible when there's more data
+    const isMobile = window.innerWidth <= 768;
+
+    if (isMobile) {
+      const scrollTop = window.scrollY;
+      const windowHeight = window.innerHeight;
+      const documentHeight = document.documentElement.scrollHeight;
+      const distanceFromBottom = documentHeight - (scrollTop + windowHeight);
+      this.showFloatingShowMore = this.hasMoreProducts && distanceFromBottom < this.bottomThreshold;
+    } else {
+      // Desktop: always show if there's more products
+      this.showFloatingShowMore = this.hasMoreProducts;
+    }
+  }
+
+  scrollToTop(): void {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  /**
+   * Load categories for filter dropdown
+   */
+  loadCategories(): void {
+    this.productService.getFrontendCategories().subscribe({
+      next: (categories) => {
+        this.allCategories = categories.sort((a, b) => a.name.localeCompare(b.name));
+        this.cdr.markForCheck();
+      },
+      error: (error) => {
+        console.error('Error loading categories:', error);
+      }
+    });
+  }
+
+  /**
+   * Load products with pagination (resets to first page)
+   */
   loadProducts(): void {
     this.loading = true;
-    // Use frontend endpoint that returns products with all calculated prices
+    this.currentPage = 1;
+    this.products = [];
+    this.cdr.markForCheck();
+
     const category = this.selectedCategory || undefined;
-    this.productService.getFrontendProducts(0, 1000, category).subscribe({
-      next: (products) => {
-        this.products = this.sortProductsByCategoryAndName(products);
-        this.extractAllCategories(products);
+    const search = this.searchQuery.trim() || undefined;
+    this.productService.getFrontendProductsPaginated(0, this.pageSize, category, search).subscribe({
+      next: (response) => {
+        this.products = this.sortProductsByCategoryAndName(response.products);
+        this.totalProducts = response.pagination.total;
+        this.totalPages = response.pagination.totalPages;
+        this.hasMoreProducts = response.pagination.hasMore;
+        this.currentPage = response.pagination.page;
+
         // Filter to show only available products in bulk view
         this.filteredProducts = this.products.filter(p => p.inStock);
         this.groupProductsByCategory(this.filteredProducts);
         this.loading = false;
+
+        // On desktop, show "Show more" button immediately if there's more data
+        const isMobile = window.innerWidth <= 768;
+        if (!isMobile) {
+          this.showFloatingShowMore = this.hasMoreProducts;
+        }
+
+        this.cdr.markForCheck();
+
         // Set first product as selected by default in bulk view
         if (this.filteredProducts.length > 0) {
           this.selectedProduct = this.filteredProducts[0];
         }
 
         // Load product images from cache or API
-        const productUids = products.map(p => p.id);
-        if (productUids.length > 0) {
-          this.imageCacheService.loadMainImages(productUids).subscribe({
-            next: () => {
-              // Images loaded, trigger change detection to update view
-              this.cdr.detectChanges();
-            },
-            error: (err) => {
-              console.error('Error loading product images:', err);
-            }
-          });
-        }
-
-        // currencyName is resolved via auth.currentEntity$ subscription; no local fallback needed here.
+        this.loadProductImages(response.products);
       },
       error: (error) => {
         console.error('Error loading products:', error);
         this.loading = false;
+        this.cdr.markForCheck();
       }
     });
   }
 
-  extractAllCategories(products: Product[]): void {
-    const categorySet = new Set<string>();
-    products.forEach(product => categorySet.add(product.category));
-    this.allCategories = Array.from(categorySet).sort();
+  /**
+   * Load more products (next page)
+   */
+  loadMoreProducts(): void {
+    if (this.loadingMore || !this.hasMoreProducts) {
+      return;
+    }
+
+    this.loadingMore = true;
+    this.cdr.markForCheck();
+
+    const offset = this.currentPage * this.pageSize;
+    const category = this.selectedCategory || undefined;
+    const search = this.searchQuery.trim() || undefined;
+
+    this.productService.getFrontendProductsPaginated(offset, this.pageSize, category, search).subscribe({
+      next: (response) => {
+        // Append new products to existing list
+        const newProducts = this.sortProductsByCategoryAndName(response.products);
+        this.products = [...this.products, ...newProducts];
+        this.totalProducts = response.pagination.total;
+        this.totalPages = response.pagination.totalPages;
+        this.hasMoreProducts = response.pagination.hasMore;
+        this.currentPage = response.pagination.page;
+
+        // Re-apply filters
+        this.filteredProducts = this.products.filter(p => p.inStock);
+        this.groupProductsByCategory(this.filteredProducts);
+        this.loadingMore = false;
+
+        // Hide floating button if no more products
+        if (!this.hasMoreProducts) {
+          this.showFloatingShowMore = false;
+        }
+
+        this.cdr.markForCheck();
+
+        // Load product images for new products
+        this.loadProductImages(newProducts);
+      },
+      error: (error) => {
+        console.error('Error loading more products:', error);
+        this.loadingMore = false;
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  /**
+   * Load product images from cache or API
+   */
+  private loadProductImages(products: Product[]): void {
+    const productUids = products.map(p => p.id);
+    if (productUids.length > 0) {
+      this.imageCacheService.loadMainImages(productUids).subscribe({
+        next: () => {
+          this.cdr.detectChanges();
+        },
+        error: (err) => {
+          console.error('Error loading product images:', err);
+        }
+      });
+    }
   }
 
   sortProductsByCategoryAndName(products: Product[]): Product[] {
@@ -254,11 +388,13 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
   }
 
   onSearchChange(): void {
-    this.applyFilters();
+    // Emit search query to trigger debounced backend search
+    this.searchSubject.next(this.searchQuery);
   }
 
   onCategoryChange(): void {
-    this.applyFilters();
+    // Reload products from backend with new category filter
+    this.loadProducts();
   }
 
   applyFilters(): void {
@@ -267,22 +403,6 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
     // Filter to show only available products in bulk view
     if (this.viewMode === 'bulk') {
       filtered = filtered.filter(p => p.inStock);
-    }
-
-    // Filter by category if selected
-    if (this.selectedCategory) {
-      filtered = filtered.filter(p => p.category === this.selectedCategory);
-    }
-
-    // Filter by search query
-    if (this.searchQuery.trim()) {
-      const query = this.searchQuery.toLowerCase();
-      filtered = filtered.filter(p =>
-        p.name.toLowerCase().includes(query) ||
-        p.description.toLowerCase().includes(query) ||
-        p.category.toLowerCase().includes(query) ||
-        p.sku.toLowerCase().includes(query)
-      );
     }
 
     this.filteredProducts = this.sortProductsByCategoryAndName(filtered);
@@ -366,75 +486,9 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
     return cartItem ? cartItem.quantity : 0;
   }
 
-  setBulkQuantity(productId: string, quantity: number): void {
-    if (quantity <= 0) {
-      this.bulkQuantities.delete(productId);
-      // Also remove from cart if it exists
-      this.removeFromCart(productId);
-    } else {
-      this.bulkQuantities.set(productId, quantity);
-    }
+  setBulkQuantity(product: Product, quantity: number): void {
+    this.updateQuantityAndCart(product.id, product, quantity);
   }
-
-    addBulkToCart(): void {
-        // Build the updated cart directly from bulk quantities
-        const updatedCart: OrderItem[] = [];
-
-        this.bulkQuantities.forEach((quantity, productId) => {
-            if (quantity > 0) {
-                const product = this.products.find(p => p.id === productId);
-                if (product && product.inStock) {
-                    // Check if item is already in cart
-                    const existingItem = this.cartItems.find(item => item.productId === productId);
-
-                    if (existingItem) {
-                        // Update quantity in existing item
-                        updatedCart.push({
-                            ...existingItem,
-                            quantity: quantity
-                        });
-                    } else {
-                        // Add new item
-                        updatedCart.push({
-                            productId: product.id,
-                            productName: product.name,
-                            quantity: quantity,
-                            price: product.price,
-                            subtotal: 0, // Backend will calculate
-                            isNew: product.isNew,
-                            sortOrder: product.sortOrder
-                        });
-                    }
-                }
-            }
-        });
-
-        if (updatedCart.length > 0) {
-            // Update local cart state with new quantities (keeping old subtotals for now)
-            this.orderService.setCart(updatedCart);
-
-            // Save to backend - backend will recalculate everything and update cart
-            // Pass current address UID if available
-            this.orderService.saveDraftCart(this.selectedAddressUid).subscribe({
-                next: draftOrder => {
-                    // Cart updated with backend calculations
-                    console.log('Draft saved with backend calculations', draftOrder);
-                    // Clear bulk quantities after successful save
-                    this.bulkQuantities.clear();
-                    // Trigger change detection to update the view (fixes NG0100 error)
-                    this.cdr.detectChanges();
-                },
-                error: err => {
-                    console.error('Failed to save draft cart:', err);
-                    alert(this.translationService.instant('product.saveDraftFailed') || 'Failed to save cart draft');
-                }
-            });
-        }
-    }
-
-    hasBulkItems(): boolean {
-        return this.bulkQuantities.size > 0 || this.cartItems.length > 0;
-    }
 
   isInCart(productId: string): boolean {
     return this.cartItems.some(item => item.productId === productId);

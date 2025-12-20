@@ -32,17 +32,14 @@ describe('LanguageSwitcherComponent', () => {
     expect(component).toBeTruthy();
   });
 
-  it('should select language when language is chosen', () => {
-    component.selectLanguage('uk');
+  it('should switch language when button clicked', () => {
+    component.switchLanguage('uk');
     expect(translationService.setLanguage).toHaveBeenCalledWith('uk');
   });
 
-  it('should toggle dropdown', () => {
-    expect(component.isDropdownOpen).toBeFalse();
-    component.toggleDropdown();
-    expect(component.isDropdownOpen).toBeTrue();
-    component.toggleDropdown();
-    expect(component.isDropdownOpen).toBeFalse();
+  it('should toggle language', () => {
+    component.toggleLanguage();
+    expect(translationService.toggleLanguage).toHaveBeenCalled();
   });
 });
 

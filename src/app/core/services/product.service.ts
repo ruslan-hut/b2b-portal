@@ -9,10 +9,36 @@ import { environment } from '../../../environments/environment';
 import { TranslationService } from './translation.service';
 import { AppSettingsService } from './app-settings.service';
 
+interface ApiPagination {
+  page: number;
+  count: number;
+  total: number;
+  total_pages: number;
+}
+
 interface ApiResponse<T> {
   success: boolean;
   message?: string;
   data: T;
+  pagination?: ApiPagination;
+}
+
+// Response type for paginated products
+export interface PaginatedProductsResponse {
+  products: Product[];
+  pagination: {
+    page: number;
+    pageSize: number;
+    total: number;
+    totalPages: number;
+    hasMore: boolean;
+  };
+}
+
+// Category type for frontend
+export interface FrontendCategory {
+  uid: string;
+  name: string;
 }
 
 interface ProductDescription {
@@ -132,6 +158,133 @@ export class ProductService {
       }),
       catchError(error => {
         console.error('Error fetching frontend products:', error);
+        return of([]);
+      })
+    );
+  }
+
+  /**
+   * Get products with pagination metadata from frontend endpoint
+   * Returns products along with pagination info for "Show more" functionality
+   * Supports search by SKU and name, with optional category filter
+   */
+  getFrontendProductsPaginated(offset: number = 0, limit: number = 20, category?: string, search?: string): Observable<PaginatedProductsResponse> {
+    const currentLanguage = this.translationService.getCurrentLanguage();
+    let params = new HttpParams()
+      .set('offset', offset.toString())
+      .set('limit', limit.toString())
+      .set('language', currentLanguage);
+
+    if (category) {
+      params = params.set('category', category);
+    }
+
+    if (search) {
+      params = params.set('search', search);
+    }
+
+    return this.http.get<ApiResponse<FrontendProduct[]>>(`${this.apiUrl}/frontend/products`, { params }).pipe(
+      map(response => {
+        if (!response.success || !response.data || !Array.isArray(response.data)) {
+          return {
+            products: [],
+            pagination: {
+              page: 1,
+              pageSize: limit,
+              total: 0,
+              totalPages: 0,
+              hasMore: false
+            }
+          };
+        }
+
+        // Map frontend products to Product model
+        const products = response.data.map(fp => {
+          const categoryName = fp.category_name || fp.category_uid || 'Uncategorized';
+
+          return {
+            id: fp.uid,
+            name: fp.name,
+            description: fp.description,
+            price: fp.price_final / 100,
+            category: categoryName,
+            categoryUid: fp.category_uid,
+            imageUrl: fp.image,
+            inStock: fp.available_quantity > 0,
+            sku: fp.sku,
+            availableQuantity: fp.available_quantity,
+            active: true,
+            isNew: fp.is_new,
+            isHotSale: fp.is_hot_sale,
+            sortOrder: fp.sort_order,
+            basePrice: fp.base_price / 100,
+            priceWithVat: fp.price_with_vat / 100,
+            priceWithDiscount: fp.price_with_discount / 100,
+            priceFinal: fp.price_final / 100,
+            vatRate: fp.vat_rate,
+            discountPercent: fp.discount_percent,
+          } as Product & {
+            categoryUid: string;
+            basePrice: number;
+            priceWithVat: number;
+            priceWithDiscount: number;
+            priceFinal: number;
+            vatRate: number;
+            discountPercent: number;
+          };
+        });
+
+        // Extract pagination from response
+        const pagination = response.pagination;
+        const total = pagination?.total || products.length;
+        const totalPages = pagination?.total_pages || Math.ceil(total / limit);
+        const currentPage = pagination?.page || Math.floor(offset / limit) + 1;
+        const hasMore = currentPage < totalPages;
+
+        return {
+          products,
+          pagination: {
+            page: currentPage,
+            pageSize: limit,
+            total,
+            totalPages,
+            hasMore
+          }
+        };
+      }),
+      catchError(error => {
+        console.error('Error fetching frontend products (paginated):', error);
+        return of({
+          products: [],
+          pagination: {
+            page: 1,
+            pageSize: limit,
+            total: 0,
+            totalPages: 0,
+            hasMore: false
+          }
+        });
+      })
+    );
+  }
+
+  /**
+   * Get all categories for filter dropdown
+   * Returns categories with translated names
+   */
+  getFrontendCategories(): Observable<FrontendCategory[]> {
+    const currentLanguage = this.translationService.getCurrentLanguage();
+    const params = new HttpParams().set('language', currentLanguage);
+
+    return this.http.get<ApiResponse<FrontendCategory[]>>(`${this.apiUrl}/frontend/categories`, { params }).pipe(
+      map(response => {
+        if (!response.success || !response.data || !Array.isArray(response.data)) {
+          return [];
+        }
+        return response.data;
+      }),
+      catchError(error => {
+        console.error('Error fetching frontend categories:', error);
         return of([]);
       })
     );

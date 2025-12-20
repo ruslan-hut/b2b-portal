@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { AdminService, AdminProductWithDetails, AdminProductsResponse } from '../../core/services/admin.service';
 import { AuthService } from '../../core/services/auth.service';
 import { TranslationService } from '../../core/services/translation.service';
@@ -44,7 +44,8 @@ export class ProductsComponent implements OnInit {
     private adminService: AdminService,
     private authService: AuthService,
     private translationService: TranslationService,
-    private productService: ProductService
+    private productService: ProductService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -185,11 +186,13 @@ export class ProductsComponent implements OnInit {
         this.totalPages = response.metadata?.total_pages || Math.ceil(this.total / this.pageSize);
         this.applySearch();
         this.loading = false;
+        this.cdr.detectChanges();
       },
       error: (err) => {
         console.error('Failed to load products:', err);
         this.error = 'Failed to load products';
         this.loading = false;
+        this.cdr.detectChanges();
       }
     });
   }

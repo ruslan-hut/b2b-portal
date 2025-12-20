@@ -138,6 +138,37 @@
       font-weight: 500;
       color: #333;
     }
+
+    &.discount-progress {
+      grid-column: span 2;
+
+      @media (max-width: 600px) {
+        grid-column: span 1;
+      }
+
+      .progress-info {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        flex-wrap: wrap;
+
+        .field-value {
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          color: white;
+          padding: 4px 12px;
+          border-radius: 6px;
+          font-size: 14px;
+        }
+
+        .progress-detail {
+          font-size: 13px;
+          color: #666;
+          background: #e8f4e8;
+          padding: 4px 10px;
+          border-radius: 4px;
+        }
+      }
+    }
   }
 }
 
@@ -218,6 +249,70 @@
       span {
         font-size: 14px;
         color: #333;
+      }
+    }
+  }
+
+  .switch-group {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+
+    .switch-label {
+      font-size: 14px;
+      color: #333;
+      font-weight: 500;
+    }
+
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 48px;
+      height: 26px;
+      flex-shrink: 0;
+
+      input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+
+        &:checked + .slider {
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        &:checked + .slider::before {
+          transform: translateX(22px);
+        }
+
+        &:focus + .slider {
+          box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+        }
+      }
+
+      .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #ccc;
+        transition: all 0.3s ease;
+        border-radius: 26px;
+
+        &::before {
+          position: absolute;
+          content: "";
+          height: 20px;
+          width: 20px;
+          left: 3px;
+          bottom: 3px;
+          background-color: white;
+          transition: all 0.3s ease;
+          border-radius: 50%;
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
       }
     }
   }
@@ -327,8 +422,8 @@
   animation: spin 0.8s linear infinite;
 }
 
-// Addresses Section
-.addresses-section {
+// Section Header (shared by Personal Information and Addresses)
+.profile-section {
   .section-header {
     display: flex;
     justify-content: space-between;
@@ -541,11 +636,19 @@
 
   .modal-actions {
     display: flex;
-    justify-content: flex-end;
+    justify-content: space-between;
     gap: 12px;
     padding-top: 20px;
     border-top: 2px solid #f5f5f5;
     margin-top: 20px;
+
+    .btn-secondary {
+      order: 1;
+    }
+
+    .btn-primary {
+      order: 2;
+    }
   }
 }
 
@@ -556,37 +659,517 @@
 }
 
 @media (max-width: 768px) {
+  .profile-container {
+    padding: 16px 12px;
+  }
+
   .page-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 15px;
+    gap: 8px;
+    margin-bottom: 12px;
+
+    .btn-back {
+      min-height: 44px;
+      padding: 10px 14px;
+      font-size: 13px;
+    }
+
+    h1 {
+      font-size: 22px;
+      margin: 0;
+    }
+  }
+
+  .loading-container {
+    padding: 40px 16px;
+
+    .spinner-large {
+      width: 40px;
+      height: 40px;
+      margin-bottom: 16px;
+    }
+
+    p {
+      font-size: 14px;
+    }
+  }
+
+  .profile-content {
+    gap: 10px;
+  }
+
+  .profile-section {
+    padding: 12px;
+    border-radius: 8px;
+
+    h2 {
+      font-size: 15px;
+      margin-bottom: 10px;
+      padding-bottom: 8px;
+    }
+
+    .section-header {
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+
+      h2 {
+        margin: 0;
+        padding: 0;
+        border: none;
+        flex: 1;
+      }
+
+      .btn {
+        padding: 8px 12px;
+        min-height: 36px;
+        font-size: 13px;
+        white-space: nowrap;
+      }
+    }
   }
 
   .readonly-fields {
     grid-template-columns: 1fr;
-  }
+    padding: 10px 12px;
+    gap: 8px;
+    margin-bottom: 12px;
+    border-radius: 8px;
 
-  .addresses-section .section-header {
-    flex-direction: column;
-    gap: 15px;
-    align-items: flex-start;
+    .field-group {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 0;
+      border-bottom: 1px solid #f0f0f0;
 
-    .btn {
-      width: 100%;
+      &:last-child {
+        border-bottom: none;
+      }
+
+      label {
+        font-size: 12px;
+        margin-bottom: 0;
+        text-transform: none;
+      }
+
+      .field-value {
+        font-size: 14px;
+        font-weight: 600;
+      }
+
+      &.discount-progress {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
+
+        .progress-info {
+          width: 100%;
+          gap: 8px;
+
+          .field-value {
+            font-size: 12px;
+            padding: 3px 10px;
+          }
+
+          .progress-detail {
+            font-size: 11px;
+            padding: 3px 8px;
+          }
+        }
+      }
     }
   }
 
-  .address-card .address-header {
-    flex-direction: column;
-    gap: 10px;
-    align-items: flex-start;
+  .profile-form,
+  .address-form {
+    .form-row {
+      gap: 0;
+    }
+
+    .form-group {
+      margin-bottom: 12px;
+
+      label {
+        font-size: 12px;
+        margin-bottom: 4px;
+      }
+
+      input,
+      select,
+      textarea {
+        padding: 12px 14px;
+        font-size: 16px; // Prevents iOS zoom
+        border-radius: 8px;
+      }
+
+      textarea {
+        min-height: 80px;
+      }
+
+      .error-message {
+        font-size: 11px;
+        margin-top: 4px;
+      }
+    }
+
+    .checkbox-group {
+      .checkbox-label {
+        min-height: 44px;
+        padding: 8px 0;
+
+        input[type="checkbox"] {
+          width: 20px;
+          height: 20px;
+        }
+
+        span {
+          font-size: 14px;
+        }
+      }
+    }
+
+    .switch-group {
+      min-height: 44px;
+      padding: 10px 0;
+
+      .switch-label {
+        font-size: 14px;
+      }
+
+      .switch {
+        width: 52px;
+        height: 28px;
+
+        .slider::before {
+          height: 22px;
+          width: 22px;
+        }
+
+        input:checked + .slider::before {
+          transform: translateX(24px);
+        }
+      }
+    }
   }
 
-  .modal-actions {
-    flex-direction: column;
+  .form-actions {
+    margin-top: 12px;
 
     .btn {
       width: 100%;
+      min-height: 44px;
+      font-size: 14px;
+    }
+  }
+
+  .message {
+    padding: 10px 12px;
+    font-size: 13px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+  }
+
+  .addresses-section .section-header {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+
+    h2 {
+      margin: 0;
+      padding: 0;
+      border: none;
+    }
+
+    .btn {
+      padding: 8px 12px;
+      min-height: 36px;
+      font-size: 13px;
+      white-space: nowrap;
+    }
+  }
+
+  .addresses-list {
+    gap: 8px;
+  }
+
+  .address-card {
+    padding: 12px;
+    border-radius: 8px;
+
+    .address-header {
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 8px;
+      margin-bottom: 8px;
+
+      .address-country {
+        flex-wrap: wrap;
+        gap: 6px;
+
+        strong {
+          font-size: 14px;
+        }
+
+        .default-badge {
+          font-size: 9px;
+          padding: 2px 6px;
+        }
+      }
+
+      .address-actions {
+        display: flex;
+        gap: 4px;
+        flex-shrink: 0;
+
+        .btn-icon {
+          min-width: 36px;
+          min-height: 36px;
+          padding: 6px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: #f8f9fa;
+          border: 1px solid #e1e8ed;
+          border-radius: 6px;
+          font-size: 16px;
+
+          &:hover {
+            background: #e9ecef;
+          }
+
+          &.btn-danger:hover {
+            background: #fff5f5;
+            border-color: #ffcdd2;
+          }
+        }
+      }
+    }
+
+    .address-details {
+      p {
+        font-size: 13px;
+        line-height: 1.5;
+        color: #666;
+      }
+    }
+  }
+
+  .empty-addresses {
+    padding: 24px 12px;
+    background: #f8f9fa;
+    border-radius: 8px;
+
+    p {
+      font-size: 13px;
+      margin: 0;
+    }
+  }
+
+  // Country autocomplete mobile adjustments
+  .country-autocomplete {
+    .autocomplete-wrapper {
+      .btn-clear {
+        min-width: 40px;
+        min-height: 40px;
+        right: 4px;
+        padding: 8px;
+      }
+
+      .autocomplete-dropdown {
+        max-height: 220px;
+
+        .autocomplete-item {
+          padding: 10px 12px;
+          min-height: 44px;
+
+          .country-code {
+            font-size: 12px;
+            min-width: 32px;
+          }
+
+          .country-name {
+            font-size: 14px;
+          }
+        }
+
+        .autocomplete-no-results {
+          padding: 12px;
+          font-size: 13px;
+        }
+      }
+    }
+  }
+
+  // Modal mobile adjustments - bottom sheet style
+  .modal-overlay {
+    padding: 0;
+    align-items: flex-end;
+  }
+
+  .modal-content {
+    max-height: 85vh;
+    border-radius: 12px 12px 0 0;
+    padding-bottom: env(safe-area-inset-bottom, 0);
+
+    .modal-header {
+      padding: 12px 14px;
+      position: sticky;
+      top: 0;
+      background: white;
+      z-index: 1;
+
+      h3 {
+        font-size: 16px;
+      }
+
+      .btn-close {
+        min-width: 44px;
+        min-height: 44px;
+        padding: 8px;
+      }
+    }
+
+    .address-form {
+      padding: 12px 14px;
+    }
+
+    .modal-actions {
+      flex-direction: row;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 12px 14px;
+      padding-bottom: calc(12px + env(safe-area-inset-bottom, 0));
+      margin-top: 0;
+      border-top: 1px solid #e1e8ed;
+      background: white;
+      position: sticky;
+      bottom: 0;
+
+      .btn {
+        flex: 1;
+        min-height: 44px;
+        font-size: 14px;
+      }
+    }
+  }
+}
+
+// Extra small screens
+@media (max-width: 480px) {
+  .profile-container {
+    padding: 12px 10px;
+  }
+
+  .page-header {
+    gap: 6px;
+
+    .btn-back {
+      padding: 8px 12px;
+      font-size: 12px;
+    }
+
+    h1 {
+      font-size: 20px;
+    }
+  }
+
+  .profile-section {
+    padding: 10px;
+
+    h2 {
+      font-size: 14px;
+      margin-bottom: 8px;
+      padding-bottom: 6px;
+    }
+  }
+
+  .readonly-fields {
+    padding: 8px 10px;
+    gap: 6px;
+
+    .field-group {
+      padding: 5px 0;
+
+      label {
+        font-size: 11px;
+      }
+
+      .field-value {
+        font-size: 13px;
+      }
+    }
+  }
+
+  .profile-form,
+  .address-form {
+    .form-group {
+      margin-bottom: 10px;
+
+      label {
+        font-size: 11px;
+      }
+
+      input,
+      select,
+      textarea {
+        padding: 10px 12px;
+      }
+    }
+  }
+
+  .addresses-section .section-header {
+    .btn {
+      padding: 6px 10px;
+      font-size: 12px;
+    }
+  }
+
+  .address-card {
+    padding: 10px;
+
+    .address-header {
+      gap: 6px;
+
+      .address-country strong {
+        font-size: 13px;
+      }
+
+      .address-actions .btn-icon {
+        min-width: 32px;
+        min-height: 32px;
+        padding: 4px;
+        font-size: 14px;
+      }
+    }
+
+    .address-details p {
+      font-size: 12px;
+    }
+  }
+
+  .modal-content {
+    .modal-header {
+      padding: 10px 12px;
+
+      h3 {
+        font-size: 15px;
+      }
+    }
+
+    .address-form {
+      padding: 10px 12px;
+    }
+
+    .modal-actions {
+      padding: 10px 12px;
+      padding-bottom: calc(10px + env(safe-area-inset-bottom, 0));
     }
   }
 }

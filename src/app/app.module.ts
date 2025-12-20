@@ -5,15 +5,11 @@ import { FormsModule } from '@angular/forms';
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { CoreModule } from './core/core.module';
-import { OrderConfirmationDialogComponent } from './products/order-confirmation-dialog/order-confirmation-dialog.component';
-import { CartAddressComponent } from './products/cart-address/cart-address.component';
 import { ServiceWorkerModule } from '@angular/service-worker';
 
 @NgModule({
   declarations: [
-    AppComponent,
-    OrderConfirmationDialogComponent,
-    CartAddressComponent
+    AppComponent
   ],
   imports: [
     BrowserModule,

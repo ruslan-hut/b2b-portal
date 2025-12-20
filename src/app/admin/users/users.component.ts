@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 
@@ -63,7 +63,10 @@ export class UsersComponent implements OnInit {
   editForm: Partial<AdminUser & { password: string; confirmPassword: string }> = {};
   isCreating = false;
 
-  constructor(private http: HttpClient) {}
+  constructor(
+    private http: HttpClient,
+    private cdr: ChangeDetectorRef
+  ) {}
 
   ngOnInit(): void {
     this.loadUsers();
@@ -83,11 +86,13 @@ export class UsersComponent implements OnInit {
         this.totalPages = response.metadata?.total_pages || Math.ceil(this.total / this.pageSize);
         this.applyFilters();
         this.loading = false;
+        this.cdr.detectChanges();
       },
       error: (err) => {
         console.error('Failed to load users:', err);
         this.error = 'Failed to load users';
         this.loading = false;
+        this.cdr.detectChanges();
       }
     });
   }
