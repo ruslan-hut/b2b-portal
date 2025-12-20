@@ -200,15 +200,10 @@ Please refer to [CODING_POLICY.md](./docs/CODING_POLICY.md) for detailed coding 
 
 ## Documentation
 
-For comprehensive frontend documentation, see the [Frontend Documentation Index](docs/README.md):
-
 - **[Quick Start Guide](docs/QUICKSTART.md)** - Fast setup and testing
-- **[Coding Policy](docs/CODING_POLICY.md)** - Coding standards and conventions
 - **[API Structure](docs/api/API_STRUCTURE.md)** - Complete backend API endpoint reference
 - **[Translation Implementation](docs/TRANSLATION_IMPLEMENTATION.md)** - Complete translation system
-- **[Translation Quick Start](docs/TRANSLATION_QUICK_START.md)** - Quick translation setup
 - **[Deployment Guide](docs/DEPLOYMENT.md)** - Frontend deployment instructions
-- **[Frontend CLAUDE Guide](CLAUDE.md)** - Frontend development patterns
 
 For project-wide documentation, see the [Main Documentation Index](docs/README.md).
 
