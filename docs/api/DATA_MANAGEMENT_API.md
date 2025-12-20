@@ -1008,6 +1008,79 @@ Client addresses store shipping and billing address information.
 
 ---
 
+## Changes
+
+Change records track modifications to entities for CRM synchronization. When clients, orders, or client addresses are created or updated, a change record is automatically created. External CRM systems can poll for pending changes and confirm when they've been processed.
+
+#### Change Record Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `uid` | string | Unique identifier for this change record |
+| `object_name` | string | Type of object: `"order"`, `"client"`, `"client_address"` |
+| `object_uid` | string | UID of the changed object |
+| `created_at` | timestamp | When the change was recorded |
+
+#### Get Pending Changes
+
+**GET** `/changes`
+
+Returns a list of pending changes that need to be synchronized with external systems.
+
+**Query Parameters:**
+- `limit`: (optional) integer, default 100, max 1000
+
+**Response:**
+```json
+{
+  "status": "success",
+  "data": [
+    {
+      "uid": "change-001",
+      "object_name": "client",
+      "object_uid": "client-123",
+      "created_at": "2025-01-15T10:30:00Z"
+    },
+    {
+      "uid": "change-002",
+      "object_name": "order",
+      "object_uid": "order-456",
+      "created_at": "2025-01-15T10:35:00Z"
+    }
+  ]
+}
+```
+
+#### Confirm Changes
+
+**POST** `/changes/confirm`
+
+Confirms that changes have been processed by the CRM. This deletes the change records so they won't be returned again.
+
+**Request Body:**
+```json
+{
+  "data": ["change-001", "change-002", "change-003"]
+}
+```
+
+**Response:**
+```json
+{
+  "status": "success",
+  "message": "Changes confirmed successfully"
+}
+```
+
+#### Synchronization Workflow
+
+1. CRM polls `GET /changes?limit=100` periodically
+2. CRM processes each change (fetches updated entity data)
+3. CRM calls `POST /changes/confirm` with processed change UIDs
+4. Change records are deleted, won't appear in future polls
+
+---
+
 ## Cleanup
 
 #### Delete Records Older Than a Specific Date
