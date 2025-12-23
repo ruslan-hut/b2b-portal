@@ -182,6 +182,10 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
 
     // Subscribe to language changes and reload products with new language descriptions
     this.translationService.currentLanguage$.subscribe(language => {
+      // Reload categories for the new language
+      console.log(`[Language Change] Reloading categories for language: ${language}`);
+      this.loadCategories();
+      
       // Only reload if products are already loaded (skip initial load)
       if (this.products.length > 0) {
         console.log(`[Language Change] Reloading products for language: ${language}`);

@@ -278,24 +278,103 @@ table {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20px;
+  padding: 16px;
   border-top: 1px solid #ecf0f1;
-
-  button {
-    padding: 8px 16px;
-    background-color: #3498db;
-    color: white;
-    border: none;
+  flex-wrap: wrap;
+  gap: 12px;
+  background-color: #f8f9fa;
+  
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+  
+  .pagination-info {
+    font-size: 0.9rem;
+    color: #2c3e50;
+    font-weight: 500;
+    
+    @media (max-width: 768px) {
+      text-align: center;
+      order: 1;
+    }
+  }
+  
+  .pagination-controls {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-wrap: wrap;
+    justify-content: center;
+    
+    @media (max-width: 768px) {
+      order: 2;
+      width: 100%;
+      justify-content: center;
+    }
+  }
+  
+  .pagination-page-info {
+    font-size: 0.9rem;
+    color: #2c3e50;
+    font-weight: 500;
+    
+    @media (max-width: 768px) {
+      text-align: center;
+      order: 3;
+    }
+  }
+  
+  .pagination-btn {
+    padding: 8px 12px;
+    background-color: white;
+    color: #2c3e50;
+    border: 1px solid #ddd;
     border-radius: 4px;
     cursor: pointer;
-
-    &:hover:not(:disabled) {
-      background-color: #2980b9;
+    font-size: 0.9rem;
+    font-weight: 500;
+    min-width: 40px;
+    transition: all 0.2s ease;
+    
+    @media (max-width: 768px) {
+      padding: 6px 10px;
+      font-size: 0.85rem;
+      min-width: 36px;
     }
-
+    
+    &:hover:not(:disabled) {
+      background-color: #3498db;
+      color: white;
+      border-color: #3498db;
+    }
+    
     &:disabled {
-      background-color: #bdc3c7;
+      background-color: #ecf0f1;
+      color: #bdc3c7;
       cursor: not-allowed;
+      border-color: #ecf0f1;
+    }
+    
+    &.active {
+      background-color: #3498db;
+      color: white;
+      border-color: #3498db;
+      font-weight: 600;
+    }
+    
+    &.first,
+    &.last {
+      font-weight: 600;
+    }
+    
+    &.prev,
+    &.next {
+      font-size: 1.2rem;
+      line-height: 1;
+      padding-top: 6px;
+      padding-bottom: 6px;
     }
   }
 }
@@ -357,11 +436,6 @@ table {
     }
   }
 
-  .pagination {
-    flex-direction: column;
-    gap: 10px;
-    text-align: center;
-  }
 }
 
 @media (max-width: 480px) {

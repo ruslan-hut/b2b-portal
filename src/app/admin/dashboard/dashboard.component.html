@@ -71,5 +71,43 @@
       </div>
     </div>
   }
+
+  <div class="discount-scale-section">
+    <div class="stat-card discount-scale-card">
+      <h2>Discount Scale</h2>
+      @if (getSelectedStoreName()) {
+        <div class="stat-description">{{ getSelectedStoreName() }}</div>
+      }
+      
+      @if (!selectedStoreUID || selectedStoreUID === 'null') {
+        <div class="empty-message">No scale</div>
+      } @else if (loadingDiscountScales) {
+        <div class="loading-message">Loading discount scales...</div>
+      } @else if (discountScales.length === 0) {
+        <div class="empty-message">No discount scales configured for this store</div>
+      } @else {
+        <div class="discount-scale-table-container">
+          <table class="discount-scale-table">
+            <thead>
+              <tr>
+                <th>Purchase Threshold</th>
+                <th>Discount</th>
+                <th>Currency</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (scale of discountScales; track scale.sum_purchase + scale.currency_code) {
+                <tr class="discount-scale-row">
+                  <td>{{ formatCurrency(scale.sum_purchase) }}</td>
+                  <td>{{ formatDiscount(scale.discount) }}</td>
+                  <td>{{ scale.currency_code }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  </div>
 </div>
 

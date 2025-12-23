@@ -48,12 +48,20 @@ export interface AdminProductWithDetails {
 export interface AdminProductsResponse {
   success: boolean;
   data: AdminProductWithDetails[];
-  metadata?: {
+  pagination?: {
     page: number;
     count: number;
     total: number;
     total_pages: number;
   };
+}
+
+export interface DiscountScale {
+  store_uid: string;
+  sum_purchase: number;  // in cents
+  discount: number;      // percentage 0-100
+  currency_code: string;
+  last_update?: string;
 }
 
 @Injectable({
@@ -191,6 +199,20 @@ export class AdminService {
     // For now, return common languages. In the future, this could query the database
     // to get distinct languages from product_descriptions table
     return of(['en', 'uk']);
+  }
+
+  /**
+   * Get discount scales for a store
+   * @param storeUID Store UID (required)
+   */
+  getDiscountScales(storeUID: string): Observable<DiscountScale[]> {
+    const url = `${this.apiUrl}/admin/discount_scale?store_uid=${encodeURIComponent(storeUID)}`;
+    return this.http.get<any>(url).pipe(
+      map((response: any) => {
+        // Handle both { success: true, data: [...] } and direct array responses
+        return response.data || response || [];
+      })
+    );
   }
 }
 

@@ -4,7 +4,12 @@
       <span class="arrow-icon">&larr;</span>
       Back to Clients
     </button>
-    <h1>{{ isEditMode ? 'Edit Client' : 'Create Client' }}</h1>
+    <h1>
+      {{ isEditMode ? 'Edit Client' : 'Create Client' }}
+      @if (hasUnsavedChanges) {
+        <span class="material-icons unsaved-warning-icon" title="You have unsaved changes">warning</span>
+      }
+    </h1>
     <button
       type="button"
       class="btn btn-primary btn-save"
@@ -34,13 +39,6 @@
   <!-- Success Message -->
   @if (successMessage) {
     <div class="message success">{{ successMessage }}</div>
-  }
-
-  <!-- Unsaved Changes Warning -->
-  @if (hasUnsavedChanges) {
-    <div class="message warning">
-      You have unsaved changes. Don't forget to save before leaving.
-    </div>
   }
 
   @if (!loading) {
