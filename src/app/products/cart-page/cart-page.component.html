@@ -46,12 +46,14 @@
                 <div class="item-pricing">
                   <div class="price-per-unit">
                     @if (hasDiscount) {
-                      <span class="price-original">{{ item.price.toFixed(2) }}</span>
+                      <span class="price-original">{{ (item.priceWithVat || item.price).toFixed(2) }}</span>
                     }
                     <span class="price-current" [class.discounted]="hasDiscount">
-                      {{ (item.priceDiscount || item.price).toFixed(2) }}
+                      {{ (item.priceAfterDiscountWithVat || item.priceDiscount || item.price).toFixed(2) }}
                     </span>
-                    <span class="price-unit">/ {{ 'products.unit' | translate }}</span>
+                    @if (item.discount && item.discount > 0) {
+                      <span class="discount-badge">-{{ item.discount }}%</span>
+                    }
                   </div>
                 </div>
               </div>
@@ -138,11 +140,14 @@
                     <span class="row-label">{{ 'products.price' | translate }}:</span>
                     <div class="row-value price-value">
                       @if (hasDiscount) {
-                        <span class="price-original">{{ item.price.toFixed(2) }}</span>
+                        <span class="price-original">{{ (item.priceWithVat || item.price).toFixed(2) }}</span>
                       }
                       <span class="price-current" [class.discounted]="hasDiscount">
-                        {{ (item.priceDiscount || item.price).toFixed(2) }}
+                        {{ (item.priceAfterDiscountWithVat || item.priceDiscount || item.price).toFixed(2) }}
                       </span>
+                      @if (item.discount && item.discount > 0) {
+                        <span class="discount-badge">-{{ item.discount }}%</span>
+                      }
                     </div>
                   </div>
 

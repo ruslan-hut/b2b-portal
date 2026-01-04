@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { Subscription } from 'rxjs';
@@ -30,7 +30,8 @@ interface ApiResponse<T> {
     selector: 'app-order-detail',
     templateUrl: './order-detail.component.html',
     styleUrl: './order-detail.component.scss',
-    standalone: false
+    standalone: false,
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class OrderDetailComponent implements OnInit, OnDestroy {
   orderId: string = '';

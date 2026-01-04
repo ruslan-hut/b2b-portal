@@ -4,7 +4,7 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ClientsRoutingModule } from './clients-routing.module';
 import { ClientsComponent } from './clients.component';
 import { ClientEditComponent } from './client-edit/client-edit.component';
-import { CoreModule } from '../../core/core.module';
+import { SharedModule } from '../../shared/shared.module';
 
 @NgModule({
   declarations: [
@@ -16,7 +16,7 @@ import { CoreModule } from '../../core/core.module';
     FormsModule,
     ReactiveFormsModule,
     ClientsRoutingModule,
-    CoreModule
+    SharedModule
   ]
 })
 export class ClientsModule { }

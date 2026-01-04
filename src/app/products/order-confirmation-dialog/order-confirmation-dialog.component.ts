@@ -1,10 +1,11 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output, ChangeDetectionStrategy } from '@angular/core';
 
 @Component({
     selector: 'app-order-confirmation-dialog',
     templateUrl: './order-confirmation-dialog.component.html',
     styleUrl: './order-confirmation-dialog.component.scss',
-    standalone: false
+    standalone: false,
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class OrderConfirmationDialogComponent {
   @Input() total: number = 0;

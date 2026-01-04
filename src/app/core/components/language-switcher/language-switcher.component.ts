@@ -1,4 +1,4 @@
-import { Component, OnInit, HostListener } from '@angular/core';
+import { Component, OnInit, HostListener, ChangeDetectionStrategy } from '@angular/core';
 import { TranslationService, Language } from '../../services/translation.service';
 import { Observable } from 'rxjs';
 
@@ -6,7 +6,8 @@ import { Observable } from 'rxjs';
     selector: 'app-language-switcher',
     templateUrl: './language-switcher.component.html',
     styleUrls: ['./language-switcher.component.scss'],
-    standalone: false
+    standalone: false,
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class LanguageSwitcherComponent implements OnInit {
   currentLanguage$: Observable<Language>;

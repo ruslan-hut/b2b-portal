@@ -13,7 +13,7 @@
   h1 {
     font-size: 32px;
     font-weight: 700;
-    color: #333;
+    color: var(--color-text-primary);
     margin: 0;
   }
 
@@ -22,17 +22,17 @@
     font-size: 14px;
     font-weight: 600;
     border: none;
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     cursor: pointer;
     transition: all 0.3s ease;
 
     &.btn-primary {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
+      background: var(--gradient-primary);
+      color: var(--color-text-inverse);
 
       &:hover {
         transform: translateY(-2px);
-        box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        box-shadow: var(--shadow-primary);
       }
     }
   }
@@ -45,24 +45,24 @@
   .spinner-large {
     width: 50px;
     height: 50px;
-    border: 4px solid rgba(102, 126, 234, 0.2);
+    border: 4px solid rgba(var(--color-primary-rgb), 0.2);
     border-radius: 50%;
-    border-top-color: #667eea;
+    border-top-color: var(--color-primary);
     animation: spin 0.8s linear infinite;
     margin: 0 auto 20px;
   }
 
   p {
-    color: #666;
+    color: var(--color-text-secondary);
     font-size: 16px;
   }
 }
 
 .filters-section {
   margin-bottom: 30px;
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  background: var(--card-bg);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
   overflow: hidden;
 
   .filters-header {
@@ -74,7 +74,7 @@
     transition: background 0.2s ease;
 
     &:hover {
-      background: #f8f9fa;
+      background: var(--color-background-secondary);
     }
 
     .filters-title {
@@ -83,30 +83,30 @@
       gap: 8px;
       font-size: 16px;
       font-weight: 600;
-      color: #333;
+      color: var(--color-text-primary);
 
       .filter-icon {
         font-size: 20px;
-        color: #667eea;
+        color: var(--color-primary);
       }
 
       .active-filters-badge {
         width: 8px;
         height: 8px;
-        background: #667eea;
+        background: var(--color-primary);
         border-radius: 50%;
       }
     }
 
     .expand-icon {
       font-size: 24px;
-      color: #666;
+      color: var(--color-text-secondary);
       transition: transform 0.2s ease;
     }
   }
 
   &.expanded .filters-header {
-    border-bottom: 1px solid #e1e8ed;
+    border-bottom: 1px solid var(--color-border);
   }
 
   .filters-container {
@@ -126,20 +126,22 @@
       label {
         font-size: 14px;
         font-weight: 600;
-        color: #333;
+        color: var(--color-text-primary);
       }
 
       .filter-select,
       .filter-input {
         padding: 10px 12px;
-        border: 2px solid #e1e8ed;
-        border-radius: 8px;
+        border: 2px solid var(--color-border);
+        border-radius: var(--radius-md);
         font-size: 14px;
+        background: var(--input-bg);
+        color: var(--input-text);
         transition: border-color 0.3s ease;
 
         &:focus {
           outline: none;
-          border-color: #667eea;
+          border-color: var(--color-primary);
         }
       }
     }
@@ -149,19 +151,19 @@
       font-size: 14px;
       font-weight: 600;
       border: none;
-      border-radius: 8px;
+      border-radius: var(--radius-md);
       cursor: pointer;
       transition: all 0.3s ease;
       white-space: nowrap;
 
       &.btn-secondary {
-        background-color: #f8f9fa;
-        color: #333;
-        border: 2px solid #e1e8ed;
+        background-color: var(--color-background-secondary);
+        color: var(--color-text-primary);
+        border: 2px solid var(--color-border);
 
         &:hover {
-          background-color: #e9ecef;
-          border-color: #dee2e6;
+          background-color: var(--color-background-hover);
+          border-color: var(--color-border-hover);
         }
       }
     }
@@ -171,13 +173,13 @@
 .no-matches {
   text-align: center;
   padding: 40px 20px;
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  background: var(--card-bg);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
   margin-bottom: 20px;
 
   p {
-    color: #666;
+    color: var(--color-text-secondary);
     font-size: 16px;
   }
 }
@@ -193,17 +195,17 @@
     align-items: center;
     justify-content: center;
     width: 100%;
-    color: #999;
+    color: var(--color-text-muted);
   }
 
   h2 {
     font-size: 24px;
-    color: #333;
+    color: var(--color-text-primary);
     margin-bottom: 10px;
   }
 
   p {
-    color: #666;
+    color: var(--color-text-secondary);
     font-size: 16px;
     margin-bottom: 30px;
   }
@@ -213,17 +215,17 @@
     font-size: 16px;
     font-weight: 600;
     border: none;
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     cursor: pointer;
     transition: all 0.3s ease;
 
     &.btn-primary {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
+      background: var(--gradient-primary);
+      color: var(--color-text-inverse);
 
       &:hover {
         transform: translateY(-2px);
-        box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        box-shadow: var(--shadow-primary);
       }
     }
   }
@@ -235,20 +237,20 @@
 }
 
 .order-card {
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  background: var(--card-bg);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
   padding: 24px;
   transition: all 0.3s ease;
   cursor: pointer;
 
   &:hover {
-    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
-    border-color: #667eea;
+    box-shadow: var(--shadow-lg);
+    border-color: var(--color-primary);
   }
 
   &:active {
-    background: #fafbfc;
+    background: var(--color-background-secondary);
   }
 
   .order-header {
@@ -262,13 +264,13 @@
       h3 {
         font-size: 20px;
         font-weight: 700;
-        color: #333;
+        color: var(--color-text-primary);
         margin: 0 0 5px 0;
       }
 
       .order-date {
         font-size: 14px;
-        color: #666;
+        color: var(--color-text-secondary);
       }
     }
 
@@ -282,28 +284,28 @@
         text-transform: uppercase;
 
         &.status-draft {
-          background-color: #ecf0f1;
-          color: #95a5a6;
+          background-color: var(--status-draft-bg);
+          color: var(--status-draft-text);
         }
 
         &.status-new {
-          background-color: #d6eaf8;
-          color: #3498db;
+          background-color: var(--status-new-bg);
+          color: var(--status-new-text);
         }
 
         &.status-processing {
-          background-color: #fef5e7;
-          color: #f39c12;
+          background-color: var(--status-processing-bg);
+          color: var(--status-processing-text);
         }
 
         &.status-confirmed {
-          background-color: #d5f4e6;
-          color: #27ae60;
+          background-color: var(--status-confirmed-bg);
+          color: var(--status-confirmed-text);
         }
 
         &.status-cancelled {
-          background-color: #fadbd8;
-          color: #e74c3c;
+          background-color: var(--status-cancelled-bg);
+          color: var(--status-cancelled-text);
         }
       }
     }
@@ -318,7 +320,7 @@
       justify-content: space-between;
       align-items: center;
       padding: 12px 0;
-      border-bottom: 1px solid #f5f5f5;
+      border-bottom: 1px solid var(--color-border-light);
 
       &:last-child {
         border-bottom: none;
@@ -330,21 +332,21 @@
 
         .item-name {
           font-size: 15px;
-          color: #333;
+          color: var(--color-text-primary);
           font-weight: 500;
           margin-bottom: 4px;
         }
 
         .item-quantity {
           font-size: 13px;
-          color: #666;
+          color: var(--color-text-secondary);
         }
       }
 
       .item-price {
         font-size: 15px;
         font-weight: 600;
-        color: #333;
+        color: var(--color-text-primary);
       }
     }
   }
@@ -352,21 +354,21 @@
   .order-comment {
     margin-bottom: 15px;
     padding: 12px;
-    background: #f8f9fa;
-    border-left: 3px solid #667eea;
-    border-radius: 4px;
+    background: var(--color-background-secondary);
+    border-left: 3px solid var(--color-primary);
+    border-radius: var(--radius-sm);
 
     .comment-label {
       font-size: 12px;
       font-weight: 600;
-      color: #667eea;
+      color: var(--color-primary);
       text-transform: uppercase;
       margin-bottom: 6px;
     }
 
     .comment-text {
       font-size: 14px;
-      color: #333;
+      color: var(--color-text-primary);
       line-height: 1.5;
       white-space: pre-wrap;
       word-wrap: break-word;
@@ -378,31 +380,31 @@
     justify-content: space-between;
     align-items: center;
     padding-top: 15px;
-    border-top: 1px solid #e1e8ed;
+    border-top: 1px solid var(--color-border);
 
     .order-total {
       .total-label {
         font-size: 16px;
-        color: #666;
+        color: var(--color-text-secondary);
         margin-right: 10px;
       }
 
       .total-amount {
         font-size: 24px;
         font-weight: 700;
-        color: #333;
+        color: var(--color-text-primary);
       }
     }
 
     .chevron-icon {
-      color: #999;
+      color: var(--color-text-muted);
       font-size: 24px;
       transition: color 0.2s ease;
     }
   }
 
   &:hover .chevron-icon {
-    color: #667eea;
+    color: var(--color-primary);
   }
 }
 
@@ -444,7 +446,7 @@
 
   .filters-section {
     margin-bottom: 12px;
-    border-radius: 8px;
+    border-radius: var(--radius-md);
 
     .filters-header {
       padding: 12px;
@@ -487,7 +489,7 @@
         .filter-input {
           padding: 10px 12px;
           font-size: 16px; // Prevents iOS zoom
-          border-radius: 8px;
+          border-radius: var(--radius-md);
         }
       }
 
@@ -502,7 +504,7 @@
 
   .no-matches {
     padding: 24px 12px;
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     margin-bottom: 12px;
 
     p {
@@ -541,10 +543,10 @@
 
   .order-card {
     padding: 12px;
-    border-radius: 8px;
+    border-radius: var(--radius-md);
 
     &:hover {
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      box-shadow: var(--shadow-md);
     }
 
     .order-header {
@@ -567,7 +569,7 @@
 
           small {
             font-size: 11px;
-            color: #999;
+            color: var(--color-text-muted);
           }
         }
       }

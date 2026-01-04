@@ -1,61 +1,80 @@
 <div class="tables-container">
   <div class="header">
-    <h1>Database Tables Viewer</h1>
-    <p class="warning">Read-only access. This tool allows viewing database records for debugging and administration purposes.</p>
+    <h1>Tables</h1>
   </div>
 
+  <!-- Mobile Controls Toggle -->
+  <button class="controls-toggle" (click)="toggleControls()">
+    <span class="material-icons">tune</span>
+    <span>{{ selectedTable || 'Select Table' }}</span>
+    <span class="material-icons toggle-icon" [class.expanded]="isControlsExpanded">
+      expand_more
+    </span>
+  </button>
+
   <div class="tables-layout">
-    <!-- Table Selector -->
-    <div class="table-selector-row">
-      <label class="table-selector-label">Table:</label>
-      @if (loading) {
-        <span class="loading-inline">Loading tables...</span>
-      }
-      @if (error && !selectedTable) {
-        <span class="error-inline">{{ error }}</span>
-      }
-      @if (!loading) {
-        <select
-          class="table-selector"
-          [value]="selectedTable"
-          (change)="onTableSelect($any($event.target).value)"
-          >
-          <option value="" disabled selected>Select a table...</option>
-          @for (table of tables; track table) {
-            <option [value]="table.name">{{ table.name }}</option>
-          }
-        </select>
+    <!-- Table Selector Row with Search Controls -->
+    <div class="table-selector-row" [class.expanded]="isControlsExpanded">
+      <div class="selector-group">
+        <label class="table-selector-label">Table:</label>
+        @if (loading) {
+          <span class="loading-inline">Loading tables...</span>
+        }
+        @if (error && !selectedTable) {
+          <span class="error-inline">{{ error }}</span>
+        }
+        @if (!loading) {
+          <select
+            class="table-selector"
+            [value]="selectedTable"
+            (change)="onTableSelect($any($event.target).value)"
+            >
+            <option value="" disabled selected>Select a table...</option>
+            @for (table of tables; track table) {
+              <option [value]="table.name">{{ table.name }}</option>
+            }
+          </select>
+        }
+      </div>
+      @if (selectedTable) {
+        <div class="search-controls">
+          <select
+            [(ngModel)]="searchField"
+            class="field-selector"
+            >
+            <option value="">All fields</option>
+            @for (column of columns; track column) {
+              <option [value]="column">{{ getColumnLabel(column) }}</option>
+            }
+          </select>
+          <div class="search-input-wrapper">
+            <input
+              type="text"
+              [(ngModel)]="searchTerm"
+              (keyup.enter)="onSearchChange()"
+              placeholder="Search..."
+              class="search-input"
+              />
+            <button type="button" class="search-icon-btn" (click)="onSearchChange()">
+              <span class="material-icons">search</span>
+            </button>
+          </div>
+        </div>
+        <div class="inline-pagination">
+          <button class="page-btn" [disabled]="currentPage === 1" (click)="goToPage(currentPage - 1)">
+            <span class="material-icons">chevron_left</span>
+          </button>
+          <span class="page-info">{{ currentPage }}/{{ totalPages }}</span>
+          <button class="page-btn" [disabled]="currentPage === totalPages" (click)="goToPage(currentPage + 1)">
+            <span class="material-icons">chevron_right</span>
+          </button>
+        </div>
       }
     </div>
 
     <!-- Records Viewer -->
     @if (selectedTable) {
       <div class="records-viewer">
-        <div class="viewer-header">
-          <div class="search-controls">
-            <select
-              [(ngModel)]="searchField"
-              class="field-selector"
-              >
-              <option value="">All fields</option>
-              @for (column of columns; track column) {
-                <option [value]="column">{{ getColumnLabel(column) }}</option>
-              }
-            </select>
-            <div class="search-input-wrapper">
-              <input
-                type="text"
-                [(ngModel)]="searchTerm"
-                (keyup.enter)="onSearchChange()"
-                placeholder="Search records..."
-                class="search-input"
-                />
-              <button type="button" class="search-icon-btn" (click)="onSearchChange()">
-                <span class="material-icons">search</span>
-              </button>
-            </div>
-          </div>
-        </div>
         @if (loadingRecords) {
           <div class="loading">Loading records...</div>
         }
@@ -63,7 +82,8 @@
           <div class="error">{{ error }}</div>
         }
         @if (!loadingRecords && !error) {
-          <div class="records-table-container">
+          <!-- Desktop Table -->
+          <div class="records-table-container desktop-only">
             @if (records.length === 0) {
               <div class="no-records">
                 No records found
@@ -95,18 +115,65 @@
                 </table>
               </div>
             }
-            @if (totalPages > 1) {
-              <div class="pagination">
-                <button [disabled]="currentPage === 1" (click)="goToPage(currentPage - 1)">Previous</button>
-                <span>Page {{ currentPage }} of {{ totalPages }} ({{ total }} total records)</span>
-                <button [disabled]="currentPage === totalPages" (click)="goToPage(currentPage + 1)">Next</button>
+          </div>
+
+          <!-- Mobile Cards -->
+          <div class="records-cards mobile-only">
+            @if (records.length === 0) {
+              <div class="no-data-card">No records found</div>
+            }
+            @for (record of records; track record; let i = $index) {
+              <div class="record-card" [class.expanded]="isRecordExpanded(i)" (click)="toggleRecordExpanded(i)">
+                <div class="card-header">
+                  <span class="record-title">{{ getRecordTitle(record) }}</span>
+                  <span class="record-index">#{{ (currentPage - 1) * pageSize + i + 1 }}</span>
+                </div>
+                <div class="card-summary">
+                  @for (col of getPreviewColumns(); track col) {
+                    <div class="summary-item">
+                      <span class="label">{{ getColumnLabel(col) }}:</span>
+                      <span class="value" [class]="getValueClass(record[col], col)">
+                        {{ formatValue(record[col], col) }}
+                      </span>
+                    </div>
+                  }
+                  <span class="material-icons expand-icon">{{ isRecordExpanded(i) ? 'expand_less' : 'expand_more' }}</span>
+                </div>
+                @if (isRecordExpanded(i)) {
+                  <div class="card-details">
+                    @for (col of getRemainingColumns(); track col) {
+                      <div class="detail-row">
+                        <span class="label">{{ getColumnLabel(col) }}:</span>
+                        <span class="value" [class]="getValueClass(record[col], col)">
+                          {{ formatValue(record[col], col) }}
+                        </span>
+                      </div>
+                    }
+                  </div>
+                }
               </div>
             }
           </div>
+
+          <!-- Mobile Pagination -->
+          @if (records.length > 0) {
+            <div class="mobile-pagination mobile-only">
+              <span class="page-info-mobile">Page {{ currentPage }} of {{ totalPages }} ({{ total }} records)</span>
+              <div class="pagination-buttons">
+                <button [disabled]="currentPage === 1" (click)="goToPage(currentPage - 1)">Previous</button>
+                <button [disabled]="currentPage === totalPages" (click)="goToPage(currentPage + 1)">Next</button>
+              </div>
+            </div>
+          }
         }
       </div>
     }
 
+    @if (!selectedTable && !loading) {
+      <div class="select-table-prompt">
+        <span class="material-icons">table_chart</span>
+        <p>Select a table to view its records</p>
+      </div>
+    }
   </div>
 </div>
-

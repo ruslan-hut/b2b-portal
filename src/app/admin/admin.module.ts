@@ -4,7 +4,7 @@ import { RouterModule } from '@angular/router';
 
 import { AdminRoutingModule } from './admin-routing.module';
 import { AdminComponent } from './admin.component';
-import { CoreModule } from '../core/core.module';
+import { SharedModule } from '../shared/shared.module';
 
 @NgModule({
   declarations: [
@@ -14,7 +14,7 @@ import { CoreModule } from '../core/core.module';
     CommonModule,
     RouterModule,
     AdminRoutingModule,
-    CoreModule
+    SharedModule
   ]
 })
 export class AdminModule { }

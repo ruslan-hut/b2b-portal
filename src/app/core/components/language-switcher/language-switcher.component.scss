@@ -8,9 +8,9 @@
   align-items: center;
   gap: 0.25rem;
   padding: 0.5rem 0.75rem;
-  border: 1px solid #ddd;
+  border: 1px solid var(--color-border);
   border-radius: 6px;
-  background-color: #fff;
+  background-color: var(--card-bg);
   cursor: pointer;
   transition: all 0.2s ease;
   font-size: 0.9rem;
@@ -18,9 +18,9 @@
   justify-content: center;
 
   &:hover {
-    background-color: #f8f9fa;
-    border-color: #007bff;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    background-color: var(--color-background-secondary);
+    border-color: var(--color-info);
+    box-shadow: var(--shadow-sm);
   }
 
   &:active {
@@ -41,7 +41,7 @@
 
   .arrow {
     font-size: 16px;
-    color: #6c757d;
+    color: var(--color-text-muted);
     transition: transform 0.2s ease;
     display: inline-flex;
     align-items: center;
@@ -54,10 +54,10 @@
   top: calc(100% + 0.5rem);
   right: 0;
   min-width: 160px;
-  background-color: #fff;
-  border: 1px solid #ddd;
+  background-color: var(--card-bg);
+  border: 1px solid var(--color-border);
   border-radius: 6px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--shadow-md);
   opacity: 0;
   visibility: hidden;
   transform: translateY(-10px);
@@ -79,28 +79,28 @@
   width: 100%;
   padding: 0.75rem 1rem;
   border: none;
-  background-color: #fff;
+  background-color: var(--card-bg);
   cursor: pointer;
   transition: background-color 0.2s ease;
   text-align: left;
   font-size: 0.9rem;
 
   &:hover {
-    background-color: #f8f9fa;
+    background-color: var(--color-background-secondary);
   }
 
   &.active {
-    background-color: #e7f3ff;
-    color: #007bff;
+    background-color: var(--color-info-light);
+    color: var(--color-info);
     font-weight: 500;
 
     &:hover {
-      background-color: #d6ebff;
+      background-color: var(--color-info-light);
     }
   }
 
   &:not(:last-child) {
-    border-bottom: 1px solid #f0f0f0;
+    border-bottom: 1px solid var(--color-border-light);
   }
 
   .flag-icon {

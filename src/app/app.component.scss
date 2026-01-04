@@ -2,7 +2,7 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background: #f5f7fa;
+  background: var(--color-background);
 }
 
 .offline-indicator {
@@ -10,12 +10,12 @@
   top: 0;
   left: 0;
   right: 0;
-  background: #ff6b6b;
-  color: white;
+  background: var(--color-warning);
+  color: var(--color-text-inverse);
   padding: 12px 20px;
   text-align: center;
   z-index: 10001;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--shadow-md);
   animation: slideDown 0.3s ease-out;
 
   .offline-content {
@@ -52,11 +52,18 @@
 }
 
 .app-header {
-  background: white;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  background: var(--header-bg);
+  box-shadow: var(--header-shadow);
   position: sticky;
   top: 0;
   z-index: 1100;
+
+  // Hide on mobile when in admin zone (admin has its own header)
+  &.hide-on-mobile-admin {
+    @media (max-width: 768px) {
+      display: none;
+    }
+  }
 
   .header-content {
     max-width: 1400px;
@@ -88,7 +95,7 @@
     .logo-text {
       font-size: 24px;
       font-weight: 700;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: var(--gradient-primary);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
@@ -108,9 +115,9 @@
       font-size: 14px;
       font-weight: 600;
       border: none;
-      border-radius: 8px;
-      background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
-      color: white;
+      border-radius: var(--radius-md);
+      background: var(--gradient-danger);
+      color: var(--color-text-inverse);
       cursor: pointer;
       transition: all 0.3s ease;
       position: relative;
@@ -128,7 +135,7 @@
 
       &:hover {
         transform: translateY(-2px);
-        box-shadow: 0 5px 20px rgba(255, 107, 107, 0.5);
+        box-shadow: 0 5px 20px rgba(var(--color-warning-rgb), 0.5);
       }
     }
 
@@ -142,16 +149,16 @@
         padding: 8px 16px;
         font-size: 14px;
         font-weight: 600;
-        border: 2px solid #e1e8ed;
-        border-radius: 8px;
-        background: white;
-        color: #333;
+        border: 2px solid var(--color-border);
+        border-radius: var(--radius-md);
+        background: var(--card-bg);
+        color: var(--color-text-primary);
         cursor: pointer;
         transition: all 0.2s ease;
 
         &:hover {
-          border-color: #667eea;
-          background: #f5f7fa;
+          border-color: var(--color-primary);
+          background: var(--color-background);
         }
 
         .user-info {
@@ -162,13 +169,13 @@
           .user-name {
             font-size: 14px;
             font-weight: 600;
-            color: #333;
+            color: var(--color-text-primary);
             line-height: 1.2;
           }
 
           .user-company {
             font-size: 12px;
-            color: #666;
+            color: var(--color-text-secondary);
             line-height: 1.2;
           }
         }
@@ -186,7 +193,7 @@
 
         .menu-arrow {
           font-size: 16px;
-          color: #666;
+          color: var(--color-text-secondary);
           transition: transform 0.2s ease;
           display: inline-flex;
           align-items: center;
@@ -203,9 +210,9 @@
         top: calc(100% + 8px);
         right: 0;
         min-width: 220px;
-        background: white;
-        border-radius: 12px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        background: var(--dropdown-bg);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--dropdown-shadow);
         opacity: 0;
         visibility: hidden;
         transform: translateY(-10px);
@@ -223,7 +230,7 @@
           padding: 0;
 
           &:not(:first-child) {
-            border-top: 1px solid #e1e8ed;
+            border-top: 1px solid var(--color-border);
             margin-top: 4px;
             padding-top: 4px;
           }
@@ -238,19 +245,19 @@
             font-weight: 500;
             border: none;
             background: none;
-            color: #333;
+            color: var(--color-text-primary);
             text-decoration: none;
             cursor: pointer;
             transition: all 0.2s ease;
             text-align: left;
 
             &:hover {
-              background: #f5f7fa;
+              background: var(--dropdown-item-hover-bg);
             }
 
             &.active {
-              background: #f0f4ff;
-              color: #667eea;
+              background: var(--dropdown-item-active-bg);
+              color: var(--color-primary);
               font-weight: 600;
             }
 
@@ -267,26 +274,26 @@
             }
 
             &.btn-logout-menu {
-              color: #dc3545;
+              color: var(--color-danger);
 
               &:hover {
-                background: #fff5f5;
-                color: #c82333;
+                background: var(--color-danger-light);
+                color: var(--color-danger-dark);
               }
             }
 
             &.admin-menu-item {
-              color: #667eea;
+              color: var(--color-primary);
               font-weight: 600;
 
               &:hover {
-                background: #f0f4ff;
-                color: #5568d3;
+                background: var(--dropdown-item-active-bg);
+                color: var(--color-primary-dark);
               }
 
               &.active {
-                background: #f0f4ff;
-                color: #667eea;
+                background: var(--dropdown-item-active-bg);
+                color: var(--color-primary);
               }
             }
           }
@@ -299,24 +306,25 @@
             gap: 4px;
             padding: 12px 20px;
             cursor: default;
-            background: #f8f9fa;
-            border-bottom: 1px solid #e1e8ed;
+            background: var(--color-background-secondary);
+            border-bottom: 1px solid var(--color-border);
             margin-bottom: 4px;
 
             .user-name-display {
               font-size: 15px;
               font-weight: 600;
-              color: #333;
+              color: var(--color-text-primary);
             }
 
             .user-company-display {
               font-size: 13px;
-              color: #666;
+              color: var(--color-text-secondary);
             }
           }
 
           // Style language switcher inside menu
-          .language-menu-item {
+          .language-menu-item,
+          .theme-menu-item {
             display: flex;
             align-items: center;
             gap: 12px;
@@ -327,33 +335,37 @@
               flex: 1;
             }
 
-            app-language-switcher {
+            app-language-switcher,
+            app-theme-toggle {
               flex-shrink: 0;
 
               ::ng-deep {
-                .language-switcher {
+                .language-switcher,
+                .theme-toggle-wrapper {
                   position: relative;
 
-                  .language-toggle {
+                  .language-toggle,
+                  .theme-toggle-btn {
                     width: auto;
                     min-width: 60px;
                     justify-content: center;
-                    border: 1px solid #e1e8ed;
-                    background: white;
+                    border: 1px solid var(--color-border);
+                    background: var(--card-bg);
                     padding: 6px 10px;
                     font-weight: 500;
-                    color: #333;
-                    border-radius: 6px;
+                    color: var(--color-text-primary);
+                    border-radius: var(--radius-md);
                     transition: all 0.2s ease;
 
                     &:hover {
-                      background: #f5f7fa;
-                      border-color: #667eea;
-                      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+                      background: var(--dropdown-item-hover-bg);
+                      border-color: var(--color-primary);
+                      box-shadow: var(--shadow-sm);
                     }
                   }
 
-                  .language-dropdown {
+                  .language-dropdown,
+                  .theme-dropdown {
                     position: absolute;
                     top: calc(100% + 8px);
                     right: 0;

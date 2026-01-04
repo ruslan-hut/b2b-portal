@@ -1,4 +1,4 @@
-import { Component, ChangeDetectorRef, OnInit, OnDestroy, HostListener } from '@angular/core';
+import { Component, ChangeDetectorRef, ChangeDetectionStrategy, OnInit, OnDestroy, HostListener } from '@angular/core';
 import { Router, NavigationEnd } from '@angular/router';
 import { AuthService } from './core/services/auth.service';
 import { OrderService } from './core/services/order.service';
@@ -14,7 +14,8 @@ import { Subscription } from 'rxjs';
     selector: 'app-root',
     templateUrl: './app.component.html',
     styleUrl: './app.component.scss',
-    standalone: false
+    standalone: false,
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AppComponent implements OnInit, OnDestroy {
   title: string = 'B2B Portal';
@@ -24,6 +25,7 @@ export class AppComponent implements OnInit, OnDestroy {
   viewMode: 'grid' | 'bulk' = 'bulk';
   showViewToggle = false;
   isAuthRoute = false;
+  isAdminRoute = false;
   isOnline = true;
   isUserMenuOpen = false;
   private subscriptions = new Subscription();
@@ -64,11 +66,12 @@ export class AppComponent implements OnInit, OnDestroy {
       })
     );
 
-    // Initialize auth route check
+    // Initialize route checks
     this.isAuthRoute = this.router.url.includes('/auth');
+    this.isAdminRoute = this.router.url.includes('/admin');
 
     // Show view toggle only on products catalog page
-    // Also track if we're on auth route
+    // Also track if we're on auth or admin routes
     this.subscriptions.add(
       this.router.events.pipe(
         filter(event => event instanceof NavigationEnd)
@@ -76,6 +79,7 @@ export class AppComponent implements OnInit, OnDestroy {
         const navEvent = event as NavigationEnd;
         this.showViewToggle = navEvent.url.includes('/products/catalog');
         this.isAuthRoute = navEvent.url.includes('/auth');
+        this.isAdminRoute = navEvent.url.includes('/admin');
       })
     );
   }

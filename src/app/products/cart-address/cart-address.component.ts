@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, OnInit, OnDestroy } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, OnDestroy, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
 import { CartAddress } from '../../core/models/order.model';
 import { ClientAddress } from '../../core/models/app-settings.model';
 import { AppSettingsService } from '../../core/services/app-settings.service';
@@ -8,7 +8,8 @@ import { Subscription } from 'rxjs';
     selector: 'app-cart-address',
     templateUrl: './cart-address.component.html',
     styleUrls: ['./cart-address.component.scss'],
-    standalone: false
+    standalone: false,
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class CartAddressComponent implements OnInit, OnDestroy {
   @Input() address: CartAddress | null = null;
@@ -21,7 +22,7 @@ export class CartAddressComponent implements OnInit, OnDestroy {
 
   private subscription = new Subscription();
 
-  constructor(private appSettingsService: AppSettingsService) {}
+  constructor(private appSettingsService: AppSettingsService, private cdr: ChangeDetectorRef) {}
 
   ngOnInit(): void {
     // Subscribe to AppSettings changes for addresses
@@ -33,6 +34,7 @@ export class CartAddressComponent implements OnInit, OnDestroy {
           this.addresses = [];
         }
         this.loadingAddresses = false;
+        this.cdr.markForCheck();
       })
     );
   }

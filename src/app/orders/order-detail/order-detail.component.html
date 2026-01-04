@@ -191,7 +191,7 @@
         </div>
         @if (getVatAmount() > 0) {
           <div class="total-row vat-row">
-            <span class="total-label">{{ 'products.vat' | translate }}@if (order?.vatRate) {
+            <span class="total-label">{{ 'products.vat' | translate }}@if (order.vatRate) {
               <span> ({{ order.vatRate }}%)</span>
             }:</span>
             <span class="total-value">{{ getVatAmount().toFixed(2) }}{{ currencyName ? ' ' + currencyName : '' }}</span>

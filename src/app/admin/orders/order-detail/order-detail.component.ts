@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
@@ -85,7 +85,8 @@ interface ApiResponse<T> {
     selector: 'app-order-detail',
     templateUrl: './order-detail.component.html',
     styleUrl: './order-detail.component.scss',
-    standalone: false
+    standalone: false,
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class OrderDetailComponent implements OnInit {
   orderUID: string = '';
@@ -102,6 +103,10 @@ export class OrderDetailComponent implements OnInit {
   historyOffset = 0;
   historyDesc = true; // default: newest first
   historyLoading = false;
+
+  // Mobile UI state
+  showAllItems = false;
+  itemsPreviewLimit = 5;
 
   constructor(
     private route: ActivatedRoute,
@@ -182,9 +187,10 @@ export class OrderDetailComponent implements OnInit {
         }
 
         this.loading = false;
-        this.cdr.detectChanges();
         // Load status history after order and items are loaded
-        this.loadHistory();
+        // Defer to next tick to avoid ExpressionChangedAfterItHasBeenCheckedError
+        setTimeout(() => this.loadHistory());
+        this.cdr.detectChanges();
       },
       error: (err) => {
         console.error('Failed to load order detail:', err);
@@ -266,5 +272,25 @@ export class OrderDetailComponent implements OnInit {
        !!this.order.city ||
        !!this.order.zipcode ||
        !!this.order.country_code);
+  }
+
+  // Mobile UI methods
+  get visibleItems(): OrderItem[] {
+    if (this.showAllItems) {
+      return this.items;
+    }
+    return this.items.slice(0, this.itemsPreviewLimit);
+  }
+
+  get hasMoreItems(): boolean {
+    return this.items.length > this.itemsPreviewLimit;
+  }
+
+  get hiddenItemsCount(): number {
+    return this.items.length - this.itemsPreviewLimit;
+  }
+
+  toggleShowAllItems(): void {
+    this.showAllItems = !this.showAllItems;
   }
 }

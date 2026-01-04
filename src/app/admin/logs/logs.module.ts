@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { LogsRoutingModule } from './logs-routing.module';
 import { LogsComponent } from './logs.component';
-import { CoreModule } from '../../core/core.module';
+import { SharedModule } from '../../shared/shared.module';
 
 @NgModule({
   declarations: [
@@ -13,7 +13,7 @@ import { CoreModule } from '../../core/core.module';
     CommonModule,
     FormsModule,
     LogsRoutingModule,
-    CoreModule
+    SharedModule
   ]
 })
 export class LogsModule { }

@@ -1,4 +1,69 @@
 <div class="admin-container">
+  <!-- Mobile Header -->
+  <header class="mobile-header">
+    <button class="mobile-menu-btn" (click)="toggleMobileMenu()" aria-label="Toggle menu">
+      <span class="material-icons">{{ isMobileMenuOpen ? 'close' : 'menu' }}</span>
+    </button>
+    <h1>Admin Zone</h1>
+    <button class="mobile-close-btn" (click)="goToClientZone()" aria-label="Exit admin zone">
+      <span class="material-icons">close</span>
+    </button>
+  </header>
+
+  <!-- Mobile Dropdown Menu -->
+  @if (isMobileMenuOpen) {
+    <div class="mobile-menu-backdrop" (click)="closeMobileMenu()"></div>
+    <nav class="mobile-dropdown-menu">
+      <ul>
+        <li>
+          <a routerLink="/admin/dashboard" routerLinkActive="active" (click)="closeMobileMenu()">
+            <span class="material-icons">dashboard</span>
+            <span>Dashboard</span>
+          </a>
+        </li>
+        <li>
+          <a routerLink="/admin/clients" routerLinkActive="active" (click)="closeMobileMenu()">
+            <span class="material-icons">people</span>
+            <span>Clients</span>
+          </a>
+        </li>
+        <li>
+          <a routerLink="/admin/orders" routerLinkActive="active" (click)="closeMobileMenu()">
+            <span class="material-icons">receipt</span>
+            <span>Orders</span>
+          </a>
+        </li>
+        <li>
+          <a routerLink="/admin/products" routerLinkActive="active" (click)="closeMobileMenu()">
+            <span class="material-icons">inventory_2</span>
+            <span>Products</span>
+          </a>
+        </li>
+        @if (isAdmin) {
+          <li>
+            <a routerLink="/admin/users" routerLinkActive="active" (click)="closeMobileMenu()">
+              <span class="material-icons">person</span>
+              <span>Users</span>
+            </a>
+          </li>
+          <li>
+            <a routerLink="/admin/tables" routerLinkActive="active" (click)="closeMobileMenu()">
+              <span class="material-icons">table_chart</span>
+              <span>Database Tables</span>
+            </a>
+          </li>
+          <li>
+            <a routerLink="/admin/logs" routerLinkActive="active" (click)="closeMobileMenu()">
+              <span class="material-icons">description</span>
+              <span>Logs</span>
+            </a>
+          </li>
+        }
+      </ul>
+    </nav>
+  }
+
+  <!-- Desktop Sidebar -->
   <nav class="admin-nav" [class.collapsed]="isMenuCollapsed">
     <div class="nav-header">
       <div class="header-top">
@@ -74,6 +139,14 @@
         </li>
       }
     </ul>
+    <div class="nav-footer">
+      <button class="exit-btn" (click)="goToClientZone()" [title]="isMenuCollapsed ? 'Exit Admin' : ''">
+        <span class="material-icons">logout</span>
+        @if (!isMenuCollapsed) {
+          <span class="text">Exit Admin</span>
+        }
+      </button>
+    </div>
   </nav>
   <main class="admin-content" [class.expanded]="isMenuCollapsed">
     <router-outlet></router-outlet>

@@ -49,9 +49,16 @@
     "profile": "Profile",
     "settings": "Settings",
     "language": "Language",
+    "theme": "Theme",
     "gridView": "Grid View",
     "bulkOrder": "Bulk Order",
     "cart": "Cart"
+  },
+  "theme": {
+    "toggle": "Toggle theme",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System"
   },
   "products": {
     "title": "Product Catalog",
@@ -245,6 +252,7 @@
     "itemAddedToCart": "Item added to cart",
     "itemRemovedFromCart": "Item removed from cart",
     "cartCleared": "Cart cleared",
+    "cartEmpty": "Your cart is empty",
     "profileUpdated": "Profile updated successfully",
     "passwordChanged": "Password changed successfully",
     "somethingWentWrong": "Something went wrong. Please try again."

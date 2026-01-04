@@ -1,10 +1,22 @@
 <div class="clients-container">
   <div class="header">
-    <h1>Clients Management</h1>
-    <button class="btn-primary" (click)="createClient()">+ Add Client</button>
+    <h1>Clients</h1>
+    <button class="btn-add" (click)="createClient()">
+      <span class="material-icons">add</span>
+      <span class="btn-text">Add</span>
+    </button>
   </div>
 
-  <div class="filters">
+  <!-- Mobile Filter Toggle -->
+  <button class="filter-toggle" (click)="toggleFilters()">
+    <span class="material-icons">filter_list</span>
+    <span>Filters</span>
+    <span class="material-icons toggle-icon" [class.expanded]="isFiltersExpanded">
+      expand_more
+    </span>
+  </button>
+
+  <div class="filters" [class.expanded]="isFiltersExpanded">
     <div class="filter-group">
       <label>Status:</label>
       <select [(ngModel)]="activeFilter" (change)="onFilterChange()">
@@ -37,7 +49,8 @@
   }
 
   @if (!loading && !error) {
-    <div class="clients-table">
+    <!-- Desktop Table View -->
+    <div class="clients-table desktop-only">
       <table>
         <thead>
           <tr>
@@ -79,13 +92,111 @@
           }
         </tbody>
       </table>
-      @if (totalPages > 1) {
-        <div class="pagination">
-          <button [disabled]="currentPage === 1" (click)="goToPage(currentPage - 1)">Previous</button>
-          <span>Page {{ currentPage }} of {{ totalPages }} ({{ total }} total)</span>
-          <button [disabled]="currentPage === totalPages" (click)="goToPage(currentPage + 1)">Next</button>
+
+    </div>
+
+    <!-- Mobile Card View -->
+    <div class="clients-cards mobile-only">
+      @for (client of filteredClients; track client) {
+        <div class="client-card" [class.expanded]="isCardExpanded(client.uid)" (click)="toggleCardExpanded(client.uid)">
+          <div class="card-header">
+            <div class="card-title">
+              <span class="client-name">{{ client.name }}</span>
+              <span class="status-badge" [class.active]="client.active" [class.inactive]="!client.active">
+                {{ client.active ? 'Active' : 'Inactive' }}
+              </span>
+            </div>
+            <div class="card-subtitle">{{ client.phone }}</div>
+          </div>
+          <div class="card-summary">
+            <div class="summary-item">
+              <span class="label">Discount:</span>
+              <span class="value">{{ client.discount }}%</span>
+            </div>
+            <div class="summary-item">
+              <span [class.mode-fixed]="client.fixed_discount" [class.mode-scale]="!client.fixed_discount">
+                {{ client.fixed_discount ? 'Fixed' : 'Scale' }}
+              </span>
+            </div>
+            <span class="material-icons expand-icon">{{ isCardExpanded(client.uid) ? 'expand_less' : 'expand_more' }}</span>
+          </div>
+          @if (isCardExpanded(client.uid)) {
+            <div class="card-details">
+              <div class="detail-row">
+                <span class="label">Email:</span>
+                <span class="value">{{ client.email || '-' }}</span>
+              </div>
+              <div class="detail-row">
+                <span class="label">Balance:</span>
+                <span class="value">{{ formatBalance(client.balance) }}</span>
+              </div>
+              <div class="detail-row">
+                <span class="label">VAT Number:</span>
+                <span class="value">{{ client.vat_number || '-' }}</span>
+              </div>
+              <button class="btn-edit" (click)="editClient(client); $event.stopPropagation()">
+                <span class="material-icons">edit</span>
+                Edit Client
+              </button>
+            </div>
+          }
         </div>
       }
+      @if (filteredClients.length === 0) {
+        <div class="no-data-card">No clients found</div>
+      }
     </div>
+
+    <!-- Pagination -->
+    @if (totalPages > 1) {
+      <div class="pagination">
+          <div class="pagination-info">
+            <span>Showing {{ getStartItemNumber() }} - {{ getEndItemNumber() }} of {{ total }} clients</span>
+          </div>
+          <div class="pagination-controls">
+            <button 
+              class="pagination-btn first" 
+              [disabled]="currentPage === 1" 
+              (click)="goToFirstPage()"
+              title="First page">
+              ««
+            </button>
+            <button 
+              class="pagination-btn prev" 
+              [disabled]="currentPage === 1" 
+              (click)="goToPage(currentPage - 1)"
+              title="Previous page">
+              ‹
+            </button>
+            
+            @for (page of getPageNumbers(); track page) {
+              <button 
+                class="pagination-btn page-number"
+                [class.active]="page === currentPage"
+                (click)="goToPage(page)">
+                {{ page }}
+              </button>
+            }
+            
+            <button 
+              class="pagination-btn next" 
+              [disabled]="currentPage === totalPages" 
+              (click)="goToPage(currentPage + 1)"
+              title="Next page">
+              ›
+            </button>
+            <button 
+              class="pagination-btn last" 
+              [disabled]="currentPage === totalPages" 
+              (click)="goToLastPage()"
+              title="Last page">
+              »»
+            </button>
+          </div>
+          <div class="pagination-page-info">
+            <span>Page {{ currentPage }} of {{ totalPages }}</span>
+          </div>
+      </div>
+    }
   }
 </div>

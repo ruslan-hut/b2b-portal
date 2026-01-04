@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ChangeDetectorRef, HostListener } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, ChangeDetectionStrategy, HostListener } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
@@ -54,7 +54,8 @@ interface SelectOption {
   selector: 'app-client-edit',
   templateUrl: './client-edit.component.html',
   styleUrls: ['./client-edit.component.scss'],
-  standalone: false
+  standalone: false,
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ClientEditComponent implements OnInit, OnDestroy {
   // Form
@@ -155,16 +156,18 @@ export class ClientEditComponent implements OnInit, OnDestroy {
     );
 
     // Check if editing existing client
-    this.route.params.subscribe(params => {
-      if (params['uid']) {
-        this.clientUid = params['uid'];
-        this.isEditMode = true;
-        this.loadClient();
-      } else {
-        // For new client, store initial form value
-        this.storeInitialFormValue();
-      }
-    });
+    this.subscriptions.add(
+      this.route.params.subscribe(params => {
+        if (params['uid']) {
+          this.clientUid = params['uid'];
+          this.isEditMode = true;
+          this.loadClient();
+        } else {
+          // For new client, store initial form value
+          this.storeInitialFormValue();
+        }
+      })
+    );
   }
 
   ngOnDestroy(): void {
@@ -266,10 +269,16 @@ export class ClientEditComponent implements OnInit, OnDestroy {
 
     this.addressesLoading = true;
 
-    // Load addresses for this client
-    this.http.get<ApiResponse<AdminClientAddress[]>>(`${environment.apiUrl}/admin/client_addresses?client_uid=${this.clientUid}`).subscribe({
+    // Load addresses for this client using find/client endpoint
+    // Response is a map: { "client-uid": [addresses...] }
+    this.http.post<ApiResponse<{ [clientUid: string]: AdminClientAddress[] }>>(`${environment.apiUrl}/client_address/find/client`, {
+      data: [this.clientUid]
+    }).subscribe({
       next: (response) => {
-        this.addresses = (response.data || []).sort((a, b) => {
+        // Extract addresses for this client from the map
+        const addressMap = response.data || {};
+        const clientAddresses = addressMap[this.clientUid!] || [];
+        this.addresses = clientAddresses.sort((a, b) => {
           if (a.is_default && !b.is_default) return -1;
           if (!a.is_default && b.is_default) return 1;
           return 0;
@@ -421,7 +430,7 @@ export class ClientEditComponent implements OnInit, OnDestroy {
       is_default: formValue.is_default || false
     };
 
-    this.http.post<ApiResponse<any>>(`${environment.apiUrl}/admin/client_addresses`, {
+    this.http.post<ApiResponse<any>>(`${environment.apiUrl}/client_address`, {
       data: [addressData]
     }).subscribe({
       next: () => {
@@ -444,7 +453,7 @@ export class ClientEditComponent implements OnInit, OnDestroy {
       return;
     }
 
-    this.http.post<ApiResponse<any>>(`${environment.apiUrl}/admin/client_addresses/delete`, {
+    this.http.post<ApiResponse<any>>(`${environment.apiUrl}/client_address/delete`, {
       data: [address.uid]
     }).subscribe({
       next: () => {
@@ -470,7 +479,7 @@ export class ClientEditComponent implements OnInit, OnDestroy {
       is_default: true
     };
 
-    this.http.post<ApiResponse<any>>(`${environment.apiUrl}/admin/client_addresses`, {
+    this.http.post<ApiResponse<any>>(`${environment.apiUrl}/client_address`, {
       data: [addressData]
     }).subscribe({
       next: () => {

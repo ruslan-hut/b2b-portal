@@ -1,11 +1,12 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
 import { LogService, LogEntry, LogFilters } from '../../core/services/log.service';
 
 @Component({
     selector: 'app-logs',
     templateUrl: './logs.component.html',
     styleUrls: ['./logs.component.scss'],
-    standalone: false
+    standalone: false,
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class LogsComponent implements OnInit {
   logs: LogEntry[] = [];
@@ -29,6 +30,9 @@ export class LogsComponent implements OnInit {
 
   // Expanded rows
   expandedRows = new Set<number>();
+
+  // Mobile UI state
+  isFiltersExpanded = false;
 
   constructor(
     private logService: LogService,
@@ -143,6 +147,11 @@ export class LogsComponent implements OnInit {
     return new Date(dateString).toLocaleString();
   }
 
+  formatTime(dateString: string): string {
+    const date = new Date(dateString);
+    return date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  }
+
   refresh(): void {
     this.loadLogs();
   }
@@ -162,6 +171,11 @@ export class LogsComponent implements OnInit {
         alert('Failed to cleanup logs');
       }
     });
+  }
+
+  // Mobile UI methods
+  toggleFilters(): void {
+    this.isFiltersExpanded = !this.isFiltersExpanded;
   }
 }
 

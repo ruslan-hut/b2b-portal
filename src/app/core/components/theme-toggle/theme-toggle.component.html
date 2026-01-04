@@ -1,0 +1,26 @@
+<div class="theme-toggle-wrapper">
+  <button
+    class="theme-toggle-btn"
+    (click)="toggleDropdown()"
+    [attr.aria-label]="'theme.toggle' | translate"
+    [attr.aria-expanded]="isDropdownOpen">
+    <span class="material-icons theme-icon">{{ getThemeIcon() }}</span>
+    <span class="material-icons arrow" [class.open]="isDropdownOpen">keyboard_arrow_down</span>
+  </button>
+
+  <div class="theme-dropdown" [class.open]="isDropdownOpen">
+    @for (theme of themes; track theme.value) {
+      <button
+        class="theme-option"
+        [class.active]="(theme$ | async) === theme.value"
+        (click)="selectTheme(theme.value)"
+        [attr.aria-label]="theme.labelKey | translate">
+        <span class="material-icons option-icon">{{ theme.icon }}</span>
+        <span class="option-label">{{ theme.labelKey | translate }}</span>
+        @if ((theme$ | async) === theme.value) {
+          <span class="material-icons check-icon">check</span>
+        }
+      </button>
+    }
+  </div>
+</div>

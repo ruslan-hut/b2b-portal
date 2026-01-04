@@ -1,4 +1,3 @@
-// filepath: c:\Users\egorh\GolandProjects\comex\frontend\src\app\admin\orders\order-detail\order-detail.component.scss
 .order-detail-container {
   .detail-header {
     display: flex;
@@ -7,30 +6,46 @@
     margin-bottom: 20px;
 
     .btn-back {
-      padding: 8px 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 14px;
       border: none;
-      background: #ecf0f1;
-      border-radius: 4px;
+      background: var(--color-background-secondary);
+      border-radius: 6px;
       cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: var(--color-text-primary);
+      transition: background-color 0.2s;
+
+      .material-icons {
+        font-size: 18px;
+      }
+
+      &:hover {
+        background: var(--color-border);
+      }
     }
 
     h2 {
       margin: 0;
-      color: #2c3e50;
+      color: var(--color-text-primary);
+      font-size: 1.5rem;
     }
   }
 
   .section {
-    background: white;
+    background: var(--card-bg);
     border-radius: 8px;
     padding: 16px;
     margin-bottom: 16px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    box-shadow: var(--shadow-sm);
 
     h3 {
       margin-top: 0;
       margin-bottom: 12px;
-      color: #2c3e50;
+      color: var(--color-text-primary);
     }
   }
 
@@ -43,34 +58,43 @@
   .items-table {
     width: 100%;
     border-collapse: collapse;
+    font-size: 0.9rem;
 
     thead {
-      background: #34495e;
-      color: white;
+      background: var(--table-header-bg);
+      color: var(--table-header-text);
+
+      th {
+        padding: 10px 8px;
+        text-align: left;
+        font-weight: 600;
+        font-size: 0.85rem;
+      }
     }
 
-    th, td {
-      padding: 10px;
-      border-bottom: 1px solid #ecf0f1;
+    tbody td {
+      padding: 10px 8px;
+      border-bottom: 1px solid var(--color-border-light);
       text-align: left;
+      color: var(--color-text-primary);
     }
 
     .no-data {
       text-align: center;
       padding: 20px;
-      color: #7f8c8d;
+      color: var(--color-text-muted);
     }
   }
 
   .loading, .error {
     padding: 12px;
-    background: white;
+    background: var(--card-bg);
     border-radius: 6px;
     margin-bottom: 12px;
   }
 
   .error {
-    color: #e74c3c;
+    color: var(--color-danger);
   }
 }
 
@@ -85,7 +109,7 @@
     display: flex;
     justify-content: space-between;
     padding: 4px 0;
-    //border-bottom: 1px solid #ecf0f1;
+    //border-bottom: 1px solid var(--color-border-light);
 
     &:last-child {
       border-bottom: none;
@@ -98,40 +122,267 @@
   }
 
   .total-label {
-    color: #7f8c8d;
+    color: var(--color-text-muted);
   }
 
   .total-value {
     font-weight: 500;
-    color: #2c3e50;
+    color: var(--color-text-primary);
   }
 
   .discount-row {
     .discount-value {
-      color: #27ae60;
+      color: var(--color-success);
     }
   }
 
   .final-total-row {
-    border-top: 2px solid #34495e;
+    border-top: 2px solid var(--table-header-bg);
     margin-top: 8px;
     padding-top: 12px;
 
     .total-label {
       font-weight: 600;
-      color: #2c3e50;
+      color: var(--color-text-primary);
     }
 
     .final-total {
       font-size: 1.2em;
       font-weight: 700;
-      color: #2c3e50;
+      color: var(--color-text-primary);
     }
   }
 }
 
-.status-draft { color: #95a5a6; font-weight: 600; }
-.status-new { color: #3498db; font-weight: 600; }
-.status-processing { color: #f39c12; font-weight: 600; }
-.status-confirmed { color: #27ae60; font-weight: 600; }
+// Status colors
+.status-draft { color: var(--status-draft-text); font-weight: 600; }
+.status-new { color: var(--color-info); font-weight: 600; }
+.status-processing { color: var(--status-processing-text); font-weight: 600; }
+.status-confirmed { color: var(--color-success); font-weight: 600; }
+
+// Desktop/Mobile visibility
+.desktop-only {
+  display: table;
+}
+
+.mobile-only {
+  display: none;
+}
+
+// Mobile Item Cards
+.items-cards {
+  flex-direction: column;
+  gap: 10px;
+}
+
+.item-card {
+  background: var(--color-background-secondary);
+  border-radius: 6px;
+  padding: 12px;
+  border-left: 3px solid var(--color-info);
+
+  .item-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 4px;
+
+    .item-name {
+      font-weight: 600;
+      color: var(--color-text-primary);
+      font-size: 0.95rem;
+      flex: 1;
+      padding-right: 8px;
+    }
+
+    .item-total {
+      font-weight: 700;
+      color: var(--color-text-primary);
+      font-size: 1rem;
+      white-space: nowrap;
+    }
+  }
+
+  .item-card-sku {
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+    margin-bottom: 8px;
+  }
+
+  .item-card-details {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+
+    .detail-item {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.85rem;
+
+      .label {
+        color: var(--color-text-muted);
+      }
+
+      .value {
+        font-weight: 500;
+        color: var(--color-text-primary);
+      }
+
+      &.discount .value {
+        color: var(--color-success);
+      }
+    }
+  }
+}
+
+// Mobile History Cards
+.history-cards {
+  flex-direction: column;
+  gap: 10px;
+}
+
+.history-card {
+  background: var(--color-background-secondary);
+  border-radius: 6px;
+  padding: 12px;
+
+  .history-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+
+    .history-status {
+      font-weight: 600;
+      text-transform: capitalize;
+    }
+
+    .history-date {
+      font-size: 0.8rem;
+      color: var(--color-text-muted);
+    }
+  }
+
+  .history-card-user {
+    font-size: 0.85rem;
+    color: var(--color-text-primary);
+  }
+
+  .history-card-comment {
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid var(--color-border-light);
+    font-style: italic;
+  }
+}
+
+.no-data-card {
+  text-align: center;
+  padding: 20px;
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+  background: var(--color-background-secondary);
+  border-radius: 6px;
+}
+
+// Show more button
+.btn-show-more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  padding: 12px;
+  margin-top: 4px;
+  background: var(--card-bg);
+  border: 1px dashed var(--color-border);
+  border-radius: 6px;
+  color: var(--color-info);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  .material-icons {
+    font-size: 20px;
+  }
+
+  &:hover {
+    background: var(--color-background-secondary);
+    border-color: var(--color-info);
+  }
+
+  &:active {
+    background: var(--color-background-secondary);
+  }
+}
+
+// Mobile Responsive Styles
+@media (max-width: 768px) {
+  .order-detail-container {
+    .detail-header {
+      gap: 12px;
+      margin-bottom: 16px;
+
+      .btn-back {
+        padding: 8px 12px;
+
+        .btn-text {
+          display: none;
+        }
+      }
+
+      h2 {
+        font-size: 1.25rem;
+      }
+    }
+
+    .section {
+      padding: 12px;
+      margin-bottom: 12px;
+
+      h3 {
+        font-size: 1rem;
+        margin-bottom: 10px;
+      }
+    }
+
+    .info-grid {
+      grid-template-columns: 1fr;
+      gap: 8px;
+
+      > div {
+        font-size: 0.9rem;
+      }
+    }
+  }
+
+  // Toggle visibility
+  .desktop-only {
+    display: none !important;
+  }
+
+  .mobile-only {
+    display: flex !important;
+  }
+
+  // Totals section adjustments
+  .totals-section {
+    .totals-breakdown {
+      max-width: none;
+      margin-left: 0;
+    }
+
+    .total-row {
+      font-size: 0.9rem;
+    }
+
+    .final-total-row .final-total {
+      font-size: 1.1em;
+    }
+  }
+}
 

@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { environment } from '../../../environments/environment';
@@ -46,7 +46,8 @@ interface ApiResponse<T> {
     selector: 'app-orders',
     templateUrl: './orders.component.html',
     styleUrls: ['./orders.component.scss'],
-    standalone: false
+    standalone: false,
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class OrdersComponent implements OnInit {
   orders: AdminOrder[] = [];
@@ -65,6 +66,10 @@ export class OrdersComponent implements OnInit {
   searchTerm = '';
   storeFilter: string = '';
   priceTypeFilter: string = '';
+
+  // Mobile UI state
+  isFiltersExpanded = false;
+  expandedCardIds: Set<string> = new Set();
 
   // Filter Options
   statusOptions = [
@@ -312,5 +317,22 @@ export class OrdersComponent implements OnInit {
 
   viewOrderDetail(order: AdminOrder): void {
     this.router.navigate(['/admin/orders', order.uid]);
+  }
+
+  // Mobile UI methods
+  toggleFilters(): void {
+    this.isFiltersExpanded = !this.isFiltersExpanded;
+  }
+
+  toggleCardExpanded(uid: string): void {
+    if (this.expandedCardIds.has(uid)) {
+      this.expandedCardIds.delete(uid);
+    } else {
+      this.expandedCardIds.add(uid);
+    }
+  }
+
+  isCardExpanded(uid: string): boolean {
+    return this.expandedCardIds.has(uid);
   }
 }

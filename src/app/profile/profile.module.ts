@@ -4,7 +4,7 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 import { ProfileRoutingModule } from './profile-routing.module';
 import { ProfileComponent } from './profile.component';
-import { CoreModule } from '../core/core.module';
+import { SharedModule } from '../shared/shared.module';
 
 @NgModule({
   declarations: [
@@ -15,7 +15,7 @@ import { CoreModule } from '../core/core.module';
     FormsModule,
     ReactiveFormsModule,
     ProfileRoutingModule,
-    CoreModule
+    SharedModule
   ]
 })
 export class ProfileModule { }

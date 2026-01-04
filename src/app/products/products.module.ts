@@ -8,7 +8,7 @@ import { ProductDetailsOverlayComponent } from './product-details-overlay/produc
 import { CartPageComponent } from './cart-page/cart-page.component';
 import { CartAddressComponent } from './cart-address/cart-address.component';
 import { OrderConfirmationDialogComponent } from './order-confirmation-dialog/order-confirmation-dialog.component';
-import { CoreModule } from '../core/core.module';
+import { SharedModule } from '../shared/shared.module';
 
 
 @NgModule({
@@ -24,7 +24,7 @@ import { CoreModule } from '../core/core.module';
     FormsModule,
     ReactiveFormsModule,
     ProductsRoutingModule,
-    CoreModule
+    SharedModule
   ]
 })
 export class ProductsModule { }

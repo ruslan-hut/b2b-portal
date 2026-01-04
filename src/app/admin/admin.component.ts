@@ -1,5 +1,6 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectionStrategy } from '@angular/core';
 import { Router } from '@angular/router';
+import { Subscription } from 'rxjs';
 import { AuthService } from '../core/services/auth.service';
 import { User } from '../core/models/user.model';
 
@@ -7,11 +8,15 @@ import { User } from '../core/models/user.model';
     selector: 'app-admin',
     templateUrl: './admin.component.html',
     styleUrls: ['./admin.component.scss'],
-    standalone: false
+    standalone: false,
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class AdminComponent implements OnInit {
+export class AdminComponent implements OnInit, OnDestroy {
   isAdmin = false;
   isMenuCollapsed = false;
+  isMobileMenuOpen = false;
+
+  private subscriptions = new Subscription();
 
   constructor(
     private authService: AuthService,
@@ -25,19 +30,37 @@ export class AdminComponent implements OnInit {
       this.isMenuCollapsed = savedState === 'true';
     }
 
-    this.authService.currentEntity$.subscribe(entity => {
-      if (entity && this.authService.entityTypeValue === 'user') {
-        const user = entity as User;
-        this.isAdmin = user?.role === 'admin';
-      } else {
-        this.isAdmin = false;
-      }
-    });
+    this.subscriptions.add(
+      this.authService.currentEntity$.subscribe(entity => {
+        if (entity && this.authService.entityTypeValue === 'user') {
+          const user = entity as User;
+          this.isAdmin = user?.role === 'admin';
+        } else {
+          this.isAdmin = false;
+        }
+      })
+    );
+  }
+
+  ngOnDestroy(): void {
+    this.subscriptions.unsubscribe();
   }
 
   toggleMenu(): void {
     this.isMenuCollapsed = !this.isMenuCollapsed;
     localStorage.setItem('admin_menu_collapsed', this.isMenuCollapsed.toString());
+  }
+
+  toggleMobileMenu(): void {
+    this.isMobileMenuOpen = !this.isMobileMenuOpen;
+  }
+
+  closeMobileMenu(): void {
+    this.isMobileMenuOpen = false;
+  }
+
+  goToClientZone(): void {
+    this.router.navigate(['/products/catalog']);
   }
 
   logout(): void {

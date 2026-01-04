@@ -16,7 +16,7 @@
 }
 
 .overlay-content {
-  background: white;
+  background: var(--card-bg);
   border-radius: 16px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
   max-width: 900px;
@@ -33,15 +33,15 @@
   justify-content: space-between;
   align-items: center;
   padding: 24px 24px 16px;
-  border-bottom: 1px solid #e1e8ed;
+  border-bottom: 1px solid var(--color-border);
   flex-shrink: 0;
 
   h2 {
     font-size: 24px;
     font-weight: 700;
-    color: #333;
+    color: var(--color-text-primary);
     margin: 0;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: var(--gradient-primary);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -50,7 +50,7 @@
   .close-btn {
     background: none;
     border: none;
-    color: #666;
+    color: var(--color-text-secondary);
     cursor: pointer;
     padding: 0;
     width: 32px;
@@ -66,8 +66,8 @@
     }
 
     &:hover {
-      background-color: #f5f5f5;
-      color: #333;
+      background-color: var(--color-background-secondary);
+      color: var(--color-text-primary);
     }
   }
 }
@@ -98,7 +98,7 @@
     object-fit: cover;
     border-radius: 12px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    background: #f5f5f5;
+    background: var(--color-background-secondary);
   }
 
   .product-details-below-image {
@@ -109,10 +109,10 @@
 
     .product-sku {
       font-size: 14px;
-      color: #999;
+      color: var(--color-text-muted);
       font-family: monospace;
       padding: 8px 12px;
-      background: #f8f9fa;
+      background: var(--color-background-secondary);
       border-radius: 6px;
     }
 
@@ -120,7 +120,7 @@
       .section-label {
         font-size: 12px;
         font-weight: 600;
-        color: #666;
+        color: var(--color-text-secondary);
         text-transform: uppercase;
         letter-spacing: 0.5px;
         margin: 0 0 8px 0;
@@ -131,24 +131,24 @@
         align-items: baseline;
         gap: 8px;
         padding: 12px;
-        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        background: var(--color-background-secondary);
         border-radius: 8px;
 
         .price-amount {
           font-size: 24px;
           font-weight: 700;
-          color: #333;
+          color: var(--color-text-primary);
         }
 
         .price-currency {
           font-size: 14px;
-          color: #666;
+          color: var(--color-text-secondary);
           font-weight: 600;
         }
 
         .price-not-available {
           font-size: 14px;
-          color: #999;
+          color: var(--color-text-muted);
           font-style: italic;
         }
       }
@@ -158,7 +158,7 @@
       .section-label {
         font-size: 12px;
         font-weight: 600;
-        color: #666;
+        color: var(--color-text-secondary);
         text-transform: uppercase;
         letter-spacing: 0.5px;
         margin: 0 0 8px 0;
@@ -169,7 +169,7 @@
         align-items: center;
         gap: 12px;
         padding: 12px;
-        background: #f8f9fa;
+        background: var(--color-background-secondary);
         border-radius: 8px;
 
         .status-dot {
@@ -180,20 +180,20 @@
           flex-shrink: 0;
 
           &.available {
-            background-color: #28a745;
-            box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.2);
+            background-color: var(--color-success);
+            box-shadow: 0 0 0 3px rgba(var(--color-success-rgb), 0.2);
           }
 
           &.unavailable {
-            background-color: #dc3545;
-            box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.2);
+            background-color: var(--color-danger);
+            box-shadow: 0 0 0 3px rgba(var(--color-danger-rgb), 0.2);
           }
         }
 
         .status-text {
           font-size: 14px;
           font-weight: 600;
-          color: #333;
+          color: var(--color-text-primary);
         }
       }
     }
@@ -208,7 +208,7 @@
   gap: 24px;
 
   .product-category-badge {
-    color: #667eea;
+    color: var(--color-primary);
     font-size: 12px;
     font-weight: 700;
     text-transform: uppercase;
@@ -219,7 +219,7 @@
   .product-name {
     font-size: 28px;
     font-weight: 700;
-    color: #333;
+    color: var(--color-text-primary);
     margin: 0 0 24px 0;
     line-height: 1.3;
   }
@@ -227,7 +227,7 @@
   .section-label {
     font-size: 14px;
     font-weight: 600;
-    color: #666;
+    color: var(--color-text-secondary);
     text-transform: uppercase;
     letter-spacing: 0.5px;
     margin: 0 0 8px 0;
@@ -236,10 +236,10 @@
   .product-description-section {
     .product-description {
       font-size: 15px;
-      color: #555;
+      color: var(--color-text-secondary);
       line-height: 1.6;
       padding: 24px;
-      background: #f8f9fa;
+      background: var(--color-background-secondary);
       border-radius: 8px;
       white-space: pre-wrap;
       word-wrap: break-word;
@@ -279,13 +279,13 @@
         font-weight: 600;
 
         &.active {
-          background-color: #d4edda;
-          color: #155724;
+          background-color: var(--status-success-bg);
+          color: var(--status-success-text);
         }
 
         &.inactive {
-          background-color: #f8d7da;
-          color: #721c24;
+          background-color: var(--status-error-bg);
+          color: var(--status-error-text);
         }
       }
     }
@@ -351,7 +351,7 @@
 .product-price-section {
   .original-price {
     font-size: 0.9em;
-    color: #999;
+    color: var(--color-text-muted);
     margin-bottom: 4px;
 
     .strikethrough {
@@ -364,7 +364,7 @@
     font-weight: 600;
 
     &.has-discount {
-      color: #e74c3c;
+      color: var(--color-danger);
       font-weight: bold;
     }
   }
@@ -372,7 +372,7 @@
   .savings-info {
     margin-top: 8px;
     font-size: 0.9em;
-    color: #27ae60;
+    color: var(--color-success);
     font-weight: 600;
 
     .savings-label {
@@ -380,7 +380,7 @@
     }
 
     .savings-percent {
-      color: #666;
+      color: var(--color-text-secondary);
       font-weight: 500;
     }
   }

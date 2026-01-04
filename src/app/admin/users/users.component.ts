@@ -1,5 +1,5 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { Component, OnInit, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 
 export interface AdminUser {
@@ -30,7 +30,8 @@ interface ApiResponse<T> {
     selector: 'app-users',
     templateUrl: './users.component.html',
     styleUrls: ['./users.component.scss'],
-    standalone: false
+    standalone: false,
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class UsersComponent implements OnInit {
   users: AdminUser[] = [];
@@ -56,7 +57,11 @@ export class UsersComponent implements OnInit {
     { value: 'user', label: 'User' },
     { value: 'client', label: 'Client' }
   ];
-  
+
+  // Mobile UI state
+  isFiltersExpanded = false;
+  expandedCardIds: Set<string> = new Set();
+
   // Edit/Create
   editingUser: AdminUser | null = null;
   showEditModal = false;
@@ -257,6 +262,23 @@ export class UsersComponent implements OnInit {
       this.currentPage = page;
       this.loadUsers();
     }
+  }
+
+  // Mobile UI methods
+  toggleFilters(): void {
+    this.isFiltersExpanded = !this.isFiltersExpanded;
+  }
+
+  toggleCardExpanded(uid: string): void {
+    if (this.expandedCardIds.has(uid)) {
+      this.expandedCardIds.delete(uid);
+    } else {
+      this.expandedCardIds.add(uid);
+    }
+  }
+
+  isCardExpanded(uid: string): boolean {
+    return this.expandedCardIds.has(uid);
   }
 }
 

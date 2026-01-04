@@ -1,10 +1,22 @@
 <div class="users-container">
   <div class="header">
-    <h1>Users Management</h1>
-    <button class="btn-primary" (click)="createUser()">+ Add User</button>
+    <h1>Users</h1>
+    <button class="btn-add" (click)="createUser()">
+      <span class="material-icons">add</span>
+      <span class="btn-text">Add</span>
+    </button>
   </div>
 
-  <div class="filters">
+  <!-- Mobile Filter Toggle -->
+  <button class="filter-toggle" (click)="toggleFilters()">
+    <span class="material-icons">filter_list</span>
+    <span>Filters</span>
+    <span class="material-icons toggle-icon" [class.expanded]="isFiltersExpanded">
+      expand_more
+    </span>
+  </button>
+
+  <div class="filters" [class.expanded]="isFiltersExpanded">
     <div class="filter-group">
       <label>Role:</label>
       <select [(ngModel)]="roleFilter" (change)="onRoleFilterChange()">
@@ -15,13 +27,13 @@
         }
       </select>
     </div>
-    <div class="filter-group">
+    <div class="filter-group search-group">
       <label>Search:</label>
       <input
         type="text"
         [(ngModel)]="searchTerm"
         (input)="onSearchChange()"
-        placeholder="Search by username, email, or name"
+        placeholder="Search users..."
         />
     </div>
   </div>
@@ -34,7 +46,8 @@
   }
 
   @if (!loading && !error) {
-    <div class="users-table">
+    <!-- Desktop Table -->
+    <div class="users-table desktop-only">
       <table>
         <thead>
           <tr>
@@ -83,6 +96,72 @@
         </div>
       }
     </div>
+
+    <!-- Mobile Cards -->
+    <div class="users-cards mobile-only">
+      @for (user of filteredUsers; track user) {
+        <div class="user-card" [class.expanded]="isCardExpanded(user.uid)" (click)="toggleCardExpanded(user.uid)">
+          <div class="card-header">
+            <div class="card-title">
+              <span class="user-name">{{ user.username }}</span>
+              <span class="role-badge" [class]="getRoleClass(user.role)">
+                {{ user.role }}
+              </span>
+            </div>
+            <div class="card-subtitle">{{ user.email || 'No email' }}</div>
+          </div>
+          <div class="card-summary">
+            <div class="summary-item">
+              <span class="label">Name:</span>
+              <span class="value">{{ user.first_name || '-' }} {{ user.last_name || '' }}</span>
+            </div>
+            <span class="material-icons expand-icon">{{ isCardExpanded(user.uid) ? 'expand_less' : 'expand_more' }}</span>
+          </div>
+          @if (isCardExpanded(user.uid)) {
+            <div class="card-details">
+              <div class="detail-row">
+                <span class="label">Store UID:</span>
+                <span class="value">{{ user.store_uid || '-' }}</span>
+              </div>
+              <div class="detail-row">
+                <span class="label">Price Type:</span>
+                <span class="value">{{ user.price_type_uid || '-' }}</span>
+              </div>
+              <div class="detail-row">
+                <span class="label">Last Login:</span>
+                <span class="value">{{ formatDate(user.last_login) }}</span>
+              </div>
+              <div class="detail-row">
+                <span class="label">Last Update:</span>
+                <span class="value">{{ formatDate(user.last_update) }}</span>
+              </div>
+              <div class="card-actions">
+                <button class="btn-edit-card" (click)="editUser(user); $event.stopPropagation()">
+                  <span class="material-icons">edit</span>
+                  Edit User
+                </button>
+                <button class="btn-delete-card" (click)="deleteUser(user); $event.stopPropagation()">
+                  <span class="material-icons">delete</span>
+                  Delete
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+      }
+      @if (filteredUsers.length === 0) {
+        <div class="no-data-card">No users found</div>
+      }
+    </div>
+
+    <!-- Mobile Pagination -->
+    @if (totalPages > 1) {
+      <div class="pagination mobile-pagination mobile-only">
+        <button [disabled]="currentPage === 1" (click)="goToPage(currentPage - 1)">Previous</button>
+        <span>Page {{ currentPage }} of {{ totalPages }}</span>
+        <button [disabled]="currentPage === totalPages" (click)="goToPage(currentPage + 1)">Next</button>
+      </div>
+    }
   }
 
   <!-- Edit/Create Modal -->
@@ -143,4 +222,3 @@
     </div>
   }
 </div>
-

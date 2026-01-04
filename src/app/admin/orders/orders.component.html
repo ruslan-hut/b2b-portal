@@ -1,9 +1,18 @@
 <div class="orders-container">
   <div class="header">
-    <h1>Orders Management</h1>
+    <h1>Orders</h1>
   </div>
 
-  <div class="filters">
+  <!-- Mobile Filter Toggle -->
+  <button class="filter-toggle" (click)="toggleFilters()">
+    <span class="material-icons">filter_list</span>
+    <span>Filters</span>
+    <span class="material-icons toggle-icon" [class.expanded]="isFiltersExpanded">
+      expand_more
+    </span>
+  </button>
+
+  <div class="filters" [class.expanded]="isFiltersExpanded">
     <div class="filter-group">
       <label>Status:</label>
       <select [(ngModel)]="statusFilter" (change)="onFilterChange()">
@@ -40,7 +49,7 @@
         type="text"
         [(ngModel)]="searchTerm"
         (input)="onSearchChange()"
-        placeholder="Search by order number, client UID, or client name"
+        placeholder="Search by order number or client"
         />
     </div>
   </div>
@@ -53,7 +62,8 @@
   }
 
   @if (!loading && !error) {
-    <div class="orders-table">
+    <!-- Desktop Table View -->
+    <div class="orders-table desktop-only">
       <table>
         <thead>
           <tr>
@@ -108,14 +118,84 @@
           }
         </tbody>
       </table>
-      @if (totalPages > 1) {
-        <div class="pagination">
-          <button [disabled]="currentPage === 1" (click)="goToPage(currentPage - 1)">Previous</button>
-          <span>Page {{ currentPage }} of {{ totalPages }} ({{ total }} total)</span>
-          <button [disabled]="currentPage === totalPages" (click)="goToPage(currentPage + 1)">Next</button>
+    </div>
+
+    <!-- Mobile Card View -->
+    <div class="orders-cards mobile-only">
+      @for (order of filteredOrders; track order) {
+        <div class="order-card" [class.expanded]="isCardExpanded(order.uid)" (click)="toggleCardExpanded(order.uid)">
+          <div class="card-header">
+            <div class="card-title">
+              <span class="order-number">{{ order.number || order.uid }}</span>
+              <span class="status-badge" [class]="getStatusClass(order.status)">
+                {{ order.status }}
+              </span>
+            </div>
+            <div class="card-subtitle">{{ getClientName(order.client_uid) }}</div>
+          </div>
+          <div class="card-summary">
+            <div class="summary-item">
+              <span class="label">Total:</span>
+              <span class="value">{{ (order.total/100).toFixed(2) }} {{ order.currency_code }}</span>
+            </div>
+            <div class="summary-item">
+              <span class="value date">{{ formatDate(order.created_at).split(' ')[0] }}</span>
+            </div>
+            <span class="material-icons expand-icon">{{ isCardExpanded(order.uid) ? 'expand_less' : 'expand_more' }}</span>
+          </div>
+          @if (isCardExpanded(order.uid)) {
+            <div class="card-details">
+              <div class="detail-row">
+                <span class="label">Store:</span>
+                <span class="value">{{ getStoreName(order.store_uid) }}</span>
+              </div>
+              <div class="detail-row">
+                <span class="label">Price Type:</span>
+                <span class="value">{{ getPriceTypeName(order.price_type_uid) }}</span>
+              </div>
+              <div class="detail-row">
+                <span class="label">Discount:</span>
+                <span class="value">{{ order.discount_percent !== undefined ? order.discount_percent + '%' : '-' }}</span>
+              </div>
+              <div class="detail-row">
+                <span class="label">VAT Rate:</span>
+                <span class="value">{{ order.vat_rate !== undefined ? order.vat_rate + '%' : '-' }}</span>
+              </div>
+              <div class="detail-row">
+                <span class="label">Subtotal:</span>
+                <span class="value">{{ order.subtotal !== undefined ? (order.subtotal/100).toFixed(2) : '-' }}</span>
+              </div>
+              <div class="detail-row">
+                <span class="label">VAT Amount:</span>
+                <span class="value">{{ order.total_vat !== undefined ? (order.total_vat/100).toFixed(2) : '-' }}</span>
+              </div>
+              <div class="card-actions">
+                <button class="btn-view" (click)="viewOrderDetail(order); $event.stopPropagation()">
+                  <span class="material-icons">visibility</span>
+                  View Details
+                </button>
+                <button class="btn-status" (click)="editStatus(order); $event.stopPropagation()">
+                  <span class="material-icons">edit</span>
+                  Status
+                </button>
+              </div>
+            </div>
+          }
         </div>
       }
+      @if (filteredOrders.length === 0) {
+        <div class="no-data-card">No orders found</div>
+      }
     </div>
+
+    <!-- Pagination -->
+    @if (totalPages > 1) {
+      <div class="pagination">
+        <button [disabled]="currentPage === 1" (click)="goToPage(currentPage - 1)">Previous</button>
+        <span>Page {{ currentPage }} of {{ totalPages }} ({{ total }} total)</span>
+        <button [disabled]="currentPage === totalPages" (click)="goToPage(currentPage + 1)">Next</button>
+      </div>
+    }
   }
 
   <!-- Status Edit Modal -->

@@ -1,5 +1,5 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
-import { AdminService, AdminProductWithDetails, AdminProductsResponse } from '../../core/services/admin.service';
+import { Component, OnInit, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
+import { AdminService, AdminProductWithDetails } from '../../core/services/admin.service';
 import { AuthService } from '../../core/services/auth.service';
 import { TranslationService } from '../../core/services/translation.service';
 import { ProductService } from '../../core/services/product.service';
@@ -13,7 +13,8 @@ interface FilterOption {
     selector: 'app-products',
     templateUrl: './products.component.html',
     styleUrls: ['./products.component.scss'],
-    standalone: false
+    standalone: false,
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ProductsComponent implements OnInit {
   products: AdminProductWithDetails[] = [];
@@ -33,6 +34,10 @@ export class ProductsComponent implements OnInit {
   selectedPriceType: string = '';
   selectedCategory: string = '';
   searchTerm = '';
+
+  // Mobile UI state
+  isFiltersExpanded = false;
+  expandedCardIds: Set<string> = new Set();
 
   // Filter options
   languages: FilterOption[] = [];
@@ -182,8 +187,19 @@ export class ProductsComponent implements OnInit {
     this.adminService.getProductsWithDetails(params).subscribe({
       next: (response) => {
         this.products = response.data || [];
-        this.total = response.metadata?.total || this.products.length;
-        this.totalPages = response.metadata?.total_pages || Math.ceil(this.total / this.pageSize);
+        
+        // Set pagination values from pagination field (backend uses 'pagination', not 'metadata')
+        if (response.pagination) {
+          this.total = response.pagination.total || 0;
+          this.totalPages = response.pagination.total_pages || Math.ceil(this.total / this.pageSize);
+        } else {
+          // If no pagination, we can't determine total, so assume single page
+          // This should not happen if API is working correctly
+          console.warn('[Products] No pagination in response, pagination may not work correctly');
+          this.total = this.products.length;
+          this.totalPages = 1;
+        }
+        
         this.applySearch();
         this.loading = false;
         this.cdr.detectChanges();
@@ -269,6 +285,41 @@ export class ProductsComponent implements OnInit {
     }
   }
 
+  getPageNumbers(): number[] {
+    const pages: number[] = [];
+    const maxVisible = 5; // Show max 5 page numbers
+    
+    if (this.totalPages <= maxVisible) {
+      // Show all pages if total is less than max visible
+      for (let i = 1; i <= this.totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      // Show pages around current page
+      let start = Math.max(1, this.currentPage - Math.floor(maxVisible / 2));
+      let end = Math.min(this.totalPages, start + maxVisible - 1);
+      
+      // Adjust start if we're near the end
+      if (end - start < maxVisible - 1) {
+        start = Math.max(1, end - maxVisible + 1);
+      }
+      
+      for (let i = start; i <= end; i++) {
+        pages.push(i);
+      }
+    }
+    
+    return pages;
+  }
+
+  goToFirstPage(): void {
+    this.goToPage(1);
+  }
+
+  goToLastPage(): void {
+    this.goToPage(this.totalPages);
+  }
+
   formatDate(dateString?: string): string {
     if (!dateString) return '-';
     const date = new Date(dateString);
@@ -279,5 +330,33 @@ export class ProductsComponent implements OnInit {
     if (price === undefined || price === null) return '-';
     // Price is in cents, convert to dollars
     return (price / 100).toFixed(2);
+  }
+
+  // Expose Math to template
+  Math = Math;
+
+  getEndItemNumber(): number {
+    return Math.min(this.currentPage * this.pageSize, this.total);
+  }
+
+  getStartItemNumber(): number {
+    return (this.currentPage - 1) * this.pageSize + 1;
+  }
+
+  // Mobile UI methods
+  toggleFilters(): void {
+    this.isFiltersExpanded = !this.isFiltersExpanded;
+  }
+
+  toggleCardExpanded(uid: string): void {
+    if (this.expandedCardIds.has(uid)) {
+      this.expandedCardIds.delete(uid);
+    } else {
+      this.expandedCardIds.add(uid);
+    }
+  }
+
+  isCardExpanded(uid: string): boolean {
+    return this.expandedCardIds.has(uid);
   }
 }

@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ChangeDetectorRef, HostListener } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, ChangeDetectionStrategy, HostListener } from '@angular/core';
 import { Router } from '@angular/router';
 import { ProductService, FrontendCategory } from '../../core/services/product.service';
 import { OrderService } from '../../core/services/order.service';
@@ -20,7 +20,8 @@ import { debounceTime, distinctUntilChanged } from "rxjs/operators";
     selector: 'app-product-catalog',
     templateUrl: './product-catalog.component.html',
     styleUrl: './product-catalog.component.scss',
-    standalone: false
+    standalone: false,
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ProductCatalogComponent implements OnInit, OnDestroy {
   products: Product[] = [];
@@ -121,9 +122,12 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
       })
     );
 
-    this.orderService.currentOrder$.subscribe(items => {
-      this.cartItems = items;
-    });
+    this.subscriptions.add(
+      this.orderService.currentOrder$.subscribe(items => {
+        this.cartItems = items;
+        this.cdr.markForCheck();
+      })
+    );
 
     // Subscribe to draft order changes to get address data
     this.subscriptions.add(
@@ -140,54 +144,67 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
           this.currentAddress = null;
           this.selectedAddressUid = undefined;
         }
+        this.cdr.markForCheck();
       })
     );
 
     // Subscribe to AppSettings for currency, discount, and VAT rates
-    this.appSettingsService.settings$.subscribe(settings => {
-      if (settings) {
-        // Set currency from AppSettings
-        if (settings.currency) {
-          this.currency = settings.currency;
-          this.currencyName = settings.currency.name;
-        }
+    this.subscriptions.add(
+      this.appSettingsService.settings$.subscribe(settings => {
+        if (settings) {
+          // Set currency from AppSettings
+          if (settings.currency) {
+            this.currency = settings.currency;
+            this.currencyName = settings.currency.name;
+          }
 
-        // Set discount and VAT rate for clients
-        if (settings.entity_type === 'client') {
-          const client = settings.entity as Client;
-          this.currentDiscount = client.discount || 0;
-          // Use effective VAT rate from AppSettings (already calculated by backend)
-          this.currentVatRate = settings.effective_vat_rate || 0;
+          // Set discount and VAT rate for clients
+          if (settings.entity_type === 'client') {
+            const client = settings.entity as Client;
+            this.currentDiscount = client.discount || 0;
+            // Use effective VAT rate from AppSettings (already calculated by backend)
+            this.currentVatRate = settings.effective_vat_rate || 0;
+          } else {
+            this.currentDiscount = 0;
+            this.currentVatRate = 0;
+          }
         } else {
+          // No settings available
+          this.currency = null;
+          this.currencyName = undefined;
           this.currentDiscount = 0;
           this.currentVatRate = 0;
         }
-      } else {
-        // No settings available
-        this.currency = null;
-        this.currencyName = undefined;
-        this.currentDiscount = 0;
-        this.currentVatRate = 0;
-      }
-    });
+        this.cdr.markForCheck();
+      })
+    );
 
     // Subscribe to view mode changes from the service
-    this.productService.viewMode$.subscribe(mode => {
-      this.viewMode = mode;
-      // Re-apply filters when view mode changes to ensure bulk view shows only available products
-      if (this.products.length > 0) {
-        this.applyFilters();
-      }
-    });
+    this.subscriptions.add(
+      this.productService.viewMode$.subscribe(mode => {
+        this.viewMode = mode;
+        // Re-apply filters when view mode changes to ensure bulk view shows only available products
+        if (this.products.length > 0) {
+          this.applyFilters();
+        }
+        this.cdr.markForCheck();
+      })
+    );
 
     // Subscribe to language changes and reload products with new language descriptions
-    this.translationService.currentLanguage$.subscribe(language => {
-      // Only reload if products are already loaded (skip initial load)
-      if (this.products.length > 0) {
-        console.log(`[Language Change] Reloading products for language: ${language}`);
-        this.loadProducts();
-      }
-    });
+    this.subscriptions.add(
+      this.translationService.currentLanguage$.subscribe(language => {
+        // Reload categories for the new language
+        console.log(`[Language Change] Reloading categories for language: ${language}`);
+        this.loadCategories();
+
+        // Only reload if products are already loaded (skip initial load)
+        if (this.products.length > 0) {
+          console.log(`[Language Change] Reloading products for language: ${language}`);
+          this.loadProducts();
+        }
+      })
+    );
   }
 
   ngOnDestroy(): void {
@@ -612,6 +629,8 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
     incrementQuantity(productId: string, product: Product): void {
         if (!product.inStock) return;
         const currentQty = this.getBulkQuantity(productId);
+        const maxQty = product.availableQuantity ?? 0;
+        if (currentQty >= maxQty) return;
         const newQty = currentQty + 1;
         this.updateQuantityAndCart(productId, product, newQty);
     }
@@ -631,24 +650,28 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
      * Update quantity and automatically update cart (for mobile view)
      */
     updateQuantityAndCart(productId: string, product: Product, quantity: number): void {
+        // Cap quantity at available stock
+        const maxQty = product.availableQuantity ?? 0;
+        const cappedQuantity = Math.min(quantity, maxQty);
+
         // Update the bulk quantities map
-        if (quantity <= 0) {
+        if (cappedQuantity <= 0) {
             this.bulkQuantities.delete(productId);
             this.removeFromCart(productId);
         } else {
-            this.bulkQuantities.set(productId, quantity);
+            this.bulkQuantities.set(productId, cappedQuantity);
             // Automatically update/add to cart (local state)
             const existingItem = this.cartItems.find(item => item.productId === productId);
 
             if (existingItem) {
                 // Update existing cart item
-                this.orderService.updateCartItemQuantity(productId, quantity);
+                this.orderService.updateCartItemQuantity(productId, cappedQuantity);
             } else {
                 // Add new item to cart (local state only)
                 const orderItem: OrderItem = {
                     productId: product.id,
                     productName: product.name,
-                    quantity: quantity,
+                    quantity: cappedQuantity,
                     price: product.price,
                     subtotal: 0, // Placeholder - backend will calculate
                     sortOrder: product.sortOrder
@@ -769,10 +792,17 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
 
   /**
    * Get final price with VAT and discount for display
-   * Uses backend-calculated price_final from frontend products endpoint
+   * For items in cart, uses backend-calculated priceAfterDiscountWithVat (may have product limit applied)
+   * For items not in cart, uses priceFinal from frontend products endpoint
    */
   getPriceWithVat(product: Product): number {
-    // Check if product has calculated prices from frontend endpoint
+    // Check if item is in cart - use cart item's price (which may have product discount limit applied)
+    const cartItem = this.cartItems.find(item => item.productId === product.id);
+    if (cartItem && cartItem.priceAfterDiscountWithVat !== undefined) {
+      return cartItem.priceAfterDiscountWithVat;
+    }
+
+    // Item not in cart - use product's calculated prices
     const productWithPrices = product as Product & { priceFinal?: number; priceWithVat?: number };
     if (productWithPrices.priceFinal !== undefined) {
       return productWithPrices.priceFinal;
@@ -783,10 +813,17 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
 
   /**
    * Get original price with VAT (no discount applied) for display
-   * Uses backend-calculated price_with_vat from frontend products endpoint
+   * For items in cart, uses backend-calculated priceWithVat
+   * For items not in cart, uses price_with_vat from frontend products endpoint
    */
   getOriginalPriceWithVat(product: Product): number {
-    // Check if product has calculated prices from frontend endpoint
+    // Check if item is in cart - use cart item's base price with VAT
+    const cartItem = this.cartItems.find(item => item.productId === product.id);
+    if (cartItem && cartItem.priceWithVat !== undefined) {
+      return cartItem.priceWithVat;
+    }
+
+    // Item not in cart - use product's calculated prices
     const productWithPrices = product as Product & { priceWithVat?: number; basePrice?: number; vatRate?: number };
     if (productWithPrices.priceWithVat !== undefined) {
       return productWithPrices.priceWithVat;

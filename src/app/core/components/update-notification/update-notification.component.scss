@@ -9,14 +9,14 @@
   animation: slideUp 0.3s ease-out;
 
   .update-content {
-    background: white;
+    background: var(--card-bg);
     border-radius: 12px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
     padding: 20px;
     display: flex;
     align-items: center;
     gap: 16px;
-    border: 2px solid #667eea;
+    border: 2px solid var(--color-primary);
 
     .update-icon {
       font-size: 32px;
@@ -32,12 +32,12 @@
       strong {
         font-size: 16px;
         font-weight: 700;
-        color: #333;
+        color: var(--color-text-primary);
       }
 
       span {
         font-size: 14px;
-        color: #666;
+        color: var(--color-text-secondary);
       }
     }
 
@@ -58,7 +58,7 @@
       }
 
       .btn-reload {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: var(--gradient-primary);
         color: white;
 
         &:hover {
@@ -68,13 +68,13 @@
       }
 
       .btn-dismiss {
-        background: #f5f7fa;
-        color: #666;
-        border: 2px solid #e1e8ed;
+        background: var(--color-background-secondary);
+        color: var(--color-text-secondary);
+        border: 2px solid var(--color-border);
 
         &:hover {
-          background: #e1e8ed;
-          color: #333;
+          background: var(--color-border);
+          color: var(--color-text-primary);
         }
       }
     }

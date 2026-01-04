@@ -1,20 +1,26 @@
 <div class="client-edit-container">
   <div class="page-header">
-    <button class="btn btn-back" (click)="navigateBack()">
-      <span class="arrow-icon">&larr;</span>
-      Back to Clients
+    <button class="btn-icon-header" (click)="navigateBack()" title="Back to Clients">
+      <span class="material-icons">arrow_back</span>
     </button>
-    <h1>{{ isEditMode ? 'Edit Client' : 'Create Client' }}</h1>
+    <h1>
+      {{ isEditMode ? 'Edit Client' : 'Create Client' }}
+      @if (hasUnsavedChanges) {
+        <span class="material-icons unsaved-warning-icon" title="You have unsaved changes">warning</span>
+      }
+    </h1>
     <button
       type="button"
-      class="btn btn-primary btn-save"
+      class="btn-icon-header btn-save"
       [disabled]="clientForm.invalid || saving"
       (click)="saveClient()"
+      [title]="isEditMode ? 'Save Changes' : 'Create Client'"
     >
       @if (saving) {
         <span class="spinner-small"></span>
+      } @else {
+        <span class="material-icons">save</span>
       }
-      {{ saving ? 'Saving...' : (isEditMode ? 'Save Changes' : 'Create Client') }}
     </button>
   </div>
 
@@ -34,13 +40,6 @@
   <!-- Success Message -->
   @if (successMessage) {
     <div class="message success">{{ successMessage }}</div>
-  }
-
-  <!-- Unsaved Changes Warning -->
-  @if (hasUnsavedChanges) {
-    <div class="message warning">
-      You have unsaved changes. Don't forget to save before leaving.
-    </div>
   }
 
   @if (!loading) {
@@ -261,8 +260,8 @@
       <section class="form-section addresses-section">
         <div class="section-header">
           <h2>Addresses</h2>
-          <button class="btn btn-primary btn-sm" (click)="openAddAddressModal()">
-            + Add Address
+          <button class="btn-icon-header btn-save" (click)="openAddAddressModal()" title="Add Address">
+            <span class="material-icons">add</span>
           </button>
         </div>
 

@@ -1,4 +1,4 @@
-import { Component, ChangeDetectorRef, OnInit, OnDestroy } from '@angular/core';
+import { Component, ChangeDetectorRef, ChangeDetectionStrategy, OnInit, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { OrderService } from '../../core/services/order.service';
@@ -18,7 +18,8 @@ interface CartItem extends OrderItem {
   selector: 'app-cart-page',
   templateUrl: './cart-page.component.html',
   styleUrls: ['./cart-page.component.scss'],
-  standalone: false
+  standalone: false,
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class CartPageComponent implements OnInit, OnDestroy {
   cartItems: CartItem[] = [];
@@ -149,14 +150,31 @@ export class CartPageComponent implements OnInit, OnDestroy {
 
   removeFromCart(productId: string): void {
     this.orderService.removeFromCart(productId);
-    this.orderService.saveDraftCart(undefined, this.orderComment).subscribe({
-      next: () => {
-        this.cdr.markForCheck();
-      },
-      error: (error) => {
-        console.error(`Error saving cart after removing product ${productId}:`, error);
-      }
-    });
+
+    // Check if cart is now empty after removing the item
+    const remainingItems = this.orderService.getCartItems();
+
+    if (remainingItems.length === 0) {
+      // Cart is empty - delete the draft order from backend
+      this.orderService.deleteDraftCart().subscribe({
+        next: () => {
+          this.cdr.markForCheck();
+        },
+        error: (error) => {
+          console.error(`Error deleting draft cart after removing last product:`, error);
+        }
+      });
+    } else {
+      // Cart still has items - save the updated cart
+      this.orderService.saveDraftCart(undefined, this.orderComment).subscribe({
+        next: () => {
+          this.cdr.markForCheck();
+        },
+        error: (error) => {
+          console.error(`Error saving cart after removing product ${productId}:`, error);
+        }
+      });
+    }
   }
 
   updateQuantity(productId: string, quantity: number): void {

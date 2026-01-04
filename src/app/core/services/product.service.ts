@@ -1,13 +1,13 @@
-import { Injectable } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, of, BehaviorSubject, combineLatest } from 'rxjs';
-import { delay, map, catchError, switchMap } from 'rxjs/operators';
-import { Product, ProductCategory, BackendProduct, FrontendProduct } from '../models/product.model';
-import { ProductMapper } from '../mappers/product.mapper';
-import { environment } from '../../../environments/environment';
+import {Injectable} from '@angular/core';
+import {HttpClient, HttpParams} from '@angular/common/http';
+import {BehaviorSubject, Observable, of} from 'rxjs';
+import {catchError, map, switchMap} from 'rxjs/operators';
+import {BackendProduct, FrontendProduct, Product, ProductCategory} from '../models/product.model';
+import {ProductMapper} from '../mappers/product.mapper';
+import {environment} from '../../../environments/environment';
 // Mock data imports removed - using real API in production
-import { TranslationService } from './translation.service';
-import { AppSettingsService } from './app-settings.service';
+import {TranslationService} from './translation.service';
+import {AppSettingsService} from './app-settings.service';
 
 interface ApiPagination {
   page: number;
@@ -85,82 +85,9 @@ export class ProductService {
     private appSettingsService: AppSettingsService
   ) { }
 
-  getViewMode(): 'grid' | 'bulk' {
-    return this.viewModeSubject.value;
-  }
-
-  setViewMode(mode: 'grid' | 'bulk'): void {
-    this.viewModeSubject.next(mode);
-  }
-
   toggleViewMode(): void {
     const currentMode = this.viewModeSubject.value;
     this.viewModeSubject.next(currentMode === 'grid' ? 'bulk' : 'grid');
-  }
-
-  /**
-   * Get products with calculated prices from frontend endpoint
-   * Returns products with all price variants (base, with VAT, with discount, final)
-   * No calculations needed on frontend - all done by backend
-   */
-  getFrontendProducts(offset: number = 0, limit: number = 100, category?: string): Observable<Product[]> {
-    const currentLanguage = this.translationService.getCurrentLanguage();
-    let params = new HttpParams()
-      .set('offset', offset.toString())
-      .set('limit', limit.toString())
-      .set('language', currentLanguage);
-    
-    if (category) {
-      params = params.set('category', category);
-    }
-
-    return this.http.get<ApiResponse<FrontendProduct[]>>(`${this.apiUrl}/frontend/products`, { params }).pipe(
-      map(response => {
-        if (!response.success || !response.data || !Array.isArray(response.data)) {
-          return [];
-        }
-
-        // Map frontend products to Product model
-        return response.data.map(fp => {
-          // Use category_name if available, otherwise fall back to category_uid
-          const categoryName = fp.category_name || fp.category_uid || 'Uncategorized';
-          
-          return {
-            id: fp.uid,
-            name: fp.name,
-            description: fp.description,
-            price: fp.price_final / 100, // Convert from cents to dollars - use final price
-            category: categoryName,
-            imageUrl: fp.image,
-            inStock: fp.available_quantity > 0,
-            sku: fp.sku,
-            availableQuantity: fp.available_quantity,
-            active: true, // Frontend endpoint only returns active products
-            isNew: fp.is_new,
-            isHotSale: fp.is_hot_sale,
-            sortOrder: fp.sort_order,
-            // Store calculated prices for display
-            basePrice: fp.base_price / 100,
-            priceWithVat: fp.price_with_vat / 100,
-            priceWithDiscount: fp.price_with_discount / 100,
-            priceFinal: fp.price_final / 100,
-            vatRate: fp.vat_rate,
-            discountPercent: fp.discount_percent,
-          } as Product & {
-            basePrice: number;
-            priceWithVat: number;
-            priceWithDiscount: number;
-            priceFinal: number;
-            vatRate: number;
-            discountPercent: number;
-          };
-        });
-      }),
-      catchError(error => {
-        console.error('Error fetching frontend products:', error);
-        return of([]);
-      })
-    );
   }
 
   /**
@@ -454,11 +381,11 @@ export class ProductService {
 
     // If all descriptions are cached and valid, return immediately
     if (uidsToFetch.length === 0) {
-      console.log(`[Cache] All ${productUids.length} descriptions loaded from cache for language: ${language}`);
+      //console.log(`[Cache] All ${productUids.length} descriptions loaded from cache for language: ${language}`);
       return of(resultMap);
     }
 
-    console.log(`[Cache] Loading ${uidsToFetch.length} descriptions from API (${resultMap.size} from cache) for language: ${language}`);
+    //console.log(`[Cache] Loading ${uidsToFetch.length} descriptions from API (${resultMap.size} from cache) for language: ${language}`);
 
     // Fetch only missing/expired descriptions
     const payload = {
@@ -713,8 +640,7 @@ export class ProductService {
 
     return this.getAvailableQuantities(storeUid, [productUid]).pipe(
       map(mapResult => {
-        const val = mapResult[productUid];
-        return typeof val === 'number' ? val : 0;
+        return mapResult[productUid];
       }),
       catchError(error => {
         console.error('Error fetching available quantity (batch fallback):', error);

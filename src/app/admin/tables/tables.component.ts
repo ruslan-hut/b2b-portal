@@ -1,11 +1,12 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
 import { AdminService, TableInfo, TableRecord, TableRecordsResponse } from '../../core/services/admin.service';
 
 @Component({
     selector: 'app-tables',
     templateUrl: './tables.component.html',
     styleUrls: ['./tables.component.scss'],
-    standalone: false
+    standalone: false,
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class TablesComponent implements OnInit {
   tables: TableInfo[] = [];
@@ -25,6 +26,10 @@ export class TablesComponent implements OnInit {
   // Search
   searchTerm = '';
   searchField = '';
+
+  // Mobile UI state
+  isControlsExpanded = false;
+  expandedRecordIndices: Set<number> = new Set();
 
   constructor(
     private adminService: AdminService,
@@ -61,7 +66,6 @@ export class TablesComponent implements OnInit {
     this.searchField = '';
     this.columns = [];
     this.records = [];
-    this.cdr.detectChanges();
     this.loadTableRecords();
   }
 
@@ -88,13 +92,14 @@ export class TablesComponent implements OnInit {
       this.searchField || undefined
     ).subscribe({
       next: (response: TableRecordsResponse) => {
-        this.records = response.data || [];
-        this.total = response.metadata?.total || this.records.length;
-        this.totalPages = response.metadata?.total_pages || Math.ceil(this.total / this.pageSize);
+        const data = response.data || [];
+        this.records = [...data];
+        this.total = response.pagination?.total || data.length;
+        this.totalPages = response.pagination?.total_pages || Math.ceil(this.total / this.pageSize);
 
         // Extract column names from first record
-        if (this.records.length > 0) {
-          this.columns = Object.keys(this.records[0]);
+        if (data.length > 0) {
+          this.columns = [...Object.keys(data[0])];
         } else {
           this.columns = [];
         }
@@ -216,6 +221,68 @@ export class TablesComponent implements OnInit {
       .split('_')
       .map(word => word.charAt(0).toUpperCase() + word.slice(1))
       .join(' ');
+  }
+
+  // Mobile UI methods
+  toggleControls(): void {
+    this.isControlsExpanded = !this.isControlsExpanded;
+  }
+
+  toggleRecordExpanded(index: number): void {
+    if (this.expandedRecordIndices.has(index)) {
+      this.expandedRecordIndices.delete(index);
+    } else {
+      this.expandedRecordIndices.add(index);
+    }
+  }
+
+  isRecordExpanded(index: number): boolean {
+    return this.expandedRecordIndices.has(index);
+  }
+
+  // Get preview columns (first 2-3 important columns for card summary)
+  getPreviewColumns(): string[] {
+    // Prioritize uid/id columns, then name columns, then take first few
+    const priorityOrder = ['uid', 'id', 'name', 'username', 'email', 'title', 'sku'];
+    const preview: string[] = [];
+
+    // First, add priority columns that exist
+    for (const col of priorityOrder) {
+      if (this.columns.includes(col) && preview.length < 3) {
+        preview.push(col);
+      }
+    }
+
+    // Then fill up to 3 with remaining columns
+    for (const col of this.columns) {
+      if (!preview.includes(col) && preview.length < 3) {
+        preview.push(col);
+      }
+    }
+
+    return preview;
+  }
+
+  // Get remaining columns (for expanded view)
+  getRemainingColumns(): string[] {
+    const preview = this.getPreviewColumns();
+    return this.columns.filter(col => !preview.includes(col));
+  }
+
+  // Get the primary identifier for a record (for card title)
+  getRecordTitle(record: TableRecord): string {
+    // Try common identifier columns
+    const titleColumns = ['name', 'username', 'title', 'uid', 'id', 'email', 'sku'];
+    for (const col of titleColumns) {
+      if (record[col] !== undefined && record[col] !== null) {
+        return this.formatValue(record[col], col);
+      }
+    }
+    // Fallback to first column value
+    if (this.columns.length > 0) {
+      return this.formatValue(record[this.columns[0]], this.columns[0]);
+    }
+    return 'Record';
   }
 }
 

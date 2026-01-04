@@ -1,6 +1,9 @@
 <div class="order-detail-container">
   <div class="detail-header">
-    <button class="btn-back" (click)="goBack()">&larr; Back to Orders</button>
+    <button class="btn-back" (click)="goBack()">
+      <span class="material-icons">arrow_back</span>
+      <span class="btn-text">Back</span>
+    </button>
     <h2>Order Details</h2>
   </div>
 
@@ -72,8 +75,10 @@
         }
       </div>
       <div class="section items-section">
-        <h3>Order Items</h3>
-        <table class="items-table">
+        <h3>Order Items ({{ items.length }})</h3>
+
+        <!-- Desktop Table -->
+        <table class="items-table desktop-only">
           <thead>
             <tr>
               <th>SKU</th>
@@ -106,6 +111,53 @@
             }
           </tbody>
         </table>
+
+        <!-- Mobile Cards -->
+        <div class="items-cards mobile-only">
+          @for (item of visibleItems; track item) {
+            <div class="item-card">
+              <div class="item-card-header">
+                <span class="item-name">{{ getProductName(item.product_uid) }}</span>
+                <span class="item-total">{{ (item.total/100).toFixed(2) }}</span>
+              </div>
+              <div class="item-card-sku">SKU: {{ item.product_sku || '-' }}</div>
+              <div class="item-card-details">
+                <div class="detail-item">
+                  <span class="label">Qty:</span>
+                  <span class="value">{{ item.quantity }}</span>
+                </div>
+                <div class="detail-item">
+                  <span class="label">Base:</span>
+                  <span class="value">{{ (item.price/100).toFixed(2) }}</span>
+                </div>
+                <div class="detail-item">
+                  <span class="label">+VAT:</span>
+                  <span class="value">{{ (item.price_with_vat/100).toFixed(2) }}</span>
+                </div>
+                @if (item.discount) {
+                  <div class="detail-item discount">
+                    <span class="label">Disc:</span>
+                    <span class="value">-{{ item.discount }}%</span>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+          @if (hasMoreItems) {
+            <button class="btn-show-more" (click)="toggleShowAllItems()">
+              @if (showAllItems) {
+                <span class="material-icons">expand_less</span>
+                <span>Show less</span>
+              } @else {
+                <span class="material-icons">expand_more</span>
+                <span>Show {{ hiddenItemsCount }} more items</span>
+              }
+            </button>
+          }
+          @if (items.length === 0) {
+            <div class="no-data-card">No items found for this order</div>
+          }
+        </div>
       </div>
       <!-- Order Totals Section -->
       <div class="section totals-section">
@@ -141,10 +193,12 @@
           </div>
         </div>
       </div>
-      <!-- Status history section (use same styling as items section) -->
-      <div class="section items-section history-section">
+      <!-- Status history section -->
+      <div class="section history-section">
         <h3>Status History</h3>
-        <table class="items-table history-table">
+
+        <!-- Desktop Table -->
+        <table class="items-table history-table desktop-only">
           <thead>
             <tr>
               <th>Date</th>
@@ -169,6 +223,25 @@
             }
           </tbody>
         </table>
+
+        <!-- Mobile Cards -->
+        <div class="history-cards mobile-only">
+          @for (h of history; track h) {
+            <div class="history-card">
+              <div class="history-card-header">
+                <span class="history-status" [class]="getStatusClass(h.status)">{{ h.status }}</span>
+                <span class="history-date">{{ formatDate(h.created_at) }}</span>
+              </div>
+              <div class="history-card-user">{{ (h.user_firstname || '') + ' ' + (h.user_lastname || '') || 'System' }}</div>
+              @if (h.comment) {
+                <div class="history-card-comment">{{ h.comment }}</div>
+              }
+            </div>
+          }
+          @if (history.length === 0 && !historyLoading) {
+            <div class="no-data-card">No history entries</div>
+          }
+        </div>
       </div>
     </div>
   }

@@ -10,7 +10,7 @@
   }
 
   @if (!isAuthRoute && (authService.currentEntity$ | async); as entity) {
-    <header class="app-header">
+    <header class="app-header" [class.hide-on-mobile-admin]="isAdminRoute">
       <div class="header-content">
         <div class="logo" (click)="navigateTo('/products/catalog')">
           <img src="assets/favicon/icon-192.png" alt="Logo" class="logo-icon">
@@ -52,6 +52,11 @@
                   <span class="material-icons menu-icon">language</span>
                   <span class="menu-text">{{ 'navigation.language' | translate }}</span>
                   <app-language-switcher></app-language-switcher>
+                </div>
+                <div class="menu-item theme-menu-item">
+                  <span class="material-icons menu-icon">palette</span>
+                  <span class="menu-text">{{ 'navigation.theme' | translate }}</span>
+                  <app-theme-toggle></app-theme-toggle>
                 </div>
               </div>
               <div class="menu-section">

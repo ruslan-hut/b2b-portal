@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
@@ -9,7 +9,8 @@ import { UserLoginRequest, ClientLoginRequest } from '../../core/models/user.mod
     selector: 'app-login',
     templateUrl: './login.component.html',
     styleUrl: './login.component.scss',
-    standalone: false
+    standalone: false,
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class LoginComponent implements OnInit {
   loginForm!: FormGroup;
@@ -23,7 +24,8 @@ export class LoginComponent implements OnInit {
     private authService: AuthService,
     private router: Router,
     private route: ActivatedRoute,
-    private translationService: TranslationService
+    private translationService: TranslationService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -105,6 +107,7 @@ export class LoginComponent implements OnInit {
           console.warn('Login response status not success:', response.status_message);
           this.errorMessage = this.translationService.instant('auth.loginError');
           this.loading = false;
+          this.cdr.markForCheck();
         }
       },
       error: (error) => {
@@ -120,6 +123,7 @@ export class LoginComponent implements OnInit {
 
         this.errorMessage = errorMsg;
         this.loading = false;
+        this.cdr.markForCheck();
       }
     });
   }

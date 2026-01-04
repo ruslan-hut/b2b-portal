@@ -330,10 +330,12 @@ export class OrderService {
         productName: item.product_name || '',
         quantity: item.quantity,
         price: item.base_price / 100, // Convert from cents
+        priceWithVat: item.price_with_vat ? item.price_with_vat / 100 : undefined, // Base price with VAT (for strikethrough)
         priceDiscount: item.price_discount ? item.price_discount / 100 : undefined,
+        priceAfterDiscountWithVat: item.price_after_discount_with_vat ? item.price_after_discount_with_vat / 100 : undefined, // Price after discount with VAT
         tax: item.tax ? item.tax / 100 : undefined,
         subtotal: item.subtotal / 100,
-        discount: data.discount_percent
+        discount: item.discount ?? data.discount_percent // Use item-level discount if available, fallback to order-level
       })),
       totalAmount: data.total / 100,
       discountPercent: data.discount_percent,
@@ -346,6 +348,17 @@ export class OrderService {
       createdAt: data.created_at ? new Date(data.created_at) : new Date(),
       updatedAt: data.updated_at ? new Date(data.updated_at) : new Date(),
       shippingAddress: data.shipping_address ? this.parseShippingAddress(data.shipping_address) : undefined,
+      // Map address fields to CartAddress object for cart-page display
+      address: data.shipping_address ? {
+        uid: '', // Not available from order history
+        country_code: data.country_code || '',
+        country_name: '', // Not available from order history
+        zipcode: data.zipcode || '',
+        city: data.city || '',
+        address_text: data.address_text || '',
+        shipping_address: data.shipping_address || '',
+        is_default: false
+      } : undefined,
       comment: data.comment
     };
   }
@@ -466,10 +479,12 @@ export class OrderService {
             productName: item.product_name,
             quantity: item.quantity,
             price: item.base_price / 100, // Convert from cents
+            priceWithVat: item.price_with_vat / 100, // Base price with VAT (for strikethrough display)
             priceDiscount: item.price_discount / 100,
+            priceAfterDiscountWithVat: item.price_after_discount_with_vat / 100, // Price after discount with VAT
             tax: item.tax / 100,
             subtotal: item.subtotal / 100,
-            discount: cartData.discount_percent,
+            discount: item.discount, // Actual discount percent (after product discount limits)
             availableQuantity: item.available_quantity
           })),
           totalAmount: cartData.totals.total / 100,
@@ -522,6 +537,8 @@ export class OrderService {
 
   /**
    * Load user's latest draft from server (if any) and set it as current cart.
+   * Note: Does not recalculate immediately - draft already has backend-calculated values.
+   * Recalculation happens when user modifies cart or explicitly requests it.
    */
   loadDraftCart(): void {
     this.getDraftOrders().subscribe({
@@ -533,8 +550,8 @@ export class OrderService {
           // Store complete draft order with backend-calculated totals
           this.currentDraftOrderSubject.next(latest);
           this.currentOrderSubject.next(latest.items || []);
-          // Recalculate discount and priceDiscount with current client discount
-          this.recalculateCartWithCurrentDiscount();
+          // Draft already has backend-calculated values, no need to recalculate immediately
+          // This avoids 500 errors when client data isn't fully ready after login
         } else {
           // No drafts - keep empty cart
           this.draftOrderUid = undefined;
@@ -749,6 +766,47 @@ export class OrderService {
     // Clear draft order and UID when cart is cleared
     this.currentDraftOrderSubject.next(null);
     this.draftOrderUid = undefined;
+  }
+
+  /**
+   * Delete the draft order (cart) from the server
+   * Called when all items are removed from the cart
+   * @param orderUid The UID of the draft order to delete
+   */
+  deleteDraftCart(orderUid?: string): Observable<void> {
+    const uidToDelete = orderUid || this.draftOrderUid;
+
+    if (!uidToDelete) {
+      // No draft to delete, just clear local state
+      this.currentOrderSubject.next([]);
+      this.currentDraftOrderSubject.next(null);
+      return of(undefined);
+    }
+
+    const payload = {
+      order_uid: uidToDelete
+    };
+
+    return this.http.post<ApiResponse<any>>(`${this.apiUrl}/frontend/cart/delete`, payload).pipe(
+      map(response => {
+        if (!response.success) {
+          throw new Error(response.message || 'Failed to delete cart');
+        }
+
+        // Clear local state after successful deletion
+        this.currentOrderSubject.next([]);
+        this.currentDraftOrderSubject.next(null);
+        this.draftOrderUid = undefined;
+      }),
+      catchError(error => {
+        console.error('Error deleting cart:', error);
+        // Still clear local state even if server deletion fails
+        this.currentOrderSubject.next([]);
+        this.currentDraftOrderSubject.next(null);
+        this.draftOrderUid = undefined;
+        return of(undefined);
+      })
+    );
   }
 
   /**

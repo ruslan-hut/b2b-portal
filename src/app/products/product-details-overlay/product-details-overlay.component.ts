@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, HostListener, OnInit, OnDestroy } from '@angular/core';
+import { Component, Input, Output, EventEmitter, HostListener, OnInit, OnDestroy, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
@@ -17,7 +17,8 @@ import { ProductImageCacheService } from '../../core/services/product-image-cach
     selector: 'app-product-details-overlay',
     templateUrl: './product-details-overlay.component.html',
     styleUrl: './product-details-overlay.component.scss',
-    standalone: false
+    standalone: false,
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ProductDetailsOverlayComponent implements OnInit, OnDestroy {
   @Input() product: Product | null = null;
@@ -40,7 +41,8 @@ export class ProductDetailsOverlayComponent implements OnInit, OnDestroy {
     private priceFormattingService: PriceFormattingService,
     private storeService: StoreService,
     private appSettingsService: AppSettingsService,
-    public imageCacheService: ProductImageCacheService
+    public imageCacheService: ProductImageCacheService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   get sanitizedDescription(): SafeHtml {
@@ -85,6 +87,7 @@ export class ProductDetailsOverlayComponent implements OnInit, OnDestroy {
           this.currentDiscount = 0;
           this.currentVatRate = 0;
         }
+        this.cdr.markForCheck();
       });
   }
 

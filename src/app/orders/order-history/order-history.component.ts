@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectorRef, OnDestroy } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, ChangeDetectionStrategy, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
 import { OrderService } from '../../core/services/order.service';
 import { Order, OrderStatus } from '../../core/models/order.model';
@@ -12,7 +12,8 @@ import { Subscription } from 'rxjs';
     selector: 'app-order-history',
     templateUrl: './order-history.component.html',
     styleUrl: './order-history.component.scss',
-    standalone: false
+    standalone: false,
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class OrderHistoryComponent implements OnInit, OnDestroy {
   orders: Order[] = [];

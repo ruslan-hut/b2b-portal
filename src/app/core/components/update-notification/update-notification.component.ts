@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
 import { SwUpdate, VersionReadyEvent } from '@angular/service-worker';
 import { filter, map } from 'rxjs/operators';
 import { Subscription } from 'rxjs';
@@ -7,13 +7,14 @@ import { Subscription } from 'rxjs';
     selector: 'app-update-notification',
     templateUrl: './update-notification.component.html',
     styleUrl: './update-notification.component.scss',
-    standalone: false
+    standalone: false,
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class UpdateNotificationComponent implements OnInit, OnDestroy {
   updateAvailable = false;
   private subscriptions = new Subscription();
 
-  constructor(private swUpdate: SwUpdate) {}
+  constructor(private swUpdate: SwUpdate, private cdr: ChangeDetectorRef) {}
 
   /**
    * Initialize component and check for service worker updates
@@ -35,6 +36,7 @@ export class UpdateNotificationComponent implements OnInit, OnDestroy {
     this.subscriptions.add(
       versionReady$.subscribe(() => {
         this.updateAvailable = true;
+        this.cdr.markForCheck();
       })
     );
   }

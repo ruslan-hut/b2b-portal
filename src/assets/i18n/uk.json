@@ -49,9 +49,16 @@
     "profile": "Профіль",
     "settings": "Налаштування",
     "language": "Мова",
+    "theme": "Тема",
     "gridView": "Сітка",
     "bulkOrder": "Оптове замовлення",
     "cart": "Кошик"
+  },
+  "theme": {
+    "toggle": "Перемкнути тему",
+    "light": "Світла",
+    "dark": "Темна",
+    "system": "Системна"
   },
   "products": {
     "title": "Каталог товарів",
@@ -63,7 +70,7 @@
     "viewDetails": "Переглянути деталі",
     "price": "Ціна",
     "priceNotAvailable": "Ціна недоступна",
-    "stock": "В наявності",
+    "stock": "На складі",
     "outOfStock": "Відсутній",
     "category": "Категорія",
     "sku": "Артикул",
@@ -245,6 +252,7 @@
     "itemAddedToCart": "Товар додано до кошика",
     "itemRemovedFromCart": "Товар видалено з кошика",
     "cartCleared": "Кошик очищено",
+    "cartEmpty": "Ваш кошик порожній",
     "profileUpdated": "Профіль успішно оновлено",
     "passwordChanged": "Пароль успішно змінено",
     "somethingWentWrong": "Щось пішло не так. Будь ласка, спробуйте ще раз."

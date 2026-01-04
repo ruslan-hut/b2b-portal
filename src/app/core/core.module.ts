@@ -1,10 +1,5 @@
-import { NgModule, APP_INITIALIZER } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { NgModule, APP_INITIALIZER, Optional, SkipSelf } from '@angular/core';
 import { provideHttpClient, withInterceptorsFromDi, HTTP_INTERCEPTORS } from '@angular/common/http';
-import { TranslatePipe } from './pipes/translate.pipe';
-import { CurrencyFormatPipe } from './pipes/currency-format.pipe';
-import { LanguageSwitcherComponent } from './components/language-switcher/language-switcher.component';
-import { UpdateNotificationComponent } from './components/update-notification/update-notification.component';
 import { TranslationService } from './services/translation.service';
 import { AuthInterceptor } from './interceptors/auth.interceptor';
 
@@ -15,22 +10,13 @@ export function initializeTranslations(translationService: TranslationService) {
   return () => translationService.initTranslations();
 }
 
+/**
+ * CoreModule contains singleton providers (services, interceptors, initializers).
+ * Import this module ONLY in AppModule.
+ *
+ * For shared components and pipes, use SharedModule instead.
+ */
 @NgModule({
-  declarations: [
-    TranslatePipe,
-    CurrencyFormatPipe,
-    LanguageSwitcherComponent,
-    UpdateNotificationComponent
-  ],
-  imports: [
-    CommonModule
-  ],
-  exports: [
-    TranslatePipe,
-    CurrencyFormatPipe,
-    LanguageSwitcherComponent,
-    UpdateNotificationComponent
-  ],
   providers: [
     provideHttpClient(withInterceptorsFromDi()),
     {
@@ -46,5 +32,10 @@ export function initializeTranslations(translationService: TranslationService) {
     }
   ]
 })
-export class CoreModule { }
-
+export class CoreModule {
+  constructor(@Optional() @SkipSelf() parentModule: CoreModule) {
+    if (parentModule) {
+      throw new Error('CoreModule is already loaded. Import it in AppModule only.');
+    }
+  }
+}
