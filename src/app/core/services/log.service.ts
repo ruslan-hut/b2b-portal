@@ -87,16 +87,5 @@ export class LogService {
     }
     return this.http.delete<any>(`${this.apiUrl}/admin/logs/cleanup`, { params });
   }
-
-  /**
-   * Submit a log entry from frontend
-   */
-  submitLog(level: string, message: string, extra?: any): Observable<any> {
-    return this.http.post<any>(`${this.apiUrl}/logs`, {
-      level,
-      message,
-      extra
-    });
-  }
 }
 

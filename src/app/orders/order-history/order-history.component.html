@@ -67,29 +67,21 @@
     <div class="orders-list">
       @for (order of filteredOrders; track order) {
         <div class="order-card" (click)="viewOrderDetails(order.id)">
-          <div class="order-header">
-            <div class="order-info">
-              <h3>{{ getOrderTitle(order) }}</h3>
-              <span class="order-date">{{ order.createdAt | date: 'medium' }}</span>
-              @if (order.updatedAt) {
-                <div class="order-updated">
-                  <small>{{ 'orders.lastUpdated' | translate }}: {{ order.updatedAt | date: 'short' }}</small>
-                </div>
-              }
-            </div>
-            <div class="order-status">
-              <span class="status-badge" [ngClass]="getStatusClass(order.status)">
-                {{ getTranslatedStatus(order.status) }}
-              </span>
-            </div>
-          </div>
-          <div class="order-footer">
-            <div class="order-total">
-              <span class="total-label">{{ 'products.total' | translate }}:</span>
-              <span class="total-amount">{{ order.totalAmount.toFixed(2) }}{{ currencyName ? ' ' + currencyName : '' }}</span>
-            </div>
+          <div class="order-row">
+            <span class="order-date">{{ order.createdAt | date: 'shortDate' }}</span>
+            <span class="order-number">{{ order.number || order.orderNumber }}</span>
+            <span class="order-total">{{ order.totalAmount.toFixed(2) }}{{ currencyName ? ' ' + currencyName : '' }}</span>
+            <span class="status-badge" [ngClass]="getStatusClass(order.status)">
+              {{ getTranslatedStatus(order.status) }}
+            </span>
             <span class="chevron-icon material-icons">chevron_right</span>
           </div>
+          @if (order.comment) {
+            <div class="order-comment-row">
+              <span class="material-icons comment-icon">comment</span>
+              <span class="comment-text">{{ order.comment }}</span>
+            </div>
+          }
         </div>
       }
     </div>

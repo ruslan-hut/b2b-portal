@@ -533,6 +533,21 @@ input, textarea, select {
   touch-action: manipulation;
 }
 
+/* Dark mode form controls - tells browser to use dark-themed native controls */
+[data-theme="dark"] input,
+[data-theme="dark"] textarea,
+[data-theme="dark"] select {
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  [data-theme="system"] input,
+  [data-theme="system"] textarea,
+  [data-theme="system"] select {
+    color-scheme: dark;
+  }
+}
+
 /* Focus styles - visible for keyboard navigation */
 button:focus-visible,
 input:focus-visible,
