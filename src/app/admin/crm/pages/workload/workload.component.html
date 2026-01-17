@@ -1,0 +1,135 @@
+<div class="workload-container">
+  <div class="page-header">
+    <div class="header-left">
+      <button class="btn-back" (click)="goToDashboard()">
+        <span>&larr;</span>
+      </button>
+      <div>
+        <h1>Team Workload</h1>
+        <p class="subtitle">View and manage team member assignments</p>
+      </div>
+    </div>
+    <div class="header-right">
+      <button class="btn-secondary" (click)="goToPipelineBoard()">
+        <span class="icon">&#9776;</span>
+        Pipeline Board
+      </button>
+    </div>
+  </div>
+
+  <app-dashboard-filters (filtersChange)="onFiltersChange($any($event))"></app-dashboard-filters>
+
+  <div *ngIf="error" class="error-message">
+    {{ error }}
+    <button class="btn-retry" (click)="loadWorkload()">Retry</button>
+  </div>
+
+  <div *ngIf="loading" class="loading-container">
+    <div class="spinner"></div>
+    <p>Loading workload data...</p>
+  </div>
+
+  <div class="workload-content" *ngIf="!loading && !error">
+    <!-- Summary Cards -->
+    <div class="summary-cards">
+      <div class="summary-card">
+        <div class="card-value">{{ workloadStats.length }}</div>
+        <div class="card-label">Team Members</div>
+      </div>
+      <div class="summary-card">
+        <div class="card-value">{{ totalOrders }}</div>
+        <div class="card-label">Total Assigned Orders</div>
+      </div>
+      <div class="summary-card">
+        <div class="card-value">{{ totalPendingTasks }}</div>
+        <div class="card-label">Total Pending Tasks</div>
+      </div>
+      <div class="summary-card" [class.warning]="totalOverdueTasks > 0">
+        <div class="card-value">{{ totalOverdueTasks }}</div>
+        <div class="card-label">Total Overdue Tasks</div>
+      </div>
+    </div>
+
+    <!-- Workload Table -->
+    <div class="workload-table-container" *ngIf="workloadStats.length > 0">
+      <table class="workload-table">
+        <thead>
+          <tr>
+            <th (click)="toggleSort('name')" class="sortable">
+              Team Member
+              <span class="sort-icon" [innerHTML]="getSortIcon('name')"></span>
+            </th>
+            <th (click)="toggleSort('orders')" class="sortable text-center">
+              Assigned Orders
+              <span class="sort-icon" [innerHTML]="getSortIcon('orders')"></span>
+            </th>
+            <th (click)="toggleSort('tasks')" class="sortable text-center">
+              Pending Tasks
+              <span class="sort-icon" [innerHTML]="getSortIcon('tasks')"></span>
+            </th>
+            <th (click)="toggleSort('overdue')" class="sortable text-center">
+              Overdue
+              <span class="sort-icon" [innerHTML]="getSortIcon('overdue')"></span>
+            </th>
+            <th class="text-center">Completed Today</th>
+            <th>Workload</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let user of workloadStats" [class.has-overdue]="user.overdue_tasks > 0">
+            <td class="user-cell">
+              <div class="user-info">
+                <div class="user-avatar" [style.background-color]="getWorkloadColor(user)">
+                  {{ (user.user_name || '?').charAt(0) }}
+                </div>
+                <span class="user-name">{{ user.user_name || 'Unknown' }}</span>
+              </div>
+            </td>
+            <td class="text-center">
+              <span class="stat-badge orders">{{ user.assigned_orders }}</span>
+            </td>
+            <td class="text-center">
+              <span class="stat-badge tasks">{{ user.pending_tasks }}</span>
+            </td>
+            <td class="text-center">
+              <span class="stat-badge overdue" [class.highlight]="user.overdue_tasks > 0">
+                {{ user.overdue_tasks }}
+              </span>
+            </td>
+            <td class="text-center">
+              <span class="stat-badge completed">{{ user.completed_today }}</span>
+            </td>
+            <td class="workload-cell">
+              <div class="workload-bars">
+                <div class="bar-row">
+                  <div class="bar-label">Orders</div>
+                  <div class="bar-container">
+                    <div
+                      class="bar orders"
+                      [style.width.%]="getBarWidth(user.assigned_orders)"
+                    ></div>
+                  </div>
+                </div>
+                <div class="bar-row">
+                  <div class="bar-label">Tasks</div>
+                  <div class="bar-container">
+                    <div
+                      class="bar tasks"
+                      [style.width.%]="getBarWidth(user.pending_tasks)"
+                    ></div>
+                  </div>
+                </div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="empty-state" *ngIf="workloadStats.length === 0">
+      <div class="empty-icon">&#128101;</div>
+      <h2>No team members found</h2>
+      <p>No users with assigned orders or tasks</p>
+    </div>
+  </div>
+</div>

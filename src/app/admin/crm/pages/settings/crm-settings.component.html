@@ -1,0 +1,179 @@
+<div class="settings-container">
+  <div class="settings-header">
+    <button class="btn-back" (click)="goBack()">
+      <span>&larr;</span> Back to Board
+    </button>
+    <h1>CRM Pipeline Settings</h1>
+  </div>
+
+  <div *ngIf="error" class="alert error">
+    {{ error }}
+    <button class="btn-dismiss" (click)="error = null">&times;</button>
+  </div>
+
+  <div *ngIf="successMessage" class="alert success">
+    {{ successMessage }}
+  </div>
+
+  <div *ngIf="loading" class="loading">
+    <div class="spinner"></div>
+    <p>Loading settings...</p>
+  </div>
+
+  <div *ngIf="!loading" class="settings-content">
+    <!-- Stages Section -->
+    <section class="settings-section">
+      <div class="section-header">
+        <h2>Pipeline Stages</h2>
+        <button class="btn-add" (click)="addStage()">
+          <span>+</span> Add Stage
+        </button>
+      </div>
+
+      <div class="stages-list">
+        <div
+          *ngFor="let stage of stages; let i = index"
+          class="stage-item"
+          [style.--stage-color]="stage.color"
+        >
+          <div class="stage-drag-handle">
+            <span class="drag-icon">&#9776;</span>
+            <span class="order-number">{{ i + 1 }}</span>
+          </div>
+
+          <div class="stage-color" [style.background-color]="stage.color"></div>
+
+          <div class="stage-info">
+            <span class="stage-name">{{ stage.name }}</span>
+            <div class="stage-badges">
+              <span *ngIf="stage.is_initial" class="badge initial">Initial</span>
+              <span *ngIf="stage.is_final" class="badge final">Final</span>
+              <span *ngIf="stage.store_uid" class="badge store">{{ getStoreName(stage.store_uid) }}</span>
+            </div>
+          </div>
+
+          <div class="stage-actions">
+            <button class="btn-edit" (click)="editStage(stage)">Edit</button>
+            <button class="btn-delete" (click)="deleteStage(stage)">Delete</button>
+          </div>
+        </div>
+
+        <div *ngIf="stages.length === 0" class="empty-state">
+          <p>No stages configured yet.</p>
+          <p>Click "Add Stage" to create your first pipeline stage.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Transitions Section -->
+    <section class="settings-section" *ngIf="stages.length > 1">
+      <div class="section-header">
+        <h2>Allowed Transitions</h2>
+        <p class="section-description">Click cells to allow/disallow transitions between stages</p>
+      </div>
+
+      <div class="transitions-matrix">
+        <table>
+          <thead>
+            <tr>
+              <th class="corner-cell">From \ To</th>
+              <th *ngFor="let stage of stages" class="header-cell">
+                <div class="header-content">
+                  <span class="color-dot" [style.background-color]="stage.color"></span>
+                  <span class="header-name">{{ stage.name }}</span>
+                </div>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let fromStage of stages">
+              <td class="row-header">
+                <span class="color-dot" [style.background-color]="fromStage.color"></span>
+                <span class="row-name">{{ fromStage.name }}</span>
+              </td>
+              <td
+                *ngFor="let toStage of stages"
+                class="transition-cell"
+                [class.same]="fromStage.uid === toStage.uid"
+                [class.allowed]="hasTransition(fromStage.uid, toStage.uid)"
+                (click)="toggleTransition(fromStage.uid, toStage.uid)"
+              >
+                <span *ngIf="fromStage.uid === toStage.uid" class="diagonal">-</span>
+                <span *ngIf="fromStage.uid !== toStage.uid" class="check">
+                  {{ hasTransition(fromStage.uid, toStage.uid) ? '&#10003;' : '' }}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <!-- Stage Edit Modal -->
+  <div *ngIf="showStageModal" class="modal-overlay" (click)="cancelStageEdit()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>{{ editingStage ? 'Edit Stage' : 'Add Stage' }}</h2>
+        <button class="btn-close" (click)="cancelStageEdit()">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="stageName">Stage Name *</label>
+          <input
+            type="text"
+            id="stageName"
+            [(ngModel)]="stageForm.name"
+            placeholder="e.g., New Orders, In Progress, Completed"
+          />
+        </div>
+
+        <div class="form-group">
+          <label>Color</label>
+          <div class="color-picker">
+            <div
+              *ngFor="let color of defaultColors"
+              class="color-option"
+              [style.background-color]="color"
+              [class.selected]="stageForm.color === color"
+              (click)="selectColor(color)"
+            ></div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="storeUid">Store (optional)</label>
+          <select id="storeUid" [(ngModel)]="stageForm.store_uid">
+            <option *ngFor="let option of storeOptions" [value]="option.value">
+              {{ option.label }}
+            </option>
+          </select>
+        </div>
+
+        <div class="form-group checkboxes">
+          <label class="checkbox-label">
+            <input type="checkbox" [(ngModel)]="stageForm.is_initial" />
+            <span>Initial Stage</span>
+            <small>New orders will automatically be placed in this stage</small>
+          </label>
+
+          <label class="checkbox-label">
+            <input type="checkbox" [(ngModel)]="stageForm.is_final" />
+            <span>Final Stage</span>
+            <small>Orders in this stage are considered completed</small>
+          </label>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-cancel" (click)="cancelStageEdit()" [disabled]="saving">
+          Cancel
+        </button>
+        <button class="btn-save" (click)="saveStage()" [disabled]="saving">
+          {{ saving ? 'Saving...' : 'Save Stage' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

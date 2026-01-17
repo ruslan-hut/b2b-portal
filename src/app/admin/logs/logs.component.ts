@@ -1,4 +1,5 @@
-import { Component, OnInit, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
+import { Subscription } from 'rxjs';
 import { LogService, LogEntry, LogFilters } from '../../core/services/log.service';
 
 @Component({
@@ -8,7 +9,9 @@ import { LogService, LogEntry, LogFilters } from '../../core/services/log.servic
     standalone: false,
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class LogsComponent implements OnInit {
+export class LogsComponent implements OnInit, OnDestroy {
+  private subscriptions = new Subscription();
+
   logs: LogEntry[] = [];
   loading = false;
   error: string | null = null;
@@ -43,6 +46,10 @@ export class LogsComponent implements OnInit {
     this.loadLogs();
   }
 
+  ngOnDestroy(): void {
+    this.subscriptions.unsubscribe();
+  }
+
   loadLogs(): void {
     this.loading = true;
     this.error = null;
@@ -70,21 +77,23 @@ export class LogsComponent implements OnInit {
       filters.search = this.searchFilter;
     }
 
-    this.logService.listLogs(this.currentPage, this.pageSize, filters).subscribe({
-      next: (response) => {
-        this.logs = response.data || [];
-        this.total = response.metadata?.total || this.logs.length;
-        this.totalPages = response.metadata?.total_pages || Math.ceil(this.total / this.pageSize);
-        this.loading = false;
-        this.cdr.detectChanges();
-      },
-      error: (err) => {
-        console.error('Failed to load logs:', err);
-        this.error = 'Failed to load logs';
-        this.loading = false;
-        this.cdr.detectChanges();
-      }
-    });
+    this.subscriptions.add(
+      this.logService.listLogs(this.currentPage, this.pageSize, filters).subscribe({
+        next: (response) => {
+          this.logs = response.data || [];
+          this.total = response.metadata?.total || this.logs.length;
+          this.totalPages = response.metadata?.total_pages || Math.ceil(this.total / this.pageSize);
+          this.loading = false;
+          this.cdr.detectChanges();
+        },
+        error: (err) => {
+          console.error('Failed to load logs:', err);
+          this.error = 'Failed to load logs';
+          this.loading = false;
+          this.cdr.detectChanges();
+        }
+      })
+    );
   }
 
   onFilterChange(): void {
@@ -161,16 +170,18 @@ export class LogsComponent implements OnInit {
       return;
     }
 
-    this.logService.cleanupLogs(90).subscribe({
-      next: (response) => {
-        alert(`Cleanup completed. Deleted ${response.data?.deleted_count || 0} log entries.`);
-        this.loadLogs();
-      },
-      error: (err) => {
-        console.error('Failed to cleanup logs:', err);
-        alert('Failed to cleanup logs');
-      }
-    });
+    this.subscriptions.add(
+      this.logService.cleanupLogs(90).subscribe({
+        next: (response) => {
+          alert(`Cleanup completed. Deleted ${response.data?.deleted_count || 0} log entries.`);
+          this.loadLogs();
+        },
+        error: (err) => {
+          console.error('Failed to cleanup logs:', err);
+          alert('Failed to cleanup logs');
+        }
+      })
+    );
   }
 
   // Mobile UI methods

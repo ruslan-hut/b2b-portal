@@ -12,21 +12,32 @@
 /* Base variables (non-themeable) */
 :root {
   /* Border radius - standardized across components */
+  --radius-xs: 2px;
   --radius-sm: 4px;
+  --radius-sm-md: 6px;
   --radius-md: 8px;
+  --radius-md-lg: 10px;
   --radius-lg: 12px;
   --radius-xl: 16px;
+  --radius-2xl: 20px;
+  --radius-3xl: 24px;
   --radius-pill: 9999px;
 
   /* Touch targets - minimum 44px for accessibility */
   --touch-target-min: 44px;
 
-  /* Spacing */
+  /* Spacing - extended scale */
   --spacing-xs: 4px;
   --spacing-sm: 8px;
+  --spacing-sm-md: 10px;
+  --spacing-md-sm: 12px;
   --spacing-md: 16px;
+  --spacing-md-lg: 20px;
   --spacing-lg: 24px;
   --spacing-xl: 32px;
+  --spacing-2xl: 40px;
+  --spacing-3xl: 48px;
+  --spacing-4xl: 64px;
 
   /* Safe areas for notched devices */
   --safe-area-top: env(safe-area-inset-top, 0);
@@ -96,12 +107,25 @@
   --color-border-focus: var(--color-primary);
 
   /* Shadows */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
   --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
+  --shadow-sm-lg: 0 2px 8px rgba(0, 0, 0, 0.08);
   --shadow-md: 0 2px 10px rgba(0, 0, 0, 0.1);
+  --shadow-md-lg: 0 4px 12px rgba(0, 0, 0, 0.12);
   --shadow-lg: 0 5px 20px rgba(0, 0, 0, 0.15);
   --shadow-xl: 0 10px 40px rgba(0, 0, 0, 0.2);
   --shadow-primary: 0 5px 20px rgba(102, 126, 234, 0.4);
   --shadow-primary-lg: 0 8px 28px rgba(102, 126, 234, 0.5);
+
+  /* Focus rings */
+  --focus-ring-color: rgba(102, 126, 234, 0.25);
+  --focus-ring-width: 3px;
+  --focus-ring: 0 0 0 var(--focus-ring-width) var(--focus-ring-color);
+
+  /* Primary color overlays (for backgrounds with transparency) */
+  --color-primary-overlay-light: rgba(102, 126, 234, 0.08);
+  --color-primary-overlay: rgba(102, 126, 234, 0.12);
+  --color-primary-overlay-medium: rgba(102, 126, 234, 0.2);
 
   /* Component: Inputs */
   --input-bg: #ffffff;
@@ -122,9 +146,9 @@
 
   /* Component: Cards */
   --card-bg: #ffffff;
-  --card-border: #e1e8ed;
-  --card-shadow: var(--shadow-md);
-  --card-hover-shadow: var(--shadow-lg);
+  --card-border: transparent;
+  --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --card-hover-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
 
   /* Component: Tables */
   --table-header-bg: var(--gradient-primary);
@@ -270,9 +294,9 @@
 
   /* Component: Cards */
   --card-bg: #161b22;
-  --card-border: #30363d;
-  --card-shadow: var(--shadow-md);
-  --card-hover-shadow: var(--shadow-lg);
+  --card-border: transparent;
+  --card-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+  --card-hover-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
 
   /* Component: Tables */
   --table-header-bg: linear-gradient(135deg, #2d3748 0%, #352f44 100%);
@@ -419,9 +443,9 @@
 
     /* Component: Cards */
     --card-bg: #161b22;
-    --card-border: #30363d;
-    --card-shadow: var(--shadow-md);
-    --card-hover-shadow: var(--shadow-lg);
+    --card-border: transparent;
+    --card-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+    --card-hover-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
 
     /* Component: Tables */
     --table-header-bg: linear-gradient(135deg, #2d3748 0%, #352f44 100%);

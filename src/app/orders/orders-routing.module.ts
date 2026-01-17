@@ -6,11 +6,13 @@ import { OrderDetailComponent } from './order-detail/order-detail.component';
 const routes: Routes = [
   {
     path: 'history',
-    component: OrderHistoryComponent
+    component: OrderHistoryComponent,
+    data: { title: 'Order History' }
   },
   {
     path: 'detail/:id',
-    component: OrderDetailComponent
+    component: OrderDetailComponent,
+    data: { title: 'Order Details' }
   },
   {
     path: '',

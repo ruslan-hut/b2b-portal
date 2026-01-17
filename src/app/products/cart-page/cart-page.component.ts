@@ -25,7 +25,9 @@ export class CartPageComponent implements OnInit, OnDestroy {
   cartItems: CartItem[] = [];
   cartTotal = 0;
   cartOriginalTotal = 0;
+  cartOriginalTotalWithVat = 0; // GROSS original price (matches product card display)
   cartDiscountAmount = 0;
+  cartDiscountAmountWithVat = 0; // GROSS discount amount
   cartSubtotal = 0;
   cartVatAmount = 0;
   currentDiscount = 0;
@@ -280,7 +282,9 @@ export class CartPageComponent implements OnInit, OnDestroy {
     this.subscriptions.add(
       this.orderService.getCartTotalsBreakdown().subscribe(breakdown => {
         this.cartOriginalTotal = breakdown.originalTotal;
+        this.cartOriginalTotalWithVat = breakdown.originalTotalWithVat;
         this.cartDiscountAmount = breakdown.discountAmount;
+        this.cartDiscountAmountWithVat = breakdown.discountAmountWithVat;
         this.cartSubtotal = breakdown.subtotal;
         this.cartVatAmount = breakdown.vatAmount;
         this.cartTotal = breakdown.total;

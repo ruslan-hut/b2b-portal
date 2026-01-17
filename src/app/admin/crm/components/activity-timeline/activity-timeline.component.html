@@ -1,0 +1,103 @@
+<div class="activity-timeline">
+  <div class="timeline-header">
+    <h4>Activity Timeline</h4>
+    <button class="btn-add-note" (click)="toggleAddNoteForm()" [disabled]="saving">
+      <span class="material-icon">{{ showAddNoteForm ? 'close' : 'add' }}</span>
+      {{ showAddNoteForm ? 'Cancel' : 'Add Note' }}
+    </button>
+  </div>
+
+  <!-- Add Note Form -->
+  <div class="add-note-form" *ngIf="showAddNoteForm">
+    <textarea
+      [(ngModel)]="newNoteContent"
+      placeholder="Enter your note..."
+      rows="3"
+      [disabled]="saving"
+    ></textarea>
+    <div class="form-footer">
+      <label class="internal-checkbox">
+        <input type="checkbox" [(ngModel)]="newNoteIsInternal" [disabled]="saving">
+        <span>Internal note (not visible to client)</span>
+      </label>
+      <button class="btn-save" (click)="addNote()" [disabled]="saving || !newNoteContent.trim()">
+        {{ saving ? 'Saving...' : 'Save Note' }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Error Message -->
+  <div class="error-message" *ngIf="error">
+    {{ error }}
+  </div>
+
+  <!-- Loading State -->
+  <div class="loading" *ngIf="loading && activities.length === 0">
+    <span class="spinner"></span>
+    Loading activities...
+  </div>
+
+  <!-- Empty State -->
+  <div class="empty-state" *ngIf="!loading && activities.length === 0">
+    <span class="material-icon">history</span>
+    <p>No activity recorded yet</p>
+  </div>
+
+  <!-- Timeline Items -->
+  <div class="timeline-items" *ngIf="activities.length > 0">
+    <div class="timeline-item" *ngFor="let activity of activities">
+      <div class="timeline-icon" [style.background-color]="getActivityColor(activity.activity_type)">
+        <span class="material-icon">{{ getActivityIcon(activity.activity_type) }}</span>
+      </div>
+
+      <div class="timeline-content">
+        <div class="timeline-content-header">
+          <span class="activity-type" [class.internal]="activity.is_internal">
+            {{ getActivityTypeLabel(activity.activity_type) }}
+            <span class="internal-badge" *ngIf="activity.is_internal">Internal</span>
+          </span>
+          <span class="activity-time" [title]="formatDateTime(activity.created_at)">
+            {{ formatRelativeTime(activity.created_at) }}
+          </span>
+        </div>
+
+        <div class="activity-user" *ngIf="activity.user_name">
+          by {{ activity.user_name }}
+        </div>
+
+        <!-- Stage Change Details -->
+        <div class="activity-details stage-change" *ngIf="activity.activity_type === 'stage_change'">
+          {{ getStageChangeDescription(activity) }}
+        </div>
+
+        <!-- Assignment Details -->
+        <div class="activity-details assignment" *ngIf="activity.activity_type === 'assignment' || activity.activity_type === 'unassignment'">
+          {{ getAssignmentDescription(activity) }}
+        </div>
+
+        <!-- Note/Comment Content -->
+        <div class="activity-content" *ngIf="activity.content">
+          {{ activity.content }}
+        </div>
+
+        <!-- Delete Button -->
+        <button
+          class="btn-delete"
+          *ngIf="canDelete(activity)"
+          (click)="deleteActivity(activity.uid)"
+          title="Delete"
+        >
+          <span class="material-icon">delete</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Load More Button -->
+  <div class="load-more" *ngIf="hasMoreActivities">
+    <button (click)="loadMore()" [disabled]="loading">
+      {{ loading ? 'Loading...' : 'Load More' }}
+      <span class="count">({{ activities.length }} of {{ totalActivities }})</span>
+    </button>
+  </div>
+</div>

@@ -1,0 +1,315 @@
+<div class="webhooks-container">
+  <app-action-bar>
+    <div class="nav-tabs" actionBarLeft>
+      <button class="tab" [class.active]="activeTab === 'webhooks'" (click)="switchTab('webhooks')">
+        Webhooks
+      </button>
+      <button class="tab" [class.active]="activeTab === 'deliveries'" (click)="switchTab('deliveries')">
+        Deliveries
+      </button>
+    </div>
+    <div class="actions" actionBarRight>
+      <button class="btn-icon" (click)="refresh()" [disabled]="loading" title="Refresh">
+        <span class="material-icons">refresh</span>
+      </button>
+      @if (activeTab === 'webhooks') {
+        <button class="btn-primary" (click)="openNewWebhook()">
+          <span class="material-icons">add</span>
+          <span class="btn-text">Add</span>
+        </button>
+      }
+      @if (activeTab === 'deliveries') {
+        <button class="btn-icon btn-cleanup" (click)="cleanupDeliveries()" title="Cleanup Old Logs">
+          <span class="material-icons">delete_sweep</span>
+        </button>
+      }
+    </div>
+  </app-action-bar>
+
+  <!-- Error Message -->
+  @if (error) {
+    <div class="error-message">
+      {{ error }}
+    </div>
+  }
+
+  <!-- Loading Indicator -->
+  @if (loading && !showEditForm) {
+    <div class="loading">
+      Loading...
+    </div>
+  }
+
+  <!-- Webhooks Tab -->
+  @if (activeTab === 'webhooks' && !loading) {
+    <div class="webhooks-list">
+      @for (webhook of webhooks; track webhook.uid) {
+        <div class="webhook-card" [class.inactive]="!webhook.active">
+          <div class="webhook-header">
+            <div class="webhook-name">{{ webhook.name }}</div>
+            <div class="webhook-status">
+              <span class="status-badge" [class.active]="webhook.active">
+                {{ webhook.active ? 'Active' : 'Inactive' }}
+              </span>
+            </div>
+          </div>
+          <div class="webhook-info">
+            <div class="info-row">
+              <span class="info-label">URL:</span>
+              <span class="info-value url">{{ webhook.url }}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Event:</span>
+              <span class="info-value">{{ webhook.event }}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Store:</span>
+              <span class="info-value">{{ getStoreName(webhook.store_uid) }}</span>
+            </div>
+            @if (webhook.auth_header) {
+              <div class="info-row">
+                <span class="info-label">Auth:</span>
+                <span class="info-value">{{ webhook.auth_header }}: ***</span>
+              </div>
+            }
+          </div>
+          <div class="webhook-actions">
+            <button class="btn-action" (click)="toggleWebhookActive(webhook)" [title]="webhook.active ? 'Disable' : 'Enable'">
+              <span class="material-icons">{{ webhook.active ? 'pause' : 'play_arrow' }}</span>
+            </button>
+            <button class="btn-action" (click)="openEditWebhook(webhook)" title="Edit">
+              <span class="material-icons">edit</span>
+            </button>
+            <button class="btn-action btn-delete" (click)="deleteWebhook(webhook)" title="Delete">
+              <span class="material-icons">delete</span>
+            </button>
+          </div>
+        </div>
+      }
+      @if (webhooks.length === 0) {
+        <div class="no-data">
+          <span class="material-icons">webhook</span>
+          <p>No webhooks configured</p>
+          <button class="btn-primary" (click)="openNewWebhook()">Add Your First Webhook</button>
+        </div>
+      }
+    </div>
+
+    <!-- Pagination -->
+    @if (webhooksTotalPages > 1) {
+      <div class="pagination">
+        <button [disabled]="webhooksPage === 1" (click)="goToWebhooksPage(webhooksPage - 1)">Previous</button>
+        <span>Page {{ webhooksPage }} of {{ webhooksTotalPages }} ({{ webhooksTotal }} total)</span>
+        <button [disabled]="webhooksPage >= webhooksTotalPages" (click)="goToWebhooksPage(webhooksPage + 1)">Next</button>
+      </div>
+    }
+  }
+
+  <!-- Deliveries Tab -->
+  @if (activeTab === 'deliveries' && !loading) {
+    <!-- Webhook Filter -->
+    <div class="filter-bar">
+      <label>Filter by webhook:</label>
+      <select [(ngModel)]="selectedWebhookUID" (change)="filterByWebhook(selectedWebhookUID)">
+        <option [ngValue]="null">All Webhooks</option>
+        @for (webhook of webhooks; track webhook.uid) {
+          <option [value]="webhook.uid">{{ webhook.name }}</option>
+        }
+      </select>
+    </div>
+
+    <div class="deliveries-list">
+      @for (delivery of deliveries; track delivery.uid) {
+        <div class="delivery-card" [class.expanded]="isDeliveryExpanded(delivery.uid)" (click)="toggleDeliveryDetails(delivery.uid)">
+          <div class="delivery-header">
+            <span class="status-badge" [ngClass]="getStatusClass(delivery.status)">
+              {{ delivery.status }}
+            </span>
+            <span class="delivery-time">{{ formatDate(delivery.created_at) }}</span>
+          </div>
+          <div class="delivery-info">
+            <div class="info-row">
+              <span class="info-label">Event:</span>
+              <span class="info-value">{{ delivery.event }}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Object:</span>
+              <span class="info-value mono">{{ delivery.object_uid }}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Response:</span>
+              <span class="info-value">HTTP {{ delivery.response_code }} ({{ delivery.attempts }} attempts)</span>
+            </div>
+          </div>
+          @if (isDeliveryExpanded(delivery.uid)) {
+            <div class="delivery-details">
+              <div class="detail-section">
+                <div class="detail-header">
+                  <h4>Request URL</h4>
+                  <button class="btn-copy" (click)="copyToClipboard(delivery.request_url, $event)" title="Copy URL">
+                    <span class="material-icons">content_copy</span>
+                  </button>
+                </div>
+                <code>{{ delivery.request_url }}</code>
+              </div>
+              @if (delivery.request_body) {
+                <div class="detail-section">
+                  <div class="detail-header">
+                    <h4>Request Body</h4>
+                    <button class="btn-copy" (click)="copyToClipboard(formatJson(delivery.request_body), $event)" title="Copy Body">
+                      <span class="material-icons">content_copy</span>
+                    </button>
+                  </div>
+                  <pre>{{ formatJson(delivery.request_body) }}</pre>
+                </div>
+              }
+              @if (delivery.response_body) {
+                <div class="detail-section">
+                  <div class="detail-header">
+                    <h4>Response Body</h4>
+                    <button class="btn-copy" (click)="copyToClipboard(delivery.response_body, $event)" title="Copy Response">
+                      <span class="material-icons">content_copy</span>
+                    </button>
+                  </div>
+                  <pre>{{ delivery.response_body }}</pre>
+                </div>
+              }
+              @if (delivery.error_message) {
+                <div class="detail-section error">
+                  <h4>Error</h4>
+                  <p>{{ delivery.error_message }}</p>
+                </div>
+              }
+            </div>
+          }
+          <div class="expand-indicator">
+            <span class="material-icons">{{ isDeliveryExpanded(delivery.uid) ? 'expand_less' : 'expand_more' }}</span>
+          </div>
+        </div>
+      }
+      @if (deliveries.length === 0) {
+        <div class="no-data">
+          <span class="material-icons">history</span>
+          <p>No delivery logs found</p>
+        </div>
+      }
+    </div>
+
+    <!-- Pagination -->
+    @if (deliveriesTotalPages > 1) {
+      <div class="pagination">
+        <button [disabled]="deliveriesPage === 1" (click)="goToDeliveriesPage(deliveriesPage - 1)">Previous</button>
+        <span>Page {{ deliveriesPage }} of {{ deliveriesTotalPages }} ({{ deliveriesTotal }} total)</span>
+        <button [disabled]="deliveriesPage >= deliveriesTotalPages" (click)="goToDeliveriesPage(deliveriesPage + 1)">Next</button>
+      </div>
+    }
+  }
+
+  <!-- Edit Form Modal -->
+  @if (showEditForm) {
+    <div class="modal-overlay" (click)="closeEditForm()">
+      <div class="modal-content" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h2>{{ editingWebhook ? 'Edit Webhook' : 'New Webhook' }}</h2>
+          <button class="btn-close" (click)="closeEditForm()">
+            <span class="material-icons">close</span>
+          </button>
+        </div>
+        <form [formGroup]="webhookForm" (ngSubmit)="saveWebhook()" class="webhook-form">
+          <div class="form-group">
+            <label for="name">Name *</label>
+            <input type="text" id="name" formControlName="name" placeholder="My Webhook">
+            @if (webhookForm.get('name')?.invalid && webhookForm.get('name')?.touched) {
+              <span class="error-text">Name is required</span>
+            }
+          </div>
+
+          <div class="form-group">
+            <label for="url">URL *</label>
+            <input type="url" id="url" formControlName="url" placeholder="https://example.com/webhook">
+            @if (webhookForm.get('url')?.invalid && webhookForm.get('url')?.touched) {
+              <span class="error-text">Valid URL is required</span>
+            }
+          </div>
+
+          <div class="form-group">
+            <label for="event">Event *</label>
+            <select id="event" formControlName="event">
+              <optgroup label="Orders">
+                <option value="order_confirmed">Order Confirmed</option>
+              </optgroup>
+              <optgroup label="CRM Pipeline">
+                <option value="crm_stage_changed">Order Stage Changed</option>
+                <option value="crm_order_assigned">Order Assigned</option>
+                <option value="crm_order_unassigned">Order Unassigned</option>
+              </optgroup>
+              <optgroup label="CRM Tasks">
+                <option value="crm_task_created">Task Created</option>
+                <option value="crm_task_completed">Task Completed</option>
+              </optgroup>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="store_uid">Store Filter</label>
+            <select id="store_uid" formControlName="store_uid">
+              <option [ngValue]="null">All Stores</option>
+              @for (store of stores; track store.uid) {
+                <option [value]="store.uid">{{ store.name }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="auth_header">Auth Header</label>
+              <input type="text" id="auth_header" formControlName="auth_header" placeholder="Authorization">
+            </div>
+            <div class="form-group">
+              <label for="auth_value">Auth Value</label>
+              <input type="text" id="auth_value" formControlName="auth_value" placeholder="Bearer token...">
+            </div>
+          </div>
+
+          <div class="form-group checkbox-group">
+            <label>
+              <input type="checkbox" formControlName="active">
+              <span>Active</span>
+            </label>
+          </div>
+
+          <!-- Test Section -->
+          <div class="test-section">
+            <button type="button" class="btn-test" (click)="testWebhook()" [disabled]="testLoading || !webhookForm.get('url')?.valid">
+              @if (testLoading) {
+                <span class="material-icons spinning">sync</span>
+                <span>Testing...</span>
+              } @else {
+                <span class="material-icons">send</span>
+                <span>Test Webhook</span>
+              }
+            </button>
+            @if (testResult) {
+              <div class="test-result" [class.success]="testResult.success" [class.error]="!testResult.success">
+                @if (testResult.success) {
+                  <span class="material-icons">check_circle</span>
+                  <span>Success (HTTP {{ testResult.statusCode }})</span>
+                } @else {
+                  <span class="material-icons">error</span>
+                  <span>{{ testResult.error || 'HTTP ' + testResult.statusCode }}</span>
+                }
+              </div>
+            }
+          </div>
+
+          <div class="form-actions">
+            <button type="button" class="btn-cancel" (click)="closeEditForm()">Cancel</button>
+            <button type="submit" class="btn-save" [disabled]="webhookForm.invalid || loading">
+              {{ loading ? 'Saving...' : 'Save' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+</div>

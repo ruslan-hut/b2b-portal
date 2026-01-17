@@ -1,0 +1,191 @@
+.action-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  min-height: 48px;
+  gap: 16px;
+  margin-bottom: 16px;
+
+  .action-bar-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .action-bar-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+}
+
+// Nav tabs styling (commonly used in action bar)
+:host ::ng-deep {
+  .nav-tabs {
+    display: flex;
+    gap: 4px;
+
+    .tab {
+      padding: 8px 16px;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--color-text-secondary);
+      text-decoration: none;
+      border-radius: var(--radius-md);
+      transition: all 0.2s ease;
+      white-space: nowrap;
+
+      &:hover {
+        color: var(--color-text-primary);
+        background: var(--color-background-hover);
+      }
+
+      &.active {
+        color: var(--color-primary);
+        background: var(--color-primary-overlay-light);
+        font-weight: 600;
+      }
+    }
+  }
+
+  .btn-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--card-bg);
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover:not(:disabled) {
+      color: var(--color-primary);
+      border-color: var(--color-primary);
+      background: var(--color-primary-overlay-light);
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .material-icons {
+      font-size: 20px;
+    }
+  }
+
+  .btn-primary {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    background: var(--gradient-primary);
+    color: var(--color-text-inverse);
+    border: none;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: opacity 0.2s;
+    white-space: nowrap;
+
+    .material-icons {
+      font-size: 18px;
+    }
+
+    &:hover:not(:disabled) {
+      opacity: 0.9;
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+
+  .actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .btn-filter {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    background: var(--card-bg);
+    color: var(--color-text-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+
+    .material-icons {
+      font-size: 18px;
+    }
+
+    .toggle-icon {
+      font-size: 18px;
+      margin-left: 2px;
+    }
+
+    &:hover {
+      color: var(--color-primary);
+      border-color: var(--color-primary);
+    }
+
+    &.active {
+      color: var(--color-primary);
+      border-color: var(--color-primary);
+      background: var(--color-primary-overlay-light);
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .action-bar {
+    padding: 10px 0;
+    margin-bottom: 12px;
+  }
+
+  :host ::ng-deep {
+    .nav-tabs {
+      .tab {
+        padding: 6px 12px;
+        font-size: 13px;
+      }
+    }
+
+    .btn-primary {
+      padding: 8px 12px;
+
+      .btn-text {
+        display: none;
+      }
+    }
+
+    .btn-filter {
+      padding: 8px 10px;
+
+      .btn-text {
+        display: none;
+      }
+
+      .toggle-icon {
+        display: none;
+      }
+    }
+  }
+}

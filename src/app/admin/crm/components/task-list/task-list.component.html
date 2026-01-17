@@ -1,0 +1,165 @@
+<div class="task-list">
+  <div class="task-list-header">
+    <h3>Tasks</h3>
+    <div class="header-actions">
+      <select [(ngModel)]="statusFilter" class="status-filter">
+        <option value="all">All</option>
+        <option value="pending">Pending</option>
+        <option value="in_progress">In Progress</option>
+        <option value="completed">Completed</option>
+        <option value="cancelled">Cancelled</option>
+      </select>
+      <button class="btn-add-task" (click)="toggleNewTaskForm()" *ngIf="showAddForm">
+        <span *ngIf="!showNewTaskForm">+ Add Task</span>
+        <span *ngIf="showNewTaskForm">Cancel</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- New Task Form -->
+  <div class="new-task-form" *ngIf="showNewTaskForm">
+    <div class="form-group">
+      <input
+        type="text"
+        [(ngModel)]="newTaskTitle"
+        placeholder="Task title..."
+        class="task-title-input"
+        (keyup.enter)="createTask()"
+      />
+    </div>
+    <div class="form-group">
+      <textarea
+        [(ngModel)]="newTaskDescription"
+        placeholder="Description (optional)"
+        class="task-description-input"
+        rows="2"
+      ></textarea>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Priority</label>
+        <select [(ngModel)]="newTaskPriority" class="priority-select">
+          <option value="low">Low</option>
+          <option value="medium">Medium</option>
+          <option value="high">High</option>
+          <option value="urgent">Urgent</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Assign To</label>
+        <select [(ngModel)]="newTaskAssignee" class="assignee-select">
+          <option value="">Me (default)</option>
+          <option *ngFor="let user of assignableUsers" [value]="user.uid">
+            {{ user.first_name }} {{ user.last_name }} ({{ user.role }})
+          </option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Due Date</label>
+        <input
+          type="datetime-local"
+          [(ngModel)]="newTaskDueDate"
+          class="due-date-input"
+        />
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn-create" (click)="createTask()" [disabled]="!newTaskTitle.trim()">
+        Create Task
+      </button>
+    </div>
+  </div>
+
+  <div *ngIf="loading" class="loading">
+    <div class="spinner-small"></div>
+    Loading tasks...
+  </div>
+
+  <div *ngIf="error" class="error-message">
+    {{ error }}
+    <button class="btn-retry" (click)="loadTasks()">Retry</button>
+  </div>
+
+  <div *ngIf="!loading && !error && filteredTasks.length === 0" class="empty-state">
+    <span class="empty-icon">&#128203;</span>
+    <p>No tasks yet</p>
+  </div>
+
+  <div class="tasks-container" *ngIf="!loading && filteredTasks.length > 0">
+    <div
+      *ngFor="let task of filteredTasks"
+      class="task-item"
+      [class.completed]="task.status === 'completed'"
+      [class.overdue]="isOverdue(task)"
+    >
+      <div class="task-checkbox">
+        <button
+          class="checkbox-btn"
+          [class.checked]="task.status === 'completed'"
+          (click)="task.status === 'completed' ? updateTaskStatus(task, 'pending') : completeTask(task)"
+          [title]="task.status === 'completed' ? 'Mark as pending' : 'Mark as complete'"
+        >
+          <span *ngIf="task.status === 'completed'">&#10003;</span>
+        </button>
+      </div>
+
+      <div class="task-content">
+        <div class="task-title">{{ task.title }}</div>
+        <div class="task-description" *ngIf="task.description">{{ task.description }}</div>
+        <div class="task-meta">
+          <span class="priority-badge" [class]="getPriorityClass(task.priority)">
+            {{ task.priority }}
+          </span>
+          <span class="status-badge" [class]="getStatusClass(task.status)">
+            {{ task.status | titlecase }}
+          </span>
+          <span class="due-date" *ngIf="task.due_date" [class.overdue]="isOverdue(task)">
+            {{ formatDueDate(task.due_date) }}
+          </span>
+          <span class="assigned-to" *ngIf="task.assigned_to_name">
+            <span class="icon">&#128100;</span> {{ task.assigned_to_name }}
+          </span>
+        </div>
+      </div>
+
+      <div class="task-actions">
+        <button
+          class="btn-action btn-assign"
+          (click)="assignToMe(task)"
+          *ngIf="!isAssignedToMe(task)"
+          title="Assign to me"
+        >
+          &#128100;
+        </button>
+        <select
+          class="assignee-dropdown"
+          [ngModel]="task.assigned_to_uid || ''"
+          (ngModelChange)="reassignTask(task, $event)"
+          title="Reassign task"
+        >
+          <option value="">Unassigned</option>
+          <option *ngFor="let user of assignableUsers" [value]="user.uid">
+            {{ user.first_name }} {{ user.last_name }}
+          </option>
+        </select>
+        <button
+          class="btn-action"
+          (click)="updateTaskStatus(task, 'in_progress')"
+          *ngIf="task.status === 'pending'"
+          title="Start working"
+        >
+          &#9654;
+        </button>
+        <button
+          class="btn-action btn-delete"
+          (click)="deleteTask(task)"
+          title="Delete task"
+        >
+          &#128465;
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

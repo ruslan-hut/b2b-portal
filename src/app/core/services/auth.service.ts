@@ -331,12 +331,27 @@ export class AuthService {
   }
 
   private storeAuthData(authData: AuthData): void {
-    localStorage.setItem(this.AUTH_DATA_KEY, JSON.stringify(authData));
+    try {
+      localStorage.setItem(this.AUTH_DATA_KEY, JSON.stringify(authData));
+    } catch (error) {
+      console.error('Failed to store auth data:', error);
+      // Storage quota exceeded or other localStorage error
+      // Continue without persisting - user will need to re-login on refresh
+    }
   }
 
   private getStoredAuthData(): AuthData | null {
-    const stored = localStorage.getItem(this.AUTH_DATA_KEY);
-    return stored ? JSON.parse(stored) : null;
+    try {
+      const stored = localStorage.getItem(this.AUTH_DATA_KEY);
+      if (stored) {
+        return JSON.parse(stored);
+      }
+    } catch (error) {
+      console.error('Failed to parse stored auth data:', error);
+      // Clear corrupted data
+      localStorage.removeItem(this.AUTH_DATA_KEY);
+    }
+    return null;
   }
 
   private startRefreshTokenTimer(expiresAt: string): void {

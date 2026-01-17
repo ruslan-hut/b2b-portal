@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, HostListener, OnInit, OnDestroy, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
+import { Component, Input, Output, EventEmitter, HostListener, OnInit, OnDestroy, ChangeDetectorRef, ChangeDetectionStrategy, SecurityContext } from '@angular/core';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
@@ -48,11 +48,13 @@ export class ProductDetailsOverlayComponent implements OnInit, OnDestroy {
   get sanitizedDescription(): SafeHtml {
     if (!this.product || !this.product.description) {
       const noDescText = this.translationService.instant('products.noDescription');
-      return this.sanitizer.bypassSecurityTrustHtml(noDescText);
+      // Plain text doesn't need sanitization bypass
+      return noDescText;
     }
-    // Trust HTML content from backend (trusted source)
-    // Angular will still sanitize dangerous scripts, but allows safe HTML tags
-    return this.sanitizer.bypassSecurityTrustHtml(this.product.description);
+    // Use Angular's built-in sanitization to prevent XSS attacks
+    // This allows safe HTML tags (b, i, p, br, etc.) while blocking dangerous content
+    // (script tags, event handlers, javascript: URLs, etc.)
+    return this.sanitizer.sanitize(SecurityContext.HTML, this.product.description) || '';
   }
 
   ngOnInit(): void {
@@ -72,8 +74,8 @@ export class ProductDetailsOverlayComponent implements OnInit, OnDestroy {
 
           // Set discount and VAT rate for clients
           if (settings.entity_type === 'client') {
-            const client = settings.entity as Client;
-            this.currentDiscount = client.discount || 0;
+            // Use calculated discount from discount_info (backend-computed based on discount mode)
+            this.currentDiscount = settings.discount_info?.current_discount || 0;
             // Use effective VAT rate from AppSettings (already calculated by backend)
             this.currentVatRate = settings.effective_vat_rate || 0;
           } else {
@@ -174,15 +176,47 @@ export class ProductDetailsOverlayComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Get estimated price with VAT included for display
-   * Note: Actual price with VAT calculated by backend when item is added to cart
+   * Get original price with VAT (no discount applied) for display
+   * Uses backend-calculated priceWithVat from the product object
+   */
+  getOriginalPriceWithVat(): number {
+    if (!this.product) {
+      return 0;
+    }
+    const productWithPrices = this.product as Product & { priceWithVat?: number };
+    if (productWithPrices.priceWithVat !== undefined) {
+      return productWithPrices.priceWithVat;
+    }
+    return this.product.price;
+  }
+
+  /**
+   * Get price with VAT for display
+   * Uses backend-calculated prices from the product object
+   * When no discount, returns original price with VAT
+   * When discount exists, returns discounted price with VAT
    */
   getPriceWithVat(originalPrice: number): number {
-    if (!this.currentVatRate || this.currentVatRate <= 0) {
-      return this.getDiscountedPrice(originalPrice);
+    if (!this.product) {
+      return originalPrice;
     }
-    const discountedPrice = this.getDiscountedPrice(originalPrice);
-    const vatAmount = discountedPrice * (this.currentVatRate / 100);
-    return Number((discountedPrice + vatAmount).toFixed(2));
+
+    const productWithPrices = this.product as Product & { priceFinal?: number; priceWithVat?: number };
+
+    // If no discount, return original price with VAT
+    if (!this.hasDiscount()) {
+      if (productWithPrices.priceWithVat !== undefined) {
+        return productWithPrices.priceWithVat;
+      }
+      return originalPrice;
+    }
+
+    // With discount, return discounted price with VAT
+    if (productWithPrices.priceFinal !== undefined) {
+      return productWithPrices.priceFinal;
+    }
+
+    // Fallback to original price
+    return originalPrice;
   }
 }

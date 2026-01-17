@@ -1,0 +1,58 @@
+<div class="filters-container">
+  <div class="filters-row">
+    <div class="filter-group">
+      <label for="store-filter">Store</label>
+      <select
+        id="store-filter"
+        [(ngModel)]="selectedStoreUid"
+        (ngModelChange)="onFilterChange()"
+      >
+        <option value="">All Stores</option>
+        <option *ngFor="let store of stores" [value]="store.uid">{{ store.name }}</option>
+      </select>
+    </div>
+
+    <div class="filter-group">
+      <label for="assignee-filter">Assignee</label>
+      <select
+        id="assignee-filter"
+        [(ngModel)]="selectedAssigneeUid"
+        (ngModelChange)="onFilterChange()"
+      >
+        <option value="">All Team Members</option>
+        <option *ngFor="let user of assignableUsers" [value]="user.uid">
+          {{ getUserDisplayName(user) }}
+        </option>
+      </select>
+    </div>
+
+    <div class="filter-group date-group">
+      <label>Date Range</label>
+      <div class="date-inputs">
+        <input
+          type="date"
+          [(ngModel)]="dateFrom"
+          (ngModelChange)="onFilterChange()"
+          placeholder="From"
+        >
+        <span class="date-separator">to</span>
+        <input
+          type="date"
+          [(ngModel)]="dateTo"
+          (ngModelChange)="onFilterChange()"
+          placeholder="To"
+        >
+      </div>
+    </div>
+
+    <button
+      class="btn-clear"
+      (click)="clearFilters()"
+      [class.visible]="hasActiveFilters"
+      title="Clear all filters"
+    >
+      <span class="icon">&#10005;</span>
+      Clear
+    </button>
+  </div>
+</div>

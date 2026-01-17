@@ -195,6 +195,36 @@
             </div>
           </div>
         </div>
+        <!-- Cumulative Mode (only visible when scale-based) -->
+        @if (!clientForm.get('fixed_discount')?.value) {
+          <div class="form-row">
+            <div class="form-group">
+              <label>Cumulative Mode</label>
+              <div class="radio-group">
+                <label class="radio-label">
+                  <input
+                    type="radio"
+                    [value]="true"
+                    formControlName="cumulative_discount"
+                  >
+                  <span>Cumulative (balance + order)</span>
+                </label>
+                <label class="radio-label">
+                  <input
+                    type="radio"
+                    [value]="false"
+                    formControlName="cumulative_discount"
+                  >
+                  <span>Per-order only</span>
+                </label>
+              </div>
+              <span class="field-hint">
+                Cumulative: discount based on total turnover history.<br>
+                Per-order: discount based on current order amount only.
+              </span>
+            </div>
+          </div>
+        }
         <div class="form-row">
           <div class="form-group">
             <label for="discount">Fixed Discount (%)</label>

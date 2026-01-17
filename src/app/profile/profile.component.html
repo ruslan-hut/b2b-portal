@@ -48,11 +48,19 @@
 <!--            <label>{{ 'profile.priceType' | translate }}</label>-->
 <!--            <span class="field-value">{{ priceTypeName || '-' }}</span>-->
 <!--          </div>-->
-          <div class="field-group">
-            <label>{{ 'profile.discount' | translate }}</label>
-            <span class="field-value">{{ discountInfo?.current_discount || client.discount || 0 }}%</span>
-          </div>
-          @if (discountInfo && !discountInfo.is_fixed_discount) {
+          <!-- Fixed discount: show discount value only -->
+          @if (discountInfo && discountInfo.is_fixed_discount) {
+            <div class="field-group">
+              <label>{{ 'profile.discount' | translate }}</label>
+              <span class="field-value">{{ discountInfo.current_discount }}%</span>
+            </div>
+          }
+          <!-- Cumulative (scale-based): show discount + balance + next tier -->
+          @if (discountInfo && !discountInfo.is_fixed_discount && discountInfo.is_cumulative_discount) {
+            <div class="field-group">
+              <label>{{ 'profile.discount' | translate }}</label>
+              <span class="field-value">{{ discountInfo.current_discount }}%</span>
+            </div>
             <div class="field-group">
               <label>{{ 'profile.balance' | translate }}</label>
               <span class="field-value">{{ formatBalance(discountInfo.current_balance) }}</span>
@@ -69,6 +77,7 @@
               </div>
             }
           }
+          <!-- Non-cumulative (fixed_discount=false, cumulative=false): show nothing -->
           @if (client.vat_rate) {
             <div class="field-group">
               <label>{{ 'profile.vatRate' | translate }}</label>

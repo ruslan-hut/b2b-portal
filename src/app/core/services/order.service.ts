@@ -343,7 +343,9 @@ export class OrderService {
       subtotal: data.subtotal ? data.subtotal / 100 : undefined,
       totalVat: data.total_vat ? data.total_vat / 100 : undefined,
       originalTotal: data.original_total ? data.original_total / 100 : undefined,
+      originalTotalWithVat: data.original_total_with_vat ? data.original_total_with_vat / 100 : undefined,
       discountAmount: data.discount_amount ? data.discount_amount / 100 : undefined,
+      discountAmountWithVat: data.discount_amount_with_vat ? data.discount_amount_with_vat / 100 : undefined,
       status: status as OrderStatus,
       createdAt: data.created_at ? new Date(data.created_at) : new Date(),
       updatedAt: data.updated_at ? new Date(data.updated_at) : new Date(),
@@ -494,7 +496,9 @@ export class OrderService {
           subtotal: cartData.totals.subtotal / 100,
           totalVat: cartData.totals.total_vat / 100,
           originalTotal: cartData.totals.original_total / 100,
+          originalTotalWithVat: cartData.totals.original_total_with_vat / 100,
           discountAmount: cartData.totals.discount_amount / 100,
+          discountAmountWithVat: cartData.totals.discount_amount_with_vat / 100,
           status: OrderStatus.DRAFT,
           createdAt: new Date(),
           updatedAt: new Date(),
@@ -896,10 +900,16 @@ export class OrderService {
    * Get cart totals with VAT breakdown
    * Returns backend-calculated totals from the current draft order
    * All monetary calculations are done by backend for consistency
+   *
+   * Includes both NET (without VAT) and GROSS (with VAT) values:
+   * - originalTotal/discountAmount: NET values (for traditional B2B display)
+   * - originalTotalWithVat/discountAmountWithVat: GROSS values (for consistency with product card)
    */
   getCartTotalsBreakdown(): Observable<{
     originalTotal: number;
+    originalTotalWithVat: number;
     discountAmount: number;
+    discountAmountWithVat: number;
     subtotal: number;
     vatAmount: number;
     total: number;
@@ -914,7 +924,9 @@ export class OrderService {
         if (!draftOrder) {
           return {
             originalTotal: 0,
+            originalTotalWithVat: 0,
             discountAmount: 0,
+            discountAmountWithVat: 0,
             subtotal: 0,
             vatAmount: 0,
             total: 0,
@@ -932,11 +944,15 @@ export class OrderService {
         const totalVat = draftOrder.totalVat || 0;
         const total = draftOrder.totalAmount || 0;
         const originalTotal = draftOrder.originalTotal || 0;
+        const originalTotalWithVat = draftOrder.originalTotalWithVat || 0;
         const discountAmount = draftOrder.discountAmount || 0;
+        const discountAmountWithVat = draftOrder.discountAmountWithVat || 0;
 
         return {
           originalTotal,
+          originalTotalWithVat,
           discountAmount,
+          discountAmountWithVat,
           subtotal,
           vatAmount: totalVat,
           total,

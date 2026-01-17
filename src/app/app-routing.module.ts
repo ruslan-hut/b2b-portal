@@ -10,7 +10,8 @@ const routes: Routes = [
   },
   {
     path: 'auth',
-    loadChildren: () => import('./auth/auth.module').then(m => m.AuthModule)
+    loadChildren: () => import('./auth/auth.module').then(m => m.AuthModule),
+    data: { title: 'Login' }
   },
   {
     path: 'products',
@@ -25,7 +26,8 @@ const routes: Routes = [
   {
     path: 'profile',
     loadChildren: () => import('./profile/profile.module').then(m => m.ProfileModule),
-    canActivate: [authGuard]
+    canActivate: [authGuard],
+    data: { title: 'Profile' }
   },
   {
     path: 'admin',

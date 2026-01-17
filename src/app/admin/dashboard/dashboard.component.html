@@ -1,8 +1,7 @@
 <div class="dashboard-container">
-  <div class="dashboard-header">
-    <h1>Dashboard</h1>
-    <div class="store-filter">
-      <label for="store-select">Filter by Store:</label>
+  <app-action-bar>
+    <div class="store-filter" actionBarLeft>
+      <label for="store-select">Store:</label>
       <select
         id="store-select"
         [(ngModel)]="selectedStoreUID"
@@ -17,7 +16,8 @@
         }
       </select>
     </div>
-  </div>
+    <div actionBarRight></div>
+  </app-action-bar>
 
   @if (loading) {
     <div class="loading">

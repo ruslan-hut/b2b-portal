@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { environment } from '../../../environments/environment';
@@ -8,7 +8,7 @@ import { Store } from '../../core/models/store.model';
 import { StoreService } from '../../core/services/store.service';
 import { PriceType } from '../../core/models/price-type.model';
 import { PriceTypeService } from '../../core/services/price-type.service';
-import { forkJoin } from 'rxjs';
+import { forkJoin, Subscription } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
 
 export interface AdminOrder {
@@ -49,7 +49,9 @@ interface ApiResponse<T> {
     standalone: false,
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class OrdersComponent implements OnInit {
+export class OrdersComponent implements OnInit, OnDestroy {
+  private subscriptions = new Subscription();
+
   orders: AdminOrder[] = [];
   filteredOrders: AdminOrder[] = [];
   loading = false;
@@ -106,35 +108,41 @@ export class OrdersComponent implements OnInit {
     this.loadInitialData();
   }
 
+  ngOnDestroy(): void {
+    this.subscriptions.unsubscribe();
+  }
+
   loadInitialData(): void {
     this.loading = true;
-    forkJoin({
-      stores: this.storeService.getStores(),
-      priceTypes: this.priceTypeService.getPriceTypes()
-    }).subscribe({
-      next: ({ stores, priceTypes }) => {
-        this.stores = stores;
-        this.priceTypes = priceTypes;
+    this.subscriptions.add(
+      forkJoin({
+        stores: this.storeService.getStores(),
+        priceTypes: this.priceTypeService.getPriceTypes()
+      }).subscribe({
+        next: ({ stores, priceTypes }) => {
+          this.stores = stores;
+          this.priceTypes = priceTypes;
 
-        this.storeOptions = [
-          { value: '', label: 'All Stores' },
-          ...Object.values(stores).map(s => ({ value: s.uid, label: s.name })).sort((a, b) => a.label.localeCompare(b.label))
-        ];
-        this.priceTypeOptions = [
-          { value: '', label: 'All Price Types' },
-          ...Object.values(priceTypes).map(pt => ({ value: pt.uid, label: pt.name })).sort((a, b) => a.label.localeCompare(b.label))
-        ];
-        this.cdr.detectChanges();
+          this.storeOptions = [
+            { value: '', label: 'All Stores' },
+            ...Object.values(stores).map(s => ({ value: s.uid, label: s.name })).sort((a, b) => a.label.localeCompare(b.label))
+          ];
+          this.priceTypeOptions = [
+            { value: '', label: 'All Price Types' },
+            ...Object.values(priceTypes).map(pt => ({ value: pt.uid, label: pt.name })).sort((a, b) => a.label.localeCompare(b.label))
+          ];
+          this.cdr.detectChanges();
 
-        this.loadOrders(); // Now load the orders
-      },
-      error: (err) => {
-        console.error('Failed to load filter data:', err);
-        this.error = 'Failed to load filter data';
-        this.loading = false;
-        this.cdr.detectChanges();
-      }
-    });
+          this.loadOrders(); // Now load the orders
+        },
+        error: (err) => {
+          console.error('Failed to load filter data:', err);
+          this.error = 'Failed to load filter data';
+          this.loading = false;
+          this.cdr.detectChanges();
+        }
+      })
+    );
   }
 
   loadOrders(): void {
@@ -157,53 +165,55 @@ export class OrdersComponent implements OnInit {
 
     const url = `${environment.apiUrl}/admin/orders`;
 
-    this.http.get<ApiResponse<AdminOrder[]>>(url, { params }).pipe(
-      switchMap((response: ApiResponse<AdminOrder[]>) => {
-        this.orders = response.data || [];
-        this.total = response.metadata?.total || this.orders.length;
-        this.totalPages = response.metadata?.total_pages || Math.ceil(this.total / this.pageSize);
+    this.subscriptions.add(
+      this.http.get<ApiResponse<AdminOrder[]>>(url, { params }).pipe(
+        switchMap((response: ApiResponse<AdminOrder[]>) => {
+          this.orders = response.data || [];
+          this.total = response.metadata?.total || this.orders.length;
+          this.totalPages = response.metadata?.total_pages || Math.ceil(this.total / this.pageSize);
 
-        const currencyCodes = [...new Set(this.orders.map(order => order.currency_code))];
-        return this.currencyService.getCurrenciesByCodes(currencyCodes);
-      }),
-      switchMap((currencies) => {
-        currencies.forEach(currency => {
-          if (!this.currencies[currency.code]) {
-            this.currencies[currency.code] = currency;
-          }
-        });
-
-        // Fetch clients
-        const clientUIDs = [...new Set(this.orders.map(order => order.client_uid))];
-
-        if (clientUIDs.length > 0) {
-          return this.http.post<ApiResponse<any[]>>(
-            `${environment.apiUrl}/client/batch`,
-            { data: clientUIDs }
-          );
-        }
-
-        return forkJoin({ data: [] });
-      })
-    ).subscribe({
-      next: (clientsResponse: any) => {
-        if (clientsResponse.data) {
-          clientsResponse.data.forEach((client: any) => {
-            this.clients[client.uid] = client;
+          const currencyCodes = [...new Set(this.orders.map(order => order.currency_code))];
+          return this.currencyService.getCurrenciesByCodes(currencyCodes);
+        }),
+        switchMap((currencies) => {
+          currencies.forEach(currency => {
+            if (!this.currencies[currency.code]) {
+              this.currencies[currency.code] = currency;
+            }
           });
-        }
 
-        this.applySearch();
-        this.loading = false;
-        this.cdr.detectChanges();
-      },
-      error: (err) => {
-        console.error('Failed to load orders:', err);
-        this.error = 'Failed to load orders';
-        this.loading = false;
-        this.cdr.detectChanges();
-      }
-    });
+          // Fetch clients
+          const clientUIDs = [...new Set(this.orders.map(order => order.client_uid))];
+
+          if (clientUIDs.length > 0) {
+            return this.http.post<ApiResponse<any[]>>(
+              `${environment.apiUrl}/client/batch`,
+              { data: clientUIDs }
+            );
+          }
+
+          return forkJoin({ data: [] });
+        })
+      ).subscribe({
+        next: (clientsResponse: any) => {
+          if (clientsResponse.data) {
+            clientsResponse.data.forEach((client: any) => {
+              this.clients[client.uid] = client;
+            });
+          }
+
+          this.applySearch();
+          this.loading = false;
+          this.cdr.detectChanges();
+        },
+        error: (err) => {
+          console.error('Failed to load orders:', err);
+          this.error = 'Failed to load orders';
+          this.loading = false;
+          this.cdr.detectChanges();
+        }
+      })
+    );
   }
 
   onFilterChange(): void {
@@ -257,21 +267,23 @@ export class OrdersComponent implements OnInit {
       return;
     }
 
-    this.http.post(`${environment.apiUrl}/admin/orders/status`, {
-      data: [{
-        uid: this.editingOrder.uid,
-        status: this.newStatus
-      }]
-    }).subscribe({
-      next: () => {
-        this.showStatusModal = false;
-        this.loadOrders();
-      },
-      error: (err) => {
-        console.error('Failed to update order status:', err);
-        alert('Failed to update order status');
-      }
-    });
+    this.subscriptions.add(
+      this.http.post(`${environment.apiUrl}/admin/orders/status`, {
+        data: [{
+          uid: this.editingOrder.uid,
+          status: this.newStatus
+        }]
+      }).subscribe({
+        next: () => {
+          this.showStatusModal = false;
+          this.loadOrders();
+        },
+        error: (err) => {
+          console.error('Failed to update order status:', err);
+          alert('Failed to update order status');
+        }
+      })
+    );
   }
 
   cancelEdit(): void {
@@ -285,17 +297,19 @@ export class OrdersComponent implements OnInit {
       return;
     }
 
-    this.http.post(`${environment.apiUrl}/admin/orders/delete`, {
-      data: [order.uid]
-    }).subscribe({
-      next: () => {
-        this.loadOrders();
-      },
-      error: (err) => {
-        console.error('Failed to delete order:', err);
-        alert('Failed to delete order');
-      }
-    });
+    this.subscriptions.add(
+      this.http.post(`${environment.apiUrl}/admin/orders/delete`, {
+        data: [order.uid]
+      }).subscribe({
+        next: () => {
+          this.loadOrders();
+        },
+        error: (err) => {
+          console.error('Failed to delete order:', err);
+          alert('Failed to delete order');
+        }
+      })
+    );
   }
 
   getStatusClass(status: string): string {

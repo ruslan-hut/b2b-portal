@@ -1,0 +1,232 @@
+<div class="invites-container">
+  <app-action-bar>
+    <div class="nav-tabs" actionBarLeft>
+      <a routerLink="/admin/telegram/subscriptions" routerLinkActive="active" class="tab">Subscriptions</a>
+      <a routerLink="/admin/telegram/invites" routerLinkActive="active" class="tab">Invites</a>
+      <a routerLink="/admin/telegram/settings" routerLinkActive="active" class="tab">Settings</a>
+    </div>
+    <div class="actions" actionBarRight>
+      <button class="btn-icon" (click)="refresh()" [disabled]="loading" title="Refresh">
+        <span class="material-icons">refresh</span>
+      </button>
+      <button class="btn-primary" (click)="openGenerateModal()">
+        <span class="material-icons">add</span>
+        <span class="btn-text">Generate</span>
+      </button>
+    </div>
+  </app-action-bar>
+
+  <!-- Error Message -->
+  @if (error) {
+    <div class="error-message">
+      {{ error }}
+    </div>
+  }
+
+  <!-- Loading Indicator -->
+  @if (loading) {
+    <div class="loading">
+      Loading...
+    </div>
+  }
+
+  <!-- Desktop Table View -->
+  @if (!loading) {
+    <div class="table-container desktop-only">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Code</th>
+            <th>Status</th>
+            <th>Used By</th>
+            <th>Created</th>
+            <th>Expires</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of items; track item.uid) {
+            <tr>
+              <td class="code-cell">
+                <code class="invite-code">{{ item.code }}</code>
+                <button
+                  class="btn-copy"
+                  (click)="copyCode(item.code, $event)"
+                  [title]="isCopied(item.code) ? 'Copied!' : 'Copy code'"
+                >
+                  <span class="material-icons">{{ isCopied(item.code) ? 'check' : 'content_copy' }}</span>
+                </button>
+              </td>
+              <td>
+                <span class="status-badge" [ngClass]="getStatusClass(item.status)">
+                  {{ item.status }}
+                </span>
+              </td>
+              <td>
+                @if (item.used_by_username) {
+                  <span class="username">{{ getUsedBy(item) }}</span>
+                } @else {
+                  <span class="no-user">{{ getUsedBy(item) }}</span>
+                }
+              </td>
+              <td class="date">{{ formatDate(item.created_at) }}</td>
+              <td class="date">{{ formatDate(item.expires_at) }}</td>
+              <td class="actions">
+                @if (item.status === 'available') {
+                  <button
+                    class="btn-action btn-revoke"
+                    (click)="revokeInvite(item)"
+                    title="Revoke"
+                  >
+                    <span class="material-icons">block</span>
+                  </button>
+                }
+              </td>
+            </tr>
+          }
+          @if (items.length === 0) {
+            <tr>
+              <td colspan="6" class="no-data-cell">
+                <div class="no-data">
+                  <span class="material-icons">confirmation_number</span>
+                  <p>No invite codes found</p>
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Mobile Card View -->
+    <div class="cards-container mobile-only">
+      @for (item of items; track item.uid) {
+        <div class="invite-card" [class.expanded]="isExpanded(item.uid)">
+          <div class="card-header" (click)="toggleExpanded(item.uid)">
+            <div class="card-code">
+              <code class="invite-code">{{ item.code }}</code>
+              <button
+                class="btn-copy"
+                (click)="copyCode(item.code, $event)"
+                [title]="isCopied(item.code) ? 'Copied!' : 'Copy code'"
+              >
+                <span class="material-icons">{{ isCopied(item.code) ? 'check' : 'content_copy' }}</span>
+              </button>
+            </div>
+            <div class="card-status">
+              <span class="status-badge" [ngClass]="getStatusClass(item.status)">
+                {{ item.status }}
+              </span>
+              <span class="material-icons expand-icon">
+                {{ isExpanded(item.uid) ? 'expand_less' : 'expand_more' }}
+              </span>
+            </div>
+          </div>
+          @if (isExpanded(item.uid)) {
+            <div class="card-body">
+              <div class="info-row">
+                <span class="info-label">Used By:</span>
+                @if (item.used_by_username) {
+                  <span class="info-value username">{{ getUsedBy(item) }}</span>
+                } @else {
+                  <span class="info-value">{{ getUsedBy(item) }}</span>
+                }
+              </div>
+              <div class="info-row">
+                <span class="info-label">Created:</span>
+                <span class="info-value">{{ formatDate(item.created_at) }}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Expires:</span>
+                <span class="info-value">{{ formatDate(item.expires_at) }}</span>
+              </div>
+              @if (item.status === 'available') {
+                <div class="card-actions">
+                  <button
+                    class="btn-action btn-revoke"
+                    (click)="revokeInvite(item); $event.stopPropagation()"
+                  >
+                    <span class="material-icons">block</span>
+                    <span>Revoke</span>
+                  </button>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
+      @if (items.length === 0) {
+        <div class="no-data">
+          <span class="material-icons">confirmation_number</span>
+          <p>No invite codes found</p>
+        </div>
+      }
+    </div>
+
+    <!-- Pagination -->
+    @if (totalPages > 1) {
+      <div class="pagination">
+        <button [disabled]="currentPage === 1" (click)="goToPage(currentPage - 1)">Previous</button>
+        <div class="page-numbers">
+          @for (page of getPageNumbers(); track page) {
+            <button
+              [class.active]="page === currentPage"
+              (click)="goToPage(page)"
+            >
+              {{ page }}
+            </button>
+          }
+        </div>
+        <button [disabled]="currentPage >= totalPages" (click)="goToPage(currentPage + 1)">Next</button>
+        <span class="page-info">{{ total }} total</span>
+      </div>
+    }
+  }
+
+  <!-- Generate Modal -->
+  @if (showGenerateModal) {
+    <div class="modal-overlay" (click)="closeGenerateModal()">
+      <div class="modal-content" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h2>Generate Invite Codes</h2>
+          <button class="btn-close" (click)="closeGenerateModal()">
+            <span class="material-icons">close</span>
+          </button>
+        </div>
+        <form [formGroup]="generateForm" (ngSubmit)="generateInvites()" class="generate-form">
+          <div class="form-group">
+            <label for="count">Number of codes *</label>
+            <input
+              type="number"
+              id="count"
+              formControlName="count"
+              min="1"
+              max="100"
+              placeholder="1-100"
+            />
+            @if (generateForm.get('count')?.invalid && generateForm.get('count')?.touched) {
+              <span class="error-text">Enter a number between 1 and 100</span>
+            }
+          </div>
+
+          <div class="form-group">
+            <label for="expires_at">Expiration date (optional)</label>
+            <input
+              type="datetime-local"
+              id="expires_at"
+              formControlName="expires_at"
+            />
+            <span class="help-text">Leave empty for codes that never expire</span>
+          </div>
+
+          <div class="form-actions">
+            <button type="button" class="btn-cancel" (click)="closeGenerateModal()">Cancel</button>
+            <button type="submit" class="btn-save" [disabled]="generateForm.invalid || generating">
+              {{ generating ? 'Generating...' : 'Generate' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+</div>

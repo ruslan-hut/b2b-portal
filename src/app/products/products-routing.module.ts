@@ -6,11 +6,13 @@ import { CartPageComponent } from './cart-page/cart-page.component';
 const routes: Routes = [
   {
     path: 'catalog',
-    component: ProductCatalogComponent
+    component: ProductCatalogComponent,
+    data: { title: 'Catalog' }
   },
   {
     path: 'cart',
-    component: CartPageComponent
+    component: CartPageComponent,
+    data: { title: 'Cart' }
   },
   {
     path: '',

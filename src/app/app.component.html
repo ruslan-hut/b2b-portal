@@ -14,13 +14,15 @@
       <div class="header-content">
         <div class="logo" (click)="navigateTo('/products/catalog')">
           <img src="assets/favicon/icon-192.png" alt="Logo" class="logo-icon">
-          <span class="logo-text">{{ title }}</span>
+          <span class="logo-text">{{ pageTitle || title }}</span>
         </div>
         <div class="header-actions">
-          <button class="btn-cart" (click)="navigateTo('/products/cart')">
-            <span class="material-icons cart-icon">shopping_cart</span>
-            <span class="cart-text">{{ 'navigation.cart' | translate }} ({{ cartItems.length }})</span>
-          </button>
+          @if (!isAdminRoute) {
+            <button class="btn-cart" (click)="navigateTo('/products/cart')">
+              <span class="material-icons cart-icon">shopping_cart</span>
+              <span class="cart-text">{{ 'navigation.cart' | translate }} ({{ cartItems.length }})</span>
+            </button>
+          }
           <div class="user-menu-wrapper">
             <button class="btn-user-menu" (click)="toggleUserMenu()" [attr.aria-label]="'User menu'">
               <div class="user-info">

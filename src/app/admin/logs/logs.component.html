@@ -1,7 +1,13 @@
 <div class="logs-container">
-  <div class="header">
-    <h1>Logs</h1>
-    <div class="header-actions">
+  <app-action-bar>
+    <div actionBarLeft>
+      <button class="btn-filter" (click)="toggleFilters()" [class.active]="isFiltersExpanded">
+        <span class="material-icons">filter_list</span>
+        <span class="btn-text">Filters</span>
+        <span class="material-icons toggle-icon">{{ isFiltersExpanded ? 'expand_less' : 'expand_more' }}</span>
+      </button>
+    </div>
+    <div class="actions" actionBarRight>
       <button class="btn-icon" (click)="refresh()" [disabled]="loading" title="Refresh">
         <span class="material-icons">refresh</span>
       </button>
@@ -9,16 +15,7 @@
         <span class="material-icons">delete_sweep</span>
       </button>
     </div>
-  </div>
-
-  <!-- Mobile Filter Toggle -->
-  <button class="filter-toggle" (click)="toggleFilters()">
-    <span class="material-icons">filter_list</span>
-    <span>Filters</span>
-    <span class="material-icons toggle-icon" [class.expanded]="isFiltersExpanded">
-      expand_more
-    </span>
-  </button>
+  </app-action-bar>
 
   <!-- Filters -->
   <div class="filters" [class.expanded]="isFiltersExpanded">

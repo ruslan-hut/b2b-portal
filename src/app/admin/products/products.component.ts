@@ -1,4 +1,5 @@
-import { Component, OnInit, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
+import { Subscription } from 'rxjs';
 import { AdminService, AdminProductWithDetails } from '../../core/services/admin.service';
 import { AuthService } from '../../core/services/auth.service';
 import { TranslationService } from '../../core/services/translation.service';
@@ -16,7 +17,9 @@ interface FilterOption {
     standalone: false,
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class ProductsComponent implements OnInit {
+export class ProductsComponent implements OnInit, OnDestroy {
+  private subscriptions = new Subscription();
+
   products: AdminProductWithDetails[] = [];
   filteredProducts: AdminProductWithDetails[] = [];
   loading = false;
@@ -55,18 +58,24 @@ export class ProductsComponent implements OnInit {
 
   ngOnInit(): void {
     // Refresh user data from server to get latest price_type_uid and store_uid
-    this.authService.getCurrentEntity().subscribe({
-      next: (entity) => {
-        this.initializeDefaults(entity);
-        this.loadFilterOptions();
-      },
-      error: (err) => {
-        console.warn('Failed to refresh user data, using cached:', err);
-        // Fallback to cached data if refresh fails
-        this.initializeDefaults(this.authService.currentEntityValue);
-        this.loadFilterOptions();
-      }
-    });
+    this.subscriptions.add(
+      this.authService.getCurrentEntity().subscribe({
+        next: (entity) => {
+          this.initializeDefaults(entity);
+          this.loadFilterOptions();
+        },
+        error: (err) => {
+          console.warn('Failed to refresh user data, using cached:', err);
+          // Fallback to cached data if refresh fails
+          this.initializeDefaults(this.authService.currentEntityValue);
+          this.loadFilterOptions();
+        }
+      })
+    );
+  }
+
+  ngOnDestroy(): void {
+    this.subscriptions.unsubscribe();
   }
 
   initializeDefaults(entity: any): void {
@@ -95,71 +104,81 @@ export class ProductsComponent implements OnInit {
 
   loadFilterOptions(): void {
     // Load languages
-    this.adminService.getAvailableLanguages().subscribe({
-      next: (langs) => {
-        this.languages = [{ value: '', label: 'All Languages' }, ...langs.map(l => ({ value: l, label: l.toUpperCase() }))];
-      }
-    });
+    this.subscriptions.add(
+      this.adminService.getAvailableLanguages().subscribe({
+        next: (langs) => {
+          this.languages = [{ value: '', label: 'All Languages' }, ...langs.map(l => ({ value: l, label: l.toUpperCase() }))];
+        }
+      })
+    );
 
     // Load stores
-    this.adminService.listStores().subscribe({
-      next: (stores) => {
-        this.stores = [{ value: '', label: 'All Stores' }, ...stores.map((s: any) => ({ value: s.uid, label: s.name || s.uid }))];
-        // After stores are loaded, load products to ensure store filter works
-        this.loadProducts();
-      },
-      error: (err) => {
-        console.error('Failed to load stores:', err);
-        this.loadProducts();
-      }
-    });
+    this.subscriptions.add(
+      this.adminService.listStores().subscribe({
+        next: (stores) => {
+          this.stores = [{ value: '', label: 'All Stores' }, ...stores.map((s: any) => ({ value: s.uid, label: s.name || s.uid }))];
+          // After stores are loaded, load products to ensure store filter works
+          this.loadProducts();
+        },
+        error: (err) => {
+          console.error('Failed to load stores:', err);
+          this.loadProducts();
+        }
+      })
+    );
 
     // Load price types
-    this.adminService.listPriceTypes().subscribe({
-      next: (priceTypes) => {
-        this.priceTypes = [{ value: '', label: 'All Price Types' }, ...priceTypes.map((pt: any) => ({ value: pt.uid, label: pt.name || pt.uid }))];
-      },
-      error: (err) => console.error('Failed to load price types:', err)
-    });
+    this.subscriptions.add(
+      this.adminService.listPriceTypes().subscribe({
+        next: (priceTypes) => {
+          this.priceTypes = [{ value: '', label: 'All Price Types' }, ...priceTypes.map((pt: any) => ({ value: pt.uid, label: pt.name || pt.uid }))];
+        },
+        error: (err) => console.error('Failed to load price types:', err)
+      })
+    );
 
     // Load categories with descriptions
-    this.adminService.listCategories().subscribe({
-      next: (categories) => {
-        if (categories.length === 0) {
-          this.categories = [{ value: '', label: 'All Categories' }];
-          return;
-        }
-
-        // Get category UIDs
-        const categoryUIDs = categories.map((c: any) => c.uid);
-        const currentLanguage = this.translationService.getCurrentLanguage();
-
-        // Fetch category descriptions for current language
-        this.productService.getBatchCategoryDescriptions(categoryUIDs, currentLanguage).subscribe({
-          next: (descriptionsMap) => {
-            // Map categories with descriptions
-            this.categories = [
-              { value: '', label: 'All Categories' },
-              ...categories.map((c: any) => {
-                const description = descriptionsMap.get(c.uid);
-                // Use description name if available, otherwise fallback to UID
-                const label = description || c.uid;
-                return { value: c.uid, label: label };
-              })
-            ];
-          },
-          error: (err) => {
-            console.error('Failed to load category descriptions:', err);
-            // Fallback to UIDs if descriptions fail
-            this.categories = [{ value: '', label: 'All Categories' }, ...categories.map((c: any) => ({ value: c.uid, label: c.uid }))];
+    this.subscriptions.add(
+      this.adminService.listCategories().subscribe({
+        next: (categories) => {
+          if (categories.length === 0) {
+            this.categories = [{ value: '', label: 'All Categories' }];
+            return;
           }
-        });
-      },
-      error: (err) => {
-        console.error('Failed to load categories:', err);
-        this.categories = [{ value: '', label: 'All Categories' }];
-      }
-    });
+
+          // Get category UIDs
+          const categoryUIDs = categories.map((c: any) => c.uid);
+          const currentLanguage = this.translationService.getCurrentLanguage();
+
+          // Fetch category descriptions for current language
+          this.subscriptions.add(
+            this.productService.getBatchCategoryDescriptions(categoryUIDs, currentLanguage).subscribe({
+              next: (descriptionsMap) => {
+                // Map categories with descriptions
+                this.categories = [
+                  { value: '', label: 'All Categories' },
+                  ...categories.map((c: any) => {
+                    const description = descriptionsMap.get(c.uid);
+                    // Use description name if available, otherwise fallback to UID
+                    const label = description || c.uid;
+                    return { value: c.uid, label: label };
+                  })
+                ];
+              },
+              error: (err) => {
+                console.error('Failed to load category descriptions:', err);
+                // Fallback to UIDs if descriptions fail
+                this.categories = [{ value: '', label: 'All Categories' }, ...categories.map((c: any) => ({ value: c.uid, label: c.uid }))];
+              }
+            })
+          );
+        },
+        error: (err) => {
+          console.error('Failed to load categories:', err);
+          this.categories = [{ value: '', label: 'All Categories' }];
+        }
+      })
+    );
   }
 
   loadProducts(): void {
@@ -184,33 +203,35 @@ export class ProductsComponent implements OnInit {
       params.category = this.selectedCategory;
     }
 
-    this.adminService.getProductsWithDetails(params).subscribe({
-      next: (response) => {
-        this.products = response.data || [];
-        
-        // Set pagination values from pagination field (backend uses 'pagination', not 'metadata')
-        if (response.pagination) {
-          this.total = response.pagination.total || 0;
-          this.totalPages = response.pagination.total_pages || Math.ceil(this.total / this.pageSize);
-        } else {
-          // If no pagination, we can't determine total, so assume single page
-          // This should not happen if API is working correctly
-          console.warn('[Products] No pagination in response, pagination may not work correctly');
-          this.total = this.products.length;
-          this.totalPages = 1;
+    this.subscriptions.add(
+      this.adminService.getProductsWithDetails(params).subscribe({
+        next: (response) => {
+          this.products = response.data || [];
+
+          // Set pagination values from pagination field (backend uses 'pagination', not 'metadata')
+          if (response.pagination) {
+            this.total = response.pagination.total || 0;
+            this.totalPages = response.pagination.total_pages || Math.ceil(this.total / this.pageSize);
+          } else {
+            // If no pagination, we can't determine total, so assume single page
+            // This should not happen if API is working correctly
+            console.warn('[Products] No pagination in response, pagination may not work correctly');
+            this.total = this.products.length;
+            this.totalPages = 1;
+          }
+
+          this.applySearch();
+          this.loading = false;
+          this.cdr.detectChanges();
+        },
+        error: (err) => {
+          console.error('Failed to load products:', err);
+          this.error = 'Failed to load products';
+          this.loading = false;
+          this.cdr.detectChanges();
         }
-        
-        this.applySearch();
-        this.loading = false;
-        this.cdr.detectChanges();
-      },
-      error: (err) => {
-        console.error('Failed to load products:', err);
-        this.error = 'Failed to load products';
-        this.loading = false;
-        this.cdr.detectChanges();
-      }
-    });
+      })
+    );
   }
 
   applySearch(): void {
@@ -242,36 +263,40 @@ export class ProductsComponent implements OnInit {
 
   refreshCategoryDescriptions(): void {
     // Reload categories with descriptions for the selected language
-    this.adminService.listCategories().subscribe({
-      next: (categories) => {
-        if (categories.length === 0) {
-          return;
-        }
-
-        const categoryUIDs = categories.map((c: any) => c.uid);
-        const language = this.selectedLanguage || this.translationService.getCurrentLanguage();
-
-        this.productService.getBatchCategoryDescriptions(categoryUIDs, language).subscribe({
-          next: (descriptionsMap) => {
-            // Update category labels with new descriptions
-            this.categories = [
-              { value: '', label: 'All Categories' },
-              ...categories.map((c: any) => {
-                const description = descriptionsMap.get(c.uid);
-                const label = description || c.uid;
-                return { value: c.uid, label: label };
-              })
-            ];
-          },
-          error: (err) => {
-            console.error('Failed to refresh category descriptions:', err);
+    this.subscriptions.add(
+      this.adminService.listCategories().subscribe({
+        next: (categories) => {
+          if (categories.length === 0) {
+            return;
           }
-        });
-      },
-      error: (err) => {
-        console.error('Failed to reload categories:', err);
-      }
-    });
+
+          const categoryUIDs = categories.map((c: any) => c.uid);
+          const language = this.selectedLanguage || this.translationService.getCurrentLanguage();
+
+          this.subscriptions.add(
+            this.productService.getBatchCategoryDescriptions(categoryUIDs, language).subscribe({
+              next: (descriptionsMap) => {
+                // Update category labels with new descriptions
+                this.categories = [
+                  { value: '', label: 'All Categories' },
+                  ...categories.map((c: any) => {
+                    const description = descriptionsMap.get(c.uid);
+                    const label = description || c.uid;
+                    return { value: c.uid, label: label };
+                  })
+                ];
+              },
+              error: (err) => {
+                console.error('Failed to refresh category descriptions:', err);
+              }
+            })
+          );
+        },
+        error: (err) => {
+          console.error('Failed to reload categories:', err);
+        }
+      })
+    );
   }
 
   onSearchChange(): void {

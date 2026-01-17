@@ -1,5 +1,6 @@
-import { Component, OnInit, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { Subscription } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
 export interface AdminUser {
@@ -33,7 +34,9 @@ interface ApiResponse<T> {
     standalone: false,
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class UsersComponent implements OnInit {
+export class UsersComponent implements OnInit, OnDestroy {
+  private subscriptions = new Subscription();
+
   users: AdminUser[] = [];
   filteredUsers: AdminUser[] = [];
   loading = false;
@@ -77,6 +80,10 @@ export class UsersComponent implements OnInit {
     this.loadUsers();
   }
 
+  ngOnDestroy(): void {
+    this.subscriptions.unsubscribe();
+  }
+
   loadUsers(): void {
     this.loading = true;
     this.error = null;
@@ -84,22 +91,24 @@ export class UsersComponent implements OnInit {
     const offset = (this.currentPage - 1) * this.pageSize;
     const url = `${environment.apiUrl}/admin/user?offset=${offset}&limit=${this.pageSize}`;
 
-    this.http.get<ApiResponse<AdminUser[]>>(url).subscribe({
-      next: (response) => {
-        this.users = response.data || [];
-        this.total = response.metadata?.total || this.users.length;
-        this.totalPages = response.metadata?.total_pages || Math.ceil(this.total / this.pageSize);
-        this.applyFilters();
-        this.loading = false;
-        this.cdr.detectChanges();
-      },
-      error: (err) => {
-        console.error('Failed to load users:', err);
-        this.error = 'Failed to load users';
-        this.loading = false;
-        this.cdr.detectChanges();
-      }
-    });
+    this.subscriptions.add(
+      this.http.get<ApiResponse<AdminUser[]>>(url).subscribe({
+        next: (response) => {
+          this.users = response.data || [];
+          this.total = response.metadata?.total || this.users.length;
+          this.totalPages = response.metadata?.total_pages || Math.ceil(this.total / this.pageSize);
+          this.applyFilters();
+          this.loading = false;
+          this.cdr.detectChanges();
+        },
+        error: (err) => {
+          console.error('Failed to load users:', err);
+          this.error = 'Failed to load users';
+          this.loading = false;
+          this.cdr.detectChanges();
+        }
+      })
+    );
   }
 
   applyFilters(): void {
@@ -208,18 +217,20 @@ export class UsersComponent implements OnInit {
     }
     // For updates without password, don't include password field at all
 
-    this.http.post<ApiResponse<string[]>>(`${environment.apiUrl}/admin/user`, {
-      data: [userData]
-    }).subscribe({
-      next: () => {
-        this.showEditModal = false;
-        this.loadUsers();
-      },
-      error: (err) => {
-        console.error('Failed to save user:', err);
-        alert('Failed to save user: ' + (err.error?.message || err.message || 'Unknown error'));
-      }
-    });
+    this.subscriptions.add(
+      this.http.post<ApiResponse<string[]>>(`${environment.apiUrl}/admin/user`, {
+        data: [userData]
+      }).subscribe({
+        next: () => {
+          this.showEditModal = false;
+          this.loadUsers();
+        },
+        error: (err) => {
+          console.error('Failed to save user:', err);
+          alert('Failed to save user: ' + (err.error?.message || err.message || 'Unknown error'));
+        }
+      })
+    );
   }
 
   deleteUser(user: AdminUser): void {
@@ -227,17 +238,19 @@ export class UsersComponent implements OnInit {
       return;
     }
 
-    this.http.post(`${environment.apiUrl}/admin/user/delete`, {
-      data: [user.uid]
-    }).subscribe({
-      next: () => {
-        this.loadUsers();
-      },
-      error: (err) => {
-        console.error('Failed to delete user:', err);
-        alert('Failed to delete user');
-      }
-    });
+    this.subscriptions.add(
+      this.http.post(`${environment.apiUrl}/admin/user/delete`, {
+        data: [user.uid]
+      }).subscribe({
+        next: () => {
+          this.loadUsers();
+        },
+        error: (err) => {
+          console.error('Failed to delete user:', err);
+          alert('Failed to delete user');
+        }
+      })
+    );
   }
 
   cancelEdit(): void {

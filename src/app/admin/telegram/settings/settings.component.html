@@ -1,0 +1,208 @@
+<div class="settings-container">
+  <app-action-bar>
+    <div class="nav-tabs" actionBarLeft>
+      <a routerLink="/admin/telegram/subscriptions" routerLinkActive="active" class="tab">Subscriptions</a>
+      <a routerLink="/admin/telegram/invites" routerLinkActive="active" class="tab">Invites</a>
+      <a routerLink="/admin/telegram/settings" routerLinkActive="active" class="tab">Settings</a>
+    </div>
+    <div actionBarRight>
+      <button class="btn-icon" (click)="refresh()" [disabled]="loading" title="Refresh">
+        <span class="material-icons">refresh</span>
+      </button>
+    </div>
+  </app-action-bar>
+
+  <!-- Error Message -->
+  @if (error) {
+    <div class="error-message">
+      {{ error }}
+    </div>
+  }
+
+  <!-- Success Message -->
+  @if (successMessage) {
+    <div class="success-message">
+      {{ successMessage }}
+    </div>
+  }
+
+  <!-- Loading Indicator -->
+  @if (loading) {
+    <div class="loading">
+      Loading...
+    </div>
+  }
+
+  @if (!loading && settings) {
+    <!-- Bot Status Card -->
+    <div class="settings-card status-card">
+      <div class="card-header">
+        <h2>Bot Status</h2>
+        <span class="status-indicator" [class.connected]="settings.bot_connected">
+          <span class="material-icons">{{ settings.bot_connected ? 'check_circle' : 'cancel' }}</span>
+          {{ settings.bot_connected ? 'Connected' : 'Disconnected' }}
+        </span>
+      </div>
+      <div class="card-body">
+        <div class="status-grid">
+          <div class="status-item">
+            <span class="status-label">Bot Username</span>
+            <span class="status-value">
+              @if (settings.bot_username) {
+                <span class="username">@{{ settings.bot_username }}</span>
+              } @else {
+                <span class="not-set">Not configured</span>
+              }
+            </span>
+          </div>
+          <div class="status-item">
+            <span class="status-label">Subscribers</span>
+            <span class="status-value">{{ settings.subscriber_count }}</span>
+          </div>
+          <div class="status-item">
+            <span class="status-label">Bot Name</span>
+            <span class="status-value">{{ settings.bot_name || 'Not set' }}</span>
+          </div>
+          <div class="status-item">
+            <span class="status-label">Last Updated</span>
+            <span class="status-value">{{ formatDate(settings.last_update) }}</span>
+          </div>
+        </div>
+        <div class="status-actions">
+          <button
+            class="btn btn-primary"
+            (click)="restartBot()"
+            [disabled]="restarting || !settings.has_api_key"
+            title="Restart bot with current settings"
+          >
+            @if (restarting) {
+              <span class="material-icons spinning">sync</span>
+              Restarting...
+            } @else {
+              <span class="material-icons">restart_alt</span>
+              Restart Bot
+            }
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Settings Form Card -->
+    <div class="settings-card">
+      <div class="card-header">
+        <h2>Configuration</h2>
+      </div>
+      <div class="card-body">
+        <form (ngSubmit)="saveSettings()">
+          <!-- API Key Section -->
+          <div class="form-group">
+            <label>API Key</label>
+            <div class="api-key-section">
+              @if (!showApiKeyInput) {
+                <div class="api-key-display">
+                  @if (settings.has_api_key) {
+                    <span class="masked-key">{{ settings.api_key_masked }}</span>
+                  } @else {
+                    <span class="not-set">Not configured</span>
+                  }
+                  <button type="button" class="btn btn-secondary btn-sm" (click)="toggleApiKeyInput()">
+                    <span class="material-icons">edit</span>
+                    {{ settings.has_api_key ? 'Change' : 'Set' }} API Key
+                  </button>
+                </div>
+              } @else {
+                <div class="api-key-input">
+                  <input
+                    type="password"
+                    [(ngModel)]="apiKey"
+                    name="apiKey"
+                    placeholder="Enter new bot API key"
+                    autocomplete="new-password"
+                  />
+                  <div class="api-key-actions">
+                    <button
+                      type="button"
+                      class="btn btn-secondary btn-sm"
+                      (click)="testConnection()"
+                      [disabled]="testing || !apiKey.trim()"
+                    >
+                      @if (testing) {
+                        <span class="material-icons spinning">sync</span>
+                      } @else {
+                        <span class="material-icons">wifi</span>
+                      }
+                      Test
+                    </button>
+                    <button type="button" class="btn btn-text btn-sm" (click)="toggleApiKeyInput()">
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+                @if (testResult) {
+                  <div class="test-result" [class.success]="testResult.success" [class.error]="!testResult.success">
+                    @if (testResult.success) {
+                      <span class="material-icons">check_circle</span>
+                      <span>Connection successful! Bot: @{{ testResult.bot_username }} ({{ testResult.bot_name }})</span>
+                    } @else {
+                      <span class="material-icons">error</span>
+                      <span>{{ testResult.error }}</span>
+                    }
+                  </div>
+                }
+              }
+            </div>
+          </div>
+
+          <!-- Bot Name -->
+          <div class="form-group">
+            <label for="botName">Bot Name (Display)</label>
+            <input
+              type="text"
+              id="botName"
+              [(ngModel)]="botName"
+              name="botName"
+              placeholder="Enter bot display name"
+            />
+            <span class="form-hint">Friendly name for the bot (for display purposes)</span>
+          </div>
+
+          <!-- Enabled Toggle -->
+          <div class="form-group">
+            <label>Bot Enabled</label>
+            <div class="toggle-container">
+              <label class="toggle">
+                <input type="checkbox" [(ngModel)]="enabled" name="enabled" />
+                <span class="toggle-slider"></span>
+              </label>
+              <span class="toggle-label">{{ enabled ? 'Bot is enabled' : 'Bot is disabled' }}</span>
+            </div>
+          </div>
+
+          <!-- Log Level -->
+          <div class="form-group">
+            <label for="minLogLevel">Minimum Log Level</label>
+            <select id="minLogLevel" [(ngModel)]="minLogLevel" name="minLogLevel">
+              @for (level of logLevels; track level) {
+                <option [value]="level">{{ level }}</option>
+              }
+            </select>
+            <span class="form-hint">Minimum log level for Telegram notifications</span>
+          </div>
+
+          <!-- Save Button -->
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary" [disabled]="saving">
+              @if (saving) {
+                <span class="material-icons spinning">sync</span>
+                Saving...
+              } @else {
+                <span class="material-icons">save</span>
+                Save Settings
+              }
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+</div>

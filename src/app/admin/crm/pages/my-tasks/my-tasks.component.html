@@ -1,0 +1,141 @@
+<div class="my-tasks-container">
+  <div class="page-header">
+    <div class="header-left">
+      <button class="btn-back" (click)="goToCrmBoard()">
+        <span>&larr;</span>
+      </button>
+      <div>
+        <h1>My Tasks</h1>
+        <p class="subtitle">Tasks assigned to you</p>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="filters">
+        <select [(ngModel)]="statusFilter" (change)="onFilterChange()" class="status-filter">
+          <option value="all">All Statuses</option>
+          <option value="pending">Pending</option>
+          <option value="in_progress">In Progress</option>
+          <option value="completed">Completed</option>
+          <option value="cancelled">Cancelled</option>
+        </select>
+
+        <button
+          class="btn-overdue"
+          [class.active]="showOverdueOnly"
+          (click)="toggleOverdueOnly()"
+        >
+          <span class="icon">&#9888;</span>
+          Overdue Only
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="error" class="error-message">
+    {{ error }}
+    <button class="btn-retry" (click)="loadTasks()">Retry</button>
+  </div>
+
+  <div *ngIf="loading" class="loading-container">
+    <div class="spinner"></div>
+    <p>Loading tasks...</p>
+  </div>
+
+  <div *ngIf="!loading && !error && groupedTasksCache.length === 0" class="empty-state">
+    <div class="empty-icon">&#128203;</div>
+    <h2>No tasks found</h2>
+    <p *ngIf="showOverdueOnly">You have no overdue tasks</p>
+    <p *ngIf="!showOverdueOnly">You don't have any tasks assigned to you</p>
+  </div>
+
+  <div class="task-groups" *ngIf="!loading && groupedTasksCache.length > 0">
+    <div class="task-group" *ngFor="let group of groupedTasksCache">
+      <div class="group-header" [class.overdue]="group.title === 'Overdue'">
+        <span class="group-title">{{ group.title }}</span>
+        <span class="group-count">{{ group.tasks.length }}</span>
+      </div>
+
+      <div class="task-list">
+        <div
+          *ngFor="let task of group.tasks"
+          class="task-card"
+          [class.completed]="task.status === 'completed'"
+          [class.overdue]="isOverdue(task)"
+        >
+          <div class="task-checkbox">
+            <button
+              class="checkbox-btn"
+              [class.checked]="task.status === 'completed'"
+              (click)="task.status === 'completed' ? updateTaskStatus(task, 'pending') : completeTask(task)"
+            >
+              <span *ngIf="task.status === 'completed'">&#10003;</span>
+            </button>
+          </div>
+
+          <div class="task-content" (click)="goToOrder(task)">
+            <div class="task-title">{{ task.title }}</div>
+            <div class="task-description" *ngIf="task.description">{{ task.description }}</div>
+            <div class="task-meta">
+              <span class="priority-badge" [class]="getPriorityClass(task.priority)">
+                {{ task.priority }}
+              </span>
+              <span class="status-badge" [class]="getStatusClass(task.status)">
+                {{ task.status | titlecase }}
+              </span>
+              <span class="due-date" *ngIf="task.due_date" [class.overdue]="isOverdue(task)">
+                {{ formatDueDate(task.due_date) }}
+              </span>
+              <span class="assigned-to" *ngIf="task.assigned_to_name">
+                <span class="icon">&#128100;</span> {{ task.assigned_to_name }}
+              </span>
+            </div>
+          </div>
+
+          <div class="task-actions">
+            <button
+              class="btn-action btn-assign"
+              (click)="assignToMe(task)"
+              *ngIf="!isAssignedToMe(task)"
+              title="Assign to me"
+            >
+              &#128100;
+            </button>
+            <select
+              class="assignee-dropdown"
+              [ngModel]="task.assigned_to_uid || ''"
+              (ngModelChange)="reassignTask(task, $event)"
+              title="Reassign task"
+            >
+              <option value="">Unassigned</option>
+              <option *ngFor="let user of assignableUsers" [value]="user.uid">
+                {{ user.first_name }} {{ user.last_name }}
+              </option>
+            </select>
+            <button
+              class="btn-action"
+              (click)="updateTaskStatus(task, 'in_progress')"
+              *ngIf="task.status === 'pending'"
+              title="Start working"
+            >
+              &#9654;
+            </button>
+            <button
+              class="btn-action btn-view"
+              (click)="goToOrder(task)"
+              title="View order"
+            >
+              &#8594;
+            </button>
+            <button
+              class="btn-action btn-delete"
+              (click)="deleteTask(task)"
+              title="Delete task"
+            >
+              &#128465;
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

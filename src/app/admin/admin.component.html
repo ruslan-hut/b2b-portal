@@ -34,6 +34,12 @@
           </a>
         </li>
         <li>
+          <a routerLink="/admin/crm" routerLinkActive="active" (click)="closeMobileMenu()">
+            <span class="material-icons">view_kanban</span>
+            <span>CRM Pipeline</span>
+          </a>
+        </li>
+        <li>
           <a routerLink="/admin/products" routerLinkActive="active" (click)="closeMobileMenu()">
             <span class="material-icons">inventory_2</span>
             <span>Products</span>
@@ -56,6 +62,18 @@
             <a routerLink="/admin/logs" routerLinkActive="active" (click)="closeMobileMenu()">
               <span class="material-icons">description</span>
               <span>Logs</span>
+            </a>
+          </li>
+          <li>
+            <a routerLink="/admin/webhooks" routerLinkActive="active" (click)="closeMobileMenu()">
+              <span class="material-icons">webhook</span>
+              <span>Webhooks</span>
+            </a>
+          </li>
+          <li>
+            <a routerLink="/admin/telegram" routerLinkActive="active" (click)="closeMobileMenu()">
+              <span class="material-icons">send</span>
+              <span>Telegram</span>
             </a>
           </li>
         }
@@ -101,6 +119,14 @@
         </a>
       </li>
       <li>
+        <a routerLink="/admin/crm" routerLinkActive="active" [title]="isMenuCollapsed ? 'CRM Pipeline' : ''">
+          <span class="material-icons">view_kanban</span>
+          @if (!isMenuCollapsed) {
+            <span class="text">CRM Pipeline</span>
+          }
+        </a>
+      </li>
+      <li>
         <a routerLink="/admin/products" routerLinkActive="active" [title]="isMenuCollapsed ? 'Products' : ''">
           <span class="material-icons">inventory_2</span>
           @if (!isMenuCollapsed) {
@@ -134,6 +160,26 @@
             <span class="material-icons">description</span>
             @if (!isMenuCollapsed) {
               <span class="text">Logs</span>
+            }
+          </a>
+        </li>
+      }
+      @if (isAdmin) {
+        <li>
+          <a routerLink="/admin/webhooks" routerLinkActive="active" [title]="isMenuCollapsed ? 'Webhooks' : ''">
+            <span class="material-icons">webhook</span>
+            @if (!isMenuCollapsed) {
+              <span class="text">Webhooks</span>
+            }
+          </a>
+        </li>
+      }
+      @if (isAdmin) {
+        <li>
+          <a routerLink="/admin/telegram" routerLinkActive="active" [title]="isMenuCollapsed ? 'Telegram' : ''">
+            <span class="material-icons">send</span>
+            @if (!isMenuCollapsed) {
+              <span class="text">Telegram</span>
             }
           </a>
         </li>

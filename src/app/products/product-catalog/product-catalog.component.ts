@@ -129,12 +129,26 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
       })
     );
 
-    // Subscribe to draft order changes to get address data
+    // Subscribe to draft order changes to get address data and order discount
     this.subscriptions.add(
       this.orderService.currentDraftOrder$.subscribe((order: Order | null) => {
         if (order) {
           this.currentAddress = order.address || null;
           this.selectedAddressUid = order.address?.uid;
+
+          // Update discount from order if it's different (scale-based discount may change with cart total)
+          if (order.discountPercent !== undefined && order.discountPercent !== this.currentDiscount) {
+            const previousDiscount = this.currentDiscount;
+            this.currentDiscount = order.discountPercent;
+
+            // Reload products to get updated prices with new discount
+            // Only reload if discount actually changed and products are loaded
+            if (this.products.length > 0 && previousDiscount !== order.discountPercent) {
+              console.log(`[Discount Change] Discount changed from ${previousDiscount}% to ${order.discountPercent}%, reloading products`);
+              this.loadProducts();
+            }
+          }
+
           // If VAT rate changed, reload products to update prices
           if (order.vatRateChanged) {
             console.log('[Address Change] VAT rate changed, reloading products');
@@ -160,10 +174,18 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
 
           // Set discount and VAT rate for clients
           if (settings.entity_type === 'client') {
-            const client = settings.entity as Client;
-            this.currentDiscount = client.discount || 0;
             // Use effective VAT rate from AppSettings (already calculated by backend)
             this.currentVatRate = settings.effective_vat_rate || 0;
+
+            // Set initial discount from AppSettings (backend-computed based on discount mode)
+            // But if there's an active order with a discount, prefer the order's discount
+            // (order discount may differ due to scale-based calculations on order total)
+            const currentOrder = this.orderService.currentDraftOrderValue;
+            if (currentOrder && currentOrder.discountPercent !== undefined) {
+              this.currentDiscount = currentOrder.discountPercent;
+            } else {
+              this.currentDiscount = settings.discount_info?.current_discount || 0;
+            }
           } else {
             this.currentDiscount = 0;
             this.currentVatRate = 0;
@@ -262,7 +284,17 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
 
     const category = this.selectedCategory || undefined;
     const search = this.searchQuery.trim() || undefined;
-    this.productService.getFrontendProductsPaginated(0, this.pageSize, category, search).subscribe({
+
+    // Get current order total for accurate discount calculation
+    // This ensures products show prices with the correct discount based on cart total
+    // IMPORTANT: Use originalTotalWithVat (GROSS with VAT) for scale lookup because
+    // the backend's calculatePreliminaryTotal uses GROSS amounts for discount scale lookup.
+    // Fallback chain: originalTotalWithVat -> totalAmount -> 0
+    const currentOrder = this.orderService.currentDraftOrderValue;
+    const orderTotal = currentOrder?.originalTotalWithVat || currentOrder?.totalAmount || 0;
+    const orderTotalCents = orderTotal > 0 ? Math.round(orderTotal * 100) : undefined;
+
+    this.productService.getFrontendProductsPaginated(0, this.pageSize, category, search, orderTotalCents).subscribe({
       next: (response) => {
         this.products = this.sortProductsByCategoryAndName(response.products);
         this.totalProducts = response.pagination.total;
@@ -314,7 +346,13 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
     const category = this.selectedCategory || undefined;
     const search = this.searchQuery.trim() || undefined;
 
-    this.productService.getFrontendProductsPaginated(offset, this.pageSize, category, search).subscribe({
+    // Get current order total for accurate discount calculation
+    // Use GROSS (with VAT) for consistency with loadProducts()
+    const currentOrder = this.orderService.currentDraftOrderValue;
+    const orderTotal = currentOrder?.originalTotalWithVat || currentOrder?.totalAmount || 0;
+    const orderTotalCents = orderTotal > 0 ? Math.round(orderTotal * 100) : undefined;
+
+    this.productService.getFrontendProductsPaginated(offset, this.pageSize, category, search, orderTotalCents).subscribe({
       next: (response) => {
         // Append new products to existing list
         const newProducts = this.sortProductsByCategoryAndName(response.products);
@@ -523,12 +561,13 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
     if (draftOrder && draftOrder.totalAmount) {
       return draftOrder.totalAmount;
     }
-    
-    // Fallback: if no draft order, sum item subtotals (which should come from backend)
-    // Note: This is a temporary fallback. In normal flow, draft order should always exist
+
+    // Fallback: if no draft order yet, sum item subtotals from backend
+    // All item.subtotal values come from backend calculations
+    // Return 0 if items don't have backend-calculated subtotals yet
     return this.cartItems.reduce((sum, item) => {
-      // Use backend-calculated subtotal if available, otherwise fallback to price * quantity
-      return sum + (item.subtotal || (item.price * item.quantity));
+      // Only use backend-calculated subtotal, never calculate locally
+      return sum + (item.subtotal || 0);
     }, 0);
   }
 
@@ -794,16 +833,32 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
    * Get final price with VAT and discount for display
    * For items in cart, uses backend-calculated priceAfterDiscountWithVat (may have product limit applied)
    * For items not in cart, uses priceFinal from frontend products endpoint
+   * When there's no discount, returns original price with VAT
    */
   getPriceWithVat(product: Product): number {
-    // Check if item is in cart - use cart item's price (which may have product discount limit applied)
     const cartItem = this.cartItems.find(item => item.productId === product.id);
+    const productWithPrices = product as Product & { priceFinal?: number; priceWithVat?: number };
+
+    // If no discount, always return original price with VAT
+    if (!this.hasDiscount()) {
+      // For cart items, use cart's priceWithVat
+      if (cartItem && cartItem.priceWithVat !== undefined) {
+        return cartItem.priceWithVat;
+      }
+      // For non-cart items, use product's priceWithVat
+      if (productWithPrices.priceWithVat !== undefined) {
+        return productWithPrices.priceWithVat;
+      }
+      return product.price;
+    }
+
+    // With discount - use discounted prices
+    // For cart items, use cart's discounted price (may have product limit applied)
     if (cartItem && cartItem.priceAfterDiscountWithVat !== undefined) {
       return cartItem.priceAfterDiscountWithVat;
     }
 
-    // Item not in cart - use product's calculated prices
-    const productWithPrices = product as Product & { priceFinal?: number; priceWithVat?: number };
+    // For non-cart items, use product's priceFinal
     if (productWithPrices.priceFinal !== undefined) {
       return productWithPrices.priceFinal;
     }
@@ -815,6 +870,9 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
    * Get original price with VAT (no discount applied) for display
    * For items in cart, uses backend-calculated priceWithVat
    * For items not in cart, uses price_with_vat from frontend products endpoint
+   *
+   * IMPORTANT: All calculations are done by backend. This method only retrieves
+   * pre-calculated values. Returns 0 if no backend value is available.
    */
   getOriginalPriceWithVat(product: Product): number {
     // Check if item is in cart - use cart item's base price with VAT
@@ -823,16 +881,16 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
       return cartItem.priceWithVat;
     }
 
-    // Item not in cart - use product's calculated prices
-    const productWithPrices = product as Product & { priceWithVat?: number; basePrice?: number; vatRate?: number };
+    // Item not in cart - use product's calculated prices from backend
+    const productWithPrices = product as Product & { priceWithVat?: number };
     if (productWithPrices.priceWithVat !== undefined) {
       return productWithPrices.priceWithVat;
     }
-    // Fallback calculation if not available
-    if (productWithPrices.basePrice !== undefined && productWithPrices.vatRate !== undefined) {
-      return productWithPrices.basePrice * (1 + productWithPrices.vatRate / 100);
-    }
-    return product.price * (1 + this.currentVatRate / 100);
+
+    // No backend value available - return 0 (should not happen in normal flow)
+    // Products from getFrontendProductsPaginated() always have priceWithVat
+    console.warn(`[getOriginalPriceWithVat] No priceWithVat available for product ${product.id}`);
+    return 0;
   }
 
 }

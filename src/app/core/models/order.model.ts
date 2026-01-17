@@ -9,8 +9,10 @@ export interface Order {
   vatRate?: number; // VAT rate percentage (0-100)
   subtotal?: number; // Subtotal without VAT
   totalVat?: number; // Total VAT amount
-  originalTotal?: number; // Original total before discount
-  discountAmount?: number; // Total discount amount saved
+  originalTotal?: number; // Original total before discount (NET)
+  originalTotalWithVat?: number; // Original total before discount (GROSS with VAT) - matches product card display
+  discountAmount?: number; // Total discount amount saved (NET)
+  discountAmountWithVat?: number; // Total discount amount saved (GROSS with VAT) - for consistent display
   status: OrderStatus;
   createdAt: Date;
   updatedAt: Date;

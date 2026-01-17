@@ -4,27 +4,27 @@
   align-items: center;
   min-height: 100vh;
   background: var(--gradient-primary);
-  padding: 20px;
+  padding: var(--spacing-md-lg);
 }
 
 .login-card {
   background: var(--card-bg);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-xl);
-  padding: 40px;
+  padding: var(--spacing-2xl);
   width: 100%;
   max-width: 400px;
 }
 
 .login-header {
   text-align: center;
-  margin-bottom: 30px;
+  margin-bottom: var(--spacing-xl);
 
   h1 {
     color: var(--color-text-primary);
     font-size: 28px;
     font-weight: 700;
-    margin: 0 0 10px 0;
+    margin: 0 0 var(--spacing-sm-md) 0;
   }
 
   p {
@@ -36,34 +36,35 @@
 
 .login-form {
   .form-group {
-    margin-bottom: 20px;
+    margin-bottom: var(--spacing-md-lg);
 
     label {
       display: block;
       color: var(--color-text-primary);
       font-size: 14px;
       font-weight: 600;
-      margin-bottom: 8px;
+      margin-bottom: var(--spacing-sm);
     }
 
     .form-control {
       width: 100%;
-      padding: 12px 16px;
-      font-size: 14px;
+      padding: var(--spacing-sm);
+      font-size: 15px;
       border: 2px solid var(--color-border);
       border-radius: var(--radius-md);
       outline: none;
-      transition: all 0.3s ease;
+      transition: border-color 0.3s ease, box-shadow 0.3s ease;
       box-sizing: border-box;
       background: var(--input-bg);
       color: var(--input-text);
 
       &::placeholder {
-        color: var(--input-placeholder);
+        color: var(--color-text-muted);
       }
 
       &:focus {
         border-color: var(--color-primary);
+        box-shadow: var(--focus-ring);
       }
 
       &.is-invalid {
@@ -75,14 +76,14 @@
       display: block;
       color: var(--color-danger);
       font-size: 12px;
-      margin-top: 5px;
+      margin-top: var(--spacing-xs);
     }
   }
 
   .alert {
-    padding: 12px 16px;
+    padding: var(--spacing-sm-md) var(--spacing-md);
     border-radius: var(--radius-md);
-    margin-bottom: 20px;
+    margin-bottom: var(--spacing-md-lg);
     font-size: 14px;
 
     &.alert-danger {
@@ -94,7 +95,7 @@
 
   .btn {
     width: 100%;
-    padding: 14px;
+    padding: var(--spacing-sm-lg);
     font-size: 16px;
     font-weight: 600;
     border: none;
@@ -125,13 +126,13 @@
       border-radius: 50%;
       border-top-color: white;
       animation: spin 0.6s linear infinite;
-      margin-right: 8px;
+      margin-right: var(--spacing-sm);
     }
   }
 }
 
 .login-footer {
-  margin-top: 20px;
+  margin-top: var(--spacing-md-lg);
   text-align: center;
 
   .hint {

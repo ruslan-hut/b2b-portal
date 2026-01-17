@@ -5,6 +5,7 @@ import { OrderService } from './core/services/order.service';
 import { ProductService } from './core/services/product.service';
 import { TranslationService } from './core/services/translation.service';
 import { NetworkService } from './core/services/network.service';
+import { PageTitleService } from './core/services/page-title.service';
 import { User, Client } from './core/models/user.model';
 import { OrderItem } from './core/models/order.model';
 import { filter } from 'rxjs/operators';
@@ -19,6 +20,7 @@ import { Subscription } from 'rxjs';
 })
 export class AppComponent implements OnInit, OnDestroy {
   title: string = 'B2B Portal';
+  pageTitle: string = '';
   currentEntity: User | Client | null = null;
   entityType: 'user' | 'client' | null = null;
   cartItems: OrderItem[] = [];
@@ -37,6 +39,7 @@ export class AppComponent implements OnInit, OnDestroy {
     private router: Router,
     public translationService: TranslationService,
     private networkService: NetworkService,
+    private pageTitleService: PageTitleService,
     private cdr: ChangeDetectorRef
   ) {
     this.subscriptions.add(
@@ -92,6 +95,14 @@ export class AppComponent implements OnInit, OnDestroy {
     this.subscriptions.add(
       this.networkService.isOnline$.subscribe(isOnline => {
         this.isOnline = isOnline;
+        this.cdr.markForCheck();
+      })
+    );
+
+    // Subscribe to page title changes
+    this.subscriptions.add(
+      this.pageTitleService.title$.subscribe(title => {
+        this.pageTitle = title;
         this.cdr.markForCheck();
       })
     );

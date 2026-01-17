@@ -1,20 +1,19 @@
 <div class="users-container">
-  <div class="header">
-    <h1>Users</h1>
-    <button class="btn-add" (click)="createUser()">
-      <span class="material-icons">add</span>
-      <span class="btn-text">Add</span>
-    </button>
-  </div>
-
-  <!-- Mobile Filter Toggle -->
-  <button class="filter-toggle" (click)="toggleFilters()">
-    <span class="material-icons">filter_list</span>
-    <span>Filters</span>
-    <span class="material-icons toggle-icon" [class.expanded]="isFiltersExpanded">
-      expand_more
-    </span>
-  </button>
+  <app-action-bar>
+    <div actionBarLeft>
+      <button class="btn-filter" (click)="toggleFilters()" [class.active]="isFiltersExpanded">
+        <span class="material-icons">filter_list</span>
+        <span class="btn-text">Filters</span>
+        <span class="material-icons toggle-icon">{{ isFiltersExpanded ? 'expand_less' : 'expand_more' }}</span>
+      </button>
+    </div>
+    <div actionBarRight>
+      <button class="btn-primary" (click)="createUser()">
+        <span class="material-icons">add</span>
+        <span class="btn-text">Add</span>
+      </button>
+    </div>
+  </app-action-bar>
 
   <div class="filters" [class.expanded]="isFiltersExpanded">
     <div class="filter-group">

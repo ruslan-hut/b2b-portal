@@ -231,7 +231,7 @@
         <div class="order-summary-card">
           <h2 class="summary-title">{{ 'orders.orderTotals' | translate }}</h2>
 
-          <!-- Cart Totals Breakdown -->
+          <!-- Cart Totals Breakdown (uses VAT-inclusive values to match product card display) -->
           <div class="cart-totals-breakdown">
             @if (hasDiscount) {
               <div class="total-row original-total-row">

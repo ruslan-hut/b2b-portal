@@ -1,4 +1,5 @@
-import { Component, OnInit, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
+import { Subscription } from 'rxjs';
 import { AdminService, TableInfo, TableRecord, TableRecordsResponse } from '../../core/services/admin.service';
 
 @Component({
@@ -8,7 +9,9 @@ import { AdminService, TableInfo, TableRecord, TableRecordsResponse } from '../.
     standalone: false,
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class TablesComponent implements OnInit {
+export class TablesComponent implements OnInit, OnDestroy {
+  private subscriptions = new Subscription();
+
   tables: TableInfo[] = [];
   selectedTable = '';
   records: TableRecord[] = [];
@@ -40,23 +43,29 @@ export class TablesComponent implements OnInit {
     this.loadTables();
   }
 
+  ngOnDestroy(): void {
+    this.subscriptions.unsubscribe();
+  }
+
   loadTables(): void {
     this.loading = true;
     this.error = null;
 
-    this.adminService.listTables().subscribe({
-      next: (tables) => {
-        this.tables = tables;
-        this.loading = false;
-        this.cdr.detectChanges();
-      },
-      error: (err) => {
-        console.error('Failed to load tables:', err);
-        this.error = 'Failed to load database tables';
-        this.loading = false;
-        this.cdr.detectChanges();
-      }
-    });
+    this.subscriptions.add(
+      this.adminService.listTables().subscribe({
+        next: (tables) => {
+          this.tables = tables;
+          this.loading = false;
+          this.cdr.detectChanges();
+        },
+        error: (err) => {
+          console.error('Failed to load tables:', err);
+          this.error = 'Failed to load database tables';
+          this.loading = false;
+          this.cdr.detectChanges();
+        }
+      })
+    );
   }
 
   selectTable(table: TableInfo): void {
@@ -84,36 +93,38 @@ export class TablesComponent implements OnInit {
     this.loadingRecords = true;
     this.error = null;
 
-    this.adminService.searchTableRecords(
-      this.selectedTable,
-      this.currentPage,
-      this.pageSize,
-      this.searchTerm || undefined,
-      this.searchField || undefined
-    ).subscribe({
-      next: (response: TableRecordsResponse) => {
-        const data = response.data || [];
-        this.records = [...data];
-        this.total = response.pagination?.total || data.length;
-        this.totalPages = response.pagination?.total_pages || Math.ceil(this.total / this.pageSize);
+    this.subscriptions.add(
+      this.adminService.searchTableRecords(
+        this.selectedTable,
+        this.currentPage,
+        this.pageSize,
+        this.searchTerm || undefined,
+        this.searchField || undefined
+      ).subscribe({
+        next: (response: TableRecordsResponse) => {
+          const data = response.data || [];
+          this.records = [...data];
+          this.total = response.pagination?.total || data.length;
+          this.totalPages = response.pagination?.total_pages || Math.ceil(this.total / this.pageSize);
 
-        // Extract column names from first record
-        if (data.length > 0) {
-          this.columns = [...Object.keys(data[0])];
-        } else {
-          this.columns = [];
+          // Extract column names from first record
+          if (data.length > 0) {
+            this.columns = [...Object.keys(data[0])];
+          } else {
+            this.columns = [];
+          }
+
+          this.loadingRecords = false;
+          this.cdr.detectChanges();
+        },
+        error: (err) => {
+          console.error('Failed to load table records:', err);
+          this.error = 'Failed to load table records';
+          this.loadingRecords = false;
+          this.cdr.detectChanges();
         }
-
-        this.loadingRecords = false;
-        this.cdr.detectChanges();
-      },
-      error: (err) => {
-        console.error('Failed to load table records:', err);
-        this.error = 'Failed to load table records';
-        this.loadingRecords = false;
-        this.cdr.detectChanges();
-      }
-    });
+      })
+    );
   }
 
   onSearchChange(): void {

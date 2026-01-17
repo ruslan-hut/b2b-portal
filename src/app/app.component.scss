@@ -45,6 +45,7 @@
     transform: translateY(-100%);
     opacity: 0;
   }
+
   to {
     transform: translateY(0);
     opacity: 1;
@@ -68,8 +69,8 @@
   .header-content {
     max-width: 1400px;
     margin: 0 auto;
-    padding: 0 20px;
-    height: 70px;
+    padding: 0 16px;
+    height: 50px;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -87,13 +88,13 @@
     }
 
     .logo-icon {
-      width: 32px;
-      height: 32px;
+      width: 28px;
+      height: 28px;
       object-fit: contain;
     }
 
     .logo-text {
-      font-size: 24px;
+      font-size: 18px;
       font-weight: 700;
       background: var(--gradient-primary);
       -webkit-background-clip: text;
@@ -149,7 +150,7 @@
         padding: 8px 16px;
         font-size: 14px;
         font-weight: 600;
-        border: 2px solid var(--color-border);
+        border: 2px solid transparent;
         border-radius: var(--radius-md);
         background: var(--card-bg);
         color: var(--color-text-primary);
@@ -340,6 +341,7 @@
               flex-shrink: 0;
 
               ::ng-deep {
+
                 .language-switcher,
                 .theme-toggle-wrapper {
                   position: relative;
@@ -390,8 +392,8 @@
   .app-header {
     .header-content {
       flex-wrap: nowrap;
-      height: 60px;
-      padding: 8px 12px;
+      height: 48px;
+      padding: 6px 12px;
       gap: 8px;
     }
 
@@ -400,12 +402,12 @@
       min-width: 0;
 
       .logo-icon {
-        width: 28px;
-        height: 28px;
+        width: 24px;
+        height: 24px;
       }
 
       .logo-text {
-        font-size: 18px;
+        font-size: 16px;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;

@@ -1,6 +1,7 @@
-import { Component, OnInit, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
+import { Subscription } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
 export interface AdminClient {
@@ -39,7 +40,9 @@ interface ApiResponse<T> {
     standalone: false,
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class ClientsComponent implements OnInit {
+export class ClientsComponent implements OnInit, OnDestroy {
+  private subscriptions = new Subscription();
+
   clients: AdminClient[] = [];
   filteredClients: AdminClient[] = [];
   loading = false;
@@ -69,6 +72,10 @@ export class ClientsComponent implements OnInit {
     this.loadClients();
   }
 
+  ngOnDestroy(): void {
+    this.subscriptions.unsubscribe();
+  }
+
   loadClients(): void {
     this.loading = true;
     this.error = null;
@@ -83,31 +90,33 @@ export class ClientsComponent implements OnInit {
       url += `&search=${encodeURIComponent(this.searchTerm.trim())}`;
     }
 
-    this.http.get<ApiResponse<AdminClient[]>>(url).subscribe({
-      next: (response) => {
-        this.clients = response.data || [];
-        // Set pagination values from pagination field (backend uses 'pagination', not 'metadata')
-        if (response.pagination) {
-          this.total = response.pagination.total || 0;
-          this.totalPages = response.pagination.total_pages || Math.ceil(this.total / this.pageSize);
-        } else {
-          // If no pagination, we can't determine total, so assume single page
-          console.warn('[Clients] No pagination in response');
-          this.total = this.clients.length;
-          this.totalPages = 1;
+    this.subscriptions.add(
+      this.http.get<ApiResponse<AdminClient[]>>(url).subscribe({
+        next: (response) => {
+          this.clients = response.data || [];
+          // Set pagination values from pagination field (backend uses 'pagination', not 'metadata')
+          if (response.pagination) {
+            this.total = response.pagination.total || 0;
+            this.totalPages = response.pagination.total_pages || Math.ceil(this.total / this.pageSize);
+          } else {
+            // If no pagination, we can't determine total, so assume single page
+            console.warn('[Clients] No pagination in response');
+            this.total = this.clients.length;
+            this.totalPages = 1;
+          }
+
+          this.applyFilters();
+          this.loading = false;
+          this.cdr.detectChanges();
+        },
+        error: (err) => {
+          console.error('Failed to load clients:', err);
+          this.error = 'Failed to load clients';
+          this.loading = false;
+          this.cdr.detectChanges();
         }
-        
-        this.applyFilters();
-        this.loading = false;
-        this.cdr.detectChanges();
-      },
-      error: (err) => {
-        console.error('Failed to load clients:', err);
-        this.error = 'Failed to load clients';
-        this.loading = false;
-        this.cdr.detectChanges();
-      }
-    });
+      })
+    );
   }
 
   applyFilters(): void {
@@ -144,20 +153,22 @@ export class ClientsComponent implements OnInit {
   }
 
   toggleActive(client: AdminClient): void {
-    this.http.post(`${environment.apiUrl}/admin/clients/active`, {
-      data: [{
-        uid: client.uid,
-        active: !client.active
-      }]
-    }).subscribe({
-      next: () => {
-        this.loadClients();
-      },
-      error: (err) => {
-        console.error('Failed to update client status:', err);
-        alert('Failed to update client status');
-      }
-    });
+    this.subscriptions.add(
+      this.http.post(`${environment.apiUrl}/admin/clients/active`, {
+        data: [{
+          uid: client.uid,
+          active: !client.active
+        }]
+      }).subscribe({
+        next: () => {
+          this.loadClients();
+        },
+        error: (err) => {
+          console.error('Failed to update client status:', err);
+          alert('Failed to update client status');
+        }
+      })
+    );
   }
 
   deleteClient(client: AdminClient): void {
@@ -165,17 +176,19 @@ export class ClientsComponent implements OnInit {
       return;
     }
 
-    this.http.post(`${environment.apiUrl}/admin/clients/delete`, {
-      data: [client.uid]
-    }).subscribe({
-      next: () => {
-        this.loadClients();
-      },
-      error: (err) => {
-        console.error('Failed to delete client:', err);
-        alert('Failed to delete client');
-      }
-    });
+    this.subscriptions.add(
+      this.http.post(`${environment.apiUrl}/admin/clients/delete`, {
+        data: [client.uid]
+      }).subscribe({
+        next: () => {
+          this.loadClients();
+        },
+        error: (err) => {
+          console.error('Failed to delete client:', err);
+          alert('Failed to delete client');
+        }
+      })
+    );
   }
 
   goToPage(page: number): void {

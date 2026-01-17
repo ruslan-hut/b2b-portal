@@ -21,6 +21,7 @@ export interface AdminClientFull {
   vat_number?: string;
   balance: number;
   fixed_discount: boolean;
+  cumulative_discount: boolean;
   price_type_uid: string;
   store_uid: string;
   active: boolean;
@@ -119,6 +120,7 @@ export class ClientEditComponent implements OnInit, OnDestroy {
       vat_number: ['', [Validators.maxLength(50)]],
       balance: [0, [Validators.min(0)]],
       fixed_discount: [false],
+      cumulative_discount: [true],
       store_uid: ['', Validators.required],
       price_type_uid: ['', Validators.required],
       active: [false]
@@ -242,6 +244,7 @@ export class ClientEditComponent implements OnInit, OnDestroy {
       vat_number: client.vat_number || '',
       balance: client.balance || 0,
       fixed_discount: client.fixed_discount || false,
+      cumulative_discount: client.cumulative_discount ?? true,
       store_uid: client.store_uid || '',
       price_type_uid: client.price_type_uid || '',
       active: client.active || false
@@ -320,6 +323,7 @@ export class ClientEditComponent implements OnInit, OnDestroy {
       vat_number: formValue.vat_number || '',
       balance: formValue.balance || 0,
       fixed_discount: formValue.fixed_discount || false,
+      cumulative_discount: formValue.cumulative_discount ?? true,
       store_uid: formValue.store_uid,
       price_type_uid: formValue.price_type_uid,
       active: formValue.active

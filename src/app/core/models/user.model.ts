@@ -28,6 +28,7 @@ export interface Client {
   store_uid: string; // Required: store assigned to client
   balance?: number; // Current monthly purchase turnover in cents (set by CRM)
   fixed_discount?: boolean; // If true, use discount field; if false, use scale lookup
+  cumulative_discount?: boolean; // If true, use balance+order for scale; if false, only order total
 }
 
 // Token information

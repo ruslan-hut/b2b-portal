@@ -94,8 +94,9 @@ export class ProductService {
    * Get products with pagination metadata from frontend endpoint
    * Returns products along with pagination info for "Show more" functionality
    * Supports search by SKU and name, with optional category filter
+   * @param orderTotal Optional cart total in cents for accurate discount calculation
    */
-  getFrontendProductsPaginated(offset: number = 0, limit: number = 20, category?: string, search?: string): Observable<PaginatedProductsResponse> {
+  getFrontendProductsPaginated(offset: number = 0, limit: number = 20, category?: string, search?: string, orderTotal?: number): Observable<PaginatedProductsResponse> {
     const currentLanguage = this.translationService.getCurrentLanguage();
     let params = new HttpParams()
       .set('offset', offset.toString())
@@ -108,6 +109,10 @@ export class ProductService {
 
     if (search) {
       params = params.set('search', search);
+    }
+
+    if (orderTotal !== undefined && orderTotal > 0) {
+      params = params.set('order_total', orderTotal.toString());
     }
 
     return this.http.get<ApiResponse<FrontendProduct[]>>(`${this.apiUrl}/frontend/products`, { params }).pipe(

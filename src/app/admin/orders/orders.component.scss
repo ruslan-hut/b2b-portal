@@ -1,62 +1,50 @@
 .orders-container {
-  h1 {
-    margin-bottom: 20px;
-    color: var(--color-text-primary);
-  }
-}
-
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-  gap: 12px;
-
-  h1 {
-    margin: 0;
-    font-size: 1.5rem;
-    color: var(--color-text-primary);
-  }
-}
-
-// Filter toggle - hidden on desktop
-.filter-toggle {
-  display: none;
 }
 
 .filters {
-  display: flex;
-  gap: 20px;
-  margin-bottom: 20px;
-  padding: 15px;
+  display: none;
+  gap: var(--spacing-md-lg);
+  margin-bottom: var(--spacing-md-lg);
+  padding: var(--spacing-md);
   background-color: var(--card-bg);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   box-shadow: var(--shadow-sm);
+
+  &.expanded {
+    display: flex;
+  }
 }
 
 .filter-group {
   display: flex;
   align-items: center;
-  gap: 10px;
-  
+  gap: var(--spacing-sm-md);
+
   label {
     font-weight: 600;
     color: var(--color-text-primary);
   }
-  
+
   select, input {
-    padding: 8px 12px;
-    border: 1px solid var(--color-border);
-    border-radius: 4px;
-    font-size: 0.95rem;
-    background-color: var(--input-bg);
-    color: var(--color-text-primary);
+    padding: var(--spacing-sm);
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-md);
+    font-size: 15px;
+    background: var(--input-bg);
+    color: var(--input-text);
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+
+    &:focus {
+      outline: none;
+      border-color: var(--color-primary);
+      box-shadow: var(--focus-ring);
+    }
 
     &::placeholder {
       color: var(--color-text-muted);
     }
   }
-  
+
   input {
     min-width: 250px;
   }
@@ -64,7 +52,7 @@
 
 .orders-table {
   background-color: var(--card-bg);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   box-shadow: var(--shadow-sm);
   overflow-x: auto;
   position: relative;
@@ -77,12 +65,12 @@
 
   &::-webkit-scrollbar-track {
     background: var(--scrollbar-track);
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
   }
 
   &::-webkit-scrollbar-thumb {
     background: var(--scrollbar-thumb);
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
 
     &:hover {
       background: var(--scrollbar-thumb-hover);
@@ -187,28 +175,28 @@ table {
 
 .actions {
   display: flex;
-  gap: 8px;
-  
+  gap: var(--spacing-sm);
+
   button {
-    padding: 6px 12px;
+    padding: var(--spacing-sm-md) var(--spacing-sm-md);
     border: none;
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     cursor: pointer;
     font-size: 0.9rem;
-    
+
     &.btn-edit {
       background-color: var(--color-info);
       color: var(--color-text-inverse);
-      
+
       &:hover {
         background-color: var(--color-info-dark);
       }
     }
-    
+
     &.btn-delete {
       background-color: var(--color-danger);
       color: var(--color-text-inverse);
-      
+
       &:hover {
         background-color: var(--color-danger-dark);
       }
@@ -218,7 +206,7 @@ table {
 
 .no-data {
   text-align: center;
-  padding: 40px;
+  padding: var(--spacing-2xl);
   color: var(--color-text-muted);
 }
 
@@ -226,21 +214,21 @@ table {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20px;
+  padding: var(--spacing-md-lg);
   border-top: 1px solid var(--color-border-light);
-  
+
   button {
-    padding: 8px 16px;
+    padding: var(--spacing-sm) var(--spacing-md);
     background-color: var(--color-info);
     color: var(--color-text-inverse);
     border: none;
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     cursor: pointer;
-    
+
     &:hover:not(:disabled) {
       background-color: var(--color-info-dark);
     }
-    
+
     &:disabled {
       background-color: var(--color-disabled);
       cursor: not-allowed;
@@ -263,75 +251,84 @@ table {
 
 .modal-content {
   background-color: var(--card-bg);
-  padding: 30px;
-  border-radius: 8px;
+  padding: var(--spacing-xl);
+  border-radius: var(--radius-md);
   max-width: 500px;
   width: 90%;
-  
+
   h2 {
     margin-top: 0;
-    margin-bottom: 20px;
+    margin-bottom: var(--spacing-md-lg);
     color: var(--color-text-primary);
   }
 }
 
 .order-info {
-  margin-bottom: 20px;
-  padding: 15px;
+  margin-bottom: var(--spacing-md-lg);
+  padding: var(--spacing-md);
   background-color: var(--color-background-secondary);
-  border-radius: 4px;
-  
+  border-radius: var(--radius-sm);
+
   p {
-    margin: 5px 0;
+    margin: var(--spacing-xs) 0;
     color: var(--color-text-primary);
   }
 }
 
 .form-group {
-  margin-bottom: 15px;
-  
+  margin-bottom: var(--spacing-md);
+
   label {
     display: block;
-    margin-bottom: 5px;
+    margin-bottom: var(--spacing-xs);
     font-weight: 600;
     color: var(--color-text-primary);
   }
-  
+
   select {
     width: 100%;
-    padding: 8px 12px;
-    border: 1px solid var(--color-border);
-    border-radius: 4px;
-    font-size: 0.95rem;
+    padding: var(--spacing-sm);
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-md);
+    font-size: 15px;
+    background: var(--input-bg);
+    color: var(--input-text);
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+
+    &:focus {
+      outline: none;
+      border-color: var(--color-primary);
+      box-shadow: var(--focus-ring);
+    }
   }
 }
 
 .form-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 10px;
-  margin-top: 20px;
-  
+  gap: var(--spacing-sm-md);
+  margin-top: var(--spacing-md-lg);
+
   button {
-    padding: 10px 20px;
+    padding: var(--spacing-sm-md) var(--spacing-md-lg);
     border: none;
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     cursor: pointer;
     font-size: 1rem;
-    
+
     &.btn-cancel {
       background-color: var(--status-draft-text);
       color: var(--color-text-inverse);
-      
+
       &:hover {
         background-color: var(--color-text-muted);
       }
     }
-    
+
     &.btn-save {
       background-color: var(--color-success);
       color: var(--color-text-inverse);
-      
+
       &:hover {
         background-color: var(--color-success-dark);
       }
@@ -340,11 +337,11 @@ table {
 }
 
 .loading, .error {
-  padding: 20px;
+  padding: var(--spacing-md-lg);
   text-align: center;
   background-color: var(--card-bg);
-  border-radius: 8px;
-  margin-bottom: 20px;
+  border-radius: var(--radius-md);
+  margin-bottom: var(--spacing-md-lg);
 }
 
 .error {
@@ -363,13 +360,13 @@ table {
 // Mobile Card Layout
 .orders-cards {
   flex-direction: column;
-  gap: 12px;
+  gap: var(--spacing-sm-md);
 }
 
 .order-card {
   background: var(--card-bg);
   border: 1px solid var(--card-border);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   box-shadow: var(--shadow-sm);
   overflow: hidden;
   cursor: pointer;
@@ -389,15 +386,15 @@ table {
   }
 
   .card-header {
-    padding: 12px 16px;
+    padding: var(--spacing-sm-md) var(--spacing-md);
   }
 
   .card-title {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 8px;
-    margin-bottom: 4px;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-xs);
 
     .order-number {
       font-weight: 600;
@@ -408,8 +405,8 @@ table {
     .status-badge {
       font-size: 0.75rem;
       font-weight: 600;
-      padding: 2px 8px;
-      border-radius: 12px;
+      padding: 2px var(--spacing-sm);
+      border-radius: var(--radius-lg);
       text-transform: capitalize;
 
       &.status-draft {
@@ -442,15 +439,15 @@ table {
   .card-summary {
     display: flex;
     align-items: center;
-    gap: 16px;
-    padding: 8px 16px;
+    gap: var(--spacing-md);
+    padding: var(--spacing-sm) var(--spacing-md);
     background-color: var(--color-background-secondary);
     border-top: 1px solid var(--color-border-light);
 
     .summary-item {
       display: flex;
       align-items: center;
-      gap: 4px;
+      gap: var(--spacing-xs);
       font-size: 0.85rem;
 
       .label {
@@ -481,14 +478,14 @@ table {
   }
 
   .card-details {
-    padding: 12px 16px;
+    padding: var(--spacing-sm-md) var(--spacing-md);
     background-color: var(--color-background-secondary);
     border-top: 1px solid var(--color-border-light);
 
     .detail-row {
       display: flex;
       justify-content: space-between;
-      padding: 8px 0;
+      padding: var(--spacing-sm) 0;
       font-size: 0.9rem;
 
       &:not(:last-child) {
@@ -508,18 +505,18 @@ table {
 
     .card-actions {
       display: flex;
-      gap: 8px;
-      margin-top: 12px;
+      gap: var(--spacing-sm);
+      margin-top: var(--spacing-sm-md);
 
       button {
         flex: 1;
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 6px;
-        padding: 10px 12px;
+        gap: var(--spacing-sm-md);
+        padding: var(--spacing-sm-md) var(--spacing-sm-md);
         border: none;
-        border-radius: 6px;
+        border-radius: var(--radius-sm-md);
         font-size: 0.9rem;
         font-weight: 500;
         cursor: pointer;
@@ -553,9 +550,9 @@ table {
 
 .no-data-card {
   text-align: center;
-  padding: 40px 20px;
+  padding: var(--spacing-2xl) var(--spacing-md-lg);
   background: var(--card-bg);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   color: var(--color-text-muted);
   font-size: 0.95rem;
 }

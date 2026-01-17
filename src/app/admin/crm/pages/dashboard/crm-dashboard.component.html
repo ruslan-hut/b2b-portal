@@ -1,0 +1,196 @@
+<div class="dashboard-container">
+  <div class="page-header">
+    <div class="header-left">
+      <h1>CRM Dashboard</h1>
+      <p class="subtitle">Pipeline and team performance overview</p>
+    </div>
+    <div class="header-right">
+      <button class="btn-primary" (click)="goToPipelineBoard()">
+        <span class="icon">&#9776;</span>
+        Pipeline Board
+      </button>
+      <button class="btn-secondary" (click)="goToMyTasks()">
+        <span class="icon">&#10003;</span>
+        My Tasks
+      </button>
+      <button class="btn-icon" (click)="goToSettings()" title="Settings">
+        <span>&#9881;</span>
+      </button>
+    </div>
+  </div>
+
+  <app-dashboard-filters (filtersChange)="onFiltersChange($any($event))"></app-dashboard-filters>
+
+  <div *ngIf="error" class="error-message">
+    {{ error }}
+    <button class="btn-retry" (click)="loadDashboard()">Retry</button>
+  </div>
+
+  <div *ngIf="loading" class="loading-container">
+    <div class="spinner"></div>
+    <p>Loading dashboard...</p>
+  </div>
+
+  <div class="dashboard-content" *ngIf="!loading && !error">
+    <!-- Summary Cards -->
+    <div class="summary-cards">
+      <div class="summary-card">
+        <div class="card-icon orders">&#128230;</div>
+        <div class="card-content">
+          <div class="card-value">{{ formatNumber(totalOrdersInPipeline) }}</div>
+          <div class="card-label">Orders in Pipeline</div>
+        </div>
+      </div>
+      <div class="summary-card">
+        <div class="card-icon value">&#128176;</div>
+        <div class="card-content">
+          <div class="card-value">${{ formatCurrency(totalPipelineValue) }}</div>
+          <div class="card-label">Total Pipeline Value</div>
+        </div>
+      </div>
+      <div class="summary-card">
+        <div class="card-icon tasks">&#10003;</div>
+        <div class="card-content">
+          <div class="card-value">{{ formatNumber(totalActiveTasks) }}</div>
+          <div class="card-label">Active Tasks</div>
+        </div>
+      </div>
+      <div class="summary-card" [class.warning]="taskStats.total_overdue > 0">
+        <div class="card-icon overdue">&#9888;</div>
+        <div class="card-content">
+          <div class="card-value">{{ formatNumber(taskStats.total_overdue) }}</div>
+          <div class="card-label">Overdue Tasks</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dashboard-grid">
+      <!-- Pipeline Stats Section -->
+      <div class="dashboard-section pipeline-section">
+        <div class="section-header">
+          <h2>Pipeline Overview</h2>
+          <button class="btn-link" (click)="goToPipelineBoard()">View Board &rarr;</button>
+        </div>
+        <div class="pipeline-chart" *ngIf="pipelineStats.length > 0">
+          <div class="pipeline-stage" *ngFor="let stage of pipelineStats">
+            <div class="stage-info">
+              <span class="stage-color" [style.background-color]="stage.stage_color"></span>
+              <span class="stage-name">{{ stage.stage_name }}</span>
+              <span class="stage-count">{{ stage.order_count }}</span>
+            </div>
+            <div class="stage-bar-container">
+              <div
+                class="stage-bar"
+                [style.width.%]="getBarWidth(stage.order_count)"
+                [style.background-color]="stage.stage_color"
+              ></div>
+            </div>
+            <div class="stage-meta">
+              <span class="stage-value">${{ formatCurrency(stage.total_value) }}</span>
+              <span class="stage-avg" *ngIf="stage.avg_days_in_stage > 0">
+                Avg: {{ formatAvgDays(stage.avg_days_in_stage) }}
+              </span>
+            </div>
+          </div>
+        </div>
+        <div class="empty-state" *ngIf="pipelineStats.length === 0">
+          <p>No pipeline data available</p>
+        </div>
+      </div>
+
+      <!-- Task Stats Section -->
+      <div class="dashboard-section task-section">
+        <div class="section-header">
+          <h2>Task Overview</h2>
+          <button class="btn-link" (click)="goToMyTasks()">View Tasks &rarr;</button>
+        </div>
+        <div class="task-stats-grid">
+          <div class="task-stat">
+            <div class="stat-value pending">{{ taskStats.total_pending }}</div>
+            <div class="stat-label">Pending</div>
+          </div>
+          <div class="task-stat">
+            <div class="stat-value in-progress">{{ taskStats.total_in_progress }}</div>
+            <div class="stat-label">In Progress</div>
+          </div>
+          <div class="task-stat">
+            <div class="stat-value overdue" [class.highlight]="taskStats.total_overdue > 0">
+              {{ taskStats.total_overdue }}
+            </div>
+            <div class="stat-label">Overdue</div>
+          </div>
+          <div class="task-stat">
+            <div class="stat-value completed">{{ taskStats.completed_today }}</div>
+            <div class="stat-label">Completed Today</div>
+          </div>
+          <div class="task-stat full-width">
+            <div class="stat-value week">{{ taskStats.completed_week }}</div>
+            <div class="stat-label">Completed This Week</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Team Workload Section -->
+      <div class="dashboard-section workload-section">
+        <div class="section-header">
+          <h2>Team Workload</h2>
+          <span class="section-badge">{{ totalTeamMembers }} members</span>
+        </div>
+        <div class="workload-list" *ngIf="workloadStats.length > 0">
+          <div class="workload-item" *ngFor="let user of workloadStats">
+            <div class="user-info">
+              <div class="user-avatar">{{ (user.user_name || '?').charAt(0) }}</div>
+              <div class="user-name">{{ user.user_name || 'Unknown' }}</div>
+            </div>
+            <div class="workload-bars">
+              <div class="workload-bar-container">
+                <div
+                  class="workload-bar orders"
+                  [style.width.%]="getWorkloadBarWidth(user)"
+                ></div>
+              </div>
+            </div>
+            <div class="workload-stats">
+              <span class="stat orders" title="Assigned orders">
+                <span class="icon">&#128230;</span> {{ user.assigned_orders }}
+              </span>
+              <span class="stat tasks" title="Pending tasks">
+                <span class="icon">&#10003;</span> {{ user.pending_tasks }}
+              </span>
+              <span class="stat overdue" *ngIf="user.overdue_tasks > 0" title="Overdue tasks">
+                <span class="icon">&#9888;</span> {{ user.overdue_tasks }}
+              </span>
+            </div>
+          </div>
+        </div>
+        <div class="empty-state" *ngIf="workloadStats.length === 0">
+          <p>No team workload data available</p>
+        </div>
+      </div>
+
+      <!-- Recent Activity Section -->
+      <div class="dashboard-section activity-section">
+        <div class="section-header">
+          <h2>Recent Activity</h2>
+        </div>
+        <div class="activity-list" *ngIf="recentActivity.length > 0">
+          <div class="activity-item" *ngFor="let activity of recentActivity">
+            <div class="activity-icon" [innerHTML]="getActivityIcon(activity.activity_type)"></div>
+            <div class="activity-content">
+              <div class="activity-description">{{ activity.content }}</div>
+              <div class="activity-meta">
+                <span class="activity-user" *ngIf="activity.user_name">
+                  {{ activity.user_name }}
+                </span>
+                <span class="activity-time">{{ formatActivityDate(activity.created_at) }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="empty-state" *ngIf="recentActivity.length === 0">
+          <p>No recent activity</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

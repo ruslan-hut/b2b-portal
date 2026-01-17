@@ -1,0 +1,225 @@
+<div class="subscriptions-container">
+  <app-action-bar>
+    <div class="nav-tabs" actionBarLeft>
+      <a routerLink="/admin/telegram/subscriptions" routerLinkActive="active" class="tab">Subscriptions</a>
+      <a routerLink="/admin/telegram/invites" routerLinkActive="active" class="tab">Invites</a>
+      <a routerLink="/admin/telegram/settings" routerLinkActive="active" class="tab">Settings</a>
+    </div>
+    <div actionBarRight>
+      <button class="btn-icon" (click)="refresh()" [disabled]="loading" title="Refresh">
+        <span class="material-icons">refresh</span>
+      </button>
+    </div>
+  </app-action-bar>
+
+  <!-- Filters -->
+  <div class="filter-bar">
+    <div class="filter-group">
+      <label>Status:</label>
+      <select [(ngModel)]="statusFilter" (change)="onStatusFilterChange()">
+        <option value="all">All</option>
+        <option value="active">Active</option>
+        <option value="inactive">Inactive</option>
+      </select>
+    </div>
+    <div class="filter-group search-group">
+      <label>Search:</label>
+      <input
+        type="text"
+        [(ngModel)]="searchQuery"
+        (input)="onSearchChange()"
+        placeholder="Search by username or name..."
+      />
+    </div>
+  </div>
+
+  <!-- Error Message -->
+  @if (error) {
+    <div class="error-message">
+      {{ error }}
+    </div>
+  }
+
+  <!-- Loading Indicator -->
+  @if (loading) {
+    <div class="loading">
+      Loading...
+    </div>
+  }
+
+  <!-- Desktop Table View -->
+  @if (!loading) {
+    <div class="table-container desktop-only">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>User ID</th>
+            <th>Username</th>
+            <th>Name</th>
+            <th>Log Level</th>
+            <th>Status</th>
+            <th>Created</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of filteredItems; track item.user_id) {
+            <tr [class.inactive]="!item.active">
+              <td class="mono">{{ item.user_id }}</td>
+              <td>
+                @if (item.username) {
+                  <span class="username">@{{ item.username }}</span>
+                } @else {
+                  <span class="no-username">-</span>
+                }
+              </td>
+              <td>{{ getDisplayName(item) }}</td>
+              <td>
+                <select
+                  class="log-level-select"
+                  [value]="item.log_level"
+                  (change)="updateLogLevel(item, $any($event.target).value)"
+                >
+                  @for (level of logLevels; track level) {
+                    <option [value]="level">{{ level }}</option>
+                  }
+                </select>
+              </td>
+              <td>
+                <span class="status-badge" [class.active]="item.active">
+                  {{ item.active ? 'Active' : 'Inactive' }}
+                </span>
+              </td>
+              <td class="date">{{ formatDate(item.created_at) }}</td>
+              <td class="actions">
+                <button
+                  class="btn-action"
+                  (click)="toggleActive(item)"
+                  [title]="item.active ? 'Disable' : 'Enable'"
+                >
+                  <span class="material-icons">{{ item.active ? 'pause' : 'play_arrow' }}</span>
+                </button>
+                <button
+                  class="btn-action btn-delete"
+                  (click)="deleteSubscription(item)"
+                  title="Delete"
+                >
+                  <span class="material-icons">delete</span>
+                </button>
+              </td>
+            </tr>
+          }
+          @if (filteredItems.length === 0) {
+            <tr>
+              <td colspan="7" class="no-data-cell">
+                <div class="no-data">
+                  <span class="material-icons">send</span>
+                  <p>No subscriptions found</p>
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Mobile Card View -->
+    <div class="cards-container mobile-only">
+      @for (item of filteredItems; track item.user_id) {
+        <div class="subscription-card" [class.inactive]="!item.active" [class.expanded]="isExpanded(item.user_id)">
+          <div class="card-header" (click)="toggleExpanded(item.user_id)">
+            <div class="card-title">
+              @if (item.username) {
+                <span class="username">@{{ item.username }}</span>
+              } @else {
+                <span class="name">{{ getDisplayName(item) }}</span>
+              }
+            </div>
+            <div class="card-status">
+              <span class="status-badge" [class.active]="item.active">
+                {{ item.active ? 'Active' : 'Inactive' }}
+              </span>
+              <span class="material-icons expand-icon">
+                {{ isExpanded(item.user_id) ? 'expand_less' : 'expand_more' }}
+              </span>
+            </div>
+          </div>
+          @if (isExpanded(item.user_id)) {
+            <div class="card-body">
+              <div class="info-row">
+                <span class="info-label">User ID:</span>
+                <span class="info-value mono">{{ item.user_id }}</span>
+              </div>
+              @if (item.username) {
+                <div class="info-row">
+                  <span class="info-label">Name:</span>
+                  <span class="info-value">{{ getDisplayName(item) }}</span>
+                </div>
+              }
+              <div class="info-row">
+                <span class="info-label">Log Level:</span>
+                <select
+                  class="log-level-select"
+                  [value]="item.log_level"
+                  (change)="updateLogLevel(item, $any($event.target).value)"
+                  (click)="$event.stopPropagation()"
+                >
+                  @for (level of logLevels; track level) {
+                    <option [value]="level">{{ level }}</option>
+                  }
+                </select>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Created:</span>
+                <span class="info-value">{{ formatDate(item.created_at) }}</span>
+              </div>
+              <div class="card-actions">
+                <button
+                  class="btn-action"
+                  (click)="toggleActive(item); $event.stopPropagation()"
+                  [title]="item.active ? 'Disable' : 'Enable'"
+                >
+                  <span class="material-icons">{{ item.active ? 'pause' : 'play_arrow' }}</span>
+                  <span>{{ item.active ? 'Disable' : 'Enable' }}</span>
+                </button>
+                <button
+                  class="btn-action btn-delete"
+                  (click)="deleteSubscription(item); $event.stopPropagation()"
+                  title="Delete"
+                >
+                  <span class="material-icons">delete</span>
+                  <span>Delete</span>
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+      }
+      @if (filteredItems.length === 0) {
+        <div class="no-data">
+          <span class="material-icons">send</span>
+          <p>No subscriptions found</p>
+        </div>
+      }
+    </div>
+
+    <!-- Pagination -->
+    @if (totalPages > 1) {
+      <div class="pagination">
+        <button [disabled]="currentPage === 1" (click)="goToPage(currentPage - 1)">Previous</button>
+        <div class="page-numbers">
+          @for (page of getPageNumbers(); track page) {
+            <button
+              [class.active]="page === currentPage"
+              (click)="goToPage(page)"
+            >
+              {{ page }}
+            </button>
+          }
+        </div>
+        <button [disabled]="currentPage >= totalPages" (click)="goToPage(currentPage + 1)">Next</button>
+        <span class="page-info">{{ total }} total</span>
+      </div>
+    }
+  }
+</div>

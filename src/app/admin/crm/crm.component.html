@@ -1,0 +1,101 @@
+<div class="crm-container">
+  <div class="crm-header">
+    <div class="header-left">
+      <h1>CRM Pipeline</h1>
+      <p class="subtitle">Manage orders through your sales pipeline</p>
+    </div>
+    <div class="header-right">
+      <div class="filters">
+        <select [(ngModel)]="selectedStoreUid" (change)="onStoreChange()" class="store-filter">
+          <option *ngFor="let option of storeOptions" [value]="option.value">
+            {{ option.label }}
+          </option>
+        </select>
+      </div>
+      <button class="btn-my-tasks" (click)="goToMyTasks()">
+        <span class="icon">&#9745;</span>
+        My Tasks
+      </button>
+      <button class="btn-settings" (click)="goToSettings()">
+        <span class="icon">&#9881;</span>
+        Settings
+      </button>
+    </div>
+  </div>
+
+  <div *ngIf="error" class="error-message">
+    {{ error }}
+    <button class="btn-retry" (click)="loadBoard()">Retry</button>
+  </div>
+
+  <div *ngIf="loading" class="loading-container">
+    <div class="spinner"></div>
+    <p>Loading pipeline...</p>
+  </div>
+
+  <app-pipeline-board
+    *ngIf="!loading && !error"
+    [columns]="board.columns"
+    [transitions]="transitions"
+    (orderMoved)="onOrderMoved($event)"
+    (viewOrder)="viewOrder($event)"
+    (openOrderDetails)="navigateToOrderPage($event)"
+  ></app-pipeline-board>
+
+  <app-assignment-modal
+    *ngIf="showAssignmentModal && selectedOrder"
+    [order]="selectedOrder"
+    (complete)="onAssignmentComplete()"
+    (cancel)="onAssignmentCancel()"
+  ></app-assignment-modal>
+
+  <!-- Order Details Panel -->
+  <div class="order-details-overlay" *ngIf="showOrderDetailsPanel" (click)="closeOrderDetailsPanel()"></div>
+  <div class="order-details-panel" *ngIf="showOrderDetailsPanel && selectedOrderForDetails" [class.open]="showOrderDetailsPanel">
+    <div class="panel-header">
+      <div class="panel-title">
+        <h2>Order {{ selectedOrderForDetails.number || selectedOrderForDetails.uid }}</h2>
+        <span class="order-status" [class]="'status-' + selectedOrderForDetails.status">
+          {{ selectedOrderForDetails.status }}
+        </span>
+      </div>
+      <button class="btn-close" (click)="closeOrderDetailsPanel()">
+        <span>&times;</span>
+      </button>
+    </div>
+
+    <div class="panel-content">
+      <div class="order-summary">
+        <div class="summary-row">
+          <span class="label">Client</span>
+          <span class="value">{{ selectedOrderForDetails.client_name || 'Unknown' }}</span>
+        </div>
+        <div class="summary-row">
+          <span class="label">Total</span>
+          <span class="value total">{{ formatPrice(selectedOrderForDetails.total, selectedOrderForDetails.currency_code) }}</span>
+        </div>
+        <div class="summary-row">
+          <span class="label">Created</span>
+          <span class="value">{{ formatDate(selectedOrderForDetails.created_at) }}</span>
+        </div>
+        <div class="summary-row" *ngIf="selectedOrderForDetails.assigned_user_name">
+          <span class="label">Assigned to</span>
+          <span class="value">{{ selectedOrderForDetails.assigned_user_name }}</span>
+        </div>
+      </div>
+
+      <div class="panel-actions">
+        <button class="btn-view-full" (click)="navigateToOrderDetails()">
+          View Full Order Details
+        </button>
+        <button class="btn-assign" (click)="onAssignOrder(selectedOrderForDetails)">
+          {{ selectedOrderForDetails.assigned_user_uid ? 'Reassign' : 'Assign' }}
+        </button>
+      </div>
+
+      <app-activity-timeline [orderUid]="selectedOrderForDetails.uid"></app-activity-timeline>
+
+      <app-task-list [orderUid]="selectedOrderForDetails.uid"></app-task-list>
+    </div>
+  </div>
+</div>

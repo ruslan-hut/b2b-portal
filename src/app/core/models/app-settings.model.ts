@@ -24,6 +24,7 @@ export interface DiscountInfo {
   next_discount?: number;            // Discount percentage at next tier
   has_next_tier: boolean;            // Whether there's a higher tier
   is_fixed_discount: boolean;        // Whether using fixed discount mode
+  is_cumulative_discount: boolean;   // Whether cumulative discount mode is enabled
 }
 
 export interface AppSettings {

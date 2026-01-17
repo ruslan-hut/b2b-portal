@@ -1,0 +1,46 @@
+<div class="pipeline-board" cdkDropListGroup>
+  <div
+    class="pipeline-column"
+    *ngFor="let column of columns; let i = index; trackBy: trackByColumn"
+    [style.--column-color]="column.stage.color"
+  >
+    <div class="column-header">
+      <div class="column-title">
+        <span class="color-indicator" [style.background-color]="column.stage.color"></span>
+        <h3>{{ column.stage.name }}</h3>
+      </div>
+      <span class="order-count">{{ column.total_count }}</span>
+    </div>
+
+    <div
+      class="column-content"
+      cdkDropList
+      [id]="'column-' + i"
+      [cdkDropListData]="getColumnData(column)"
+      [cdkDropListConnectedTo]="getConnectedDropLists()"
+      (cdkDropListDropped)="onDrop($event)"
+    >
+      <app-order-card
+        *ngFor="let order of column.orders; trackBy: trackByOrder"
+        [order]="order"
+        [stageColor]="column.stage.color"
+        cdkDrag
+        (click)="onViewClick(order)"
+        (openDetails)="onOpenDetailsClick(order)"
+      ></app-order-card>
+
+      <div class="empty-state" *ngIf="column.orders.length === 0">
+        <p>No orders in this stage</p>
+      </div>
+
+      <div class="load-more" *ngIf="column.orders.length < column.total_count">
+        <span>{{ column.orders.length }} of {{ column.total_count }} orders</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="empty-board" *ngIf="columns.length === 0">
+    <h3>No pipeline stages configured</h3>
+    <p>Go to Settings to create pipeline stages</p>
+  </div>
+</div>
