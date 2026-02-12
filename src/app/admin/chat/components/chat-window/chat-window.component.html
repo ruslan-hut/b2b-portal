@@ -1,0 +1,67 @@
+@if (!activeChat) {
+  <div class="empty-state">
+    <span class="material-icons">forum</span>
+    <p>{{ 'chat.selectChat' | translate }}</p>
+  </div>
+} @else {
+  <div class="chat-window">
+    <!-- Header -->
+    <div class="chat-header">
+      <button class="back-btn" (click)="onBack()">
+        <span class="material-icons">arrow_back</span>
+      </button>
+      <div class="platform-icon" [ngClass]="getPlatformClass(activeChat.platform)">
+        <span class="material-icons">{{ getPlatformIcon(activeChat.platform) }}</span>
+      </div>
+      <div class="header-info">
+        <span class="header-name">{{ activeChat.userName || activeChat.userId }}</span>
+        <span class="header-platform">{{ activeChat.platform }}</span>
+      </div>
+    </div>
+
+    <!-- Reconnecting banner -->
+    @if (!wsConnected) {
+      <div class="reconnecting-banner">
+        <span class="material-icons">wifi_off</span>
+        {{ 'chat.reconnecting' | translate }}
+      </div>
+    }
+
+    <!-- Messages -->
+    <div class="messages-container" #messagesContainer (scroll)="onScroll()">
+      @if (loading) {
+        <div class="loading-indicator">
+          <span class="material-icons spin">refresh</span>
+        </div>
+      }
+
+      @for (group of dateGroups; track group.label) {
+        <div class="date-separator">
+          <span>{{ group.label }}</span>
+        </div>
+        @for (msg of group.messages; track msg.id) {
+          <div class="message" [class.outgoing]="msg.direction === 'outgoing'" [class.incoming]="msg.direction === 'incoming'">
+            <div class="message-bubble">
+              <div class="message-sender">{{ msg.sender }}</div>
+              <div class="message-text">{{ msg.text }}</div>
+              <div class="message-time">{{ formatTime(msg.created_at) }}</div>
+            </div>
+          </div>
+        }
+      }
+
+      @if (typingIndicator) {
+        <div class="message incoming">
+          <div class="message-bubble typing">
+            <span class="dot"></span>
+            <span class="dot"></span>
+            <span class="dot"></span>
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- Input -->
+    <app-message-input (send)="onSend($event)"></app-message-input>
+  </div>
+}

@@ -1,0 +1,14 @@
+<div class="image-preview-overlay" (click)="onBackdropClick()">
+  <div class="image-preview-container" (click)="$event.stopPropagation()">
+    <button class="image-preview-close" (click)="onCloseClick()">
+      <span class="material-icons">close</span>
+    </button>
+    <img
+      [src]="imageUrl"
+      [alt]="altText"
+      (error)="onImageError($event)"
+      class="image-preview-img"
+      />
+    <div class="image-preview-caption">{{ altText }}</div>
+  </div>
+</div>

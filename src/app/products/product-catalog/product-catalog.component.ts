@@ -125,6 +125,8 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
     this.subscriptions.add(
       this.orderService.currentOrder$.subscribe(items => {
         this.cartItems = items;
+        // Sync bulkQuantities from cart items to ensure quantities persist when navigating back
+        this.syncBulkQuantitiesFromCart();
         this.cdr.markForCheck();
       })
     );
@@ -442,12 +444,20 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
     });
   }
 
-  onSearchChange(): void {
+  onSearchChange(query?: string): void {
+    // Handle search from SearchBarComponent or legacy calls
+    if (query !== undefined) {
+      this.searchQuery = query;
+    }
     // Emit search query to trigger debounced backend search
     this.searchSubject.next(this.searchQuery);
   }
 
-  onCategoryChange(): void {
+  onCategoryChange(categoryUid?: string): void {
+    // Handle category change from SearchBarComponent or legacy calls
+    if (categoryUid !== undefined) {
+      this.selectedCategory = categoryUid;
+    }
     // Reload products from backend with new category filter
     this.loadProducts();
   }
@@ -539,6 +549,20 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
     // Otherwise, check if the product is in the cart (read-only, no side effects)
     const cartItem = this.cartItems.find(item => item.productId === productId);
     return cartItem ? cartItem.quantity : 0;
+  }
+
+  /**
+   * Sync bulkQuantities Map from cart items
+   * This ensures quantities persist when navigating away and back to the catalog
+   */
+  private syncBulkQuantitiesFromCart(): void {
+    // Clear and repopulate bulkQuantities from cart items
+    this.bulkQuantities.clear();
+    this.cartItems.forEach(item => {
+      if (item.quantity > 0) {
+        this.bulkQuantities.set(item.productId, item.quantity);
+      }
+    });
   }
 
   setBulkQuantity(product: Product, quantity: number): void {
@@ -755,6 +779,32 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
    */
   closeImagePreview(): void {
     this.selectedImageForPreview = null;
+  }
+
+  /**
+   * Handle image click from bulk card list
+   */
+  handleBulkImageClick(event: { imageUrl: string; altText: string }): void {
+    this.selectedImageForPreview = {
+      url: event.imageUrl || 'assets/images/product-placeholder.svg',
+      alt: event.altText
+    };
+  }
+
+  /**
+   * Handle detail card click from bulk detail panel
+   */
+  handleDetailCardClick(): void {
+    if (this.selectedProduct) {
+      this.openProductDetails(this.selectedProduct);
+    }
+  }
+
+  /**
+   * Handle image preview event from ProductGridComponent
+   */
+  handleImagePreview(event: { url: string; alt: string }): void {
+    this.selectedImageForPreview = event;
   }
 
   /**

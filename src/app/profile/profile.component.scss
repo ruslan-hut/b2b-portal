@@ -218,6 +218,18 @@
       &::placeholder {
         color: var(--color-text-muted);
       }
+
+      &.warning-empty {
+        border-color: var(--color-warning);
+        background: var(--status-warning-bg);
+      }
+    }
+
+    .warning-message {
+      display: block;
+      font-size: 12px;
+      color: var(--color-warning);
+      margin-top: var(--spacing-xs);
     }
 
     textarea {
@@ -669,7 +681,7 @@
 
     .btn-back {
       min-height: 44px;
-      padding: 10px 14px;
+      padding: 8px 12px;
       font-size: 13px;
     }
 
@@ -694,7 +706,7 @@
   }
 
   .profile-content {
-    gap: 10px;
+    gap: 8px;
   }
 
   .profile-section {
@@ -733,7 +745,7 @@
 
   .readonly-fields {
     grid-template-columns: 1fr;
-    padding: 10px 12px;
+    padding: 8px 12px;
     gap: 8px;
     margin-bottom: 12px;
     border-radius: 8px;
@@ -833,7 +845,7 @@
 
     .switch-group {
       min-height: 44px;
-      padding: 10px 0;
+      padding: 8px 0;
 
       .switch-label {
         font-size: 14px;
@@ -866,7 +878,7 @@
   }
 
   .message {
-    padding: 10px 12px;
+    padding: 8px 12px;
     font-size: 13px;
     border-radius: 8px;
     margin-bottom: 10px;
@@ -986,7 +998,7 @@
         max-height: 220px;
 
         .autocomplete-item {
-          padding: 10px 12px;
+          padding: 8px 12px;
           min-height: 44px;
 
           .country-code {
@@ -1081,7 +1093,7 @@
   }
 
   .profile-section {
-    padding: 10px;
+    padding: 8px;
 
     h2 {
       font-size: 14px;
@@ -1095,7 +1107,7 @@
     gap: 6px;
 
     .field-group {
-      padding: 5px 0;
+      padding: 4px 0;
 
       label {
         font-size: 11px;
@@ -1119,7 +1131,7 @@
       input,
       select,
       textarea {
-        padding: 10px 12px;
+        padding: 8px 12px;
       }
     }
   }
@@ -1132,7 +1144,7 @@
   }
 
   .address-card {
-    padding: 10px;
+    padding: 8px;
 
     .address-header {
       gap: 6px;
@@ -1156,7 +1168,7 @@
 
   .modal-content {
     .modal-header {
-      padding: 10px 12px;
+      padding: 8px 12px;
 
       h3 {
         font-size: 15px;
@@ -1164,11 +1176,11 @@
     }
 
     .address-form {
-      padding: 10px 12px;
+      padding: 8px 12px;
     }
 
     .modal-actions {
-      padding: 10px 12px;
+      padding: 8px 12px;
       padding-bottom: calc(10px + env(safe-area-inset-bottom, 0));
     }
   }

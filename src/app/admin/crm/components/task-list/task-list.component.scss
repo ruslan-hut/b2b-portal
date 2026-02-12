@@ -1,3 +1,5 @@
+@use '../../../../../styles/mixins' as *;
+
 .task-list {
   padding: var(--spacing-sm);
 }
@@ -23,15 +25,19 @@
 
 .status-filter {
   padding: var(--spacing-xs) var(--spacing-sm);
+  min-height: var(--touch-target-min);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
   font-size: 12px;
   background: var(--color-background);
   color: var(--color-text-primary);
+  cursor: pointer;
 }
 
 .btn-add-task {
+  @include button-typography;
   padding: var(--spacing-xs) var(--spacing-sm);
+  min-height: var(--touch-target-min);
   background: var(--color-primary);
   color: white;
   border: none;
@@ -40,7 +46,7 @@
   cursor: pointer;
   transition: background 0.2s ease;
 
-  &:hover {
+  &:hover:not(:disabled) {
     background: var(--color-primary-dark);
   }
 }
@@ -79,15 +85,18 @@
   .due-date-input {
     width: 100%;
     padding: var(--spacing-sm);
+    min-height: var(--touch-target-min);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-sm);
     font-size: 13px;
     background: var(--color-background);
     color: var(--color-text-primary);
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
 
     &:focus {
       outline: none;
       border-color: var(--color-primary);
+      box-shadow: var(--focus-ring);
     }
   }
 
@@ -102,7 +111,9 @@
   }
 
   .btn-create {
+    @include button-typography;
     padding: var(--spacing-sm) var(--spacing-md);
+    min-height: var(--touch-target-min);
     background: var(--color-primary);
     color: white;
     border: none;
@@ -142,7 +153,9 @@
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .error-message {
@@ -155,7 +168,9 @@
   font-size: 13px;
 
   .btn-retry {
+    @include button-typography;
     padding: 4px 8px;
+    min-height: var(--touch-target-min);
     background: transparent;
     border: 1px solid var(--color-danger);
     border-radius: var(--radius-sm);
@@ -163,7 +178,7 @@
     font-size: 12px;
     cursor: pointer;
 
-    &:hover {
+    &:hover:not(:disabled) {
       background: var(--color-danger);
       color: white;
     }
@@ -282,9 +297,8 @@
 }
 
 .priority-badge {
+  @include badge-typography;
   padding: 2px 6px;
-  border-radius: var(--radius-sm);
-  font-weight: 500;
   text-transform: uppercase;
   font-size: 10px;
 
@@ -294,45 +308,44 @@
   }
 
   &.priority-medium {
-    background: rgba(59, 130, 246, 0.1);
-    color: #3b82f6;
+    background: var(--priority-medium-bg);
+    color: var(--priority-medium-color);
   }
 
   &.priority-high {
-    background: rgba(245, 158, 11, 0.1);
-    color: #f59e0b;
+    background: var(--priority-high-bg);
+    color: var(--priority-high-color);
   }
 
   &.priority-urgent {
-    background: rgba(239, 68, 68, 0.1);
-    color: #ef4444;
+    background: var(--priority-urgent-bg);
+    color: var(--priority-urgent-color);
   }
 }
 
 .status-badge {
+  @include badge-typography;
   padding: 2px 6px;
-  border-radius: var(--radius-sm);
-  font-weight: 500;
   font-size: 10px;
 
   &.status-pending {
-    background: rgba(107, 114, 128, 0.1);
-    color: #6b7280;
+    background: var(--status-pending-bg);
+    color: var(--status-pending-color);
   }
 
   &.status-in_progress {
-    background: rgba(59, 130, 246, 0.1);
-    color: #3b82f6;
+    background: var(--status-in-progress-bg);
+    color: var(--status-in-progress-color);
   }
 
   &.status-completed {
-    background: rgba(34, 197, 94, 0.1);
-    color: #22c55e;
+    background: var(--status-completed-bg);
+    color: var(--status-completed-color);
   }
 
   &.status-cancelled {
-    background: rgba(239, 68, 68, 0.1);
-    color: #ef4444;
+    background: var(--status-cancelled-bg);
+    color: var(--status-cancelled-color);
   }
 }
 
@@ -348,7 +361,7 @@
 .assigned-to {
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: var(--spacing-xs);
   color: var(--color-primary);
 
   .icon {
@@ -363,32 +376,26 @@
 }
 
 .btn-action {
-  width: 24px;
-  height: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  @include icon-button(48px);
   background: transparent;
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  cursor: pointer;
   font-size: 12px;
   color: var(--color-text-muted);
   transition: all 0.2s ease;
 
-  &:hover {
+  &:hover:not(:disabled) {
     background: var(--color-surface);
     color: var(--color-primary);
     border-color: var(--color-primary);
   }
 
-  &.btn-assign:hover {
+  &.btn-assign:hover:not(:disabled) {
     background: var(--color-info);
     color: white;
     border-color: var(--color-info);
   }
 
-  &.btn-delete:hover {
+  &.btn-delete:hover:not(:disabled) {
     background: var(--color-danger);
     color: white;
     border-color: var(--color-danger);
@@ -397,6 +404,7 @@
 
 .assignee-dropdown {
   padding: 2px 4px;
+  min-height: var(--touch-target-min);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
   font-size: 11px;
@@ -404,24 +412,29 @@
   color: var(--color-text-primary);
   max-width: 120px;
   cursor: pointer;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
 
   &:focus {
     outline: none;
     border-color: var(--color-primary);
+    box-shadow: var(--focus-ring);
   }
 }
 
 .assignee-select {
   width: 100%;
   padding: var(--spacing-sm);
+  min-height: var(--touch-target-min);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
   font-size: 13px;
   background: var(--color-background);
   color: var(--color-text-primary);
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
 
   &:focus {
     outline: none;
     border-color: var(--color-primary);
+    box-shadow: var(--focus-ring);
   }
 }

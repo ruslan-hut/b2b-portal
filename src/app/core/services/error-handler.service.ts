@@ -6,6 +6,7 @@ export enum OrderErrorType {
   PRODUCT_INACTIVE = 'PRODUCT_INACTIVE',
   PRODUCT_NOT_FOUND = 'PRODUCT_NOT_FOUND',
   INVALID_STATUS = 'INVALID_STATUS',
+  BUSINESS_REG_NUMBER_REQUIRED = 'BUSINESS_REG_NUMBER_REQUIRED',
   NETWORK_ERROR = 'NETWORK_ERROR',
   UNKNOWN = 'UNKNOWN'
 }
@@ -35,6 +36,9 @@ export class ErrorHandlerService {
       case OrderErrorType.INVALID_STATUS:
         return this.translationService.instant('errors.invalidStatus');
 
+      case OrderErrorType.BUSINESS_REG_NUMBER_REQUIRED:
+        return this.translationService.instant('errors.businessRegNumberRequired');
+
       case OrderErrorType.NETWORK_ERROR:
         return this.translationService.instant('errors.networkError');
 
@@ -63,6 +67,10 @@ export class ErrorHandlerService {
 
     if (message.includes('invalid status') || message.includes('invalid_status')) {
       return OrderErrorType.INVALID_STATUS;
+    }
+
+    if (message.includes('business registration number required')) {
+      return OrderErrorType.BUSINESS_REG_NUMBER_REQUIRED;
     }
 
     if (message.includes('network') || error?.status === 0) {

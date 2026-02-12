@@ -1,23 +1,39 @@
 <div class="workload-container">
-  <div class="page-header">
-    <div class="header-left">
-      <button class="btn-back" (click)="goToDashboard()">
-        <span>&larr;</span>
-      </button>
-      <div>
-        <h1>Team Workload</h1>
-        <p class="subtitle">View and manage team member assignments</p>
-      </div>
-    </div>
-    <div class="header-right">
-      <button class="btn-secondary" (click)="goToPipelineBoard()">
-        <span class="icon">&#9776;</span>
-        Pipeline Board
+  <app-action-bar>
+    <div actionBarLeft>
+      <button class="btn-filter" (click)="toggleFilters()" [class.active]="isFiltersExpanded">
+        <span class="material-icons">filter_list</span>
+        <span class="btn-text">Filters</span>
+        <span class="material-icons toggle-icon">{{ isFiltersExpanded ? 'expand_less' : 'expand_more' }}</span>
       </button>
     </div>
-  </div>
+    <div actionBarRight>
+      <a routerLink="/admin/crm" [routerLinkActiveOptions]="{exact: true}" routerLinkActive="active" class="btn-nav">
+        <span class="material-icons">view_kanban</span>
+        <span class="btn-text">Pipeline</span>
+      </a>
+      <a routerLink="/admin/crm/dashboard" routerLinkActive="active" class="btn-nav">
+        <span class="material-icons">dashboard</span>
+        <span class="btn-text">Dashboard</span>
+      </a>
+      <a routerLink="/admin/crm/workload" routerLinkActive="active" class="btn-nav">
+        <span class="material-icons">bar_chart</span>
+        <span class="btn-text">Workload</span>
+      </a>
+      <a routerLink="/admin/crm/my-tasks" routerLinkActive="active" class="btn-nav">
+        <span class="material-icons">task_alt</span>
+        <span class="btn-text">My Tasks</span>
+      </a>
+      <a routerLink="/admin/crm/settings" routerLinkActive="active" class="btn-nav">
+        <span class="material-icons">settings</span>
+        <span class="btn-text">Settings</span>
+      </a>
+    </div>
+  </app-action-bar>
 
-  <app-dashboard-filters (filtersChange)="onFiltersChange($any($event))"></app-dashboard-filters>
+  <div class="filters" [class.expanded]="isFiltersExpanded">
+    <app-dashboard-filters (filtersChange)="onFiltersChange($any($event))"></app-dashboard-filters>
+  </div>
 
   <div *ngIf="error" class="error-message">
     {{ error }}

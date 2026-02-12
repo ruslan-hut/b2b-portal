@@ -20,7 +20,7 @@ export class OrderMapper {
     shippingAddress?: ShippingAddress,
     billingAddress?: ShippingAddress,
     comment?: string,
-    status?: 'draft' | 'new', // Frontend can only use 'draft' or 'new'
+    status?: string, // CRM stage name or legacy status
     orderUid?: string // Optional UID for updating existing orders
   ): BackendOrderRequest {
     const uid = orderUid || this.generateUid();
@@ -94,7 +94,8 @@ export class OrderMapper {
       totalVat: response.total_vat ? response.total_vat / 100 : undefined, // Total VAT amount (in cents, convert to regular)
       originalTotal: response.original_total ? response.original_total / 100 : undefined, // Original total before discount
       discountAmount: response.discount_amount ? response.discount_amount / 100 : undefined, // Total discount amount saved
-      status: this.mapBackendStatus(response.status),
+      status: response.status, // Pass through status as-is (CRM stage name or legacy status)
+      draft: response.draft ?? (response.status === 'draft'), // Use backend draft field, fallback to status check
       createdAt: new Date(response.created_at),
       // Backend may return `updated_at` or `last_update` depending on API version.
       // Prefer `last_update` if present, otherwise fall back to `updated_at` or `created_at`.
@@ -139,17 +140,12 @@ export class OrderMapper {
   }
 
   /**
-   * Map backend status to frontend enum
+   * @deprecated Status now passed through as-is from backend
+   * Map backend status to frontend enum (kept for reference only)
    */
-  private static mapBackendStatus(status: string): OrderStatus {
-    const statusMap: { [key: string]: OrderStatus } = {
-      'draft': OrderStatus.DRAFT,
-      'new': OrderStatus.NEW,
-      'processing': OrderStatus.PROCESSING,
-      'confirmed': OrderStatus.CONFIRMED,
-      'cancelled': OrderStatus.CANCELLED
-    };
-    return statusMap[status.toLowerCase()] || OrderStatus.NEW;
+  private static mapBackendStatus(status: string): string {
+    // No longer mapping - pass through status as received
+    return status;
   }
 
   /**

@@ -1,6 +1,7 @@
 import { Component, OnInit, OnDestroy, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
 import { Subscription } from 'rxjs';
 import { AdminService, TableInfo, TableRecord, TableRecordsResponse } from '../../core/services/admin.service';
+import { PageTitleService } from '../../core/services/page-title.service';
 
 @Component({
     selector: 'app-tables',
@@ -36,10 +37,12 @@ export class TablesComponent implements OnInit, OnDestroy {
 
   constructor(
     private adminService: AdminService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private pageTitleService: PageTitleService
   ) {}
 
   ngOnInit(): void {
+    this.pageTitleService.setTitle('Tables');
     this.loadTables();
   }
 

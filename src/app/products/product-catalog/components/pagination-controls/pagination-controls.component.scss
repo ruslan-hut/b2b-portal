@@ -1,0 +1,126 @@
+// Keyframes
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes floatIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// Scroll to Top Button - hidden on desktop by default
+.btn-scroll-to-top {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .btn-scroll-to-top {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    bottom: calc(var(--spacing-md-lg) + env(safe-area-inset-bottom, 0));
+    right: var(--spacing-md);
+    width: var(--spacing-3xl);
+    height: var(--spacing-3xl);
+    background: var(--gradient-primary);
+    border: none;
+    border-radius: var(--radius-pill);
+    box-shadow: var(--shadow-md-lg);
+    cursor: pointer;
+    z-index: 100;
+    transition: all 0.3s ease;
+    animation: fadeInUp 0.3s ease;
+
+    .material-icons {
+      font-size: 28px;
+      color: var(--color-text-inverse);
+    }
+
+    &:hover {
+      transform: scale(1.1);
+      box-shadow: var(--shadow-primary);
+    }
+
+    &:active {
+      transform: scale(0.95);
+    }
+  }
+}
+
+// Floating Show More Button
+.btn-floating-show-more {
+  position: fixed;
+  bottom: calc(var(--spacing-lg) + env(safe-area-inset-bottom, 0));
+  left: var(--spacing-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  padding: 0;
+  background: var(--gradient-primary);
+  color: var(--color-text-inverse);
+  border: none;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: var(--shadow-primary-lg);
+  z-index: 100;
+  animation: floatIn 0.3s ease;
+
+  .material-icons {
+    font-size: 28px;
+  }
+
+  .spinner {
+    animation: spin 1s linear infinite;
+  }
+
+  &:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-primary-lg);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+  }
+
+  &:disabled {
+    opacity: 0.8;
+    cursor: not-allowed;
+  }
+
+  @media (max-width: 768px) {
+    left: var(--spacing-md);
+    bottom: calc(var(--spacing-md-lg) + env(safe-area-inset-bottom, 0));
+    width: var(--spacing-3xl);
+    height: var(--spacing-3xl);
+
+    .material-icons {
+      font-size: 24px;
+    }
+  }
+}

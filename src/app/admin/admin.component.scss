@@ -328,9 +328,58 @@
   }
 }
 
+// Unread badge — desktop sidebar (expanded)
+.sidebar-unread-badge {
+  margin-left: auto;
+  background-color: var(--color-danger);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 18px;
+  min-width: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  text-align: center;
+  flex-shrink: 0;
+
+  // Collapsed sidebar — small red dot
+  &.collapsed-badge {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 8px;
+    height: 8px;
+    min-width: 8px;
+    padding: 0;
+    border-radius: 50%;
+    line-height: 0;
+    font-size: 0;
+  }
+}
+
+// Allow positioning for the collapsed dot
+.chat-link {
+  position: relative;
+}
+
+// Unread badge — mobile menu
+.mobile-unread-badge {
+  margin-left: auto;
+  background-color: var(--color-danger);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 18px;
+  min-width: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
 .admin-content {
   flex: 1;
-  padding: var(--spacing-xl);
+  padding: var(--spacing-sm-md) var(--spacing-xl) var(--spacing-xl);
   overflow-y: auto;
   transition: margin-left 0.3s ease;
 
@@ -339,8 +388,8 @@
   }
 
   @media (max-width: 768px) {
-    padding: var(--spacing-md);
-    padding-top: 71px; // Account for mobile header (56px + 15px)
+    padding: var(--spacing-sm) var(--spacing-md) var(--spacing-md);
+    padding-top: 64px; // Account for mobile header (56px + 8px)
     margin-left: 0;
     min-height: 100vh;
     width: 100%;

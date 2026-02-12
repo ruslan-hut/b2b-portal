@@ -13,7 +13,8 @@ export interface Order {
   originalTotalWithVat?: number; // Original total before discount (GROSS with VAT) - matches product card display
   discountAmount?: number; // Total discount amount saved (NET)
   discountAmountWithVat?: number; // Total discount amount saved (GROSS with VAT) - for consistent display
-  status: OrderStatus;
+  status: string; // CRM stage name or legacy status (draft/new/processing/confirmed/cancelled)
+  draft: boolean; // true = cart (not confirmed), false = confirmed order
   createdAt: Date;
   updatedAt: Date;
   shippingAddress?: ShippingAddress;
@@ -66,12 +67,24 @@ export interface CartAddress {
   is_default: boolean;
 }
 
+// DEPRECATED: Used only for legacy status filtering
+// Order status is now dynamic based on CRM stages
 export enum OrderStatus {
   DRAFT = 'draft',           // Saved cart, no validation, no allocation
   NEW = 'new',               // User confirmed, stock validated, allocation created
   PROCESSING = 'processing', // CRM fulfilling order (cannot modify from frontend)
   CONFIRMED = 'confirmed',   // CRM completed order, allocation deleted
   CANCELLED = 'cancelled'    // Order cancelled
+}
+
+// Utility functions for status type checking
+export function isLegacyStatus(status: string): status is OrderStatus {
+  return Object.values(OrderStatus).includes(status as OrderStatus);
+}
+
+export function toLegacyStatus(status: string): OrderStatus | null {
+  const normalized = status.toLowerCase();
+  return isLegacyStatus(normalized) ? (normalized as OrderStatus) : null;
 }
 
 export interface CreateOrderRequest {
@@ -90,7 +103,8 @@ export interface BackendOrderRequest {
   client_uid?: string;
   // Keep user_uid optional for backward compatibility
   user_uid?: string;
-  status?: 'draft' | 'new' | 'processing' | 'confirmed'; // Frontend can only use 'draft' or 'new'
+  status?: string; // CRM stage name or legacy status
+  draft?: boolean; // true = cart (not confirmed), false = confirmed order
   total: number;
   discount_percent?: number; // Client discount percentage (0-100)
   vat_rate?: number; // VAT rate percentage (0-100)
@@ -116,6 +130,7 @@ export interface BackendOrderResponse {
   client_uid?: string;
   user_uid?: string;
   status: string;
+  draft?: boolean; // true = cart (not confirmed), false = confirmed order
   total: number;
   discount_percent?: number; // Client discount percentage (0-100)
   vat_rate?: number; // VAT rate percentage (0-100)

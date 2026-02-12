@@ -2,10 +2,10 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 0;
-  min-height: 48px;
-  gap: 16px;
-  margin-bottom: 16px;
+  padding: 8px 0;
+  min-height: 44px;
+  gap: 12px;
+  margin-bottom: 8px;
 
   .action-bar-left {
     display: flex;
@@ -52,6 +52,15 @@
     }
   }
 
+  // Standard action bar button height
+  .btn,
+  .btn-primary,
+  .btn-secondary,
+  .btn-icon {
+    height: 36px;
+    box-sizing: border-box;
+  }
+
   .btn-icon {
     display: flex;
     align-items: center;
@@ -79,35 +88,6 @@
 
     .material-icons {
       font-size: 20px;
-    }
-  }
-
-  .btn-primary {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 8px 16px;
-    background: var(--gradient-primary);
-    color: var(--color-text-inverse);
-    border: none;
-    border-radius: var(--radius-md);
-    cursor: pointer;
-    font-size: 0.9rem;
-    font-weight: 500;
-    transition: opacity 0.2s;
-    white-space: nowrap;
-
-    .material-icons {
-      font-size: 18px;
-    }
-
-    &:hover:not(:disabled) {
-      opacity: 0.9;
-    }
-
-    &:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
     }
   }
 
@@ -154,10 +134,50 @@
   }
 }
 
+/* Force action bar buttons to be flat (override any gradient) */
+:host ::ng-deep {
+  .btn,
+  .btn-primary,
+  .btn-secondary {
+    background: transparent !important;
+    border: 1px solid var(--color-border);
+    color: var(--color-text-primary);
+    box-shadow: none !important;
+    height: 36px;
+    padding: 0 16px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    text-decoration: none;
+    box-sizing: border-box;
+
+    .material-icons {
+      font-size: 18px;
+    }
+
+    &:hover:not(:disabled) {
+      background: var(--color-surface-variant) !important;
+      border-color: var(--color-primary);
+      color: var(--color-primary);
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+}
+
 @media (max-width: 768px) {
   .action-bar {
-    padding: 10px 0;
-    margin-bottom: 12px;
+    padding: 6px 0;
+    margin-bottom: 6px;
   }
 
   :host ::ng-deep {
@@ -168,8 +188,10 @@
       }
     }
 
-    .btn-primary {
-      padding: 8px 12px;
+    .btn,
+    .btn-primary,
+    .btn-secondary {
+      padding: 0 12px;
 
       .btn-text {
         display: none;
@@ -177,7 +199,7 @@
     }
 
     .btn-filter {
-      padding: 8px 10px;
+      padding: 0 10px;
 
       .btn-text {
         display: none;

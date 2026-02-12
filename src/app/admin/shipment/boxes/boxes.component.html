@@ -1,0 +1,159 @@
+<div class="boxes-container">
+  <app-action-bar>
+    <div class="page-title" actionBarLeft>
+      <h1>{{ 'shipment.boxes.title' | translate }}</h1>
+    </div>
+    <div actionBarRight>
+      <a routerLink="../settings" class="btn btn-secondary">
+        <span class="material-icons">settings</span>
+        <span class="btn-text">Settings</span>
+      </a>
+      <button class="btn-icon" (click)="refresh()" [disabled]="loading" title="Refresh">
+        <span class="material-icons">refresh</span>
+      </button>
+      <button class="btn btn-primary" (click)="openNewBox()">
+        <span class="material-icons">add</span>
+        <span class="btn-text">{{ 'shipment.boxes.addNew' | translate }}</span>
+      </button>
+    </div>
+  </app-action-bar>
+
+  @if (error) {
+    <div class="error-message">{{ error }}</div>
+  }
+
+  @if (successMessage) {
+    <div class="success-message">{{ successMessage }}</div>
+  }
+
+  @if (loading && !showEditForm) {
+    <div class="loading-spinner">Loading...</div>
+  }
+
+  <div class="boxes-list">
+    @for (box of boxes; track box.uid) {
+      <div class="box-card" [class.inactive]="!box.active">
+        <div class="box-header">
+          <h3>{{ box.name }}</h3>
+          <div class="box-actions">
+            <button class="btn-icon" (click)="openEditBox(box)" title="Edit">
+              <span class="material-icons">edit</span>
+            </button>
+            <button class="btn-icon" (click)="deleteBox(box)" title="Delete">
+              <span class="material-icons">delete</span>
+            </button>
+          </div>
+        </div>
+        <div class="box-body">
+          @if (box.description) {
+            <p class="box-description">{{ box.description }}</p>
+          }
+          <div class="box-dimensions">
+            <span class="dimension-label">{{ 'shipment.boxes.dimensions' | translate }}:</span>
+            <span class="dimension-value">{{ box.length_cm }} × {{ box.width_cm }} × {{ box.height_cm }} cm</span>
+          </div>
+          @if (box.max_weight_kg) {
+            <div class="box-weight">
+              <span class="weight-label">{{ 'shipment.boxes.maxWeight' | translate }}:</span>
+              <span class="weight-value">{{ box.max_weight_kg }} kg</span>
+            </div>
+          }
+          <div class="box-status">
+            <span class="status-badge" [class.active]="box.active" [class.inactive]="!box.active">
+              {{ box.active ? ('common.active' | translate) : ('common.inactive' | translate) }}
+            </span>
+          </div>
+        </div>
+      </div>
+    } @empty {
+      @if (!loading) {
+        <div class="empty-state">
+          <p>{{ 'shipment.boxes.noBoxes' | translate }}</p>
+        </div>
+      }
+    }
+  </div>
+
+  @if (totalPages > 1) {
+    <div class="pagination">
+      <button class="btn" (click)="prevPage()" [disabled]="page === 1">{{ 'common.previous' | translate }}</button>
+      <span>{{ 'common.page' | translate }} {{ page }} {{ 'common.of' | translate }} {{ totalPages }}</span>
+      <button class="btn" (click)="nextPage()" [disabled]="page === totalPages">{{ 'common.next' | translate }}</button>
+    </div>
+  }
+</div>
+
+<!-- Edit Form Modal -->
+@if (showEditForm) {
+  <div class="modal-overlay" (click)="closeEditForm()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>{{ editingBox ? ('shipment.boxes.editBox' | translate) : ('shipment.boxes.newBox' | translate) }}</h2>
+        <button class="btn-close" (click)="closeEditForm()">
+          <span class="material-icons">close</span>
+        </button>
+      </div>
+      <form [formGroup]="boxForm" (ngSubmit)="saveBox()" class="box-form">
+        <div class="form-group">
+          <label for="name">{{ 'shipment.boxes.name' | translate }} *</label>
+          <input type="text" id="name" formControlName="name" required>
+          @if (boxForm.get('name')?.invalid && boxForm.get('name')?.touched) {
+            <span class="error-text">{{ 'validation.required' | translate }}</span>
+          }
+        </div>
+
+        <div class="form-group">
+          <label for="description">{{ 'shipment.boxes.description' | translate }}</label>
+          <textarea id="description" formControlName="description" rows="3"></textarea>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="length">{{ 'shipment.boxes.length' | translate }} (cm) *</label>
+            <input type="number" id="length" formControlName="length_cm" min="1" required>
+            @if (boxForm.get('length_cm')?.invalid && boxForm.get('length_cm')?.touched) {
+              <span class="error-text">{{ 'validation.required' | translate }}</span>
+            }
+          </div>
+
+          <div class="form-group">
+            <label for="width">{{ 'shipment.boxes.width' | translate }} (cm) *</label>
+            <input type="number" id="width" formControlName="width_cm" min="1" required>
+            @if (boxForm.get('width_cm')?.invalid && boxForm.get('width_cm')?.touched) {
+              <span class="error-text">{{ 'validation.required' | translate }}</span>
+            }
+          </div>
+
+          <div class="form-group">
+            <label for="height">{{ 'shipment.boxes.height' | translate }} (cm) *</label>
+            <input type="number" id="height" formControlName="height_cm" min="1" required>
+            @if (boxForm.get('height_cm')?.invalid && boxForm.get('height_cm')?.touched) {
+              <span class="error-text">{{ 'validation.required' | translate }}</span>
+            }
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="maxWeight">{{ 'shipment.boxes.maxWeight' | translate }} (kg)</label>
+          <input type="number" id="maxWeight" formControlName="max_weight_kg" min="0" step="0.1">
+        </div>
+
+        <div class="form-group checkbox-group">
+          <label>
+            <input type="checkbox" formControlName="active">
+            {{ 'shipment.boxes.active' | translate }}
+          </label>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn btn-cancel" (click)="closeEditForm()">
+            {{ 'common.cancel' | translate }}
+          </button>
+          <button type="submit" class="btn btn-primary" [disabled]="boxForm.invalid || loading">
+            {{ loading ? ('common.saving' | translate) : ('common.save' | translate) }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}

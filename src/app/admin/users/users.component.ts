@@ -2,6 +2,7 @@ import { Component, OnInit, OnDestroy, ChangeDetectorRef, ChangeDetectionStrateg
 import { HttpClient } from '@angular/common/http';
 import { Subscription } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { PageTitleService } from '../../core/services/page-title.service';
 
 export interface AdminUser {
   uid: string;
@@ -73,10 +74,12 @@ export class UsersComponent implements OnInit, OnDestroy {
 
   constructor(
     private http: HttpClient,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private pageTitleService: PageTitleService
   ) {}
 
   ngOnInit(): void {
+    this.pageTitleService.setTitle('Users');
     this.loadUsers();
   }
 
@@ -253,6 +256,19 @@ export class UsersComponent implements OnInit, OnDestroy {
     );
   }
 
+  generatePassword(): void {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let password = '';
+    const array = new Uint32Array(16);
+    crypto.getRandomValues(array);
+    for (let i = 0; i < 16; i++) {
+      password += chars[array[i] % chars.length];
+    }
+    this.editForm.password = password;
+    this.editForm.confirmPassword = password;
+    this.cdr.detectChanges();
+  }
+
   cancelEdit(): void {
     this.showEditModal = false;
     this.editingUser = null;
@@ -280,6 +296,7 @@ export class UsersComponent implements OnInit, OnDestroy {
   // Mobile UI methods
   toggleFilters(): void {
     this.isFiltersExpanded = !this.isFiltersExpanded;
+    this.cdr.detectChanges();
   }
 
   toggleCardExpanded(uid: string): void {

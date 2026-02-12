@@ -5,6 +5,7 @@ import { map, catchError, tap } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 import { AppSettings } from '../models/app-settings.model';
 import { User, Client, AuthMeResponse } from '../models/user.model';
+import { TranslationService } from './translation.service';
 
 interface ApiResponse<T> {
   status: string;
@@ -23,7 +24,10 @@ export class AppSettingsService {
   private settingsSubject: BehaviorSubject<AppSettings | null>;
   public settings$: Observable<AppSettings | null>;
 
-  constructor(private http: HttpClient) {
+  constructor(
+    private http: HttpClient,
+    private translationService: TranslationService
+  ) {
     // Load settings from localStorage on init
     const stored = this.getStoredSettings();
     this.settingsSubject = new BehaviorSubject<AppSettings | null>(stored);
@@ -69,6 +73,14 @@ export class AppSettingsService {
         // Store settings
         this.storeSettings(appSettings);
         this.settingsSubject.next(appSettings);
+
+        // Sync language from client entity
+        if (appSettings.entity_type === 'client') {
+          const client = appSettings.entity as Client;
+          if (client.language) {
+            this.translationService.setLanguage(client.language);
+          }
+        }
 
         return appSettings;
       }),

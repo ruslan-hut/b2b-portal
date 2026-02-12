@@ -21,12 +21,14 @@ const path = require('path');
 // Get environment variables or use defaults
 const apiUrl = process.env.API_URL || '/api/v1';  // Default to relative path for Docker
 const appTitle = process.env.APP_TITLE || 'B2B Portal';
+const chatWsToken = process.env.CHAT_WS_TOKEN || '';
 
 console.log('========================================');
 console.log('Setting Frontend Environment Variables');
 console.log('========================================');
 console.log(`API_URL: ${apiUrl}`);
 console.log(`APP_TITLE: ${appTitle}`);
+console.log(`CHAT_WS_TOKEN: ${chatWsToken ? '***SET***' : '(empty)'}`);
 
 // Detect deployment scenario based on API_URL
 const isRelativePath = apiUrl.startsWith('/');
@@ -45,6 +47,14 @@ envContent = envContent.replace(
   /apiUrl:\s*['"].*?['"]/,
   `apiUrl: '${apiUrl}'`
 );
+
+// Replace the chatWsToken placeholder with actual value
+if (chatWsToken) {
+  envContent = envContent.replace(
+    /chatWsToken:\s*['"].*?['"]/,
+    `chatWsToken: '${chatWsToken}'`
+  );
+}
 
 // Write back to environment file
 fs.writeFileSync(envFilePath, envContent, 'utf8');

@@ -22,6 +22,21 @@
           </a>
         </li>
         <li>
+          <a routerLink="/admin/crm" routerLinkActive="active" (click)="closeMobileMenu()">
+              <span class="material-icons">view_kanban</span>
+              <span>CRM Pipeline</span>
+          </a>
+        </li>
+        <li>
+          <a routerLink="/admin/chat" routerLinkActive="active" (click)="closeMobileMenu()">
+            <span class="material-icons">chat_bubble</span>
+            <span>Chat</span>
+            @if ((totalUnread$ | async); as count) {
+              <span class="mobile-unread-badge">{{ count > 99 ? '99+' : count }}</span>
+            }
+          </a>
+        </li>
+        <li>
           <a routerLink="/admin/clients" routerLinkActive="active" (click)="closeMobileMenu()">
             <span class="material-icons">people</span>
             <span>Clients</span>
@@ -31,12 +46,6 @@
           <a routerLink="/admin/orders" routerLinkActive="active" (click)="closeMobileMenu()">
             <span class="material-icons">receipt</span>
             <span>Orders</span>
-          </a>
-        </li>
-        <li>
-          <a routerLink="/admin/crm" routerLinkActive="active" (click)="closeMobileMenu()">
-            <span class="material-icons">view_kanban</span>
-            <span>CRM Pipeline</span>
           </a>
         </li>
         <li>
@@ -76,6 +85,24 @@
               <span>Telegram</span>
             </a>
           </li>
+          <li>
+            <a routerLink="/admin/mail" routerLinkActive="active" (click)="closeMobileMenu()">
+              <span class="material-icons">email</span>
+              <span>Mail</span>
+            </a>
+          </li>
+          <li>
+            <a routerLink="/admin/invoice" routerLinkActive="active" (click)="closeMobileMenu()">
+              <span class="material-icons">receipt_long</span>
+              <span>Invoice</span>
+            </a>
+          </li>
+          <li>
+            <a routerLink="/admin/shipment" routerLinkActive="active" (click)="closeMobileMenu()">
+              <span class="material-icons">local_shipping</span>
+              <span>Shipment</span>
+            </a>
+          </li>
         }
       </ul>
     </nav>
@@ -102,6 +129,29 @@
           }
         </a>
       </li>
+        <li>
+            <a routerLink="/admin/crm" routerLinkActive="active" [title]="isMenuCollapsed ? 'CRM Pipeline' : ''">
+                <span class="material-icons">view_kanban</span>
+                @if (!isMenuCollapsed) {
+                    <span class="text">CRM Pipeline</span>
+                }
+            </a>
+        </li>
+      <li>
+        <a routerLink="/admin/chat" routerLinkActive="active" [title]="isMenuCollapsed ? 'Chat' : ''" class="chat-link">
+          <span class="material-icons">chat_bubble</span>
+          @if (!isMenuCollapsed) {
+            <span class="text">Chat</span>
+          }
+          @if ((totalUnread$ | async); as count) {
+            @if (isMenuCollapsed) {
+              <span class="sidebar-unread-badge collapsed-badge"></span>
+            } @else {
+              <span class="sidebar-unread-badge">{{ count > 99 ? '99+' : count }}</span>
+            }
+          }
+        </a>
+      </li>
       <li>
         <a routerLink="/admin/clients" routerLinkActive="active" [title]="isMenuCollapsed ? 'Clients' : ''">
           <span class="material-icons">people</span>
@@ -115,14 +165,6 @@
           <span class="material-icons">receipt</span>
           @if (!isMenuCollapsed) {
             <span class="text">Orders</span>
-          }
-        </a>
-      </li>
-      <li>
-        <a routerLink="/admin/crm" routerLinkActive="active" [title]="isMenuCollapsed ? 'CRM Pipeline' : ''">
-          <span class="material-icons">view_kanban</span>
-          @if (!isMenuCollapsed) {
-            <span class="text">CRM Pipeline</span>
           }
         </a>
       </li>
@@ -184,6 +226,36 @@
           </a>
         </li>
       }
+      @if (isAdmin) {
+        <li>
+          <a routerLink="/admin/mail" routerLinkActive="active" [title]="isMenuCollapsed ? 'Mail' : ''">
+            <span class="material-icons">email</span>
+            @if (!isMenuCollapsed) {
+              <span class="text">Mail</span>
+            }
+          </a>
+        </li>
+      }
+      @if (isAdmin) {
+        <li>
+          <a routerLink="/admin/invoice" routerLinkActive="active" [title]="isMenuCollapsed ? 'Invoice' : ''">
+            <span class="material-icons">receipt_long</span>
+            @if (!isMenuCollapsed) {
+              <span class="text">Invoice</span>
+            }
+          </a>
+        </li>
+      }
+      @if (isAdmin) {
+        <li>
+          <a routerLink="/admin/shipment" routerLinkActive="active" [title]="isMenuCollapsed ? 'Shipment' : ''">
+            <span class="material-icons">local_shipping</span>
+            @if (!isMenuCollapsed) {
+              <span class="text">Shipment</span>
+            }
+          </a>
+        </li>
+      }
     </ul>
     <div class="nav-footer">
       <button class="exit-btn" (click)="goToClientZone()" [title]="isMenuCollapsed ? 'Exit Admin' : ''">
@@ -197,5 +269,6 @@
   <main class="admin-content" [class.expanded]="isMenuCollapsed">
     <router-outlet></router-outlet>
   </main>
+
 </div>
 

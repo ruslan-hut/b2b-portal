@@ -4,6 +4,7 @@ import { AdminService, AdminProductWithDetails } from '../../core/services/admin
 import { AuthService } from '../../core/services/auth.service';
 import { TranslationService } from '../../core/services/translation.service';
 import { ProductService } from '../../core/services/product.service';
+import { PageTitleService } from '../../core/services/page-title.service';
 
 interface FilterOption {
   value: string;
@@ -53,10 +54,12 @@ export class ProductsComponent implements OnInit, OnDestroy {
     private authService: AuthService,
     private translationService: TranslationService,
     private productService: ProductService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private pageTitleService: PageTitleService
   ) {}
 
   ngOnInit(): void {
+    this.pageTitleService.setTitle('Products');
     // Refresh user data from server to get latest price_type_uid and store_uid
     this.subscriptions.add(
       this.authService.getCurrentEntity().subscribe({
@@ -371,6 +374,7 @@ export class ProductsComponent implements OnInit, OnDestroy {
   // Mobile UI methods
   toggleFilters(): void {
     this.isFiltersExpanded = !this.isFiltersExpanded;
+    this.cdr.detectChanges();
   }
 
   toggleCardExpanded(uid: string): void {

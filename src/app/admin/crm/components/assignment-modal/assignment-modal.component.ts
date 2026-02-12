@@ -1,21 +1,7 @@
 import { Component, Input, Output, EventEmitter, OnInit, OnDestroy, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
 import { Subscription } from 'rxjs';
-import { environment } from '../../../../../environments/environment';
 import { CrmBoardOrder } from '../../models/crm-board.model';
-import { CrmService } from '../../services/crm.service';
-
-interface User {
-  uid: string;
-  email: string;
-  name?: string;
-  role: string;
-}
-
-interface ApiResponse<T> {
-  success: boolean;
-  data: T;
-}
+import { CrmService, CrmAssignableUser } from '../../services/crm.service';
 
 @Component({
     selector: 'app-assignment-modal',
@@ -32,14 +18,13 @@ export class AssignmentModalComponent implements OnInit, OnDestroy {
 
   private subscriptions = new Subscription();
 
-  users: User[] = [];
+  users: CrmAssignableUser[] = [];
   selectedUserUid: string = '';
   loading = false;
   saving = false;
   error: string | null = null;
 
   constructor(
-    private http: HttpClient,
     private crmService: CrmService,
     private cdr: ChangeDetectorRef
   ) {}
@@ -58,12 +43,10 @@ export class AssignmentModalComponent implements OnInit, OnDestroy {
   loadUsers(): void {
     this.loading = true;
     this.subscriptions.add(
-      this.http.get<ApiResponse<User[]>>(`${environment.apiUrl}/admin/user`).subscribe({
-        next: (response) => {
-          // Filter to only admin and manager roles
-          this.users = (response.data || []).filter(
-            u => u.role === 'admin' || u.role === 'manager'
-          );
+      this.crmService.getAssignableUsers(this.order.store_uid).subscribe({
+        next: (users) => {
+          // Backend already filters to appropriate users based on role and store
+          this.users = users;
           this.loading = false;
           this.cdr.detectChanges();
         },
@@ -131,7 +114,10 @@ export class AssignmentModalComponent implements OnInit, OnDestroy {
     this.cancel.emit();
   }
 
-  getUserDisplay(user: User): string {
-    return user.name || user.email;
+  getUserDisplay(user: CrmAssignableUser): string {
+    if (user.first_name || user.last_name) {
+      return `${user.first_name || ''} ${user.last_name || ''}`.trim();
+    }
+    return user.username || user.email;
   }
 }

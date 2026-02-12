@@ -3,6 +3,7 @@ import { Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { CrmService } from '../../services/crm.service';
 import { CrmWorkloadStats, CrmDashboardFilters } from '../../models/crm-dashboard.model';
+import { PageTitleService } from '../../../../core/services/page-title.service';
 
 @Component({
     selector: 'app-workload',
@@ -17,6 +18,7 @@ export class WorkloadComponent implements OnInit, OnDestroy {
   workloadStats: CrmWorkloadStats[] = [];
   loading = false;
   error: string | null = null;
+  isFiltersExpanded = false;
 
   // Filters
   currentFilters: CrmDashboardFilters = {};
@@ -27,11 +29,13 @@ export class WorkloadComponent implements OnInit, OnDestroy {
 
   constructor(
     private crmService: CrmService,
-    private router: Router,
-    private cdr: ChangeDetectorRef
+    public router: Router,
+    private cdr: ChangeDetectorRef,
+    private pageTitleService: PageTitleService
   ) {}
 
   ngOnInit(): void {
+    this.pageTitleService.setTitle('CRM Workload');
     this.loadWorkload();
   }
 
@@ -103,13 +107,9 @@ export class WorkloadComponent implements OnInit, OnDestroy {
     return this.sortAsc ? '&#9650;' : '&#9660;';
   }
 
-  // Navigation
-  goToDashboard(): void {
-    this.router.navigate(['/admin/crm/dashboard']);
-  }
-
-  goToPipelineBoard(): void {
-    this.router.navigate(['/admin/crm']);
+  toggleFilters(): void {
+    this.isFiltersExpanded = !this.isFiltersExpanded;
+    this.cdr.detectChanges();
   }
 
   // Stats calculations

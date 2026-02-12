@@ -42,6 +42,11 @@ export class ProfileComponent implements OnInit, OnDestroy {
   discountInfo: DiscountInfo | null = null;
   currencySymbol = '';
 
+  // Language preference
+  availableLanguages: string[] = [];
+  selectedLanguage = 'en';
+  languageLoading = false;
+
   // Countries for autocomplete
   countries: Country[] = [];
   filteredCountries: Country[] = [];
@@ -84,6 +89,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
     this.loadClientData();
     this.loadAddresses();
     this.loadCountries();
+    this.loadAvailableLanguages();
   }
 
   ngOnDestroy(): void {
@@ -96,6 +102,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
 
     if (settings && settings.entity_type === 'client') {
       this.client = settings.entity as Client;
+      this.selectedLanguage = this.client.language || 'en';
       this.populateProfileForm();
 
       // Get store and price type names
@@ -453,6 +460,49 @@ export class ProfileComponent implements OnInit, OnDestroy {
   formatBalance(cents: number): string {
     const amount = (cents / 100).toFixed(2);
     return `${this.currencySymbol} ${amount}`;
+  }
+
+  loadAvailableLanguages(): void {
+    this.languageLoading = true;
+    this.clientService.getAvailableLanguages().subscribe({
+      next: (languages) => {
+        this.availableLanguages = languages;
+        this.languageLoading = false;
+        this.cdr.detectChanges();
+      },
+      error: (error) => {
+        console.error('Error loading languages:', error);
+        this.availableLanguages = ['en'];
+        this.languageLoading = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  changeLanguage(event: Event): void {
+    const select = event.target as HTMLSelectElement;
+    const newLang = select.value;
+    if (newLang === this.selectedLanguage) return;
+
+    this.selectedLanguage = newLang;
+    this.clientService.updateMyProfile({ language: newLang }).subscribe({
+      next: () => {
+        this.translationService.setLanguage(newLang);
+        // Refresh auth data to get updated client info
+        this.authService.getCurrentEntity().subscribe({
+          next: () => {
+            this.loadClientData();
+          }
+        });
+        this.cdr.detectChanges();
+      },
+      error: (error) => {
+        console.error('Error changing language:', error);
+        // Revert selection
+        this.selectedLanguage = this.client?.language || 'en';
+        this.cdr.detectChanges();
+      }
+    });
   }
 
   navigateBack(): void {

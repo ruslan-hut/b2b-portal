@@ -303,21 +303,8 @@ export class AuthService {
     // Start refresh token timer
     this.startRefreshTokenTimer(response.data.expires_at);
 
-    // Load AppSettings after successful login
-    // This will fetch entity, currency, store, price type in one call
-    this.appSettingsService.loadSettings().subscribe({
-      next: (settings) => {
-        // Update current entity from AppSettings
-        if (settings.entity) {
-          this.currentEntitySubject.next(settings.entity);
-        }
-      },
-      error: (error) => {
-        console.error('Failed to load app settings after login:', error);
-        // Continue with getCurrentEntity() as fallback
-      }
-    });
-
+    // getCurrentEntity() will load AppSettings and update entity state
+    // This fetches entity, currency, store, price type in one call
     return this.getCurrentEntity();
   }
 

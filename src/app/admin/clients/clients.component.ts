@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { PageTitleService } from '../../core/services/page-title.service';
 
 export interface AdminClient {
   uid: string;
@@ -65,10 +66,12 @@ export class ClientsComponent implements OnInit, OnDestroy {
   constructor(
     private http: HttpClient,
     private router: Router,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private pageTitleService: PageTitleService
   ) {}
 
   ngOnInit(): void {
+    this.pageTitleService.setTitle('Clients');
     this.loadClients();
   }
 
@@ -250,6 +253,7 @@ export class ClientsComponent implements OnInit, OnDestroy {
   // Mobile UI methods
   toggleFilters(): void {
     this.isFiltersExpanded = !this.isFiltersExpanded;
+    this.cdr.detectChanges();
   }
 
   toggleCardExpanded(clientUid: string): void {

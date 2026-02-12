@@ -1,7 +1,8 @@
-import { Injectable } from '@angular/core';
+import { Injectable, DestroyRef, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, of, BehaviorSubject, throwError } from 'rxjs';
 import { delay, map, catchError, switchMap, finalize, tap } from 'rxjs/operators';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Order, OrderItem, CreateOrderRequest, OrderStatus, BackendOrderRequest, BackendOrderResponse, ShippingAddress, CartAddress } from '../models/order.model';
 import { OrderMapper } from '../mappers/order.mapper';
 import { AuthService } from './auth.service';
@@ -39,6 +40,8 @@ export class OrderService {
   private saveInProgress = false;
   private pendingSaveRequest: { addressUid?: string; comment?: string } | null = null;
 
+  private destroyRef = inject(DestroyRef);
+
   constructor(
     private http: HttpClient,
     private authService: AuthService,
@@ -49,16 +52,19 @@ export class OrderService {
   ) {
     // Load draft cart when user is available (on service init or after login)
     // Subscribe to auth changes and react accordingly
-    this.authService.currentEntity$.subscribe(entity => {
-      if (entity) {
-        this.loadDraftCart();
-      } else {
-        // On logout/unauthenticated state clear local cart, draft order, and draft pointer
-        this.draftOrderUid = undefined;
-        this.currentDraftOrderSubject.next(null);
-        this.currentOrderSubject.next([]);
-      }
-    });
+    // Use takeUntilDestroyed to automatically clean up when service is destroyed
+    this.authService.currentEntity$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(entity => {
+        if (entity) {
+          this.loadDraftCart();
+        } else {
+          // On logout/unauthenticated state clear local cart, draft order, and draft pointer
+          this.draftOrderUid = undefined;
+          this.currentDraftOrderSubject.next(null);
+          this.currentOrderSubject.next([]);
+        }
+      });
   }
 
   /**
@@ -151,13 +157,14 @@ export class OrderService {
    */
   private getOrderItems(orderUid: string): Observable<any[]> {
     const payload = { data: [orderUid] };
-    return this.http.post<ApiResponse<any[][]>>(`${this.apiUrl}/order/items/batch`, payload).pipe(
+    return this.http.post<ApiResponse<any[]>>(`${this.apiUrl}/order/items/batch`, payload).pipe(
       map(response => {
         if (!response.success || !response.data || response.data.length === 0) {
           return [];
         }
-        // Response is an array of arrays; first element corresponds to our single order
-        return response.data[0] || [];
+        // Response is a flat array of items (may contain items from multiple orders)
+        // Filter to only return items for the requested order
+        return response.data.filter((item: any) => item.order_uid === orderUid);
       }),
       catchError(() => of([]))
     );
@@ -175,7 +182,7 @@ export class OrderService {
       data: orderUids
     };
 
-    return this.http.post<ApiResponse<any[][]>>(
+    return this.http.post<ApiResponse<any[]>>(
       `${this.apiUrl}/order/items/batch`,
       payload
     ).pipe(
@@ -184,13 +191,18 @@ export class OrderService {
           return new Map();
         }
 
-        // The API returns array of arrays, one array per order
-        // We need to match them with order UIDs
+        // The API returns a flat array of items with order_uid on each item
+        // Group items by order_uid
         const itemsMap = new Map<string, any[]>();
 
-        response.data.forEach((items, index) => {
-          if (index < orderUids.length) {
-            itemsMap.set(orderUids[index], items);
+        // Initialize map with empty arrays for all requested UIDs
+        orderUids.forEach(uid => itemsMap.set(uid, []));
+
+        // Group items by their order_uid
+        response.data.forEach((item: any) => {
+          const orderUid = item.order_uid;
+          if (orderUid && itemsMap.has(orderUid)) {
+            itemsMap.get(orderUid)!.push(item);
           }
         });
 
@@ -347,6 +359,7 @@ export class OrderService {
       discountAmount: data.discount_amount ? data.discount_amount / 100 : undefined,
       discountAmountWithVat: data.discount_amount_with_vat ? data.discount_amount_with_vat / 100 : undefined,
       status: status as OrderStatus,
+      draft: data.draft ?? (status === 'draft'), // Use backend draft field, fallback to status check for backwards compatibility
       createdAt: data.created_at ? new Date(data.created_at) : new Date(),
       updatedAt: data.updated_at ? new Date(data.updated_at) : new Date(),
       shippingAddress: data.shipping_address ? this.parseShippingAddress(data.shipping_address) : undefined,
@@ -500,6 +513,7 @@ export class OrderService {
           discountAmount: cartData.totals.discount_amount / 100,
           discountAmountWithVat: cartData.totals.discount_amount_with_vat / 100,
           status: OrderStatus.DRAFT,
+          draft: true, // Draft orders are always draft=true
           createdAt: new Date(),
           updatedAt: new Date(),
           address: address,

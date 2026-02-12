@@ -309,6 +309,14 @@ export class CartPageComponent implements OnInit, OnDestroy {
     return this.entityType === 'client' ? this.currentEntity as Client : null;
   }
 
+  get isMissingBusinessRegistration(): boolean {
+    if (this.entityType !== 'client') {
+      return false;
+    }
+    const client = this.getClientData();
+    return !client?.business_registration_number;
+  }
+
   // Mobile expandable card methods
   toggleItemExpanded(productId: string): void {
     if (this.expandedItems.has(productId)) {

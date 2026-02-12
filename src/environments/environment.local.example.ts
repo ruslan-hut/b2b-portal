@@ -5,5 +5,7 @@
 export const environment = {
   production: false,
   apiUrl: 'http://localhost:8888/api/v1', // Change this to your dev backend URL
-  appTitle: 'B2B Portal (Local Dev)' // Optional: customize app title
+  appTitle: 'B2B Portal (Local Dev)', // Optional: customize app title
+  chatWsUrl: 'https://bot.darkbyrior.com/api/v1',
+  chatWsToken: ''
 };

@@ -302,11 +302,19 @@
             </div>
           }
 
+          <!-- Business Registration Warning -->
+          @if (isMissingBusinessRegistration) {
+            <div class="cart-business-reg-warning">
+              <span class="material-icons">warning</span>
+              <span>{{ 'errors.businessRegNumberRequired' | translate }}</span>
+            </div>
+          }
+
           <!-- Checkout Button -->
           <button
-            class="btn-checkout"
+            class="btn-checkout btn-primary-cta"
             (click)="proceedToCheckout()"
-            [disabled]="isCreatingOrder || hasInsufficientStock || (entityType === 'client' && !hasSelectedAddress())"
+            [disabled]="isCreatingOrder || hasInsufficientStock || (entityType === 'client' && !hasSelectedAddress()) || isMissingBusinessRegistration"
           >
             @if (isCreatingOrder) {
               <span class="material-icons spinner">sync</span>

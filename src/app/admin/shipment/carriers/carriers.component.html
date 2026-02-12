@@ -1,0 +1,309 @@
+<div class="carriers-container">
+  <app-action-bar>
+    <div class="page-title" actionBarLeft>
+      <h1>Shipping Carriers</h1>
+    </div>
+    <div actionBarRight>
+      <a routerLink="../settings" class="btn btn-secondary">
+        <span class="material-icons">settings</span>
+        <span class="btn-text">Settings</span>
+      </a>
+      <button class="btn-icon" (click)="refresh()" [disabled]="loading" title="Refresh">
+        <span class="material-icons">refresh</span>
+      </button>
+      <button class="btn btn-primary" (click)="openNewCarrier()">
+        <span class="material-icons">add</span>
+        <span class="btn-text">Add Carrier</span>
+      </button>
+    </div>
+  </app-action-bar>
+
+  <!-- Error Message -->
+  @if (error) {
+    <div class="error-message">
+      {{ error }}
+    </div>
+  }
+
+  <!-- Loading Indicator -->
+  @if (loading && !showEditForm) {
+    <div class="loading">
+      Loading...
+    </div>
+  }
+
+  <!-- Carriers List -->
+  @if (!loading) {
+    <div class="carriers-list">
+      @for (carrier of carriers; track carrier.uid) {
+        <div class="carrier-card" [class.inactive]="!carrier.active">
+          <div class="carrier-header">
+            <div class="carrier-icon">
+              <span class="material-icons">local_shipping</span>
+            </div>
+            <div class="carrier-title">
+              <div class="carrier-name">{{ carrier.name }}</div>
+              <div class="carrier-type">{{ getCarrierTypeName(carrier.carrier_type) }}</div>
+            </div>
+            <div class="carrier-status">
+              <span class="status-badge" [class.active]="carrier.active">
+                {{ carrier.active ? 'Active' : 'Inactive' }}
+              </span>
+            </div>
+          </div>
+          <div class="carrier-info">
+            <div class="info-row">
+              <span class="info-label">API URL:</span>
+              <span class="info-value url">{{ carrier.api_url }}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Username:</span>
+              <span class="info-value">{{ carrier.username }}</span>
+            </div>
+            @if (carrier.account_number) {
+              <div class="info-row">
+                <span class="info-label">Account:</span>
+                <span class="info-value">{{ carrier.account_number }}</span>
+              </div>
+            }
+            <div class="info-row">
+              <span class="info-label">Service:</span>
+              <span class="info-value">{{ carrier.default_service_type || 'Default' }}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Updated:</span>
+              <span class="info-value">{{ formatDate(carrier.last_update) }}</span>
+            </div>
+          </div>
+          <div class="carrier-actions">
+            <button class="btn-action" (click)="toggleCarrierActive(carrier)" [title]="carrier.active ? 'Disable' : 'Enable'">
+              <span class="material-icons">{{ carrier.active ? 'pause' : 'play_arrow' }}</span>
+            </button>
+            <button class="btn-action" (click)="openEditCarrier(carrier)" title="Edit">
+              <span class="material-icons">edit</span>
+            </button>
+            <button class="btn-action btn-delete" (click)="deleteCarrier(carrier)" title="Delete">
+              <span class="material-icons">delete</span>
+            </button>
+          </div>
+        </div>
+      }
+      @if (carriers.length === 0) {
+        <div class="no-data">
+          <span class="material-icons">local_shipping</span>
+          <p>No carriers configured</p>
+          <button class="btn btn-primary" (click)="openNewCarrier()">Add Your First Carrier</button>
+        </div>
+      }
+    </div>
+
+    <!-- Pagination -->
+    @if (totalPages > 1) {
+      <div class="pagination">
+        <button [disabled]="page === 1" (click)="goToPage(page - 1)">Previous</button>
+        <span>Page {{ page }} of {{ totalPages }} ({{ total }} total)</span>
+        <button [disabled]="page >= totalPages" (click)="goToPage(page + 1)">Next</button>
+      </div>
+    }
+  }
+
+  <!-- Edit Form Modal -->
+  @if (showEditForm) {
+    <div class="modal-overlay" (click)="closeEditForm()">
+      <div class="modal-content" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h2>{{ editingCarrier ? 'Edit Carrier' : 'New Carrier' }}</h2>
+          <button class="btn-close" (click)="closeEditForm()">
+            <span class="material-icons">close</span>
+          </button>
+        </div>
+        <form [formGroup]="carrierForm" (ngSubmit)="saveCarrier()" class="carrier-form">
+          <div class="form-section">
+            <h3>Basic Information</h3>
+
+            <div class="form-group">
+              <label for="name">Carrier Name *</label>
+              <input type="text" id="name" formControlName="name" placeholder="My DHL Carrier">
+              @if (carrierForm.get('name')?.invalid && carrierForm.get('name')?.touched) {
+                <span class="error-text">Name is required</span>
+              }
+            </div>
+
+            <div class="form-group">
+              <label for="carrier_type">Carrier Type *</label>
+              <select id="carrier_type" formControlName="carrier_type" (change)="onCarrierTypeChange()">
+                @for (type of carrierTypes; track type.value) {
+                  <option [value]="type.value">{{ type.label }}</option>
+                }
+              </select>
+            </div>
+
+            <div class="form-group checkbox-group">
+              <label>
+                <input type="checkbox" formControlName="active">
+                <span>Active</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="form-section">
+            <h3>API Credentials</h3>
+
+            <div class="form-group">
+              <label for="api_url">API URL *</label>
+              <input type="url" id="api_url" formControlName="api_url" placeholder="https://api.dhl24.com.pl/webapi2">
+              @if (carrierForm.get('api_url')?.invalid && carrierForm.get('api_url')?.touched) {
+                <span class="error-text">Valid URL is required</span>
+              }
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="username">Username *</label>
+                <input type="text" id="username" formControlName="username" placeholder="API username">
+                @if (carrierForm.get('username')?.invalid && carrierForm.get('username')?.touched) {
+                  <span class="error-text">Username is required</span>
+                }
+              </div>
+              <div class="form-group">
+                <label for="password">Password {{ editingCarrier ? '(leave empty to keep)' : '*' }}</label>
+                <input type="password" id="password" formControlName="password" placeholder="API password">
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="account_number">Account Number</label>
+                <input type="text" id="account_number" formControlName="account_number" placeholder="SAP number">
+              </div>
+              <div class="form-group">
+                <label for="default_service_type">Default Service Type</label>
+                <input type="text" id="default_service_type" formControlName="default_service_type" placeholder="AH">
+              </div>
+            </div>
+          </div>
+
+          <!-- Shipper Configuration Section -->
+          <div class="form-section">
+            <h3>Shipper Address Configuration</h3>
+            <p class="section-hint">Configure the default sender address for shipments</p>
+
+            <div class="form-group">
+              <label for="shipper_name">Shipper Name *</label>
+              <input type="text" id="shipper_name" formControlName="shipper_name" placeholder="Company Name">
+              @if (carrierForm.get('shipper_name')?.invalid && carrierForm.get('shipper_name')?.touched) {
+                <span class="error-text">Shipper name is required</span>
+              }
+            </div>
+
+            <div class="form-group">
+              <label for="shipper_street">Street Address *</label>
+              <input type="text" id="shipper_street" formControlName="shipper_street" placeholder="Street Name">
+              @if (carrierForm.get('shipper_street')?.invalid && carrierForm.get('shipper_street')?.touched) {
+                <span class="error-text">Street address is required</span>
+              }
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="shipper_city">City *</label>
+                <input type="text" id="shipper_city" formControlName="shipper_city" placeholder="City">
+                @if (carrierForm.get('shipper_city')?.invalid && carrierForm.get('shipper_city')?.touched) {
+                  <span class="error-text">City is required</span>
+                }
+              </div>
+
+              <div class="form-group">
+                <label for="shipper_postal_code">Postal Code *</label>
+                <input type="text" id="shipper_postal_code" formControlName="shipper_postal_code" placeholder="12345" maxlength="10">
+                @if (carrierForm.get('shipper_postal_code')?.invalid && carrierForm.get('shipper_postal_code')?.touched) {
+                  <span class="error-text">Valid postal code is required (5-10 digits)</span>
+                }
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="shipper_phone">Phone *</label>
+                <input type="tel" id="shipper_phone" formControlName="shipper_phone" placeholder="123456789">
+                @if (carrierForm.get('shipper_phone')?.invalid && carrierForm.get('shipper_phone')?.touched) {
+                  <span class="error-text">Valid phone number is required (min 9 digits)</span>
+                }
+              </div>
+
+              <div class="form-group">
+                <label for="shipper_email">Email *</label>
+                <input type="email" id="shipper_email" formControlName="shipper_email" placeholder="sender@example.com">
+                @if (carrierForm.get('shipper_email')?.invalid && carrierForm.get('shipper_email')?.touched) {
+                  <span class="error-text">Valid email is required</span>
+                }
+              </div>
+            </div>
+          </div>
+
+          <!-- Test Section -->
+          <div class="test-section">
+            <button type="button" class="btn-test" (click)="testCarrier()" [disabled]="testLoading || !carrierForm.get('api_url')?.valid || !carrierForm.get('username')?.valid">
+              @if (testLoading) {
+                <span class="material-icons spinning">sync</span>
+                <span>Testing...</span>
+              } @else {
+                <span class="material-icons">wifi_tethering</span>
+                <span>Test Connection</span>
+              }
+            </button>
+            @if (testResult) {
+              <div class="test-result" [class.success]="testResult.success" [class.error]="!testResult.success">
+                @if (testResult.success) {
+                  <span class="material-icons">check_circle</span>
+                  <div class="test-details">
+                    <span>Connection successful</span>
+                    @if (testResult.api_version) {
+                      <span class="test-info">API Version: {{ testResult.api_version }}</span>
+                    }
+                    @if (testResult.message) {
+                      <span class="test-info">{{ testResult.message }}</span>
+                    }
+                  </div>
+                } @else {
+                  <span class="material-icons">error</span>
+                  <span>{{ testResult.error || 'Connection failed' }}</span>
+                }
+              </div>
+            }
+          </div>
+
+          <!-- Event Mappings Section -->
+          <div class="form-section event-mappings-section">
+            <h3>Event to Stage Mappings</h3>
+            <p class="section-hint">Configure which order stage to set when tracking events are received. Select "Record only" to log the event without changing the order stage.</p>
+
+            <div class="event-mappings">
+              @for (mapping of eventMappings; track mapping.code) {
+                <div class="event-mapping-row">
+                  <div class="event-info">
+                    <span class="event-code">{{ mapping.code }}</span>
+                    <span class="event-desc">{{ mapping.description }}</span>
+                  </div>
+                  <select [(ngModel)]="mapping.stageUid" [ngModelOptions]="{standalone: true}">
+                    <option [ngValue]="null">Record only</option>
+                    @for (stage of stages; track stage.uid) {
+                      <option [value]="stage.uid">{{ stage.name }}</option>
+                    }
+                  </select>
+                </div>
+              }
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button type="button" class="btn-cancel" (click)="closeEditForm()">Cancel</button>
+            <button type="submit" class="btn-save" [disabled]="carrierForm.invalid || loading">
+              {{ loading ? 'Saving...' : 'Save' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+</div>

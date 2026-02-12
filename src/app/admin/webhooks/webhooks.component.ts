@@ -1,8 +1,10 @@
 import { Component, OnInit, OnDestroy, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { WebhookService, Webhook, WebhookDelivery, WebhookUpsertRequest } from '../../core/services/webhook.service';
 import { AdminService } from '../../core/services/admin.service';
+import { PageTitleService } from '../../core/services/page-title.service';
 
 @Component({
     selector: 'app-webhooks',
@@ -21,9 +23,6 @@ export class WebhooksComponent implements OnInit, OnDestroy {
   loading = false;
   error: string | null = null;
 
-  // Tab state
-  activeTab: 'webhooks' | 'deliveries' = 'webhooks';
-
   // Pagination for webhooks (page-based, 1-indexed)
   webhooksPage = 1;
   webhooksCount = 20;
@@ -36,6 +35,9 @@ export class WebhooksComponent implements OnInit, OnDestroy {
   deliveriesTotal = 0;
   deliveriesTotalPages = 1;
   selectedWebhookUID: string | null = null;
+
+  // Filter toggle
+  isFiltersExpanded = false;
 
   // Edit mode
   showEditForm = false;
@@ -53,7 +55,9 @@ export class WebhooksComponent implements OnInit, OnDestroy {
     private webhookService: WebhookService,
     private adminService: AdminService,
     private fb: FormBuilder,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private pageTitleService: PageTitleService,
+    private router: Router
   ) {
     this.webhookForm = this.fb.group({
       name: ['', [Validators.required, Validators.maxLength(255)]],
@@ -67,8 +71,15 @@ export class WebhooksComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    this.pageTitleService.setTitle('Webhooks');
     this.loadStores();
-    this.loadWebhooks();
+
+    // Load data based on current route
+    if (this.isWebhooksRoute()) {
+      this.loadWebhooks();
+    } else if (this.isDeliveriesRoute()) {
+      this.loadDeliveries();
+    }
   }
 
   ngOnDestroy(): void {
@@ -139,15 +150,17 @@ export class WebhooksComponent implements OnInit, OnDestroy {
     );
   }
 
-  switchTab(tab: 'webhooks' | 'deliveries'): void {
-    this.activeTab = tab;
-    this.error = null;
+  isWebhooksRoute(): boolean {
+    return this.router.url.includes('/admin/webhooks/webhooks');
+  }
 
-    if (tab === 'webhooks') {
-      this.loadWebhooks();
-    } else {
-      this.loadDeliveries();
-    }
+  isDeliveriesRoute(): boolean {
+    return this.router.url.includes('/admin/webhooks/deliveries');
+  }
+
+  toggleFilters(): void {
+    this.isFiltersExpanded = !this.isFiltersExpanded;
+    this.cdr.detectChanges();
   }
 
   // Webhook CRUD
@@ -380,9 +393,9 @@ export class WebhooksComponent implements OnInit, OnDestroy {
   }
 
   refresh(): void {
-    if (this.activeTab === 'webhooks') {
+    if (this.isWebhooksRoute()) {
       this.loadWebhooks();
-    } else {
+    } else if (this.isDeliveriesRoute()) {
       this.loadDeliveries();
     }
   }

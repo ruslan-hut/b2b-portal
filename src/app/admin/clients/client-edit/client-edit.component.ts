@@ -4,41 +4,13 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { Subscription, forkJoin } from 'rxjs';
 import { environment } from '../../../../environments/environment';
-import { AdminService } from '../../../core/services/admin.service';
+import { AdminService, AdminClientFull } from '../../../core/services/admin.service';
 import { ClientService, Country, AddressUpsertRequest, ClientAddress } from '../../../core/services/client.service';
 import { TranslationService } from '../../../core/services/translation.service';
+import { UserService } from '../../../core/services/user.service';
+import { AddressService, AdminClientAddress, AdminClientAddressUpsert } from '../../../core/services/address.service';
 
-// Extended AdminClient with new fields
-export interface AdminClientFull {
-  uid: string;
-  name: string;
-  email: string;
-  phone: string;
-  pin_code: string;
-  address: string;
-  discount: number;
-  vat_rate?: number;
-  vat_number?: string;
-  balance: number;
-  fixed_discount: boolean;
-  cumulative_discount: boolean;
-  price_type_uid: string;
-  store_uid: string;
-  active: boolean;
-  last_update: string;
-}
-
-// Client address from admin endpoint
-export interface AdminClientAddress {
-  uid: string;
-  client_uid: string;
-  country_code: string;
-  zipcode?: string;
-  city?: string;
-  address_text?: string;
-  is_default: boolean;
-  last_update?: string;
-}
+// Note: AdminClientFull, AdminClientAddress interfaces now imported from services
 
 interface ApiResponse<T> {
   success: boolean;
@@ -74,6 +46,7 @@ export class ClientEditComponent implements OnInit, OnDestroy {
   stores: SelectOption[] = [];
   priceTypes: SelectOption[] = [];
   countries: Country[] = [];
+  managers: SelectOption[] = [];
 
   // Addresses
   addresses: AdminClientAddress[] = [];
@@ -96,6 +69,10 @@ export class ClientEditComponent implements OnInit, OnDestroy {
   private initialFormValue: any = null;
   hasUnsavedChanges = false;
 
+  // Navigation origin tracking
+  private fromLocation: string | null = null;
+  private fromOrderUid: string | null = null;
+
   private subscriptions = new Subscription();
 
   constructor(
@@ -105,6 +82,8 @@ export class ClientEditComponent implements OnInit, OnDestroy {
     private http: HttpClient,
     private adminService: AdminService,
     private clientService: ClientService,
+    private userService: UserService,
+    private addressService: AddressService,
     public translationService: TranslationService,
     private cdr: ChangeDetectorRef
   ) {
@@ -118,6 +97,8 @@ export class ClientEditComponent implements OnInit, OnDestroy {
       discount: [0, [Validators.min(0), Validators.max(100)]],
       vat_rate: [0, [Validators.min(0), Validators.max(100)]],
       vat_number: ['', [Validators.maxLength(50)]],
+      business_registration_number: ['', [Validators.maxLength(50)]],
+      manager_uid: [''],
       balance: [0, [Validators.min(0)]],
       fixed_discount: [false],
       cumulative_discount: [true],
@@ -147,8 +128,9 @@ export class ClientEditComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    // Load dropdown data
-    this.loadDropdownData();
+    // Read navigation origin from query params
+    this.fromLocation = this.route.snapshot.queryParams['from'] || null;
+    this.fromOrderUid = this.route.snapshot.queryParams['orderUid'] || null;
 
     // Track form changes
     this.subscriptions.add(
@@ -157,47 +139,73 @@ export class ClientEditComponent implements OnInit, OnDestroy {
       })
     );
 
-    // Check if editing existing client
-    this.subscriptions.add(
-      this.route.params.subscribe(params => {
-        if (params['uid']) {
-          this.clientUid = params['uid'];
-          this.isEditMode = true;
-          this.loadClient();
-        } else {
-          // For new client, store initial form value
-          this.storeInitialFormValue();
-        }
-      })
-    );
+    // Load dropdown data first, then load client if in edit mode
+    this.loadDropdownData().then(() => {
+      // Check if editing existing client
+      this.subscriptions.add(
+        this.route.params.subscribe(params => {
+          if (params['uid']) {
+            this.clientUid = params['uid'];
+            this.isEditMode = true;
+            this.loadClient();
+          } else {
+            // For new client, store initial form value
+            this.storeInitialFormValue();
+          }
+        })
+      );
+    });
   }
 
   ngOnDestroy(): void {
     this.subscriptions.unsubscribe();
   }
 
-  loadDropdownData(): void {
-    forkJoin({
-      stores: this.adminService.listStores(),
-      priceTypes: this.adminService.listPriceTypes(),
-      countries: this.clientService.getCountries()
-    }).subscribe({
-      next: (result) => {
-        this.stores = result.stores.map((s: any) => ({
-          value: s.uid,
-          label: s.name || s.uid
-        }));
-        this.priceTypes = result.priceTypes.map((pt: any) => ({
-          value: pt.uid,
-          label: pt.name || pt.uid
-        }));
-        this.countries = result.countries.sort((a, b) => a.name.localeCompare(b.name));
-        this.filteredCountries = [...this.countries];
-        this.cdr.detectChanges();
-      },
-      error: (err) => {
-        console.error('Failed to load dropdown data:', err);
-      }
+  loadDropdownData(): Promise<void> {
+    return new Promise((resolve) => {
+      forkJoin({
+        stores: this.adminService.listStores(),
+        priceTypes: this.adminService.listPriceTypes(),
+        countries: this.clientService.getCountries(),
+        managers: this.loadManagers()
+      }).subscribe({
+        next: (result) => {
+          this.stores = result.stores.map((s: any) => ({
+            value: s.uid,
+            label: s.name || s.uid
+          }));
+          this.priceTypes = result.priceTypes.map((pt: any) => ({
+            value: pt.uid,
+            label: pt.name || pt.uid
+          }));
+          this.managers = result.managers;
+          this.countries = result.countries.sort((a, b) => a.name.localeCompare(b.name));
+          this.filteredCountries = [...this.countries];
+          this.cdr.detectChanges();
+          resolve();
+        },
+        error: (err) => {
+          console.error('Failed to load dropdown data:', err);
+          resolve(); // Resolve even on error to allow component to continue
+        }
+      });
+    });
+  }
+
+  private loadManagers() {
+    // Load managers using UserService
+    return new Promise<SelectOption[]>((resolve) => {
+      this.userService.getManagerOptions()
+        .subscribe({
+          next: (managers) => {
+            const sorted = managers.sort((a, b) => a.label.localeCompare(b.label));
+            resolve(sorted);
+          },
+          error: (err) => {
+            console.error('Failed to load managers:', err);
+            resolve([]);
+          }
+        });
     });
   }
 
@@ -207,13 +215,9 @@ export class ClientEditComponent implements OnInit, OnDestroy {
     this.loading = true;
     this.error = null;
 
-    // Load client data using batch endpoint to get by UID
-    this.http.post<ApiResponse<AdminClientFull[]>>(`${environment.apiUrl}/admin/clients/batch`, {
-      data: [this.clientUid]
-    }).subscribe({
-      next: (response) => {
-        const clients = response.data || [];
-
+    // Load client data using AdminService
+    this.adminService.getClientsBatch([this.clientUid]).subscribe({
+      next: (clients) => {
         if (clients.length > 0) {
           this.populateForm(clients[0]);
           this.loadAddresses();
@@ -242,6 +246,8 @@ export class ClientEditComponent implements OnInit, OnDestroy {
       discount: client.discount || 0,
       vat_rate: client.vat_rate || 0,
       vat_number: client.vat_number || '',
+      business_registration_number: client.business_registration_number || '',
+      manager_uid: client.manager_uid || '',
       balance: client.balance || 0,
       fixed_discount: client.fixed_discount || false,
       cumulative_discount: client.cumulative_discount ?? true,
@@ -272,14 +278,9 @@ export class ClientEditComponent implements OnInit, OnDestroy {
 
     this.addressesLoading = true;
 
-    // Load addresses for this client using find/client endpoint
-    // Response is a map: { "client-uid": [addresses...] }
-    this.http.post<ApiResponse<{ [clientUid: string]: AdminClientAddress[] }>>(`${environment.apiUrl}/client_address/find/client`, {
-      data: [this.clientUid]
-    }).subscribe({
-      next: (response) => {
-        // Extract addresses for this client from the map
-        const addressMap = response.data || {};
+    // Load addresses using AddressService
+    this.addressService.getAddressesByClients([this.clientUid]).subscribe({
+      next: (addressMap) => {
         const clientAddresses = addressMap[this.clientUid!] || [];
         this.addresses = clientAddresses.sort((a, b) => {
           if (a.is_default && !b.is_default) return -1;
@@ -321,6 +322,8 @@ export class ClientEditComponent implements OnInit, OnDestroy {
       discount: formValue.discount || 0,
       vat_rate: formValue.vat_rate || 0,
       vat_number: formValue.vat_number || '',
+      business_registration_number: formValue.business_registration_number || '',
+      manager_uid: formValue.manager_uid || '',
       balance: formValue.balance || 0,
       fixed_discount: formValue.fixed_discount || false,
       cumulative_discount: formValue.cumulative_discount ?? true,
@@ -329,19 +332,17 @@ export class ClientEditComponent implements OnInit, OnDestroy {
       active: formValue.active
     };
 
-    this.http.post<ApiResponse<string[]>>(`${environment.apiUrl}/admin/clients`, {
-      data: [clientData]
-    }).subscribe({
-      next: (response) => {
+    this.adminService.upsertClients([clientData]).subscribe({
+      next: (uids) => {
         this.saving = false;
         this.successMessage = this.isEditMode ? 'Client updated successfully' : 'Client created successfully';
 
         // Reset unsaved changes tracking
         this.storeInitialFormValue();
 
-        if (!this.isEditMode && response.data && response.data.length > 0) {
+        if (!this.isEditMode && uids && uids.length > 0) {
           // Navigate to edit page for newly created client
-          const newUid = response.data[0];
+          const newUid = uids[0];
           this.router.navigate(['/admin/clients', newUid]);
         }
 
@@ -364,7 +365,12 @@ export class ClientEditComponent implements OnInit, OnDestroy {
         return;
       }
     }
-    this.router.navigate(['/admin/clients']);
+
+    if (this.fromLocation === 'order' && this.fromOrderUid) {
+      this.router.navigate(['/admin/orders', this.fromOrderUid]);
+    } else {
+      this.router.navigate(['/admin/clients']);
+    }
   }
 
   // Address management
@@ -434,9 +440,7 @@ export class ClientEditComponent implements OnInit, OnDestroy {
       is_default: formValue.is_default || false
     };
 
-    this.http.post<ApiResponse<any>>(`${environment.apiUrl}/client_address`, {
-      data: [addressData]
-    }).subscribe({
+    this.addressService.upsertAddresses([addressData as AdminClientAddressUpsert]).subscribe({
       next: () => {
         this.addressSaving = false;
         this.closeAddressModal();
@@ -457,9 +461,7 @@ export class ClientEditComponent implements OnInit, OnDestroy {
       return;
     }
 
-    this.http.post<ApiResponse<any>>(`${environment.apiUrl}/client_address/delete`, {
-      data: [address.uid]
-    }).subscribe({
+    this.addressService.deleteAddresses([address.uid]).subscribe({
       next: () => {
         this.loadAddresses();
       },
@@ -483,9 +485,7 @@ export class ClientEditComponent implements OnInit, OnDestroy {
       is_default: true
     };
 
-    this.http.post<ApiResponse<any>>(`${environment.apiUrl}/client_address`, {
-      data: [addressData]
-    }).subscribe({
+    this.addressService.upsertAddresses([addressData as AdminClientAddressUpsert]).subscribe({
       next: () => {
         this.loadAddresses();
       },

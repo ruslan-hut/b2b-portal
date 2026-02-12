@@ -1,11 +1,13 @@
+@use '../../../styles/mixins' as *;
+
 .clients-container {
 }
 
 .filters {
   display: none;
-  gap: var(--spacing-md-lg);
-  margin-bottom: var(--spacing-md-lg);
-  padding: var(--spacing-md);
+  gap: var(--spacing-sm-md);
+  margin-bottom: var(--spacing-sm-md);
+  padding: var(--spacing-sm-md);
   background-color: var(--card-bg);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-sm);
@@ -21,7 +23,7 @@
   gap: var(--spacing-sm-md);
 
   label {
-    font-weight: 600;
+    font-weight: var(--font-weight-semibold);
     color: var(--color-text-primary);
   }
 
@@ -56,27 +58,17 @@
     }
 
     .search-icon-btn {
+      @include icon-button(40px);
       position: absolute;
       right: var(--spacing-xs);
       top: 50%;
       transform: translateY(-50%);
-      width: 32px;
-      height: 32px;
       border: none;
-      border-radius: var(--radius-sm);
+      border-radius: var(--radius-md);
       background: transparent;
       color: var(--color-info);
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: all 0.2s ease;
 
-      .material-icons {
-        font-size: 20px;
-      }
-
-      &:hover {
+      &:hover:not(:disabled) {
         color: var(--color-info-dark);
         background: var(--color-primary-overlay-light);
       }
@@ -128,9 +120,9 @@ table {
     color: var(--table-header-text);
 
     th {
-      padding: 10px 8px;
+      @include table-cell-padding;
       text-align: left;
-      font-weight: 600;
+      font-weight: var(--font-weight-semibold);
       font-size: 0.85rem;
       white-space: nowrap;
       min-width: 80px;
@@ -164,7 +156,7 @@ table {
     }
 
     td {
-      padding: 10px 8px;
+      @include table-cell-padding;
       color: var(--color-text-primary);
       white-space: nowrap;
       min-width: 80px;
@@ -232,14 +224,21 @@ table {
   }
 }
 
-.active {
-  color: var(--color-success);
-  font-weight: 600;
-}
+// Status icon styling
+.status-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  line-height: 1;
 
-.inactive {
-  color: var(--color-danger);
-  font-weight: 600;
+  &.status-active {
+    color: var(--color-success);
+  }
+
+  &.status-inactive {
+    color: var(--color-danger);
+  }
 }
 
 // Discount mode badges
@@ -249,7 +248,7 @@ table {
   background-color: var(--color-info);
   color: var(--color-text-inverse);
   font-size: 0.8rem;
-  font-weight: 600;
+  font-weight: var(--font-weight-semibold);
   border-radius: var(--radius-lg);
 }
 
@@ -259,7 +258,7 @@ table {
   background-color: var(--color-secondary);
   color: var(--color-text-inverse);
   font-size: 0.8rem;
-  font-weight: 600;
+  font-weight: var(--font-weight-semibold);
   border-radius: var(--radius-lg);
 }
 
@@ -288,7 +287,7 @@ table {
   .pagination-info {
     font-size: 0.9rem;
     color: var(--color-text-primary);
-    font-weight: 500;
+    font-weight: var(--font-weight-medium);
 
     @media (max-width: 768px) {
       text-align: center;
@@ -313,7 +312,7 @@ table {
   .pagination-page-info {
     font-size: 0.9rem;
     color: var(--color-text-primary);
-    font-weight: 500;
+    font-weight: var(--font-weight-medium);
 
     @media (max-width: 768px) {
       text-align: center;
@@ -322,22 +321,7 @@ table {
   }
 
   .pagination-btn {
-    padding: var(--spacing-sm) var(--spacing-sm-md);
-    background-color: var(--card-bg);
-    color: var(--color-text-primary);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-sm);
-    cursor: pointer;
-    font-size: 0.9rem;
-    font-weight: 500;
-    min-width: 40px;
-    transition: all 0.2s ease;
-
-    @media (max-width: 768px) {
-      padding: var(--spacing-sm-md) var(--spacing-sm-md);
-      font-size: 0.85rem;
-      min-width: 36px;
-    }
+    @include pagination-button;
 
     &:hover:not(:disabled) {
       background-color: var(--color-info);
@@ -348,7 +332,6 @@ table {
     &:disabled {
       background-color: var(--color-disabled);
       color: var(--color-text-muted);
-      cursor: not-allowed;
       border-color: var(--color-disabled);
     }
 
@@ -356,12 +339,12 @@ table {
       background-color: var(--color-info);
       color: var(--color-text-inverse);
       border-color: var(--color-info);
-      font-weight: 600;
+      font-weight: var(--font-weight-semibold);
     }
 
     &.first,
     &.last {
-      font-weight: 600;
+      font-weight: var(--font-weight-semibold);
     }
 
     &.prev,
@@ -435,27 +418,11 @@ table {
     margin-bottom: var(--spacing-xs);
 
     .client-name {
-      font-weight: 600;
+      font-weight: var(--font-weight-semibold);
       color: var(--color-text-primary);
       font-size: 1rem;
     }
 
-    .status-badge {
-      font-size: 0.75rem;
-      font-weight: 600;
-      padding: 2px var(--spacing-sm);
-      border-radius: var(--radius-lg);
-
-      &.active {
-        background-color: var(--status-success-bg);
-        color: var(--status-success-text);
-      }
-
-      &.inactive {
-        background-color: var(--status-error-bg);
-        color: var(--status-error-text);
-      }
-    }
   }
 
   .card-subtitle {
@@ -482,7 +449,7 @@ table {
       }
 
       .value {
-        font-weight: 600;
+        font-weight: var(--font-weight-semibold);
         color: var(--color-text-primary);
       }
     }
@@ -520,7 +487,7 @@ table {
 
       .value {
         color: var(--color-text-primary);
-        font-weight: 500;
+        font-weight: var(--font-weight-medium);
         text-align: right;
         word-break: break-word;
       }
@@ -539,7 +506,7 @@ table {
       border: none;
       border-radius: var(--radius-sm-md);
       font-size: 0.95rem;
-      font-weight: 500;
+      font-weight: var(--font-weight-medium);
       cursor: pointer;
       transition: background-color 0.2s;
 
@@ -572,15 +539,15 @@ table {
   // Filters on mobile
   .filters {
     flex-direction: column;
-    gap: 12px;
-    padding: 12px;
-    margin-bottom: 12px;
+    gap: var(--spacing-md-sm);
+    padding: var(--spacing-md-sm);
+    margin-bottom: var(--spacing-sm);
   }
 
   .filter-group {
     flex-direction: column;
     align-items: stretch;
-    gap: 6px;
+    gap: var(--spacing-sm);
 
     label {
       font-size: 0.85rem;

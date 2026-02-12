@@ -345,7 +345,7 @@
     flex-direction: row;
     align-items: center;
     gap: 8px;
-    padding: 10px 12px;
+    padding: 8px 12px;
     min-height: 44px;
 
     &.clickable {
@@ -397,7 +397,7 @@
     align-items: center;
     gap: 8px;
     text-align: left;
-    padding: 10px 12px;
+    padding: 8px 12px;
     min-height: 44px;
 
     &.clickable {
@@ -456,12 +456,12 @@
   }
 
   .dialog-content {
-    padding: 10px;
+    padding: 8px;
   }
 
   .loading {
     padding: 20px;
-    gap: 10px;
+    gap: 8px;
   }
 
   .no-addresses {
@@ -481,10 +481,10 @@
   }
 
   .address-item {
-    padding: 10px 12px;
+    padding: 8px 12px;
     min-height: 52px;
     border-radius: 8px;
-    gap: 10px;
+    gap: 8px;
 
     &:active {
       background: var(--color-background-secondary);

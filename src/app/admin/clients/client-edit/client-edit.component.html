@@ -1,12 +1,12 @@
 <div class="client-edit-container">
   <div class="page-header">
-    <button class="btn-icon-header" (click)="navigateBack()" title="Back to Clients">
-      <span class="material-icons">arrow_back</span>
+    <button class="btn-icon-header" (click)="navigateBack()" [attr.aria-label]="'Back to clients'" [attr.title]="'Back to Clients'">
+      <span class="material-icons" aria-hidden="true">arrow_back</span>
     </button>
     <h1>
       {{ isEditMode ? 'Edit Client' : 'Create Client' }}
       @if (hasUnsavedChanges) {
-        <span class="material-icons unsaved-warning-icon" title="You have unsaved changes">warning</span>
+        <span class="material-icons unsaved-warning-icon" [attr.aria-label]="'You have unsaved changes'" [attr.title]="'You have unsaved changes'">warning</span>
       }
     </h1>
     <button
@@ -14,12 +14,13 @@
       class="btn-icon-header btn-save"
       [disabled]="clientForm.invalid || saving"
       (click)="saveClient()"
-      [title]="isEditMode ? 'Save Changes' : 'Create Client'"
+      [attr.aria-label]="isEditMode ? 'Save changes' : 'Create client'"
+      [attr.title]="isEditMode ? 'Save Changes' : 'Create Client'"
     >
       @if (saving) {
-        <span class="spinner-small"></span>
+        <span class="spinner-small" aria-hidden="true"></span>
       } @else {
-        <span class="material-icons">save</span>
+        <span class="material-icons" aria-hidden="true">save</span>
       }
     </button>
   </div>
@@ -55,10 +56,13 @@
               id="name"
               formControlName="name"
               [class.invalid]="isFieldInvalid('name')"
+              [attr.aria-invalid]="isFieldInvalid('name')"
+              [attr.aria-describedby]="isFieldInvalid('name') ? 'name-error' : null"
+              [attr.aria-required]="true"
               placeholder="Client name"
             >
             @if (isFieldInvalid('name')) {
-              <span class="error-message">{{ getFieldError('name') }}</span>
+              <span class="error-message" id="name-error" role="alert">{{ getFieldError('name') }}</span>
             }
           </div>
           <div class="form-group">
@@ -81,6 +85,9 @@
               id="store_uid"
               formControlName="store_uid"
               [class.invalid]="isFieldInvalid('store_uid')"
+              [attr.aria-invalid]="isFieldInvalid('store_uid')"
+              [attr.aria-describedby]="isFieldInvalid('store_uid') ? 'store_uid-error' : null"
+              [attr.aria-required]="true"
             >
               <option value="">Select a store</option>
               @for (store of stores; track store.value) {
@@ -88,7 +95,7 @@
               }
             </select>
             @if (isFieldInvalid('store_uid')) {
-              <span class="error-message">{{ getFieldError('store_uid') }}</span>
+              <span class="error-message" id="store_uid-error" role="alert">{{ getFieldError('store_uid') }}</span>
             }
           </div>
           <div class="form-group">
@@ -97,6 +104,9 @@
               id="price_type_uid"
               formControlName="price_type_uid"
               [class.invalid]="isFieldInvalid('price_type_uid')"
+              [attr.aria-invalid]="isFieldInvalid('price_type_uid')"
+              [attr.aria-describedby]="isFieldInvalid('price_type_uid') ? 'price_type_uid-error' : null"
+              [attr.aria-required]="true"
             >
               <option value="">Select a price type</option>
               @for (pt of priceTypes; track pt.value) {
@@ -104,8 +114,23 @@
               }
             </select>
             @if (isFieldInvalid('price_type_uid')) {
-              <span class="error-message">{{ getFieldError('price_type_uid') }}</span>
+              <span class="error-message" id="price_type_uid-error" role="alert">{{ getFieldError('price_type_uid') }}</span>
             }
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="manager_uid">Assigned Manager</label>
+            <select
+              id="manager_uid"
+              formControlName="manager_uid"
+            >
+              <option value="">Select a manager (optional)</option>
+              @for (manager of managers; track manager.value) {
+                <option [value]="manager.value">{{ manager.label }}</option>
+              }
+            </select>
+            <span class="field-hint">Optional. Assign a manager to this client.</span>
           </div>
         </div>
       </section>
@@ -121,12 +146,15 @@
               id="phone"
               formControlName="phone"
               [class.invalid]="isFieldInvalid('phone')"
+              [attr.aria-invalid]="isFieldInvalid('phone')"
+              [attr.aria-describedby]="isFieldInvalid('phone') ? 'phone-error' : 'phone-hint'"
+              [attr.aria-required]="true"
               placeholder="e.g., 380501234567"
             >
             @if (isFieldInvalid('phone')) {
-              <span class="error-message">{{ getFieldError('phone') }}</span>
+              <span class="error-message" id="phone-error" role="alert">{{ getFieldError('phone') }}</span>
             }
-            <span class="field-hint">8-15 digits only</span>
+            <span class="field-hint" id="phone-hint">8-15 digits only</span>
           </div>
           <div class="form-group">
             <label for="email">Email</label>
@@ -135,10 +163,12 @@
               id="email"
               formControlName="email"
               [class.invalid]="isFieldInvalid('email')"
+              [attr.aria-invalid]="isFieldInvalid('email')"
+              [attr.aria-describedby]="isFieldInvalid('email') ? 'email-error' : null"
               placeholder="client@example.com"
             >
             @if (isFieldInvalid('email')) {
-              <span class="error-message">{{ getFieldError('email') }}</span>
+              <span class="error-message" id="email-error" role="alert">{{ getFieldError('email') }}</span>
             }
           </div>
         </div>
@@ -233,14 +263,16 @@
               id="discount"
               formControlName="discount"
               [class.invalid]="isFieldInvalid('discount')"
+              [attr.aria-invalid]="isFieldInvalid('discount')"
+              [attr.aria-describedby]="isFieldInvalid('discount') ? 'discount-error' : 'discount-hint'"
               min="0"
               max="100"
               [attr.disabled]="!clientForm.get('fixed_discount')?.value ? null : null"
             >
             @if (isFieldInvalid('discount')) {
-              <span class="error-message">{{ getFieldError('discount') }}</span>
+              <span class="error-message" id="discount-error" role="alert">{{ getFieldError('discount') }}</span>
             }
-            <span class="field-hint">Used when Fixed Discount mode is selected</span>
+            <span class="field-hint" id="discount-hint">Used when Fixed Discount mode is selected</span>
           </div>
           <div class="form-group">
             <label for="balance">Balance (turnover in cents)</label>
@@ -248,11 +280,13 @@
               type="number"
               id="balance"
               formControlName="balance"
+              [attr.aria-describedby]="'balance-hint'"
+              [attr.aria-readonly]="true"
               min="0"
               readonly
               class="readonly-field"
             >
-            <span class="field-hint">Current monthly purchase turnover (set by CRM)</span>
+            <span class="field-hint" id="balance-hint">Current monthly purchase turnover (set by CRM)</span>
           </div>
         </div>
         <div class="form-row">
@@ -262,13 +296,15 @@
               type="number"
               id="vat_rate"
               formControlName="vat_rate"
+              [attr.aria-describedby]="'vat_rate-hint'"
+              [attr.aria-readonly]="true"
               min="0"
               max="100"
               step="0.01"
               readonly
               class="readonly-field"
             >
-            <span class="field-hint">Managed by CRM</span>
+            <span class="field-hint" id="vat_rate-hint">Managed by CRM</span>
           </div>
           <div class="form-group">
             <label for="vat_number">VAT Number</label>
@@ -276,9 +312,28 @@
               type="text"
               id="vat_number"
               formControlName="vat_number"
+              [attr.aria-describedby]="'vat_number-hint'"
               placeholder="e.g., PL1234567890"
             >
-            <span class="field-hint">If empty, store's default VAT rate is used</span>
+            <span class="field-hint" id="vat_number-hint">If empty, store's default VAT rate is used</span>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="business_registration_number">{{ 'profile.businessRegistrationNumber' | translate }}</label>
+            <input
+              type="text"
+              id="business_registration_number"
+              formControlName="business_registration_number"
+              [class.invalid]="isFieldInvalid('business_registration_number')"
+              [attr.aria-invalid]="isFieldInvalid('business_registration_number')"
+              [attr.aria-describedby]="'business_registration_number-hint'"
+              placeholder="e.g., 12345678"
+            >
+            @if (isFieldInvalid('business_registration_number')) {
+              <span class="error-message" role="alert">{{ getFieldError('business_registration_number') }}</span>
+            }
+            <span class="field-hint" id="business_registration_number-hint">{{ 'profile.businessRegNumberRequired' | translate }}</span>
           </div>
         </div>
       </section>
@@ -290,8 +345,8 @@
       <section class="form-section addresses-section">
         <div class="section-header">
           <h2>Addresses</h2>
-          <button class="btn-icon-header btn-save" (click)="openAddAddressModal()" title="Add Address">
-            <span class="material-icons">add</span>
+          <button class="btn-icon-header btn-save" (click)="openAddAddressModal()" [attr.aria-label]="'Add address'" [attr.title]="'Add Address'">
+            <span class="material-icons" aria-hidden="true">add</span>
           </button>
         </div>
 
@@ -323,24 +378,27 @@
                       <button
                         class="btn btn-icon"
                         (click)="setDefaultAddress(address)"
-                        title="Set as default"
+                        [attr.aria-label]="'Set as default address'"
+                        [attr.title]="'Set as default'"
                       >
-                        <span class="star-icon">&#9734;</span>
+                        <span class="star-icon" aria-hidden="true">&#9734;</span>
                       </button>
                     }
                     <button
                       class="btn btn-icon"
                       (click)="openEditAddressModal(address)"
-                      title="Edit"
+                      [attr.aria-label]="'Edit address'"
+                      [attr.title]="'Edit'"
                     >
-                      <span class="edit-icon">&#9998;</span>
+                      <span class="edit-icon" aria-hidden="true">&#9998;</span>
                     </button>
                     <button
                       class="btn btn-icon btn-danger"
                       (click)="deleteAddress(address)"
-                      title="Delete"
+                      [attr.aria-label]="'Delete address'"
+                      [attr.title]="'Delete'"
                     >
-                      <span class="delete-icon">&times;</span>
+                      <span class="delete-icon" aria-hidden="true">&times;</span>
                     </button>
                   </div>
                 </div>
@@ -357,11 +415,17 @@
 
   <!-- Address Modal -->
   @if (showAddressModal) {
-    <div class="modal-overlay" (click)="closeAddressModal()">
-      <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-overlay" (click)="closeAddressModal()" [attr.aria-hidden]="!showAddressModal">
+      <div
+        class="modal-content"
+        role="dialog"
+        aria-modal="true"
+        [attr.aria-labelledby]="'address-modal-title'"
+        (click)="$event.stopPropagation()"
+      >
         <div class="modal-header">
-          <h3>{{ editingAddress ? 'Edit Address' : 'Add Address' }}</h3>
-          <button class="btn btn-close" (click)="closeAddressModal()">&times;</button>
+          <h3 id="address-modal-title">{{ editingAddress ? 'Edit Address' : 'Add Address' }}</h3>
+          <button class="btn btn-close" (click)="closeAddressModal()" [attr.aria-label]="'Close dialog'">&times;</button>
         </div>
         <form [formGroup]="addressForm" (ngSubmit)="saveAddress()" class="address-form">
           <div class="form-group country-autocomplete">
@@ -377,6 +441,11 @@
                 (blur)="onCountryInputBlur()"
                 placeholder="Search country..."
                 [class.invalid]="addressForm.get('country_code')?.invalid && addressForm.get('country_code')?.touched"
+                [attr.aria-invalid]="addressForm.get('country_code')?.invalid && addressForm.get('country_code')?.touched"
+                [attr.aria-required]="true"
+                [attr.aria-autocomplete]="'list'"
+                [attr.aria-expanded]="showCountryDropdown"
+                [attr.aria-controls]="showCountryDropdown ? 'country-list' : null"
                 autocomplete="off"
               >
               @if (countrySearchText) {
@@ -388,10 +457,12 @@
                 >&times;</button>
               }
               @if (showCountryDropdown && filteredCountries.length > 0) {
-                <div class="autocomplete-dropdown">
+                <div class="autocomplete-dropdown" role="listbox" id="country-list">
                   @for (country of filteredCountries; track country.country_code) {
                     <div
                       class="autocomplete-item"
+                      role="option"
+                      [attr.aria-selected]="selectedCountry?.country_code === country.country_code"
                       (mousedown)="$event.preventDefault()"
                       (click)="selectCountry(country)"
                       [class.selected]="selectedCountry?.country_code === country.country_code"

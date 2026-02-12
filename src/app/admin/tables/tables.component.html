@@ -5,10 +5,10 @@
   </app-action-bar>
 
   <!-- Mobile Controls Toggle -->
-  <button class="controls-toggle" (click)="toggleControls()">
-    <span class="material-icons">tune</span>
+  <button class="controls-toggle" (click)="toggleControls()" [attr.aria-label]="'Toggle controls'" [attr.aria-expanded]="isControlsExpanded">
+    <span class="material-icons" aria-hidden="true">tune</span>
     <span>{{ selectedTable || 'Select Table' }}</span>
-    <span class="material-icons toggle-icon" [class.expanded]="isControlsExpanded">
+    <span class="material-icons toggle-icon" [class.expanded]="isControlsExpanded" aria-hidden="true">
       expand_more
     </span>
   </button>
@@ -17,7 +17,7 @@
     <!-- Table Selector Row with Search Controls -->
     <div class="table-selector-row" [class.expanded]="isControlsExpanded">
       <div class="selector-group">
-        <label class="table-selector-label">Table:</label>
+        <label for="table-selector" class="table-selector-label">Table:</label>
         @if (loading) {
           <span class="loading-inline">Loading tables...</span>
         }
@@ -26,9 +26,11 @@
         }
         @if (!loading) {
           <select
+            id="table-selector"
             class="table-selector"
             [value]="selectedTable"
             (change)="onTableSelect($any($event.target).value)"
+            [attr.aria-label]="'Select database table to view'"
             >
             <option value="" disabled selected>Select a table...</option>
             @for (table of tables; track table) {
@@ -40,8 +42,10 @@
       @if (selectedTable) {
         <div class="search-controls">
           <select
+            id="search-field-selector"
             [(ngModel)]="searchField"
             class="field-selector"
+            [attr.aria-label]="'Select field to search in'"
             >
             <option value="">All fields</option>
             @for (column of columns; track column) {
@@ -49,25 +53,28 @@
             }
           </select>
           <div class="search-input-wrapper">
+            <label for="table-search" class="sr-only">Search records</label>
             <input
               type="text"
+              id="table-search"
               [(ngModel)]="searchTerm"
               (keyup.enter)="onSearchChange()"
               placeholder="Search..."
               class="search-input"
+              [attr.aria-label]="'Search records in ' + (searchField || 'all fields')"
               />
-            <button type="button" class="search-icon-btn" (click)="onSearchChange()">
-              <span class="material-icons">search</span>
+            <button type="button" class="search-icon-btn" (click)="onSearchChange()" [attr.aria-label]="'Search records'">
+              <span class="material-icons" aria-hidden="true">search</span>
             </button>
           </div>
         </div>
         <div class="inline-pagination">
-          <button class="page-btn" [disabled]="currentPage === 1" (click)="goToPage(currentPage - 1)">
-            <span class="material-icons">chevron_left</span>
+          <button class="page-btn" [disabled]="currentPage === 1" (click)="goToPage(currentPage - 1)" [attr.aria-label]="'Go to previous page'" [attr.title]="'Previous page'">
+            <span class="material-icons" aria-hidden="true">chevron_left</span>
           </button>
-          <span class="page-info">{{ currentPage }}/{{ totalPages }}</span>
-          <button class="page-btn" [disabled]="currentPage === totalPages" (click)="goToPage(currentPage + 1)">
-            <span class="material-icons">chevron_right</span>
+          <span class="page-info" role="status" [attr.aria-live]="'polite'">{{ currentPage }}/{{ totalPages }}</span>
+          <button class="page-btn" [disabled]="currentPage === totalPages" (click)="goToPage(currentPage + 1)" [attr.aria-label]="'Go to next page'" [attr.title]="'Next page'">
+            <span class="material-icons" aria-hidden="true">chevron_right</span>
           </button>
         </div>
       }
@@ -92,11 +99,11 @@
             }
             @if (records.length > 0) {
               <div class="records-table-wrapper">
-                <table class="records-table">
+                <table class="records-table" role="table" [attr.aria-label]="selectedTable + ' table records'">
                   <thead>
                     <tr>
-                      @for (column of columns; track column) {
-                        <th [title]="column">
+                      @for (column of columns; track column; let i = $index) {
+                        <th scope="col" [id]="'col-' + i" [attr.title]="column">
                           {{ getColumnLabel(column) }}
                         </th>
                       }
@@ -105,8 +112,8 @@
                   <tbody>
                     @for (record of records; track record) {
                       <tr>
-                        @for (column of columns; track column) {
-                          <td [class]="getValueClass(record[column], column)">
+                        @for (column of columns; track column; let i = $index) {
+                          <td [headers]="'col-' + i" [class]="getValueClass(record[column], column)">
                             {{ formatValue(record[column], column) }}
                           </td>
                         }
@@ -124,8 +131,17 @@
               <div class="no-data-card">No records found</div>
             }
             @for (record of records; track record; let i = $index) {
-              <div class="record-card" [class.expanded]="isRecordExpanded(i)" (click)="toggleRecordExpanded(i)">
-                <div class="card-header">
+              <div class="record-card" [class.expanded]="isRecordExpanded(i)">
+                <div
+                  class="card-header"
+                  (click)="toggleRecordExpanded(i)"
+                  (keydown.enter)="toggleRecordExpanded(i)"
+                  (keydown.space)="toggleRecordExpanded(i); $event.preventDefault()"
+                  role="button"
+                  tabindex="0"
+                  [attr.aria-expanded]="isRecordExpanded(i)"
+                  [attr.aria-label]="'Expand details for record ' + getRecordTitle(record)"
+                >
                   <span class="record-title">{{ getRecordTitle(record) }}</span>
                   <span class="record-index">#{{ (currentPage - 1) * pageSize + i + 1 }}</span>
                 </div>
@@ -138,7 +154,7 @@
                       </span>
                     </div>
                   }
-                  <span class="material-icons expand-icon">{{ isRecordExpanded(i) ? 'expand_less' : 'expand_more' }}</span>
+                  <span class="material-icons expand-icon" aria-hidden="true">{{ isRecordExpanded(i) ? 'expand_less' : 'expand_more' }}</span>
                 </div>
                 @if (isRecordExpanded(i)) {
                   <div class="card-details">
@@ -159,11 +175,11 @@
           <!-- Mobile Pagination -->
           @if (records.length > 0) {
             <div class="mobile-pagination mobile-only">
-              <span class="page-info-mobile">Page {{ currentPage }} of {{ totalPages }} ({{ total }} records)</span>
-              <div class="pagination-buttons">
-                <button [disabled]="currentPage === 1" (click)="goToPage(currentPage - 1)">Previous</button>
-                <button [disabled]="currentPage === totalPages" (click)="goToPage(currentPage + 1)">Next</button>
-              </div>
+              <span class="page-info-mobile" role="status" [attr.aria-live]="'polite'">Page {{ currentPage }} of {{ totalPages }} ({{ total }} records)</span>
+              <nav class="pagination-buttons" [attr.aria-label]="'Pagination navigation'">
+                <button [disabled]="currentPage === 1" (click)="goToPage(currentPage - 1)" [attr.aria-label]="'Go to previous page'" [attr.title]="'Previous page'">Previous</button>
+                <button [disabled]="currentPage === totalPages" (click)="goToPage(currentPage + 1)" [attr.aria-label]="'Go to next page'" [attr.title]="'Next page'">Next</button>
+              </nav>
             </div>
           }
         }

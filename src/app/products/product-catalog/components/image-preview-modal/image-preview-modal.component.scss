@@ -1,0 +1,82 @@
+// Keyframes
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+// Full-size Image Preview Modal
+.image-preview-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.9);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-md-lg);
+  animation: fadeIn 0.3s ease;
+}
+
+.image-preview-container {
+  position: relative;
+  max-width: 90vw;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-md);
+
+  .image-preview-close {
+    position: absolute;
+    top: -40px;
+    right: 0;
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    border-radius: var(--radius-pill);
+    width: var(--spacing-2xl);
+    height: var(--spacing-2xl);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    .material-icons {
+      color: var(--color-text-inverse);
+      font-size: 24px;
+    }
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.3);
+      transform: scale(1.1);
+    }
+  }
+
+  .image-preview-img {
+    max-width: 100%;
+    max-height: 80vh;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-xl);
+  }
+
+  .image-preview-caption {
+    color: var(--color-text-inverse);
+    font-size: 16px;
+    font-weight: 600;
+    text-align: center;
+    padding: var(--spacing-md-sm) var(--spacing-md-lg);
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-md);
+    backdrop-filter: blur(10px);
+  }
+}

@@ -1,10 +1,10 @@
 <div class="products-container">
   <app-action-bar>
     <div actionBarLeft>
-      <button class="btn-filter" (click)="toggleFilters()" [class.active]="isFiltersExpanded">
-        <span class="material-icons">filter_list</span>
+      <button class="btn-filter" (click)="toggleFilters()" [class.active]="isFiltersExpanded" [attr.aria-label]="'Toggle filters'" [attr.aria-expanded]="isFiltersExpanded">
+        <span class="material-icons" aria-hidden="true">filter_list</span>
         <span class="btn-text">Filters</span>
-        <span class="material-icons toggle-icon">{{ isFiltersExpanded ? 'expand_less' : 'expand_more' }}</span>
+        <span class="material-icons toggle-icon" aria-hidden="true">{{ isFiltersExpanded ? 'expand_less' : 'expand_more' }}</span>
       </button>
     </div>
     <div actionBarRight></div>
@@ -12,8 +12,8 @@
 
   <div class="filters" [class.expanded]="isFiltersExpanded">
     <div class="filter-group">
-      <label>Language:</label>
-      <select [(ngModel)]="selectedLanguage" (change)="onFilterChange()">
+      <label for="products-language-filter">Language:</label>
+      <select id="products-language-filter" [(ngModel)]="selectedLanguage" (change)="onFilterChange()" [attr.aria-label]="'Filter products by language'">
         @for (lang of languages; track lang) {
           <option [value]="lang.value">{{ lang.label }}</option>
         }
@@ -21,8 +21,8 @@
     </div>
 
     <div class="filter-group">
-      <label>Store:</label>
-      <select [(ngModel)]="selectedStore" (change)="onFilterChange()">
+      <label for="products-store-filter">Store:</label>
+      <select id="products-store-filter" [(ngModel)]="selectedStore" (change)="onFilterChange()" [attr.aria-label]="'Filter products by store'">
         @for (store of stores; track store) {
           <option [value]="store.value">{{ store.label }}</option>
         }
@@ -30,8 +30,8 @@
     </div>
 
     <div class="filter-group">
-      <label>Price Type:</label>
-      <select [(ngModel)]="selectedPriceType" (change)="onFilterChange()">
+      <label for="products-price-type-filter">Price Type:</label>
+      <select id="products-price-type-filter" [(ngModel)]="selectedPriceType" (change)="onFilterChange()" [attr.aria-label]="'Filter products by price type'">
         @for (pt of priceTypes; track pt) {
           <option [value]="pt.value">{{ pt.label }}</option>
         }
@@ -39,8 +39,8 @@
     </div>
 
     <div class="filter-group">
-      <label>Category:</label>
-      <select [(ngModel)]="selectedCategory" (change)="onFilterChange()">
+      <label for="products-category-filter">Category:</label>
+      <select id="products-category-filter" [(ngModel)]="selectedCategory" (change)="onFilterChange()" [attr.aria-label]="'Filter products by category'">
         @for (cat of categories; track cat) {
           <option [value]="cat.value">{{ cat.label }}</option>
         }
@@ -48,12 +48,14 @@
     </div>
 
     <div class="filter-group search-group">
-      <label>Search:</label>
+      <label for="products-search">Search:</label>
       <input
         type="text"
+        id="products-search"
         [(ngModel)]="searchTerm"
         (input)="onSearchChange()"
         placeholder="Search products..."
+        [attr.aria-label]="'Search products by name or SKU'"
         />
     </div>
   </div>
@@ -68,36 +70,36 @@
   @if (!loading && !error) {
     <!-- Desktop Table -->
     <div class="products-table desktop-only">
-      <table>
+      <table role="table" [attr.aria-label]="'Products table'">
         <thead>
           <tr>
-            <th>Product UID</th>
-            <th>SKU</th>
-            <th>Product Name</th>
-            <th>Category</th>
-            <th>Price</th>
-            <th>Quantity</th>
-            <th>Active</th>
-            <th>Sort Order</th>
-            <th>Is New</th>
+            <th scope="col" id="col-uid" [attr.aria-describedby]="'uid-help'">Product UID</th>
+            <th scope="col" id="col-sku">SKU</th>
+            <th scope="col" id="col-name">Product Name</th>
+            <th scope="col" id="col-category">Category</th>
+            <th scope="col" id="col-price">Price</th>
+            <th scope="col" id="col-quantity" [attr.aria-describedby]="'quantity-help'">Quantity</th>
+            <th scope="col" id="col-active">Active</th>
+            <th scope="col" id="col-sort" [attr.aria-describedby]="'sort-help'">Sort Order</th>
+            <th scope="col" id="col-new" [attr.aria-describedby]="'new-help'">Is New</th>
           </tr>
         </thead>
         <tbody>
           @for (product of filteredProducts; track product) {
             <tr>
-              <td>{{ product.uid }}</td>
-              <td>{{ product.sku || '-' }}</td>
-              <td>{{ product.product_name || '-' }}</td>
-              <td>{{ product.category_name || product.category_uid || '-' }}</td>
-              <td>{{ formatPrice(product.price) }}</td>
-              <td>{{ product.quantity !== undefined ? product.quantity : '-' }}</td>
-              <td>
-                <span [class.active]="product.active" [class.inactive]="!product.active">
-                  {{ product.active ? 'Yes' : 'No' }}
+              <td headers="col-uid">{{ product.uid }}</td>
+              <td headers="col-sku">{{ product.sku || '-' }}</td>
+              <td headers="col-name">{{ product.product_name || '-' }}</td>
+              <td headers="col-category">{{ product.category_name || product.category_uid || '-' }}</td>
+              <td headers="col-price">{{ formatPrice(product.price) }}</td>
+              <td headers="col-quantity">{{ product.quantity !== undefined ? product.quantity : '-' }}</td>
+              <td headers="col-active">
+                <span class="status-icon" [class.status-active]="product.active" [class.status-inactive]="!product.active" [attr.aria-label]="'Active: ' + (product.active ? 'Yes' : 'No')" role="status">
+                  ●
                 </span>
               </td>
-              <td>{{ product.sort_order || '-' }}</td>
-              <td>{{ product.is_new ? 'Yes' : 'No' }}</td>
+              <td headers="col-sort">{{ product.sort_order || '-' }}</td>
+              <td headers="col-new">{{ product.is_new ? 'Yes' : 'No' }}</td>
             </tr>
           }
           @if (filteredProducts.length === 0) {
@@ -107,17 +109,31 @@
           }
         </tbody>
       </table>
+      <!-- Screen reader only help text -->
+      <p id="uid-help" class="sr-only">Unique product identifier</p>
+      <p id="quantity-help" class="sr-only">Available quantity in stock</p>
+      <p id="sort-help" class="sr-only">Display order in product catalog</p>
+      <p id="new-help" class="sr-only">Marks product as new in catalog</p>
     </div>
 
     <!-- Mobile Cards -->
     <div class="products-cards mobile-only">
       @for (product of filteredProducts; track product) {
-        <div class="product-card" [class.expanded]="isCardExpanded(product.uid)" (click)="toggleCardExpanded(product.uid)">
-          <div class="card-header">
+        <div class="product-card" [class.expanded]="isCardExpanded(product.uid)">
+          <div
+            class="card-header"
+            (click)="toggleCardExpanded(product.uid)"
+            (keydown.enter)="toggleCardExpanded(product.uid)"
+            (keydown.space)="toggleCardExpanded(product.uid); $event.preventDefault()"
+            role="button"
+            tabindex="0"
+            [attr.aria-expanded]="isCardExpanded(product.uid)"
+            [attr.aria-label]="'Expand details for ' + (product.product_name || 'Unnamed Product')"
+          >
             <div class="card-title">
               <span class="product-name">{{ product.product_name || 'Unnamed Product' }}</span>
-              <span class="status-badge" [class.active]="product.active" [class.inactive]="!product.active">
-                {{ product.active ? 'Active' : 'Inactive' }}
+              <span class="status-icon" [class.status-active]="product.active" [class.status-inactive]="!product.active" [attr.aria-label]="'Status: ' + (product.active ? 'Active' : 'Inactive')" role="status">
+                ●
               </span>
             </div>
             <div class="card-subtitle">SKU: {{ product.sku || '-' }}</div>
@@ -134,7 +150,7 @@
             @if (product.is_new) {
               <span class="new-badge">NEW</span>
             }
-            <span class="material-icons expand-icon">{{ isCardExpanded(product.uid) ? 'expand_less' : 'expand_more' }}</span>
+            <span class="material-icons expand-icon" aria-hidden="true">{{ isCardExpanded(product.uid) ? 'expand_less' : 'expand_more' }}</span>
           </div>
           @if (isCardExpanded(product.uid)) {
             <div class="card-details">
@@ -162,22 +178,24 @@
     <!-- Pagination -->
     @if (totalPages > 1) {
       <div class="pagination">
-        <div class="pagination-info">
+        <div class="pagination-info" role="status" [attr.aria-live]="'polite'">
           <span>Showing {{ getStartItemNumber() }} - {{ getEndItemNumber() }} of {{ total }} products</span>
         </div>
-        <div class="pagination-controls">
+        <nav class="pagination-controls" [attr.aria-label]="'Pagination navigation'">
           <button
             class="pagination-btn first"
             [disabled]="currentPage === 1"
             (click)="goToFirstPage()"
-            title="First page">
+            [attr.aria-label]="'Go to first page'"
+            [attr.title]="'First page'">
             ««
           </button>
           <button
             class="pagination-btn prev"
             [disabled]="currentPage === 1"
             (click)="goToPage(currentPage - 1)"
-            title="Previous page">
+            [attr.aria-label]="'Go to previous page'"
+            [attr.title]="'Previous page'">
             ‹
           </button>
 
@@ -185,7 +203,9 @@
             <button
               class="pagination-btn page-number"
               [class.active]="page === currentPage"
-              (click)="goToPage(page)">
+              (click)="goToPage(page)"
+              [attr.aria-label]="'Go to page ' + page"
+              [attr.aria-current]="page === currentPage ? 'page' : null">
               {{ page }}
             </button>
           }
@@ -194,17 +214,19 @@
             class="pagination-btn next"
             [disabled]="currentPage === totalPages"
             (click)="goToPage(currentPage + 1)"
-            title="Next page">
+            [attr.aria-label]="'Go to next page'"
+            [attr.title]="'Next page'">
             ›
           </button>
           <button
             class="pagination-btn last"
             [disabled]="currentPage === totalPages"
             (click)="goToLastPage()"
-            title="Last page">
+            [attr.aria-label]="'Go to last page'"
+            [attr.title]="'Last page'">
             »»
           </button>
-        </div>
+        </nav>
         <div class="pagination-page-info">
           <span>Page {{ currentPage }} of {{ totalPages }}</span>
         </div>

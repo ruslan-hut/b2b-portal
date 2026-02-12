@@ -9,10 +9,11 @@ describe('LanguageSwitcherComponent', () => {
   let translationService: jasmine.SpyObj<TranslationService>;
 
   beforeEach(async () => {
-    const translationServiceSpy = jasmine.createSpyObj('TranslationService', 
-      ['setLanguage', 'toggleLanguage', 'getCurrentLanguage']
+    const translationServiceSpy = jasmine.createSpyObj('TranslationService',
+      ['setLanguage', 'getCurrentLanguage']
     );
     translationServiceSpy.currentLanguage$ = of('en' as any);
+    translationServiceSpy.getCurrentLanguage.and.returnValue('en');
 
     await TestBed.configureTestingModule({
       declarations: [ LanguageSwitcherComponent ],
@@ -32,14 +33,19 @@ describe('LanguageSwitcherComponent', () => {
     expect(component).toBeTruthy();
   });
 
-  it('should switch language when button clicked', () => {
-    component.switchLanguage('uk');
+  it('should select language and close dropdown', () => {
+    component.isDropdownOpen = true;
+    component.selectLanguage('uk');
     expect(translationService.setLanguage).toHaveBeenCalledWith('uk');
+    expect(component.isDropdownOpen).toBe(false);
   });
 
-  it('should toggle language', () => {
-    component.toggleLanguage();
-    expect(translationService.toggleLanguage).toHaveBeenCalled();
+  it('should toggle dropdown', () => {
+    expect(component.isDropdownOpen).toBe(false);
+    component.toggleDropdown();
+    expect(component.isDropdownOpen).toBe(true);
+    component.toggleDropdown();
+    expect(component.isDropdownOpen).toBe(false);
   });
 });
 

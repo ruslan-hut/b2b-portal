@@ -1,0 +1,316 @@
+<div class="settings-container">
+  <app-action-bar>
+    <div class="page-title" actionBarLeft>
+      <h1>Mail Settings</h1>
+    </div>
+    <div actionBarRight>
+      <button class="btn-icon" (click)="refresh()" [disabled]="loading" title="Refresh">
+        <span class="material-icons">refresh</span>
+      </button>
+    </div>
+  </app-action-bar>
+
+  <!-- Error Message -->
+  @if (error) {
+    <div class="error-message">
+      {{ error }}
+    </div>
+  }
+
+  <!-- Success Message -->
+  @if (successMessage) {
+    <div class="success-message">
+      {{ successMessage }}
+    </div>
+  }
+
+  <!-- Loading Indicator -->
+  @if (loading) {
+    <div class="loading">
+      Loading...
+    </div>
+  }
+
+  @if (!loading && settings) {
+    <!-- Service Status Card -->
+    <div class="settings-card status-card">
+      <div class="card-header">
+        <h2>Service Status</h2>
+        <span class="status-indicator" [class.connected]="settings.service_connected">
+          <span class="material-icons">{{ settings.service_connected ? 'check_circle' : 'cancel' }}</span>
+          {{ settings.service_connected ? 'Connected' : 'Disconnected' }}
+        </span>
+      </div>
+      <div class="card-body">
+        <div class="status-grid">
+          <div class="status-item">
+            <span class="status-label">Provider</span>
+            <span class="status-value">{{ settings.provider | titlecase }}</span>
+          </div>
+          <div class="status-item">
+            <span class="status-label">Sender Email</span>
+            <span class="status-value">
+              @if (settings.sender_email) {
+                {{ settings.sender_email }}
+              } @else {
+                <span class="not-set">Not configured</span>
+              }
+            </span>
+          </div>
+          <div class="status-item">
+            <span class="status-label">Sender Name</span>
+            <span class="status-value">{{ settings.sender_name || 'Not set' }}</span>
+          </div>
+          <div class="status-item">
+            <span class="status-label">Last Updated</span>
+            <span class="status-value">{{ formatDate(settings.last_update) }}</span>
+          </div>
+        </div>
+        <div class="status-actions">
+          <button
+            class="btn btn-primary"
+            (click)="restartService()"
+            [disabled]="restarting || !settings.has_api_key || !settings.sender_email"
+            title="Restart mail service with current settings"
+          >
+            @if (restarting) {
+              <span class="material-icons spinning">sync</span>
+              Restarting...
+            } @else {
+              <span class="material-icons">restart_alt</span>
+              Restart Service
+            }
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Settings Form Card -->
+    <div class="settings-card">
+      <div class="card-header">
+        <h2>Provider Configuration</h2>
+      </div>
+      <div class="card-body">
+        <form (ngSubmit)="saveSettings()">
+          <!-- Provider Selection -->
+          <div class="form-group">
+            <label for="provider">Email Provider</label>
+            <select id="provider" [(ngModel)]="provider" name="provider">
+              @for (p of providers; track p.value) {
+                <option [value]="p.value">{{ p.label }}</option>
+              }
+            </select>
+          </div>
+
+          <!-- API Key Section -->
+          <div class="form-group">
+            <label>API Key</label>
+            <div class="api-key-section">
+              @if (!showApiKeyInput) {
+                <div class="api-key-display">
+                  @if (settings.has_api_key) {
+                    <span class="masked-key">{{ settings.api_key_masked }}</span>
+                  } @else {
+                    <span class="not-set">Not configured</span>
+                  }
+                  <button type="button" class="btn btn-secondary btn-sm" (click)="toggleApiKeyInput()">
+                    <span class="material-icons">edit</span>
+                    {{ settings.has_api_key ? 'Change' : 'Set' }} API Key
+                  </button>
+                </div>
+              } @else {
+                <div class="api-key-input">
+                  <input
+                    type="password"
+                    [(ngModel)]="apiKey"
+                    name="apiKey"
+                    placeholder="Enter new API key"
+                    autocomplete="new-password"
+                  />
+                  <div class="api-key-actions">
+                    <button type="button" class="btn btn-text btn-sm" (click)="toggleApiKeyInput()">
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+
+          <!-- Sender Email -->
+          <div class="form-group">
+            <label for="senderEmail">Sender Email</label>
+            <input
+              type="email"
+              id="senderEmail"
+              [(ngModel)]="senderEmail"
+              name="senderEmail"
+              placeholder="noreply@example.com"
+            />
+            <span class="form-hint">Email address that will appear as the sender</span>
+          </div>
+
+          <!-- Sender Name -->
+          <div class="form-group">
+            <label for="senderName">Sender Name</label>
+            <input
+              type="text"
+              id="senderName"
+              [(ngModel)]="senderName"
+              name="senderName"
+              placeholder="Comex B2B"
+            />
+            <span class="form-hint">Display name for the sender</span>
+          </div>
+
+          <!-- Reply-To Email -->
+          <div class="form-group">
+            <label for="replyToEmail">Reply-To Email (Optional)</label>
+            <input
+              type="email"
+              id="replyToEmail"
+              [(ngModel)]="replyToEmail"
+              name="replyToEmail"
+              placeholder="support@example.com"
+            />
+            <span class="form-hint">Email address for replies (if different from sender)</span>
+          </div>
+
+          <!-- Enabled Toggle -->
+          <div class="form-group">
+            <label>Service Enabled</label>
+            <div class="toggle-container">
+              <label class="toggle">
+                <input type="checkbox" [(ngModel)]="enabled" name="enabled" />
+                <span class="toggle-slider"></span>
+              </label>
+              <span class="toggle-label">{{ enabled ? 'Mail service is enabled' : 'Mail service is disabled' }}</span>
+            </div>
+          </div>
+
+          <!-- Save Button -->
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary" [disabled]="saving">
+              @if (saving) {
+                <span class="material-icons spinning">sync</span>
+                Saving...
+              } @else {
+                <span class="material-icons">save</span>
+                Save Settings
+              }
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Notification Toggles Card -->
+    <div class="settings-card">
+      <div class="card-header">
+        <h2>Notification Settings</h2>
+      </div>
+      <div class="card-body">
+        <form (ngSubmit)="saveSettings()">
+          <!-- Client Order Confirmation -->
+          <div class="form-group">
+            <label>Client Order Confirmation</label>
+            <div class="toggle-container">
+              <label class="toggle">
+                <input type="checkbox" [(ngModel)]="clientOrderConfirmation" name="clientOrderConfirmation" />
+                <span class="toggle-slider"></span>
+              </label>
+              <span class="toggle-label">{{ clientOrderConfirmation ? 'Send confirmation emails to clients' : 'Disabled' }}</span>
+            </div>
+            <span class="form-hint">Send email to client when they place an order</span>
+          </div>
+
+          <!-- Admin New Order Notification -->
+          <div class="form-group">
+            <label>Admin New Order Notification</label>
+            <div class="toggle-container">
+              <label class="toggle">
+                <input type="checkbox" [(ngModel)]="adminNewOrderNotification" name="adminNewOrderNotification" />
+                <span class="toggle-slider"></span>
+              </label>
+              <span class="toggle-label">{{ adminNewOrderNotification ? 'Notify admins/managers of new orders' : 'Disabled' }}</span>
+            </div>
+            <span class="form-hint">Send email to admins and managers when a new order is placed</span>
+          </div>
+
+          <!-- Client Status Change Notification -->
+          <div class="form-group">
+            <label>Client Status Change Notification</label>
+            <div class="toggle-container">
+              <label class="toggle">
+                <input type="checkbox" [(ngModel)]="clientStatusChangeNotification" name="clientStatusChangeNotification" />
+                <span class="toggle-slider"></span>
+              </label>
+              <span class="toggle-label">{{ clientStatusChangeNotification ? 'Notify clients of order status changes' : 'Disabled' }}</span>
+            </div>
+            <span class="form-hint">Send email to client when their order status changes</span>
+          </div>
+
+          <!-- Save Button -->
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary" [disabled]="saving">
+              @if (saving) {
+                <span class="material-icons spinning">sync</span>
+                Saving...
+              } @else {
+                <span class="material-icons">save</span>
+                Save Settings
+              }
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Test Connection Card -->
+    <div class="settings-card">
+      <div class="card-header">
+        <h2>Test Connection</h2>
+      </div>
+      <div class="card-body">
+        <div class="form-group">
+          <label for="testEmail">Test Email Address</label>
+          <div class="test-email-input">
+            <input
+              type="email"
+              id="testEmail"
+              [(ngModel)]="testEmail"
+              placeholder="Enter email to receive test message"
+            />
+            <button
+              type="button"
+              class="btn btn-secondary"
+              (click)="testConnection()"
+              [disabled]="testing || !testEmail.trim() || (!apiKey.trim() && !settings.has_api_key) || !senderEmail.trim()"
+            >
+              @if (testing) {
+                <span class="material-icons spinning">sync</span>
+                Testing...
+              } @else {
+                <span class="material-icons">send</span>
+                Send Test Email
+              }
+            </button>
+          </div>
+          <span class="form-hint">A test email will be sent to verify your configuration</span>
+        </div>
+
+        @if (testResult) {
+          <div class="test-result" [class.success]="testResult.success" [class.error]="!testResult.success">
+            @if (testResult.success) {
+              <span class="material-icons">check_circle</span>
+              <span>Test email sent successfully! Check your inbox.</span>
+            } @else {
+              <span class="material-icons">error</span>
+              <span>{{ testResult.error }}</span>
+            }
+          </div>
+        }
+      </div>
+    </div>
+  }
+</div>

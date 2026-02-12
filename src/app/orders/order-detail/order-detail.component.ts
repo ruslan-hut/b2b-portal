@@ -4,7 +4,7 @@ import { HttpClient } from '@angular/common/http';
 import { Subscription } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { OrderService } from '../../core/services/order.service';
-import { Order, OrderStatus } from '../../core/models/order.model';
+import { Order, OrderStatus, toLegacyStatus } from '../../core/models/order.model';
 import { TranslationService } from '../../core/services/translation.service';
 import { CurrencyService } from '../../core/services/currency.service';
 import { AuthService } from '../../core/services/auth.service';
@@ -184,29 +184,57 @@ export class OrderDetailComponent implements OnInit, OnDestroy {
     this.router.navigate(['/orders/history']);
   }
 
-  getStatusClass(status: OrderStatus | string): string {
-    const statusStr = typeof status === 'string' ? status.toLowerCase() : status;
-    const statusClasses: { [key: string]: string } = {
-      'draft': 'status-draft',
-      'new': 'status-new',
-      'processing': 'status-processing',
-      'confirmed': 'status-confirmed',
-      'cancelled': 'status-cancelled'
-    };
-    return statusClasses[statusStr] || 'status-new';
+  getDisplayStatus(status: string): string {
+    const legacyStatus = toLegacyStatus(status);
+    if (legacyStatus) {
+      const keyMap: { [key in OrderStatus]: string } = {
+        [OrderStatus.DRAFT]: 'orders.draft',
+        [OrderStatus.NEW]: 'orders.new',
+        [OrderStatus.PROCESSING]: 'orders.processing',
+        [OrderStatus.CONFIRMED]: 'orders.confirmed',
+        [OrderStatus.CANCELLED]: 'orders.cancelled'
+      };
+      return this.translationService.instant(keyMap[legacyStatus]);
+    }
+    return this.formatCustomStageName(status);
   }
 
-  getTranslatedStatus(status: OrderStatus | string): string {
-    const statusEnum = typeof status === 'string' ? status as OrderStatus : status;
-    const statusKeys: { [key in OrderStatus]: string } = {
-      [OrderStatus.DRAFT]: 'orders.draft',
-      [OrderStatus.NEW]: 'orders.new',
-      [OrderStatus.PROCESSING]: 'orders.processing',
-      [OrderStatus.CONFIRMED]: 'orders.confirmed',
-      [OrderStatus.CANCELLED]: 'orders.cancelled'
-    };
-    const key = statusKeys[statusEnum] || 'orders.new';
-    return this.translationService.instant(key);
+  getStatusClass(status: string): string {
+    const legacyStatus = toLegacyStatus(status);
+    if (legacyStatus) {
+      const classMap: { [key in OrderStatus]: string } = {
+        [OrderStatus.DRAFT]: 'status-draft',
+        [OrderStatus.NEW]: 'status-new',
+        [OrderStatus.PROCESSING]: 'status-processing',
+        [OrderStatus.CONFIRMED]: 'status-confirmed',
+        [OrderStatus.CANCELLED]: 'status-cancelled'
+      };
+      return classMap[legacyStatus];
+    }
+    return this.getCustomStageClass(status);
+  }
+
+  private formatCustomStageName(stageName: string): string {
+    if (!stageName || stageName.trim() === '') {
+      return this.translationService.instant('orders.unknownStatus');
+    }
+    // Title case each word
+    return stageName.split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
+  }
+
+  private getCustomStageClass(stageName: string): string {
+    const lower = stageName.toLowerCase();
+    if (lower.includes('cancel') || lower.includes('reject')) return 'status-custom-cancelled';
+    if (lower.includes('confirm') || lower.includes('complet') || lower.includes('done')) return 'status-custom-confirmed';
+    if (lower.includes('process') || lower.includes('review') || lower.includes('pending')) return 'status-custom-processing';
+    return 'status-custom-default';
+  }
+
+  // Deprecated: kept for backward compatibility
+  getTranslatedStatus(status: string): string {
+    return this.getDisplayStatus(status);
   }
 
   /**

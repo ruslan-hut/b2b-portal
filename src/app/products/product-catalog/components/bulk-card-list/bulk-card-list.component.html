@@ -1,0 +1,27 @@
+@if (products.length === 0) {
+  <div class="empty-state">
+    <span class="material-icons empty-icon">search</span>
+    <h2>{{ 'products.noProducts' | translate }}</h2>
+    <p>{{ 'common.search' | translate }}</p>
+  </div>
+} @else {
+  @for (product of products; track product.id) {
+    <app-bulk-product-card
+      [product]="product"
+      [bulkQuantity]="getBulkQuantity(product.id)"
+      [isExpanded]="isExpanded(product.id)"
+      [isInCart]="isInCart(product.id)"
+      [priceWithVat]="getPriceWithVat(product)"
+      [originalPrice]="getOriginalPriceWithVat(product)"
+      [hasDiscount]="hasDiscount()"
+      [subtotalWithVat]="getItemSubtotalWithVat(product, getBulkQuantity(product.id))"
+      [currency]="currency"
+      (cardToggle)="onCardToggle(product.id)"
+      (productSelect)="onProductSelect(product)"
+      (quantityIncrement)="onQuantityIncrement(product)"
+      (quantityDecrement)="onQuantityDecrement(product)"
+      (quantityChange)="onQuantityChange(product, $event)"
+      (imageClick)="onImageClick(product, product.imageUrl || '')"
+    />
+  }
+}

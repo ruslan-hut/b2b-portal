@@ -1,7 +1,7 @@
 import { Component, OnInit, ChangeDetectorRef, ChangeDetectionStrategy, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
 import { OrderService } from '../../core/services/order.service';
-import { Order, OrderStatus } from '../../core/models/order.model';
+import { Order, OrderStatus, toLegacyStatus } from '../../core/models/order.model';
 import { TranslationService } from '../../core/services/translation.service';
 import { AuthService } from '../../core/services/auth.service';
 import { CurrencyService } from '../../core/services/currency.service';
@@ -22,7 +22,7 @@ export class OrderHistoryComponent implements OnInit, OnDestroy {
   currencyName: string | undefined = undefined;
   
   // Filter properties
-  statusFilter: OrderStatus | '' = '';
+  statusFilter: string = '';
   dateFromFilter: string = '';
   dateToFilter: string = '';
   filtersExpanded: boolean = false;
@@ -135,27 +135,57 @@ export class OrderHistoryComponent implements OnInit, OnDestroy {
     return !!(this.statusFilter || this.dateFromFilter || this.dateToFilter);
   }
 
-  getStatusClass(status: OrderStatus): string {
-    const statusClasses: { [key in OrderStatus]: string } = {
-      [OrderStatus.DRAFT]: 'status-draft',
-      [OrderStatus.NEW]: 'status-new',
-      [OrderStatus.PROCESSING]: 'status-processing',
-      [OrderStatus.CONFIRMED]: 'status-confirmed',
-      [OrderStatus.CANCELLED]: 'status-cancelled'
-    };
-    return statusClasses[status] || 'status-new';
+  getDisplayStatus(status: string): string {
+    const legacyStatus = toLegacyStatus(status);
+    if (legacyStatus) {
+      const keyMap: { [key in OrderStatus]: string } = {
+        [OrderStatus.DRAFT]: 'orders.draft',
+        [OrderStatus.NEW]: 'orders.new',
+        [OrderStatus.PROCESSING]: 'orders.processing',
+        [OrderStatus.CONFIRMED]: 'orders.confirmed',
+        [OrderStatus.CANCELLED]: 'orders.cancelled'
+      };
+      return this.translationService.instant(keyMap[legacyStatus]);
+    }
+    return this.formatCustomStageName(status);
   }
 
-  getTranslatedStatus(status: OrderStatus): string {
-    const statusKeys: { [key in OrderStatus]: string } = {
-      [OrderStatus.DRAFT]: 'orders.draft',
-      [OrderStatus.NEW]: 'orders.new',
-      [OrderStatus.PROCESSING]: 'orders.processing',
-      [OrderStatus.CONFIRMED]: 'orders.confirmed',
-      [OrderStatus.CANCELLED]: 'orders.cancelled'
-    };
-    const key = statusKeys[status] || 'orders.new';
-    return this.translationService.instant(key);
+  getStatusClass(status: string): string {
+    const legacyStatus = toLegacyStatus(status);
+    if (legacyStatus) {
+      const classMap: { [key in OrderStatus]: string } = {
+        [OrderStatus.DRAFT]: 'status-draft',
+        [OrderStatus.NEW]: 'status-new',
+        [OrderStatus.PROCESSING]: 'status-processing',
+        [OrderStatus.CONFIRMED]: 'status-confirmed',
+        [OrderStatus.CANCELLED]: 'status-cancelled'
+      };
+      return classMap[legacyStatus];
+    }
+    return this.getCustomStageClass(status);
+  }
+
+  private formatCustomStageName(stageName: string): string {
+    if (!stageName || stageName.trim() === '') {
+      return this.translationService.instant('orders.unknownStatus');
+    }
+    // Title case each word
+    return stageName.split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
+  }
+
+  private getCustomStageClass(stageName: string): string {
+    const lower = stageName.toLowerCase();
+    if (lower.includes('cancel') || lower.includes('reject')) return 'status-custom-cancelled';
+    if (lower.includes('confirm') || lower.includes('complet') || lower.includes('done')) return 'status-custom-confirmed';
+    if (lower.includes('process') || lower.includes('review') || lower.includes('pending')) return 'status-custom-processing';
+    return 'status-custom-default';
+  }
+
+  // Deprecated: kept for backward compatibility
+  getTranslatedStatus(status: string): string {
+    return this.getDisplayStatus(status);
   }
 
   viewOrderDetails(orderId: string): void {
@@ -171,14 +201,39 @@ export class OrderHistoryComponent implements OnInit, OnDestroy {
     return order.number ? `${dateStr} - ${order.number}` : dateStr;
   }
 
-  getStatusOptions(): Array<{ value: OrderStatus | ''; label: string }> {
-    return [
-      { value: '', label: this.translationService.instant('orders.allStatuses') || 'All Statuses' },
-      { value: OrderStatus.DRAFT, label: this.translationService.instant('orders.draft') },
-      { value: OrderStatus.NEW, label: this.translationService.instant('orders.new') },
-      { value: OrderStatus.PROCESSING, label: this.translationService.instant('orders.processing') },
-      { value: OrderStatus.CONFIRMED, label: this.translationService.instant('orders.confirmed') },
-      { value: OrderStatus.CANCELLED, label: this.translationService.instant('orders.cancelled') }
+  getStatusOptions(): Array<{ value: string; label: string }> {
+    const options: Array<{ value: string; label: string }> = [
+      { value: '', label: this.translationService.instant('orders.allStatuses') }
     ];
+
+    // Collect unique statuses from loaded orders
+    const uniqueStatuses = new Set<string>();
+    this.orders.forEach(order => {
+      if (order.status) uniqueStatuses.add(order.status);
+    });
+
+    // Separate legacy and custom statuses
+    const legacyStatuses: OrderStatus[] = [];
+    const customStatuses: string[] = [];
+
+    uniqueStatuses.forEach(status => {
+      const legacy = toLegacyStatus(status);
+      legacy ? legacyStatuses.push(legacy) : customStatuses.push(status);
+    });
+
+    // Add legacy statuses first (in defined order)
+    const legacyOrder = [OrderStatus.DRAFT, OrderStatus.NEW, OrderStatus.PROCESSING, OrderStatus.CONFIRMED, OrderStatus.CANCELLED];
+    legacyOrder.forEach(status => {
+      if (legacyStatuses.includes(status)) {
+        options.push({ value: status, label: this.getDisplayStatus(status) });
+      }
+    });
+
+    // Add custom statuses (alphabetical)
+    customStatuses.sort().forEach(status => {
+      options.push({ value: status, label: this.getDisplayStatus(status) });
+    });
+
+    return options;
   }
 }

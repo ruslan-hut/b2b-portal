@@ -3,6 +3,13 @@ import { HttpClient } from '@angular/common/http';
 import { Subscription } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 
+// Subscription type bitflags
+const SUB_TYPE_LOGS = 1;           // 0b00001 - Log notifications
+const SUB_TYPE_NEW_ORDERS = 2;     // 0b00010 - New order notifications
+const SUB_TYPE_STAGE_CHANGES = 4;  // 0b00100 - Stage change notifications
+const SUB_TYPE_ORDER_EDITS = 8;    // 0b01000 - Order edit notifications
+const SUB_TYPE_ALL_ORDERS = 16;    // 0b10000 - All orders flag (vs only assigned orders)
+
 interface TelegramSubscription {
   user_id: number;
   username: string;
@@ -10,6 +17,8 @@ interface TelegramSubscription {
   last_name: string;
   log_level: string;
   active: boolean;
+  subscription_types: number;
+  internal_user_uid: string | null;
   created_at: string;
 }
 
@@ -21,6 +30,20 @@ interface SubscriptionsResponse {
     total: number;
     total_pages: number;
   };
+}
+
+interface InternalUser {
+  uid: string;
+  username: string;
+  first_name: string;
+  last_name: string;
+  user_role: string;
+}
+
+interface ApiResponse<T> {
+  data: T;
+  status: string;
+  message?: string;
 }
 
 @Component({
@@ -49,12 +72,33 @@ export class SubscriptionsComponent implements OnInit, OnDestroy {
   // Filters
   statusFilter: 'all' | 'active' | 'inactive' = 'all';
   searchQuery = '';
+  isFiltersExpanded = false;
 
   // Log level options
   logLevels = ['debug', 'info', 'warning', 'error'];
 
   // Expanded items for mobile view
   expandedItems = new Set<number>();
+
+  // Users list for assignment
+  users: InternalUser[] = [];
+
+  // Edit modal state
+  editingSubscription: TelegramSubscription | null = null;
+  editSubscriptionTypes: {
+    logs: boolean;
+    new_orders: boolean;
+    stage_changes: boolean;
+    order_edits: boolean;
+    all_orders: boolean;
+  } = {
+    logs: true,
+    new_orders: false,
+    stage_changes: false,
+    order_edits: false,
+    all_orders: false
+  };
+  editInternalUserUid: string | null = null;
 
   constructor(
     private http: HttpClient,
@@ -63,6 +107,7 @@ export class SubscriptionsComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.loadSubscriptions();
+    this.loadUsers();
   }
 
   ngOnDestroy(): void {
@@ -125,6 +170,11 @@ export class SubscriptionsComponent implements OnInit, OnDestroy {
 
   onSearchChange(): void {
     this.applyFilters();
+  }
+
+  toggleFilters(): void {
+    this.isFiltersExpanded = !this.isFiltersExpanded;
+    this.cdr.detectChanges();
   }
 
   toggleActive(item: TelegramSubscription): void {
@@ -234,6 +284,118 @@ export class SubscriptionsComponent implements OnInit, OnDestroy {
 
   formatDate(dateString: string): string {
     return new Date(dateString).toLocaleString();
+  }
+
+  loadUsers(): void {
+    const url = `${this.apiUrl}/admin/user?offset=0&limit=1000`;
+    this.subscriptions.add(
+      this.http.get<ApiResponse<InternalUser[]>>(url).subscribe({
+        next: (response) => {
+          this.users = response.data || [];
+          this.cdr.detectChanges();
+        },
+        error: (err) => {
+          console.error('Failed to load users:', err);
+        }
+      })
+    );
+  }
+
+  // Subscription types helper methods
+  hasSubscriptionType(sub: TelegramSubscription, type: number): boolean {
+    return (sub.subscription_types & type) !== 0;
+  }
+
+  getSubscriptionTypesLabel(sub: TelegramSubscription): string {
+    const types: string[] = [];
+    if (this.hasSubscriptionType(sub, SUB_TYPE_LOGS)) types.push('Logs');
+    if (this.hasSubscriptionType(sub, SUB_TYPE_NEW_ORDERS)) types.push('New Orders');
+    if (this.hasSubscriptionType(sub, SUB_TYPE_STAGE_CHANGES)) types.push('Stage Changes');
+    if (this.hasSubscriptionType(sub, SUB_TYPE_ORDER_EDITS)) types.push('Order Edits');
+    return types.length > 0 ? types.join(', ') : 'None';
+  }
+
+  getAssignmentLabel(sub: TelegramSubscription): string {
+    if (this.hasSubscriptionType(sub, SUB_TYPE_ALL_ORDERS)) {
+      return 'All Orders';
+    } else if (sub.internal_user_uid) {
+      const user = this.users.find(u => u.uid === sub.internal_user_uid);
+      if (user) {
+        return `Assigned: ${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username;
+      }
+      return 'Assigned (Unknown User)';
+    }
+    return 'All Orders (Legacy)';
+  }
+
+  // Edit subscription types modal
+  openEditModal(item: TelegramSubscription): void {
+    this.editingSubscription = item;
+    this.editSubscriptionTypes = {
+      logs: this.hasSubscriptionType(item, SUB_TYPE_LOGS),
+      new_orders: this.hasSubscriptionType(item, SUB_TYPE_NEW_ORDERS),
+      stage_changes: this.hasSubscriptionType(item, SUB_TYPE_STAGE_CHANGES),
+      order_edits: this.hasSubscriptionType(item, SUB_TYPE_ORDER_EDITS),
+      all_orders: this.hasSubscriptionType(item, SUB_TYPE_ALL_ORDERS)
+    };
+    this.editInternalUserUid = item.internal_user_uid;
+    this.cdr.detectChanges();
+  }
+
+  closeEditModal(): void {
+    this.editingSubscription = null;
+    this.cdr.detectChanges();
+  }
+
+  saveSubscriptionTypes(): void {
+    if (!this.editingSubscription) return;
+
+    // Calculate subscription types bitflags
+    let subscriptionTypes = 0;
+    if (this.editSubscriptionTypes.logs) subscriptionTypes |= SUB_TYPE_LOGS;
+    if (this.editSubscriptionTypes.new_orders) subscriptionTypes |= SUB_TYPE_NEW_ORDERS;
+    if (this.editSubscriptionTypes.stage_changes) subscriptionTypes |= SUB_TYPE_STAGE_CHANGES;
+    if (this.editSubscriptionTypes.order_edits) subscriptionTypes |= SUB_TYPE_ORDER_EDITS;
+    if (this.editSubscriptionTypes.all_orders) subscriptionTypes |= SUB_TYPE_ALL_ORDERS;
+
+    const updateData: any = {
+      user_id: this.editingSubscription.user_id,
+      subscription_types: subscriptionTypes
+    };
+
+    // Only include internal_user_uid if not "all_orders"
+    if (!this.editSubscriptionTypes.all_orders) {
+      updateData.internal_user_uid = this.editInternalUserUid || null;
+    } else {
+      // Clear user assignment when "all_orders" is enabled
+      updateData.internal_user_uid = null;
+    }
+
+    this.subscriptions.add(
+      this.http.put(`${this.apiUrl}/admin/telegram/subscriptions/types`, {
+        data: updateData
+      }).subscribe({
+        next: () => {
+          // Update local item
+          this.editingSubscription!.subscription_types = subscriptionTypes;
+          this.editingSubscription!.internal_user_uid = updateData.internal_user_uid;
+          this.closeEditModal();
+          this.cdr.detectChanges();
+        },
+        error: (err) => {
+          console.error('Failed to update subscription types:', err);
+          this.error = 'Failed to update subscription types';
+          this.cdr.detectChanges();
+        }
+      })
+    );
+  }
+
+  getUserDisplayName(userUid: string | null): string {
+    if (!userUid) return 'None';
+    const user = this.users.find(u => u.uid === userUid);
+    if (!user) return 'Unknown User';
+    return `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username;
   }
 
   refresh(): void {

@@ -1,3 +1,8 @@
+/* ========================================
+   DESIGN POLICY COMPLIANCE - SHARED MIXINS
+   ======================================== */
+@use 'styles/mixins' as *;
+
 /* Global Styles */
 * {
   margin: 0;
@@ -11,6 +16,19 @@
 
 /* Base variables (non-themeable) */
 :root {
+  /* Typography - Font Families */
+  --font-heading: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-body: 'Commissioner', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+  /* Typography - Font Weights */
+  --font-weight-light: 300;
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --font-weight-extrabold: 800;
+  --font-weight-black: 900;
+
   /* Border radius - standardized across components */
   --radius-xs: 2px;
   --radius-sm: 4px;
@@ -23,8 +41,8 @@
   --radius-3xl: 24px;
   --radius-pill: 9999px;
 
-  /* Touch targets - minimum 44px for accessibility */
-  --touch-target-min: 44px;
+  /* Touch targets - minimum 48px for WCAG 2.1 AA compliance */
+  --touch-target-min: 48px;
 
   /* Spacing - extended scale */
   --spacing-xs: 4px;
@@ -60,6 +78,25 @@
   --color-secondary: #764ba2;
   --color-secondary-dark: #5f3d85;
   --color-secondary-rgb: 118, 75, 162;
+
+  /* Material Design 3 Color Roles */
+  --color-on-primary: #ffffff;
+  --color-primary-container: #e8edff;
+  --color-on-primary-container: #1e0060;
+
+  --color-on-secondary: #ffffff;
+  --color-secondary-container: #f3e5ff;
+  --color-on-secondary-container: #2a0052;
+
+  --color-surface: var(--card-bg);
+  --color-surface-variant: #f0f4ff;
+  --color-on-surface: var(--color-text-primary);
+  --color-on-surface-variant: var(--color-text-secondary);
+
+  --color-error: var(--color-danger);
+  --color-on-error: #ffffff;
+  --color-error-container: #f9dedc;
+  --color-on-error-container: #490909;
 
   /* Gradients */
   --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -116,6 +153,14 @@
   --shadow-xl: 0 10px 40px rgba(0, 0, 0, 0.2);
   --shadow-primary: 0 5px 20px rgba(102, 126, 234, 0.4);
   --shadow-primary-lg: 0 8px 28px rgba(102, 126, 234, 0.5);
+
+  /* Material Design 3 Elevation System */
+  --elevation-0: none;
+  --elevation-1: var(--shadow-xs);     /* Cards, raised elements */
+  --elevation-2: var(--shadow-sm-lg);  /* Hover cards, buttons */
+  --elevation-3: var(--shadow-md-lg);  /* Dialogs, menus */
+  --elevation-4: var(--shadow-lg);     /* Modals */
+  --elevation-5: var(--shadow-xl);     /* FABs, tooltips */
 
   /* Focus rings */
   --focus-ring-color: rgba(102, 126, 234, 0.25);
@@ -182,11 +227,53 @@
   --admin-nav-hover: var(--admin-nav-item-hover-bg);
   --admin-nav-active: var(--admin-nav-item-active-bg);
 
+  /* Component: CRM - Priority Badges */
+  --priority-low-bg: rgba(107, 114, 128, 0.1);
+  --priority-low-color: #6b7280;
+  --priority-medium-bg: rgba(59, 130, 246, 0.1);
+  --priority-medium-color: #3b82f6;
+  --priority-high-bg: rgba(245, 158, 11, 0.1);
+  --priority-high-color: #f59e0b;
+  --priority-urgent-bg: rgba(239, 68, 68, 0.1);
+  --priority-urgent-color: #ef4444;
+
+  /* Component: CRM - Status Badges */
+  --status-pending-bg: rgba(107, 114, 128, 0.1);
+  --status-pending-color: #6b7280;
+  --status-in-progress-bg: rgba(59, 130, 246, 0.1);
+  --status-in-progress-color: #3b82f6;
+  --status-completed-bg: rgba(34, 197, 94, 0.1);
+  --status-completed-color: #22c55e;
+  --status-cancelled-bg: rgba(239, 68, 68, 0.1);
+  --status-cancelled-color: #ef4444;
+
+  /* Component: CRM - Stage Badges */
+  --stage-new-bg: #dbeafe;
+  --stage-new-color: #2563eb;
+  --stage-qualified-bg: #d1fae5;
+  --stage-qualified-color: #059669;
+  --stage-proposal-bg: #e0e7ff;
+  --stage-proposal-color: #4f46e5;
+  --stage-negotiation-bg: #fef3c7;
+  --stage-negotiation-color: #d97706;
+  --stage-won-bg: #d1fae5;
+  --stage-won-color: #059669;
+  --stage-lost-bg: #fee2e2;
+  --stage-lost-color: #dc2626;
+
+  /* Component: CRM - Alerts */
+  --alert-overdue-bg: #fee2e2;
+  --alert-overdue-border: #fca5a5;
+  --alert-overdue-color: #b91c1c;
+
+  /* Component: CRM - Order Stage Border */
+  --stage-border-warning: #f59e0b;
+
   /* Sticky Column Shadows */
   --shadow-sticky: 2px 0 4px rgba(0, 0, 0, 0.1);
   --shadow-sticky-light: 2px 0 4px rgba(0, 0, 0, 0.05);
 
-  /* Status Badges */
+  /* Status Badges (for Orders) */
   --status-draft-bg: #ecf0f1;
   --status-draft-text: #95a5a6;
   --status-new-bg: #d6eaf8;
@@ -197,6 +284,16 @@
   --status-confirmed-text: #27ae60;
   --status-cancelled-bg: #fadbd8;
   --status-cancelled-text: #e74c3c;
+
+  /* Custom Stage Badges */
+  --status-custom-default-bg: #e8ecff;
+  --status-custom-default-text: #667eea;
+  --status-custom-processing-bg: #fff4e6;
+  --status-custom-processing-text: #f39c12;
+  --status-custom-confirmed-bg: #e6f7ed;
+  --status-custom-confirmed-text: #27ae60;
+  --status-custom-cancelled-bg: #ffe6e6;
+  --status-custom-cancelled-text: #e74c3c;
 
   /* Spinners */
   --spinner-border: rgba(102, 126, 234, 0.2);
@@ -221,6 +318,25 @@
   --color-secondary: #9066c0;
   --color-secondary-dark: #764ba2;
   --color-secondary-rgb: 144, 102, 192;
+
+  /* Material Design 3 Color Roles - Dark Mode */
+  --color-on-primary: #0d1117;
+  --color-primary-container: #1c2840;
+  --color-on-primary-container: #c5d0ff;
+
+  --color-on-secondary: #0d1117;
+  --color-secondary-container: #2d1f40;
+  --color-on-secondary-container: #e5d4ff;
+
+  --color-surface: var(--card-bg);
+  --color-surface-variant: #30363d;
+  --color-on-surface: var(--color-text-primary);
+  --color-on-surface-variant: var(--color-text-secondary);
+
+  --color-error: var(--color-danger);
+  --color-on-error: #0d1117;
+  --color-error-container: #3a1a1a;
+  --color-on-error-container: #fca5a5;
 
   /* Gradients */
   --gradient-primary: linear-gradient(135deg, #7b93f0 0%, #9066c0 100%);
@@ -275,6 +391,14 @@
   --shadow-primary: 0 5px 20px rgba(123, 147, 240, 0.3);
   --shadow-primary-lg: 0 8px 28px rgba(123, 147, 240, 0.4);
 
+  /* Material Design 3 Elevation System */
+  --elevation-0: none;
+  --elevation-1: var(--shadow-xs);     /* Cards, raised elements */
+  --elevation-2: var(--shadow-sm-lg);  /* Hover cards, buttons */
+  --elevation-3: var(--shadow-md-lg);  /* Dialogs, menus */
+  --elevation-4: var(--shadow-lg);     /* Modals */
+  --elevation-5: var(--shadow-xl);     /* FABs, tooltips */
+
   /* Component: Inputs */
   --input-bg: #0d1117;
   --input-border: var(--color-border);
@@ -294,9 +418,9 @@
 
   /* Component: Cards */
   --card-bg: #161b22;
-  --card-border: transparent;
-  --card-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
-  --card-hover-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+  --card-border: #30363d;  /* Visible border for dark theme (matches --color-border) */
+  --card-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+  --card-hover-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
 
   /* Component: Tables */
   --table-header-bg: linear-gradient(135deg, #2d3748 0%, #352f44 100%);
@@ -330,11 +454,53 @@
   --admin-nav-hover: var(--admin-nav-item-hover-bg);
   --admin-nav-active: var(--admin-nav-item-active-bg);
 
+  /* Component: CRM - Priority Badges (Dark Mode) */
+  --priority-low-bg: rgba(156, 163, 175, 0.15);
+  --priority-low-color: #9ca3af;
+  --priority-medium-bg: rgba(96, 165, 250, 0.15);
+  --priority-medium-color: #60a5fa;
+  --priority-high-bg: rgba(251, 191, 36, 0.15);
+  --priority-high-color: #fbbf24;
+  --priority-urgent-bg: rgba(248, 113, 113, 0.15);
+  --priority-urgent-color: #f87171;
+
+  /* Component: CRM - Status Badges (Dark Mode) */
+  --status-pending-bg: rgba(156, 163, 175, 0.15);
+  --status-pending-color: #9ca3af;
+  --status-in-progress-bg: rgba(96, 165, 250, 0.15);
+  --status-in-progress-color: #60a5fa;
+  --status-completed-bg: rgba(110, 231, 183, 0.15);
+  --status-completed-color: #6ee7b7;
+  --status-cancelled-bg: rgba(248, 113, 113, 0.15);
+  --status-cancelled-color: #f87171;
+
+  /* Component: CRM - Stage Badges (Dark Mode) */
+  --stage-new-bg: #1e3a5f;
+  --stage-new-color: #93c5fd;
+  --stage-qualified-bg: #1a4d2e;
+  --stage-qualified-color: #6ee7b7;
+  --stage-proposal-bg: #2d2a5f;
+  --stage-proposal-color: #a5b4fc;
+  --stage-negotiation-bg: #4a3a1a;
+  --stage-negotiation-color: #fcd34d;
+  --stage-won-bg: #1a4d2e;
+  --stage-won-color: #6ee7b7;
+  --stage-lost-bg: #3a1a1a;
+  --stage-lost-color: #fca5a5;
+
+  /* Component: CRM - Alerts (Dark Mode) */
+  --alert-overdue-bg: #3a1a1a;
+  --alert-overdue-border: #5a2a2a;
+  --alert-overdue-color: #fca5a5;
+
+  /* Component: CRM - Order Stage Border (Dark Mode) */
+  --stage-border-warning: #fbbf24;
+
   /* Sticky Column Shadows */
   --shadow-sticky: 2px 0 4px rgba(0, 0, 0, 0.3);
   --shadow-sticky-light: 2px 0 4px rgba(0, 0, 0, 0.2);
 
-  /* Status Badges */
+  /* Status Badges (for Orders) */
   --status-draft-bg: #21262d;
   --status-draft-text: #8b949e;
   --status-new-bg: #1c2840;
@@ -345,6 +511,16 @@
   --status-confirmed-text: #34d058;
   --status-cancelled-bg: #3a1a1a;
   --status-cancelled-text: #f85149;
+
+  /* Custom Stage Badges (Dark Theme) */
+  --status-custom-default-bg: #2d2f4a;
+  --status-custom-default-text: #8a9bff;
+  --status-custom-processing-bg: #3a2a1a;
+  --status-custom-processing-text: #f0b429;
+  --status-custom-confirmed-bg: #1a3a2a;
+  --status-custom-confirmed-text: #34d058;
+  --status-custom-cancelled-bg: #3a1a1a;
+  --status-custom-cancelled-text: #f85149;
 
   /* Spinners */
   --spinner-border: rgba(123, 147, 240, 0.3);
@@ -370,6 +546,25 @@
     --color-secondary: #9066c0;
     --color-secondary-dark: #764ba2;
     --color-secondary-rgb: 144, 102, 192;
+
+    /* Material Design 3 Color Roles - System Theme (Dark) */
+    --color-on-primary: #0d1117;
+    --color-primary-container: #1c2840;
+    --color-on-primary-container: #c5d0ff;
+
+    --color-on-secondary: #0d1117;
+    --color-secondary-container: #2d1f40;
+    --color-on-secondary-container: #e5d4ff;
+
+    --color-surface: var(--card-bg);
+    --color-surface-variant: #30363d;
+    --color-on-surface: var(--color-text-primary);
+    --color-on-surface-variant: var(--color-text-secondary);
+
+    --color-error: var(--color-danger);
+    --color-on-error: #0d1117;
+    --color-error-container: #3a1a1a;
+    --color-on-error-container: #fca5a5;
 
     /* Gradients */
     --gradient-primary: linear-gradient(135deg, #7b93f0 0%, #9066c0 100%);
@@ -424,6 +619,14 @@
     --shadow-primary: 0 5px 20px rgba(123, 147, 240, 0.3);
     --shadow-primary-lg: 0 8px 28px rgba(123, 147, 240, 0.4);
 
+    /* Material Design 3 Elevation System */
+    --elevation-0: none;
+    --elevation-1: var(--shadow-xs);     /* Cards, raised elements */
+    --elevation-2: var(--shadow-sm-lg);  /* Hover cards, buttons */
+    --elevation-3: var(--shadow-md-lg);  /* Dialogs, menus */
+    --elevation-4: var(--shadow-lg);     /* Modals */
+    --elevation-5: var(--shadow-xl);     /* FABs, tooltips */
+
     /* Component: Inputs */
     --input-bg: #0d1117;
     --input-border: var(--color-border);
@@ -443,9 +646,9 @@
 
     /* Component: Cards */
     --card-bg: #161b22;
-    --card-border: transparent;
-    --card-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
-    --card-hover-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+    --card-border: #30363d;  /* Visible border for dark theme (matches --color-border) */
+    --card-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+    --card-hover-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
 
     /* Component: Tables */
     --table-header-bg: linear-gradient(135deg, #2d3748 0%, #352f44 100%);
@@ -519,7 +722,8 @@ html.theme-transitioning *::after {
 }
 
 body {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: var(--font-body);  /* Commissioner */
+  font-weight: var(--font-weight-regular);
   line-height: 1.6;
   color: var(--color-text-primary);
   background: var(--color-background);
@@ -528,15 +732,26 @@ body {
   /* Prevent text size adjustment on orientation change */
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
+  /* Prevent horizontal overflow */
+  overflow-x: hidden;
+  max-width: 100vw;
 }
 
-h1, h2, h3, h4, h5, h6 {
-  font-weight: 700;
-  line-height: 1.2;
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-heading);  /* Montserrat */
+  font-weight: var(--font-weight-bold);
+  line-height: 1.25;
+  margin: 0;
 }
 
-button {
-  font-family: inherit;
+button,
+.button {
+  @include button-typography;
   /* Improve touch response */
   touch-action: manipulation;
 }
@@ -549,7 +764,9 @@ button {
 }
 
 /* Form Resets */
-input, textarea, select {
+input,
+textarea,
+select {
   font-family: inherit;
   /* Standardized border-radius */
   border-radius: var(--radius-md);
@@ -565,6 +782,7 @@ input, textarea, select {
 }
 
 @media (prefers-color-scheme: dark) {
+
   [data-theme="system"] input,
   [data-theme="system"] textarea,
   [data-theme="system"] select {
@@ -620,6 +838,8 @@ textarea {
 /* Prevent pull-to-refresh on overscroll */
 html {
   overscroll-behavior: none;
+  overflow-x: hidden;
+  max-width: 100vw;
 }
 
 /* Material Icons global styles */
@@ -642,6 +862,7 @@ html {
 
 /* Mobile-specific improvements */
 @media (max-width: 768px) {
+
   /* Prevent iOS zoom on input focus */
   input[type="text"],
   input[type="email"],
@@ -665,4 +886,213 @@ html {
   .container {
     padding: 0 12px;
   }
+}
+
+/* ========================================
+   BUTTON SYSTEM - Material Design 3
+   ======================================== */
+
+/* 1. Primary CTA Button - Max 1 per screen */
+.btn-primary-cta,
+.button-primary-cta {
+  font-family: var(--font-body);
+  font-weight: var(--font-weight-medium);
+  font-size: 14px;
+  line-height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-sm) var(--spacing-md);
+  min-height: var(--touch-target-min);
+  background: var(--gradient-primary);
+  color: var(--color-on-primary);
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+  white-space: nowrap;
+
+  .material-icons {
+    font-size: 18px;
+  }
+
+  &:hover:not(:disabled) {
+    opacity: 0.9;
+  }
+
+  &:focus:not(:disabled) {
+    outline: none;
+    box-shadow: var(--focus-ring);
+  }
+
+  &:active:not(:disabled) {
+    opacity: 0.8;
+  }
+
+  &:disabled {
+    opacity: 0.38;
+    cursor: not-allowed;
+  }
+}
+
+/* 2. Action Bar Button - Flat Outlined (all toolbars) */
+.btn-action-bar,
+.button-action-bar {
+  font-family: var(--font-body);
+  font-weight: var(--font-weight-medium);
+  font-size: 14px;
+  line-height: 20px;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-sm) var(--spacing-md);
+  min-height: var(--touch-target-min);
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text-primary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+
+  .material-icons {
+    font-size: 18px;
+  }
+
+  &:hover:not(:disabled) {
+    background: var(--color-surface-variant);
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+  }
+
+  &:focus:not(:disabled) {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: var(--focus-ring);
+  }
+
+  &:active:not(:disabled) {
+    background: var(--color-primary-overlay);
+  }
+
+  &:disabled {
+    opacity: 0.38;
+    cursor: not-allowed;
+  }
+}
+
+/* 3. Secondary Button - Filled Tonal (important non-primary) */
+.btn-secondary,
+.button-secondary {
+  padding: 14px 24px;
+  min-height: 48px;
+  background: var(--color-primary-container);
+  color: var(--color-on-primary-container);
+  border: none;
+  border-radius: var(--radius-md);
+  font-family: var(--font-body);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  box-shadow: var(--elevation-1);
+  transition: all 0.3s ease;
+
+  &:hover:not(:disabled) {
+    box-shadow: var(--elevation-2);
+    filter: brightness(0.95);
+  }
+
+  &:active:not(:disabled) {
+    box-shadow: var(--elevation-0);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+/* 4. Text Button - Cancel/dismiss */
+.btn-text,
+.button-text {
+  padding: 10px 16px;
+  min-height: 40px;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-md);
+  color: var(--color-primary);
+  font-family: var(--font-body);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  &:hover:not(:disabled) {
+    background: var(--color-primary-overlay-light);
+  }
+
+  &:active:not(:disabled) {
+    background: var(--color-primary-overlay);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+/* 5. Icon Button - Toolbars */
+.btn-icon,
+.button-icon {
+  width: 48px;
+  height: 48px;
+  padding: 12px;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-md);
+  color: var(--color-text-secondary);
+  font-family: var(--font-body);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+
+  &:hover:not(:disabled) {
+    background: var(--color-surface-variant);
+    color: var(--color-primary);
+  }
+
+  &:active:not(:disabled) {
+    background: var(--color-primary-overlay);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+/* Legacy Support - Map old classes to new system */
+.btn-primary {
+  @extend .btn-primary-cta;
+}
+
+.btn-filter {
+  @extend .btn-action-bar;
+}
+
+/* ========================================
+   ACCESSIBILITY - Screen Reader Only
+   ======================================== */
+.sr-only,
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }

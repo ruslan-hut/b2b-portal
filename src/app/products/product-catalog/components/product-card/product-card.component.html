@@ -1,0 +1,67 @@
+<div class="product-card" (click)="onCardClick($event)">
+  <div class="product-image" (click)="onImageClick($event)">
+    <img
+      [src]="getProductImageUrl()"
+      [alt]="product.name"
+      (error)="onImageError($event)" />
+
+    <!-- Product badges (new / hot sale) -->
+    <div class="product-badges">
+      @if (product.isNew) {
+        <span class="badge badge-new">{{ 'products.new' | translate }}</span>
+      }
+      @if (product.isHotSale) {
+        <span class="badge badge-hot-sale">{{ 'products.hotSale' | translate }}</span>
+      }
+    </div>
+
+    <!-- Cart quantity badge -->
+    @if (cartQuantity > 0) {
+      <div class="quantity-badge">
+        <span class="material-icons quantity-icon">shopping_cart</span>
+        <span class="quantity-badge-text">{{ cartQuantity }}</span>
+      </div>
+    }
+  </div>
+
+  <div class="product-info">
+    <div class="product-category">{{ product.category }}</div>
+    <h3 class="product-name">{{ product.name }}</h3>
+    <div class="product-sku">{{ 'products.sku' | translate }}: {{ product.sku }}</div>
+
+    <div class="product-footer">
+      <div class="product-price">
+        @if (product.price && product.price > 0) {
+          <div class="price-row">
+            <div class="price-values">
+              <!-- Original price with VAT (strikethrough if discount) -->
+              @if (hasDiscount) {
+                <div class="original-price">
+                  <span class="strikethrough">{{ originalPrice.toFixed(2) }}</span>
+                </div>
+              }
+              <!-- Discounted price (prominent) -->
+              <div class="price-amount" [class.discounted]="hasDiscount">
+                {{ priceWithVat.toFixed(2) }}
+              </div>
+            </div>
+            @if (product.discountPercent && product.discountPercent > 0) {
+              <span class="discount-tag">{{ product.discountPercent }}%</span>
+            }
+          </div>
+          <div class="price-label small">{{ 'products.price' | translate }}</div>
+        } @else {
+          {{ 'products.priceNotAvailable' | translate }}
+        }
+      </div>
+
+      <button
+        class="btn btn-add-to-cart"
+        (click)="onAddToCartClick($event)"
+        [disabled]="!product.inStock"
+        >
+        {{ product.inStock ? ('products.addToCart' | translate) : ('products.outOfStock' | translate) }}
+      </button>
+    </div>
+  </div>
+</div>

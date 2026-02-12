@@ -23,12 +23,14 @@ export interface Client {
   discount: number;
   vat_rate?: number; // VAT rate percentage (0-100)
   vat_number?: string; // VAT registration number (if registered)
+  business_registration_number?: string; // Business registration number
   currency: string;
   price_type_uid: string;
   store_uid: string; // Required: store assigned to client
   balance?: number; // Current monthly purchase turnover in cents (set by CRM)
   fixed_discount?: boolean; // If true, use discount field; if false, use scale lookup
   cumulative_discount?: boolean; // If true, use balance+order for scale; if false, only order total
+  language?: string; // Preferred language for product descriptions and UI
 }
 
 // Token information

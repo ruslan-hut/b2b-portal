@@ -1,0 +1,102 @@
+<div
+  class="bulk-product-card"
+  [class.expanded]="isExpanded"
+  [class.out-of-stock]="!product.inStock"
+  [class.in-cart]="isInCart"
+  (click)="onCardClick()"
+  >
+  <div class="card-header">
+    <div class="card-header-left">
+      <div class="card-sku">{{ product.sku }}</div>
+      <div class="card-name">{{ product.name }}</div>
+      @if (product.isNew || product.isHotSale) {
+        <div class="product-badges">
+          @if (product.isNew) {
+            <span class="badge badge-new">{{ 'products.new' | translate }}</span>
+          }
+          @if (product.isHotSale) {
+            <span class="badge badge-hot-sale">{{ 'products.hotSale' | translate }}</span>
+          }
+        </div>
+      }
+      <div class="card-category">{{ product.category }}</div>
+    </div>
+    <div class="card-header-right">
+      <div class="card-price-row">
+        @if (bulkQuantity > 0) {
+          <div class="card-quantity-badge">
+            <span class="material-icons quantity-icon">shopping_cart</span>
+            <span class="quantity-badge-text">{{ bulkQuantity }}</span>
+          </div>
+        }
+        <div class="card-price-container">
+          @if (hasDiscount) {
+            <div class="original-price">
+              {{ originalPrice.toFixed(2) }}
+            </div>
+          }
+          <div class="card-price-line">
+            <span class="card-price" [class.has-discount]="hasDiscount">
+              {{ priceWithVat.toFixed(2) }}
+            </span>
+            @if (product.discountPercent && product.discountPercent > 0) {
+              <span class="discount-tag-mobile">{{ product.discountPercent }}%</span>
+            }
+          </div>
+        </div>
+      </div>
+      <span class="status-dot" [class.available]="product.inStock" [class.unavailable]="!product.inStock"></span>
+    </div>
+  </div>
+  @if (isExpanded) {
+    <div class="card-content">
+      <div class="card-content-row">
+        <div class="card-image-section">
+          <img
+            [src]="getProductImageUrl()"
+            [alt]="product.name"
+            (error)="onImageError($event)"
+            (click)="onImageClick($event)"
+            class="card-product-image"
+            />
+        </div>
+        <div class="card-quantity-section">
+          <div class="quantity-label">{{ 'products.quantity' | translate }}</div>
+          <div class="quantity-controls">
+            <button
+              class="btn-quantity btn-decrement"
+              (click)="onDecrement($event)"
+              [disabled]="bulkQuantity === 0"
+              >
+              −
+            </button>
+            <input
+              type="number"
+              class="quantity-input-card"
+              [value]="bulkQuantity"
+              (input)="onQuantityInput($event)"
+              (click)="stopPropagation($event)"
+              min="0"
+              [max]="product.availableQuantity ?? 0"
+              [disabled]="!product.inStock"
+              placeholder="0"
+              />
+            <button
+              class="btn-quantity btn-increment"
+              (click)="onIncrement($event)"
+              [disabled]="!product.inStock || bulkQuantity >= (product.availableQuantity ?? 0)"
+              >
+              +
+            </button>
+          </div>
+          @if (bulkQuantity > 0) {
+            <div class="card-subtotal">
+              <span class="subtotal-label">{{ 'products.total' | translate }}:</span>
+              <span class="subtotal-value">{{ (subtotalWithVat * 100) | currencyFormat: currency }}</span>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  }
+</div>

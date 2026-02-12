@@ -1,15 +1,15 @@
 <div class="clients-container">
   <app-action-bar>
     <div actionBarLeft>
-      <button class="btn-filter" (click)="toggleFilters()" [class.active]="isFiltersExpanded">
-        <span class="material-icons">filter_list</span>
+      <button class="btn-filter" (click)="toggleFilters()" [class.active]="isFiltersExpanded" [attr.aria-label]="'Toggle filters'" [attr.aria-expanded]="isFiltersExpanded">
+        <span class="material-icons" aria-hidden="true">filter_list</span>
         <span class="btn-text">Filters</span>
-        <span class="material-icons toggle-icon">{{ isFiltersExpanded ? 'expand_less' : 'expand_more' }}</span>
+        <span class="material-icons toggle-icon" aria-hidden="true">{{ isFiltersExpanded ? 'expand_less' : 'expand_more' }}</span>
       </button>
     </div>
     <div actionBarRight>
-      <button class="btn-primary" (click)="createClient()">
-        <span class="material-icons">add</span>
+      <button class="btn-primary" (click)="createClient()" [attr.aria-label]="'Add new client'">
+        <span class="material-icons" aria-hidden="true">add</span>
         <span class="btn-text">Add</span>
       </button>
     </div>
@@ -17,24 +17,26 @@
 
   <div class="filters" [class.expanded]="isFiltersExpanded">
     <div class="filter-group">
-      <label>Status:</label>
-      <select [(ngModel)]="activeFilter" (change)="onFilterChange()">
+      <label for="clients-status-filter">Status:</label>
+      <select id="clients-status-filter" [(ngModel)]="activeFilter" (change)="onFilterChange()" [attr.aria-label]="'Filter clients by status'">
         <option value="all">All</option>
         <option value="active">Active</option>
         <option value="inactive">Inactive</option>
       </select>
     </div>
     <div class="filter-group">
-      <label>Search:</label>
+      <label for="clients-search">Search:</label>
       <div class="search-input-wrapper">
         <input
           type="text"
+          id="clients-search"
           [(ngModel)]="searchTerm"
           (keyup.enter)="onSearchChange()"
           placeholder="Search by name, email, or phone"
+          [attr.aria-label]="'Search clients by name, email, or phone'"
           />
-        <button type="button" class="search-icon-btn" (click)="onSearchChange()">
-          <span class="material-icons">search</span>
+        <button type="button" class="search-icon-btn" (click)="onSearchChange()" [attr.aria-label]="'Search clients'">
+          <span class="material-icons" aria-hidden="true">search</span>
         </button>
       </div>
     </div>
@@ -50,36 +52,44 @@
   @if (!loading && !error) {
     <!-- Desktop Table View -->
     <div class="clients-table desktop-only">
-      <table>
+      <table role="table" [attr.aria-label]="'Clients table'">
         <thead>
           <tr>
-            <th>Name</th>
-            <th>Email</th>
-            <th>Phone</th>
-            <th title="Client discount percentage (0-100%)">Discount</th>
-            <th title="Discount mode: Fixed uses discount field, Scale uses turnover-based calculation">Mode</th>
-            <th title="Current monthly purchase turnover">Balance</th>
-            <th title="VAT registration number">VAT Number</th>
-            <th>Status</th>
+            <th scope="col" id="col-name">Name</th>
+            <th scope="col" id="col-email">Email</th>
+            <th scope="col" id="col-phone">Phone</th>
+            <th scope="col" id="col-discount" [attr.aria-describedby]="'discount-help'">Discount</th>
+            <th scope="col" id="col-mode" [attr.aria-describedby]="'mode-help'">Mode</th>
+            <th scope="col" id="col-balance" [attr.aria-describedby]="'balance-help'">Balance</th>
+            <th scope="col" id="col-vat" [attr.aria-describedby]="'vat-help'">VAT Number</th>
+            <th scope="col" id="col-status">Status</th>
           </tr>
         </thead>
         <tbody>
           @for (client of filteredClients; track client) {
-            <tr class="clickable-row" (click)="editClient(client)">
-              <td>{{ client.name }}</td>
-              <td>{{ client.email || '-' }}</td>
-              <td>{{ client.phone }}</td>
-              <td>{{ client.discount }}%</td>
-              <td>
+            <tr
+              class="clickable-row"
+              (click)="editClient(client)"
+              (keydown.enter)="editClient(client)"
+              (keydown.space)="editClient(client); $event.preventDefault()"
+              tabindex="0"
+              role="button"
+              [attr.aria-label]="'Edit client ' + client.name"
+            >
+              <td headers="col-name">{{ client.name }}</td>
+              <td headers="col-email">{{ client.email || '-' }}</td>
+              <td headers="col-phone">{{ client.phone }}</td>
+              <td headers="col-discount">{{ client.discount }}%</td>
+              <td headers="col-mode">
                 <span [class.mode-fixed]="client.fixed_discount" [class.mode-scale]="!client.fixed_discount">
                   {{ client.fixed_discount ? 'Fixed' : 'Scale' }}
                 </span>
               </td>
-              <td>{{ formatBalance(client.balance) }}</td>
-              <td>{{ client.vat_number || '-' }}</td>
-              <td>
-                <span [class.active]="client.active" [class.inactive]="!client.active">
-                  {{ client.active ? 'Active' : 'Inactive' }}
+              <td headers="col-balance">{{ formatBalance(client.balance) }}</td>
+              <td headers="col-vat">{{ client.vat_number || '-' }}</td>
+              <td headers="col-status">
+                <span class="status-icon" [class.status-active]="client.active" [class.status-inactive]="!client.active" [attr.aria-label]="'Status: ' + (client.active ? 'Active' : 'Inactive')" role="status">
+                  ●
                 </span>
               </td>
             </tr>
@@ -91,18 +101,31 @@
           }
         </tbody>
       </table>
-
+      <!-- Screen reader only help text -->
+      <p id="discount-help" class="sr-only">Client discount percentage (0-100%)</p>
+      <p id="mode-help" class="sr-only">Discount mode: Fixed uses discount field, Scale uses turnover-based calculation</p>
+      <p id="balance-help" class="sr-only">Current monthly purchase turnover</p>
+      <p id="vat-help" class="sr-only">VAT registration number</p>
     </div>
 
     <!-- Mobile Card View -->
     <div class="clients-cards mobile-only">
       @for (client of filteredClients; track client) {
-        <div class="client-card" [class.expanded]="isCardExpanded(client.uid)" (click)="toggleCardExpanded(client.uid)">
-          <div class="card-header">
+        <div class="client-card" [class.expanded]="isCardExpanded(client.uid)">
+          <div
+            class="card-header"
+            (click)="toggleCardExpanded(client.uid)"
+            (keydown.enter)="toggleCardExpanded(client.uid)"
+            (keydown.space)="toggleCardExpanded(client.uid); $event.preventDefault()"
+            role="button"
+            tabindex="0"
+            [attr.aria-expanded]="isCardExpanded(client.uid)"
+            [attr.aria-label]="'Expand details for ' + client.name"
+          >
             <div class="card-title">
               <span class="client-name">{{ client.name }}</span>
-              <span class="status-badge" [class.active]="client.active" [class.inactive]="!client.active">
-                {{ client.active ? 'Active' : 'Inactive' }}
+              <span class="status-icon" [class.status-active]="client.active" [class.status-inactive]="!client.active" [attr.aria-label]="'Status: ' + (client.active ? 'Active' : 'Inactive')" role="status">
+                ●
               </span>
             </div>
             <div class="card-subtitle">{{ client.phone }}</div>
@@ -117,7 +140,7 @@
                 {{ client.fixed_discount ? 'Fixed' : 'Scale' }}
               </span>
             </div>
-            <span class="material-icons expand-icon">{{ isCardExpanded(client.uid) ? 'expand_less' : 'expand_more' }}</span>
+            <span class="material-icons expand-icon" aria-hidden="true">{{ isCardExpanded(client.uid) ? 'expand_less' : 'expand_more' }}</span>
           </div>
           @if (isCardExpanded(client.uid)) {
             <div class="card-details">
@@ -133,8 +156,8 @@
                 <span class="label">VAT Number:</span>
                 <span class="value">{{ client.vat_number || '-' }}</span>
               </div>
-              <button class="btn-edit" (click)="editClient(client); $event.stopPropagation()">
-                <span class="material-icons">edit</span>
+              <button class="btn-edit" (click)="editClient(client); $event.stopPropagation()" [attr.aria-label]="'Edit client ' + client.name">
+                <span class="material-icons" aria-hidden="true">edit</span>
                 Edit Client
               </button>
             </div>
@@ -149,49 +172,55 @@
     <!-- Pagination -->
     @if (totalPages > 1) {
       <div class="pagination">
-          <div class="pagination-info">
+          <div class="pagination-info" role="status" [attr.aria-live]="'polite'">
             <span>Showing {{ getStartItemNumber() }} - {{ getEndItemNumber() }} of {{ total }} clients</span>
           </div>
-          <div class="pagination-controls">
-            <button 
-              class="pagination-btn first" 
-              [disabled]="currentPage === 1" 
+          <nav class="pagination-controls" [attr.aria-label]="'Pagination navigation'">
+            <button
+              class="pagination-btn first"
+              [disabled]="currentPage === 1"
               (click)="goToFirstPage()"
-              title="First page">
+              [attr.aria-label]="'Go to first page'"
+              [attr.title]="'First page'">
               ««
             </button>
-            <button 
-              class="pagination-btn prev" 
-              [disabled]="currentPage === 1" 
+            <button
+              class="pagination-btn prev"
+              [disabled]="currentPage === 1"
               (click)="goToPage(currentPage - 1)"
-              title="Previous page">
+              [attr.aria-label]="'Go to previous page'"
+              [attr.title]="'Previous page'">
               ‹
             </button>
-            
+
             @for (page of getPageNumbers(); track page) {
-              <button 
+              <button
                 class="pagination-btn page-number"
                 [class.active]="page === currentPage"
-                (click)="goToPage(page)">
+                (click)="goToPage(page)"
+                [attr.aria-label]="'Go to page ' + page"
+                [attr.aria-current]="page === currentPage ? 'page' : null">
                 {{ page }}
               </button>
             }
-            
-            <button 
-              class="pagination-btn next" 
-              [disabled]="currentPage === totalPages" 
+
+            <button
+              class="pagination-btn next"
+              [disabled]="currentPage === totalPages"
               (click)="goToPage(currentPage + 1)"
-              title="Next page">
+              [attr.aria-label]="'Go to next page'"
+              [attr.title]="'Next page'">
               ›
             </button>
-            <button 
-              class="pagination-btn last" 
-              [disabled]="currentPage === totalPages" 
+            <button
+              class="pagination-btn last"
+              [disabled]="currentPage === totalPages"
               (click)="goToLastPage()"
-              title="Last page">
+              [attr.aria-label]="'Go to last page'"
+              [attr.title]="'Last page'">
               »»
             </button>
-          </div>
+          </nav>
           <div class="pagination-page-info">
             <span>Page {{ currentPage }} of {{ totalPages }}</span>
           </div>

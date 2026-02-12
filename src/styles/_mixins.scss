@@ -1,0 +1,259 @@
+/**
+ * Shared SCSS Mixins - Design Policy Compliance
+ *
+ * These mixins enforce the DESIGN_POLICY.md standards across all admin components.
+ * Created: 2026-01-18
+ * WCAG 2.1 AA Compliant
+ */
+
+// =============================================================================
+// 1. BUTTON TYPOGRAPHY
+// =============================================================================
+// Enforces Commissioner font, 500 weight, 14px (Label Large)
+// Policy Reference: DESIGN_POLICY.md L87-91, L170-172
+@mixin button-typography {
+  font-family: var(--font-body);
+  font-weight: var(--font-weight-medium);
+  font-size: 14px;
+  line-height: 20px;
+}
+
+// =============================================================================
+// 2. TOUCH TARGET
+// =============================================================================
+// Ensures WCAG 2.1 AA compliance (48px minimum)
+// Policy Reference: DESIGN_POLICY.md L206-210
+@mixin touch-target($size: 48px) {
+  min-width: $size;
+  min-height: $size;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+// =============================================================================
+// 3. TABLE CELL PADDING
+// =============================================================================
+// Enforces 8px grid compliance (12px vertical, 8px horizontal)
+// Policy Reference: DESIGN_POLICY.md L108-125
+@mixin table-cell-padding {
+  padding: 12px 8px;
+}
+
+// =============================================================================
+// 4. PAGINATION BUTTON
+// =============================================================================
+// Complete pagination button styling with WCAG focus states
+// Policy Reference: DESIGN_POLICY.md L1698-1703
+@mixin pagination-button {
+  @include button-typography;
+  @include touch-target(48px);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--card-bg);
+  color: var(--color-text-primary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover:not(:disabled) {
+    border-color: var(--color-primary);
+    background: var(--color-surface-variant);
+  }
+
+  &:focus:not(:disabled) {
+    outline: none;
+    box-shadow: var(--focus-ring);
+    border-color: var(--color-primary);
+  }
+
+  &:disabled {
+    opacity: 0.38;
+    cursor: not-allowed;
+  }
+}
+
+// =============================================================================
+// 5. ICON BUTTON
+// =============================================================================
+// Ensures 48x48px touch target with centered 24px icon
+// Policy Reference: DESIGN_POLICY.md L206-210
+@mixin icon-button($size: 48px) {
+  @include touch-target($size);
+  padding: calc(($size - 24px) / 2);
+  border: none;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  .material-icons {
+    font-size: 24px;
+  }
+
+  &:hover:not(:disabled) {
+    background: var(--color-surface-variant);
+    color: var(--color-primary);
+  }
+
+  &:focus:not(:disabled) {
+    outline: none;
+    box-shadow: var(--focus-ring);
+  }
+
+  &:disabled {
+    opacity: 0.38;
+    cursor: not-allowed;
+  }
+}
+
+// =============================================================================
+// 6. ACTION BAR BUTTON
+// =============================================================================
+// Flat outlined button style used in action bars
+// Policy Reference: DESIGN_POLICY.md L87-91
+@mixin action-button {
+  @include button-typography;
+  min-height: 40px;
+  padding: 10px 16px;
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-text-primary);
+  cursor: pointer;
+  box-shadow: none;
+  transition: all 0.2s ease;
+
+  &:hover:not(:disabled) {
+    border-color: var(--color-primary);
+    background: var(--color-surface-variant);
+    color: var(--color-primary);
+  }
+
+  &:focus:not(:disabled) {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: var(--focus-ring);
+  }
+
+  &:active:not(:disabled) {
+    background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+  }
+
+  &:disabled {
+    opacity: 0.38;
+    cursor: not-allowed;
+  }
+}
+
+// =============================================================================
+// 7. HEADING TYPOGRAPHY
+// =============================================================================
+// Enforces Montserrat font for all headings
+// Policy Reference: DESIGN_POLICY.md L79-85
+@mixin heading-typography($level: 1) {
+  font-family: var(--font-heading);
+  margin: 0;
+
+  @if $level == 1 {
+    font-size: 22px;
+    line-height: 28px;
+    font-weight: var(--font-weight-bold);
+  } @else if $level == 2 {
+    font-size: 16px;
+    line-height: 24px;
+    font-weight: var(--font-weight-bold);
+  } @else if $level == 3 {
+    font-size: 15px;
+    line-height: 22px;
+    font-weight: var(--font-weight-semibold);
+  }
+}
+
+// =============================================================================
+// 8. FOCUS STATE
+// =============================================================================
+// Standardized focus indicator for WCAG 2.1 AA compliance
+// Policy Reference: DESIGN_POLICY.md L1698-1703
+@mixin focus-state {
+  &:focus {
+    outline: none;
+    box-shadow: var(--focus-ring);
+    border-color: var(--color-primary);
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+    border-color: var(--color-primary);
+  }
+}
+
+// =============================================================================
+// 9. BADGE TYPOGRAPHY
+// =============================================================================
+// Small label styling for status badges and pills
+// Policy Reference: DESIGN_POLICY.md L170-172
+@mixin badge-typography {
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: var(--font-weight-semibold);
+  line-height: 16px;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  display: inline-block;
+}
+
+// =============================================================================
+// 10. CARD COMPONENT
+// =============================================================================
+// Standard card styling with proper spacing
+// Policy Reference: DESIGN_POLICY.md L1300-1306
+@mixin card-base {
+  background: var(--card-bg);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--card-border);
+  padding: var(--spacing-md);
+  box-shadow: var(--card-shadow);
+}
+
+// =============================================================================
+// 11. RESPONSIVE SPACING
+// =============================================================================
+// 8px grid-compliant spacing for mobile views
+// Policy Reference: DESIGN_POLICY.md L108-125
+@mixin mobile-spacing {
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md-sm);
+}
+
+// =============================================================================
+// 12. INPUT FOCUS
+// =============================================================================
+// Specialized focus state for form inputs
+@mixin input-focus {
+  &:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: var(--focus-ring);
+  }
+
+  &:focus-visible {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: var(--focus-ring);
+  }
+}
+
+// =============================================================================
+// 13. DISABLED STATE
+// =============================================================================
+// Consistent disabled styling across all interactive elements
+@mixin disabled-state {
+  &:disabled,
+  &[disabled] {
+    opacity: 0.38;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+}

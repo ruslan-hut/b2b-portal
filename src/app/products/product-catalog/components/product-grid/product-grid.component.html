@@ -1,0 +1,29 @@
+<div class="products-grid-container">
+  @if (productsByCategory.size === 0) {
+    <div class="empty-state">
+      <span class="material-icons empty-icon">search</span>
+      <h2>{{ 'products.noProducts' | translate }}</h2>
+    </div>
+  } @else {
+    @for (category of categories; track category) {
+      <div>
+        <app-category-header [categoryName]="category" />
+        <div class="products-grid">
+          @for (product of productsByCategory.get(category); track product.id) {
+            <app-product-card
+              [product]="product"
+              [cartQuantity]="getCartQuantity(product.id)"
+              [priceWithVat]="getPriceWithVat(product)"
+              [originalPrice]="getOriginalPriceWithVat(product)"
+              [hasDiscount]="hasDiscount()"
+              [currencyName]="currency?.name"
+              (addToCart)="onAddToCart(product)"
+              (imageClick)="onImageClick(product)"
+              (cardClick)="onCardClick(product)"
+            />
+          }
+        </div>
+      </div>
+    }
+  }
+</div>

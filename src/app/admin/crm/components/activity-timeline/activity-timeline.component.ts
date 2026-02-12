@@ -1,7 +1,7 @@
 import { Component, Input, OnInit, OnDestroy, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
 import { Subscription } from 'rxjs';
 import { CrmService } from '../../services/crm.service';
-import { CrmActivity, CrmActivityType, CrmCreateActivityRequest, CrmStageChangeMetadata, CrmAssignmentMetadata } from '../../models/crm-activity.model';
+import { CrmActivity, CrmActivityType, CrmCreateActivityRequest, CrmStageChangeMetadata, CrmAssignmentMetadata, CrmOrderFieldChangeMetadata, CrmItemChangeMetadata, CrmTotalChangeMetadata } from '../../models/crm-activity.model';
 
 @Component({
     selector: 'app-activity-timeline',
@@ -162,7 +162,11 @@ export class ActivityTimelineComponent implements OnInit, OnDestroy {
       'assignment': 'person_add',
       'unassignment': 'person_remove',
       'order_created': 'add_shopping_cart',
-      'status_change': 'published_with_changes'
+      'status_change': 'published_with_changes',
+      'order_edit': 'edit',
+      'items_changed': 'inventory',
+      'total_changed': 'payments',
+      'discount_changed': 'percent'
     };
     return icons[type] || 'info';
   }
@@ -175,7 +179,11 @@ export class ActivityTimelineComponent implements OnInit, OnDestroy {
       'assignment': 'Assigned',
       'unassignment': 'Unassigned',
       'order_created': 'Order Created',
-      'status_change': 'Status Changed'
+      'status_change': 'Status Changed',
+      'order_edit': 'Order Edited',
+      'items_changed': 'Items Changed',
+      'total_changed': 'Total Changed',
+      'discount_changed': 'Discount Changed'
     };
     return labels[type] || type;
   }
@@ -188,7 +196,11 @@ export class ActivityTimelineComponent implements OnInit, OnDestroy {
       'assignment': '#10b981',
       'unassignment': '#f59e0b',
       'order_created': '#22c55e',
-      'status_change': '#ec4899'
+      'status_change': '#ec4899',
+      'order_edit': '#f97316',
+      'items_changed': '#06b6d4',
+      'total_changed': '#84cc16',
+      'discount_changed': '#a855f7'
     };
     return colors[type] || '#64748b';
   }
@@ -241,6 +253,90 @@ export class ActivityTimelineComponent implements OnInit, OnDestroy {
       const previousUser = metadata.previous_user_name || metadata.previous_user_uid || 'Unknown';
       return `Unassigned from ${previousUser}`;
     }
+  }
+
+  getOrderEditDescription(activity: CrmActivity): string {
+    const metadata = activity.metadata as CrmOrderFieldChangeMetadata[] | undefined;
+    if (!metadata || !Array.isArray(metadata) || metadata.length === 0) {
+      return 'Order fields updated';
+    }
+
+    if (metadata.length === 1) {
+      const change = metadata[0];
+      return this.formatFieldChange(change);
+    }
+
+    return `${metadata.length} fields updated: ${metadata.map(c => c.field_name).join(', ')}`;
+  }
+
+  getItemsChangedDescription(activity: CrmActivity): string {
+    const metadata = activity.metadata as CrmItemChangeMetadata[] | undefined;
+    if (!metadata || !Array.isArray(metadata) || metadata.length === 0) {
+      return 'Order items changed';
+    }
+
+    const added = metadata.filter(m => m.action === 'added').length;
+    const removed = metadata.filter(m => m.action === 'removed').length;
+    const modified = metadata.filter(m => m.action === 'modified').length;
+
+    const parts: string[] = [];
+    if (added > 0) parts.push(`${added} added`);
+    if (removed > 0) parts.push(`${removed} removed`);
+    if (modified > 0) parts.push(`${modified} modified`);
+
+    return parts.length > 0 ? parts.join(', ') : 'Order items changed';
+  }
+
+  getTotalChangedDescription(activity: CrmActivity): string {
+    const metadata = activity.metadata as CrmTotalChangeMetadata | undefined;
+    if (!metadata) return 'Order total changed';
+
+    const oldTotal = (metadata.old_total / 100).toFixed(2);
+    const newTotal = (metadata.new_total / 100).toFixed(2);
+
+    return `Total: $${oldTotal} → $${newTotal}`;
+  }
+
+  getItemChangeDetails(changes: CrmItemChangeMetadata[]): string[] {
+    return changes.map(change => {
+      const productName = change.product_name || change.sku || change.product_uid;
+      switch (change.action) {
+        case 'added':
+          return `+ ${productName} (qty: ${change.new_quantity})`;
+        case 'removed':
+          return `- ${productName} (qty: ${change.old_quantity})`;
+        case 'modified':
+          return `✎ ${productName} (qty: ${change.old_quantity} → ${change.new_quantity})`;
+        default:
+          return productName;
+      }
+    });
+  }
+
+  hasItemChangeDetails(activity: CrmActivity): boolean {
+    return activity.metadata != null && Array.isArray(activity.metadata) && activity.metadata.length > 0;
+  }
+
+  getItemChangeDetailsArray(activity: CrmActivity): string[] {
+    if (!this.hasItemChangeDetails(activity)) {
+      return [];
+    }
+    return this.getItemChangeDetails(activity.metadata as CrmItemChangeMetadata[]);
+  }
+
+  private formatFieldChange(change: CrmOrderFieldChangeMetadata): string {
+    const fieldName = this.formatFieldName(change.field_name);
+    if (!change.old_value || change.old_value === '') {
+      return `${fieldName} set to: ${change.new_value}`;
+    }
+    return `${fieldName}: ${change.old_value} → ${change.new_value}`;
+  }
+
+  private formatFieldName(fieldName: string): string {
+    return fieldName
+      .split('_')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
   }
 
   canDelete(activity: CrmActivity): boolean {

@@ -1,0 +1,34 @@
+<div class="bulk-actions-bar">
+  <div class="search-filter-container-bulk">
+    <select
+      [(ngModel)]="selectedCategory"
+      (ngModelChange)="onCategorySelect()"
+      class="category-selector-bulk"
+      >
+      <option value="">{{ 'products.allCategories' | translate }}</option>
+      @for (category of categories; track category.uid) {
+        <option [value]="category.uid">
+          {{ category.name }}
+        </option>
+      }
+    </select>
+    <div class="search-input-wrapper">
+      <input
+        type="text"
+        [ngModel]="searchQuery"
+        (ngModelChange)="searchQuery = $event"
+        (keyup.enter)="onSearchClick()"
+        [placeholder]="'products.searchPlaceholder' | translate"
+        class="search-input-bulk"
+        />
+      <button type="button" class="search-icon-btn" (click)="onSearchClick()">
+        <span class="material-icons">search</span>
+      </button>
+    </div>
+  </div>
+  <div class="bulk-actions-right">
+    <div class="bulk-info">
+      <span class="cart-total-label">{{ 'products.total' | translate }}: <span class="cart-total-value">{{ cartTotal.toFixed(2) }}{{ currencyName ? ' ' + currencyName : '' }}</span></span>
+    </div>
+  </div>
+</div>

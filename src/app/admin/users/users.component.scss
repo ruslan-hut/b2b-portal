@@ -1,31 +1,11 @@
+@use '../../../styles/mixins' as *;
+
 .users-container {
 }
 
+// .btn-primary uses global styles from styles.scss
 .btn-primary {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 16px;
-  background: var(--gradient-primary);
-  color: var(--color-text-inverse);
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 0.9rem;
-  font-weight: 500;
-  transition: opacity 0.2s;
-
-  .material-icons {
-    font-size: 18px;
-  }
-
-  &:hover {
-    opacity: 0.9;
-  }
-
   @media (max-width: 768px) {
-    padding: 8px 12px;
-
     .btn-text {
       display: none;
     }
@@ -38,14 +18,18 @@
 }
 
 .filters {
-  display: grid;
+  display: none;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 12px;
-  margin-bottom: 20px;
-  padding: 12px;
+  gap: var(--spacing-sm-md);
+  margin-bottom: var(--spacing-sm-md);
+  padding: var(--spacing-sm-md);
   background-color: var(--card-bg);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   box-shadow: var(--shadow-sm);
+
+  &.expanded {
+    display: grid;
+  }
 
   @media (max-width: 480px) {
     grid-template-columns: 1fr;
@@ -59,7 +43,7 @@
 .filter-group {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--spacing-sm);
   min-width: 0;
 
   label {
@@ -108,7 +92,7 @@
   border-radius: 8px;
   box-shadow: var(--shadow-sm);
   overflow-x: auto;
-  margin-bottom: 16px;
+  margin-bottom: 8px;
 }
 
 table {
@@ -121,7 +105,7 @@ table {
     color: var(--table-header-text);
 
     th {
-      padding: 10px 8px;
+      @include table-cell-padding;
       text-align: left;
       font-weight: 600;
       font-size: 0.85rem;
@@ -139,7 +123,7 @@ table {
     }
 
     td {
-      padding: 10px 8px;
+      @include table-cell-padding;
       color: var(--color-text-primary);
     }
   }
@@ -152,7 +136,7 @@ table {
 }
 
 .role-manager {
-  color: var(--color-warning);
+  color: var(--color-primary);
   font-weight: 600;
 }
 
@@ -168,20 +152,21 @@ table {
 
 .actions {
   display: flex;
-  gap: 8px;
+  gap: var(--spacing-sm);
 
   button {
-    padding: 6px 12px;
+    @include button-typography;
+    padding: var(--spacing-sm) var(--spacing-md-sm);
+    min-height: var(--touch-target-min);
     border: none;
-    border-radius: 4px;
+    border-radius: var(--radius-md);
     cursor: pointer;
-    font-size: 0.9rem;
 
     &.btn-edit {
       background-color: var(--color-info);
       color: var(--color-text-inverse);
 
-      &:hover {
+      &:hover:not(:disabled) {
         background-color: var(--color-info-dark);
       }
     }
@@ -190,7 +175,7 @@ table {
       background-color: var(--color-danger);
       color: var(--color-text-inverse);
 
-      &:hover {
+      &:hover:not(:disabled) {
         background-color: var(--color-danger-dark);
       }
     }
@@ -207,17 +192,13 @@ table {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px;
+  padding: var(--spacing-md);
   border-top: 1px solid var(--color-border-light);
   background-color: var(--color-background-secondary);
 
   button {
-    padding: 8px 16px;
+    @include pagination-button;
     background-color: var(--color-info);
-    color: var(--color-text-inverse);
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
 
     &:hover:not(:disabled) {
       background-color: var(--color-info-dark);
@@ -225,7 +206,6 @@ table {
 
     &:disabled {
       background-color: var(--color-disabled);
-      cursor: not-allowed;
     }
   }
 }
@@ -298,10 +278,8 @@ table {
     }
 
     .role-badge {
+      @include badge-typography;
       font-size: 0.75rem;
-      font-weight: 600;
-      padding: 2px 8px;
-      border-radius: 12px;
       white-space: nowrap;
       text-transform: capitalize;
 
@@ -311,8 +289,8 @@ table {
       }
 
       &.role-manager {
-        background-color: var(--status-warning-bg);
-        color: var(--color-warning);
+        background-color: var(--color-primary-container);
+        color: var(--color-primary);
       }
 
       &.role-user {
@@ -396,7 +374,7 @@ table {
 
     .card-actions {
       display: flex;
-      gap: 10px;
+      gap: var(--spacing-md-sm);
       margin-top: 12px;
       padding-top: 12px;
       border-top: 1px solid var(--color-border-light);
@@ -405,18 +383,18 @@ table {
 }
 
 .btn-edit-card {
+  @include button-typography;
   flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  padding: 10px 16px;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm-md) var(--spacing-md);
+  min-height: var(--touch-target-min);
   background-color: var(--color-info);
   color: var(--color-text-inverse);
   border: none;
-  border-radius: 6px;
-  font-size: 0.9rem;
-  font-weight: 500;
+  border-radius: var(--radius-md);
   cursor: pointer;
   transition: background-color 0.2s;
 
@@ -424,23 +402,23 @@ table {
     font-size: 18px;
   }
 
-  &:hover {
+  &:hover:not(:disabled) {
     background-color: var(--color-info-dark);
   }
 }
 
 .btn-delete-card {
+  @include button-typography;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  padding: 10px 16px;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm-md) var(--spacing-md);
+  min-height: var(--touch-target-min);
   background-color: var(--color-danger);
   color: var(--color-text-inverse);
   border: none;
-  border-radius: 6px;
-  font-size: 0.9rem;
-  font-weight: 500;
+  border-radius: var(--radius-md);
   cursor: pointer;
   transition: background-color 0.2s;
 
@@ -448,7 +426,7 @@ table {
     font-size: 18px;
   }
 
-  &:hover {
+  &:hover:not(:disabled) {
     background-color: var(--color-danger-dark);
   }
 }
@@ -527,29 +505,55 @@ table {
     }
   }
 
-  input[type="password"] {
-    font-family: monospace;
+  .password-field {
+    display: flex;
+    gap: var(--spacing-sm);
+
+    input {
+      flex: 1;
+      min-width: 0;
+      font-family: monospace;
+    }
+
+    .btn-generate {
+      white-space: nowrap;
+      padding: var(--spacing-sm) var(--spacing-sm-md);
+      border: 2px solid var(--color-primary);
+      border-radius: var(--radius-md);
+      background: transparent;
+      color: var(--color-primary);
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.2s ease, color 0.2s ease;
+
+      &:hover {
+        background: var(--color-primary);
+        color: var(--color-on-primary);
+      }
+    }
   }
 }
 
 .form-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 10px;
-  margin-top: 20px;
+  gap: var(--spacing-sm-md);
+  margin-top: var(--spacing-md-lg);
 
   button {
-    padding: 10px 20px;
+    @include button-typography;
+    padding: var(--spacing-sm-md) var(--spacing-md-lg);
+    min-height: var(--touch-target-min);
     border: none;
-    border-radius: 4px;
+    border-radius: var(--radius-md);
     cursor: pointer;
-    font-size: 1rem;
 
     &.btn-cancel {
       background-color: var(--color-text-secondary);
       color: var(--color-text-inverse);
 
-      &:hover {
+      &:hover:not(:disabled) {
         background-color: var(--color-text-muted);
       }
     }
@@ -558,7 +562,7 @@ table {
       background-color: var(--color-success);
       color: var(--color-text-inverse);
 
-      &:hover {
+      &:hover:not(:disabled) {
         background-color: var(--color-success-dark);
       }
     }
@@ -602,21 +606,16 @@ table {
     }
   }
 
-  // Collapsible filters
+  // Collapsible filters - margin override for mobile
   .filters {
-    display: none;
-    margin-bottom: 12px;
-
-    &.expanded {
-      display: grid;
-    }
+    margin-bottom: var(--spacing-sm);
   }
 
   .filter-group {
     select, input {
-      padding: 10px;
+      padding: var(--spacing-sm-md);
       font-size: 16px;
-      min-height: 44px;
+      min-height: var(--touch-target-min);
     }
   }
 

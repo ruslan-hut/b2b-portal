@@ -1,9 +1,16 @@
 <div class="subscriptions-container">
   <app-action-bar>
-    <div class="nav-tabs" actionBarLeft>
-      <a routerLink="/admin/telegram/subscriptions" routerLinkActive="active" class="tab">Subscriptions</a>
-      <a routerLink="/admin/telegram/invites" routerLinkActive="active" class="tab">Invites</a>
-      <a routerLink="/admin/telegram/settings" routerLinkActive="active" class="tab">Settings</a>
+    <div class="action-bar-left" actionBarLeft>
+      <div class="nav-tabs">
+        <a routerLink="/admin/telegram/subscriptions" routerLinkActive="active" class="tab">Subscriptions</a>
+        <a routerLink="/admin/telegram/invites" routerLinkActive="active" class="tab">Invites</a>
+        <a routerLink="/admin/telegram/settings" routerLinkActive="active" class="tab">Settings</a>
+      </div>
+      <button class="btn-filter" (click)="toggleFilters()" [class.active]="isFiltersExpanded">
+        <span class="material-icons">filter_list</span>
+        <span class="btn-text">Filters</span>
+        <span class="material-icons toggle-icon">{{ isFiltersExpanded ? 'expand_less' : 'expand_more' }}</span>
+      </button>
     </div>
     <div actionBarRight>
       <button class="btn-icon" (click)="refresh()" [disabled]="loading" title="Refresh">
@@ -13,7 +20,7 @@
   </app-action-bar>
 
   <!-- Filters -->
-  <div class="filter-bar">
+  <div class="filters" [class.expanded]="isFiltersExpanded">
     <div class="filter-group">
       <label>Status:</label>
       <select [(ngModel)]="statusFilter" (change)="onStatusFilterChange()">
@@ -57,6 +64,8 @@
             <th>Username</th>
             <th>Name</th>
             <th>Log Level</th>
+            <th>Subscriptions</th>
+            <th>Assignment</th>
             <th>Status</th>
             <th>Created</th>
             <th>Actions</th>
@@ -85,6 +94,12 @@
                   }
                 </select>
               </td>
+              <td class="subscription-types">
+                <span class="types-label">{{ getSubscriptionTypesLabel(item) }}</span>
+              </td>
+              <td class="assignment">
+                <span class="assignment-label">{{ getAssignmentLabel(item) }}</span>
+              </td>
               <td>
                 <span class="status-badge" [class.active]="item.active">
                   {{ item.active ? 'Active' : 'Inactive' }}
@@ -92,6 +107,13 @@
               </td>
               <td class="date">{{ formatDate(item.created_at) }}</td>
               <td class="actions">
+                <button
+                  class="btn-action"
+                  (click)="openEditModal(item)"
+                  title="Edit Subscriptions"
+                >
+                  <span class="material-icons">edit</span>
+                </button>
                 <button
                   class="btn-action"
                   (click)="toggleActive(item)"
@@ -111,7 +133,7 @@
           }
           @if (filteredItems.length === 0) {
             <tr>
-              <td colspan="7" class="no-data-cell">
+              <td colspan="9" class="no-data-cell">
                 <div class="no-data">
                   <span class="material-icons">send</span>
                   <p>No subscriptions found</p>
@@ -170,6 +192,14 @@
                 </select>
               </div>
               <div class="info-row">
+                <span class="info-label">Subscriptions:</span>
+                <span class="info-value">{{ getSubscriptionTypesLabel(item) }}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Assignment:</span>
+                <span class="info-value">{{ getAssignmentLabel(item) }}</span>
+              </div>
+              <div class="info-row">
                 <span class="info-label">Created:</span>
                 <span class="info-value">{{ formatDate(item.created_at) }}</span>
               </div>
@@ -223,3 +253,103 @@
     }
   }
 </div>
+
+<!-- Edit Subscription Modal -->
+@if (editingSubscription) {
+  <div class="modal-overlay" (click)="closeEditModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Edit Subscription</h2>
+        <button class="btn-close" (click)="closeEditModal()">
+          <span class="material-icons">close</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="subscription-info">
+          <p>
+            <strong>User:</strong>
+            @if (editingSubscription.username) {
+              @{{ editingSubscription.username }}
+            } @else {
+              {{ getDisplayName(editingSubscription) }}
+            }
+          </p>
+          <p><strong>User ID:</strong> {{ editingSubscription.user_id }}</p>
+        </div>
+
+        <div class="form-section">
+          <h3>Subscription Types</h3>
+          <div class="checkbox-group">
+            <label class="checkbox-label">
+              <input
+                type="checkbox"
+                [(ngModel)]="editSubscriptionTypes.logs"
+              />
+              <span>Log Notifications</span>
+            </label>
+            <label class="checkbox-label">
+              <input
+                type="checkbox"
+                [(ngModel)]="editSubscriptionTypes.new_orders"
+              />
+              <span>New Order Notifications</span>
+            </label>
+            <label class="checkbox-label">
+              <input
+                type="checkbox"
+                [(ngModel)]="editSubscriptionTypes.stage_changes"
+              />
+              <span>Stage Change Notifications</span>
+            </label>
+            <label class="checkbox-label">
+              <input
+                type="checkbox"
+                [(ngModel)]="editSubscriptionTypes.order_edits"
+              />
+              <span>Order Edit Notifications</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h3>Order Filtering</h3>
+          <div class="checkbox-group">
+            <label class="checkbox-label">
+              <input
+                type="checkbox"
+                [(ngModel)]="editSubscriptionTypes.all_orders"
+                (change)="editInternalUserUid = null"
+              />
+              <span>All Orders (no assignment filtering)</span>
+            </label>
+          </div>
+
+          @if (!editSubscriptionTypes.all_orders) {
+            <div class="form-group">
+              <label>Assigned User (Optional)</label>
+              <select [(ngModel)]="editInternalUserUid">
+                <option [ngValue]="null">-- All Orders (Legacy) --</option>
+                @for (user of users; track user.uid) {
+                  <option [value]="user.uid">
+                    {{ getUserDisplayName(user.uid) }} ({{ user.username }})
+                  </option>
+                }
+              </select>
+              <small class="form-hint">
+                If selected, this user will only receive notifications for orders assigned to the selected internal user.
+              </small>
+            </div>
+          }
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeEditModal()">
+          Cancel
+        </button>
+        <button class="btn-primary" (click)="saveSubscriptionTypes()">
+          Save Changes
+        </button>
+      </div>
+    </div>
+  </div>
+}

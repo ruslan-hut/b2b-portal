@@ -1,15 +1,15 @@
 <div class="users-container">
   <app-action-bar>
     <div actionBarLeft>
-      <button class="btn-filter" (click)="toggleFilters()" [class.active]="isFiltersExpanded">
-        <span class="material-icons">filter_list</span>
+      <button class="btn-filter" (click)="toggleFilters()" [class.active]="isFiltersExpanded" [attr.aria-label]="'Toggle filters'" [attr.aria-expanded]="isFiltersExpanded">
+        <span class="material-icons" aria-hidden="true">filter_list</span>
         <span class="btn-text">Filters</span>
-        <span class="material-icons toggle-icon">{{ isFiltersExpanded ? 'expand_less' : 'expand_more' }}</span>
+        <span class="material-icons toggle-icon" aria-hidden="true">{{ isFiltersExpanded ? 'expand_less' : 'expand_more' }}</span>
       </button>
     </div>
     <div actionBarRight>
-      <button class="btn-primary" (click)="createUser()">
-        <span class="material-icons">add</span>
+      <button class="btn-primary" (click)="createUser()" [attr.aria-label]="'Add new user'">
+        <span class="material-icons" aria-hidden="true">add</span>
         <span class="btn-text">Add</span>
       </button>
     </div>
@@ -17,8 +17,8 @@
 
   <div class="filters" [class.expanded]="isFiltersExpanded">
     <div class="filter-group">
-      <label>Role:</label>
-      <select [(ngModel)]="roleFilter" (change)="onRoleFilterChange()">
+      <label for="users-role-filter">Role:</label>
+      <select id="users-role-filter" [(ngModel)]="roleFilter" (change)="onRoleFilterChange()" [attr.aria-label]="'Filter users by role'">
         @for (option of roleOptions; track option) {
           <option [value]="option.value">
             {{ option.label }}
@@ -27,12 +27,14 @@
       </select>
     </div>
     <div class="filter-group search-group">
-      <label>Search:</label>
+      <label for="users-search">Search:</label>
       <input
         type="text"
+        id="users-search"
         [(ngModel)]="searchTerm"
         (input)="onSearchChange()"
         placeholder="Search users..."
+        [attr.aria-label]="'Search users by name or email'"
         />
     </div>
   </div>
@@ -47,36 +49,37 @@
   @if (!loading && !error) {
     <!-- Desktop Table -->
     <div class="users-table desktop-only">
-      <table>
+      <table role="table" [attr.aria-label]="'Users table'">
         <thead>
           <tr>
-            <th>Username</th>
-            <th>Email</th>
-            <th>Name</th>
-            <th>Role</th>
-            <th>Store UID</th>
-            <th>Last Login</th>
-            <th>Last Update</th>
-            <th>Actions</th>
+            <th scope="col" id="col-username">Username</th>
+            <th scope="col" id="col-email">Email</th>
+            <th scope="col" id="col-name">Name</th>
+            <th scope="col" id="col-role">Role</th>
+            <th scope="col" id="col-store" [attr.aria-describedby]="'store-help'">Store UID</th>
+            <th scope="col" id="col-last-login">Last Login</th>
+            <th scope="col" id="col-last-update">Last Update</th>
+            <th scope="col" id="col-actions">Actions</th>
           </tr>
         </thead>
         <tbody>
           @for (user of filteredUsers; track user) {
             <tr>
-              <td>{{ user.username }}</td>
-              <td>{{ user.email || '-' }}</td>
-              <td>{{ user.first_name }} {{ user.last_name }}</td>
-              <td>
-                <span [class]="getRoleClass(user.role)">
+              <td headers="col-username">{{ user.username }}</td>
+              <td headers="col-email">{{ user.email || '-' }}</td>
+              <td headers="col-name">{{ user.first_name }} {{ user.last_name }}</td>
+              <td headers="col-role">
+                <span [class]="getRoleClass(user.role)" [attr.aria-label]="'Role: ' + user.role" role="status">
+                  <span class="status-icon" aria-hidden="true">●</span>
                   {{ user.role }}
                 </span>
               </td>
-              <td>{{ user.store_uid || '-' }}</td>
-              <td>{{ formatDate(user.last_login) }}</td>
-              <td>{{ formatDate(user.last_update) }}</td>
-              <td class="actions">
-                <button class="btn-edit" (click)="editUser(user)">Edit</button>
-                <button class="btn-delete" (click)="deleteUser(user)">Delete</button>
+              <td headers="col-store">{{ user.store_uid || '-' }}</td>
+              <td headers="col-last-login">{{ formatDate(user.last_login) }}</td>
+              <td headers="col-last-update">{{ formatDate(user.last_update) }}</td>
+              <td headers="col-actions" class="actions">
+                <button class="btn-edit" (click)="editUser(user)" [attr.aria-label]="'Edit user ' + user.username">Edit</button>
+                <button class="btn-delete" (click)="deleteUser(user)" [attr.aria-label]="'Delete user ' + user.username">Delete</button>
               </td>
             </tr>
           }
@@ -87,11 +90,31 @@
           }
         </tbody>
       </table>
+      <!-- Screen reader only help text -->
+      <p id="store-help" class="sr-only">Store UID that this user is assigned to</p>
       @if (totalPages > 1) {
         <div class="pagination">
-          <button [disabled]="currentPage === 1" (click)="goToPage(currentPage - 1)">Previous</button>
-          <span>Page {{ currentPage }} of {{ totalPages }} ({{ total }} total)</span>
-          <button [disabled]="currentPage === totalPages" (click)="goToPage(currentPage + 1)">Next</button>
+          <div class="pagination-info" role="status" [attr.aria-live]="'polite'">
+            <span>Page {{ currentPage }} of {{ totalPages }} ({{ total }} total users)</span>
+          </div>
+          <nav class="pagination-controls" [attr.aria-label]="'Pagination navigation'">
+            <button
+              class="pagination-btn prev"
+              [disabled]="currentPage === 1"
+              (click)="goToPage(currentPage - 1)"
+              [attr.aria-label]="'Go to previous page'"
+              [attr.title]="'Previous page'">
+              Previous
+            </button>
+            <button
+              class="pagination-btn next"
+              [disabled]="currentPage === totalPages"
+              (click)="goToPage(currentPage + 1)"
+              [attr.aria-label]="'Go to next page'"
+              [attr.title]="'Next page'">
+              Next
+            </button>
+          </nav>
         </div>
       }
     </div>
@@ -99,11 +122,21 @@
     <!-- Mobile Cards -->
     <div class="users-cards mobile-only">
       @for (user of filteredUsers; track user) {
-        <div class="user-card" [class.expanded]="isCardExpanded(user.uid)" (click)="toggleCardExpanded(user.uid)">
-          <div class="card-header">
+        <div class="user-card" [class.expanded]="isCardExpanded(user.uid)">
+          <div
+            class="card-header"
+            (click)="toggleCardExpanded(user.uid)"
+            (keydown.enter)="toggleCardExpanded(user.uid)"
+            (keydown.space)="toggleCardExpanded(user.uid); $event.preventDefault()"
+            role="button"
+            tabindex="0"
+            [attr.aria-expanded]="isCardExpanded(user.uid)"
+            [attr.aria-label]="'Expand details for user ' + user.username"
+          >
             <div class="card-title">
               <span class="user-name">{{ user.username }}</span>
-              <span class="role-badge" [class]="getRoleClass(user.role)">
+              <span class="role-badge" [class]="getRoleClass(user.role)" [attr.aria-label]="'Role: ' + user.role" role="status">
+                <span class="status-icon" aria-hidden="true">●</span>
                 {{ user.role }}
               </span>
             </div>
@@ -114,7 +147,7 @@
               <span class="label">Name:</span>
               <span class="value">{{ user.first_name || '-' }} {{ user.last_name || '' }}</span>
             </div>
-            <span class="material-icons expand-icon">{{ isCardExpanded(user.uid) ? 'expand_less' : 'expand_more' }}</span>
+            <span class="material-icons expand-icon" aria-hidden="true">{{ isCardExpanded(user.uid) ? 'expand_less' : 'expand_more' }}</span>
           </div>
           @if (isCardExpanded(user.uid)) {
             <div class="card-details">
@@ -135,12 +168,12 @@
                 <span class="value">{{ formatDate(user.last_update) }}</span>
               </div>
               <div class="card-actions">
-                <button class="btn-edit-card" (click)="editUser(user); $event.stopPropagation()">
-                  <span class="material-icons">edit</span>
+                <button class="btn-edit-card" (click)="editUser(user); $event.stopPropagation()" [attr.aria-label]="'Edit user ' + user.username">
+                  <span class="material-icons" aria-hidden="true">edit</span>
                   Edit User
                 </button>
-                <button class="btn-delete-card" (click)="deleteUser(user); $event.stopPropagation()">
-                  <span class="material-icons">delete</span>
+                <button class="btn-delete-card" (click)="deleteUser(user); $event.stopPropagation()" [attr.aria-label]="'Delete user ' + user.username">
+                  <span class="material-icons" aria-hidden="true">delete</span>
                   Delete
                 </button>
               </div>
@@ -156,48 +189,75 @@
     <!-- Mobile Pagination -->
     @if (totalPages > 1) {
       <div class="pagination mobile-pagination mobile-only">
-        <button [disabled]="currentPage === 1" (click)="goToPage(currentPage - 1)">Previous</button>
-        <span>Page {{ currentPage }} of {{ totalPages }}</span>
-        <button [disabled]="currentPage === totalPages" (click)="goToPage(currentPage + 1)">Next</button>
+        <div class="pagination-info" role="status" [attr.aria-live]="'polite'">
+          <span>Page {{ currentPage }} of {{ totalPages }}</span>
+        </div>
+        <nav class="pagination-controls" [attr.aria-label]="'Pagination navigation'">
+          <button
+            class="pagination-btn prev"
+            [disabled]="currentPage === 1"
+            (click)="goToPage(currentPage - 1)"
+            [attr.aria-label]="'Go to previous page'"
+            [attr.title]="'Previous page'">
+            Previous
+          </button>
+          <button
+            class="pagination-btn next"
+            [disabled]="currentPage === totalPages"
+            (click)="goToPage(currentPage + 1)"
+            [attr.aria-label]="'Go to next page'"
+            [attr.title]="'Next page'">
+            Next
+          </button>
+        </nav>
       </div>
     }
   }
 
   <!-- Edit/Create Modal -->
   @if (showEditModal) {
-    <div class="modal-overlay" (click)="cancelEdit()">
-      <div class="modal-content" (click)="$event.stopPropagation()">
-        <h2>{{ isCreating ? 'Create User' : 'Edit User' }}</h2>
+    <div class="modal-overlay" (click)="cancelEdit()" [attr.aria-hidden]="!showEditModal">
+      <div
+        class="modal-content"
+        role="dialog"
+        aria-modal="true"
+        [attr.aria-labelledby]="'user-modal-title'"
+        (click)="$event.stopPropagation()"
+      >
+        <h2 id="user-modal-title">{{ isCreating ? 'Create User' : 'Edit User' }}</h2>
         <form (ngSubmit)="saveUser()">
           <div class="form-group">
-            <label>Username *</label>
-            <input type="text" [(ngModel)]="editForm.username" name="username" required />
+            <label for="user-username">Username *</label>
+            <input type="text" id="user-username" [(ngModel)]="editForm.username" name="username" required [attr.aria-required]="true" />
           </div>
           <div class="form-group">
-            <label>Email</label>
-            <input type="email" [(ngModel)]="editForm.email" name="email" />
+            <label for="user-email">Email</label>
+            <input type="email" id="user-email" [(ngModel)]="editForm.email" name="email" />
           </div>
           <div class="form-group">
-            <label>{{ isCreating ? 'Password *' : 'Password (leave blank to keep current)' }}</label>
-            <input type="password" [(ngModel)]="editForm.password" name="password" [required]="isCreating" />
+            <label for="user-password">{{ isCreating ? 'Password *' : 'Password (leave blank to keep current)' }}</label>
+            <div class="password-field">
+              <input [type]="editForm.password ? 'text' : 'password'" id="user-password" [(ngModel)]="editForm.password" name="password" [required]="isCreating" [attr.aria-required]="isCreating" />
+              <button type="button" class="btn-generate" (click)="generatePassword()" title="Generate random password">Generate</button>
+            </div>
           </div>
           @if (editForm.password) {
             <div class="form-group">
-              <label>Confirm Password</label>
-              <input type="password" [(ngModel)]="editForm.confirmPassword" name="confirmPassword" />
+              <label for="user-confirm-password">Confirm Password</label>
+              <input type="password" id="user-confirm-password" [(ngModel)]="editForm.confirmPassword" name="confirmPassword" />
             </div>
           }
           <div class="form-group">
-            <label>First Name</label>
-            <input type="text" [(ngModel)]="editForm.first_name" name="first_name" />
+            <label for="user-first-name">First Name</label>
+            <input type="text" id="user-first-name" [(ngModel)]="editForm.first_name" name="first_name" />
           </div>
           <div class="form-group">
-            <label>Last Name</label>
-            <input type="text" [(ngModel)]="editForm.last_name" name="last_name" />
+            <label for="user-last-name">Last Name</label>
+            <input type="text" id="user-last-name" [(ngModel)]="editForm.last_name" name="last_name" />
           </div>
           <div class="form-group">
-            <label>Role *</label>
-            <select [(ngModel)]="editForm.role" name="role" required>
+            <label for="user-role">Role *</label>
+            <select id="user-role" [(ngModel)]="editForm.role" name="role" required [attr.aria-required]="true">
               <option value="admin">Admin</option>
               <option value="manager">Manager</option>
               <option value="user">User</option>
@@ -205,16 +265,16 @@
             </select>
           </div>
           <div class="form-group">
-            <label>Store UID</label>
-            <input type="text" [(ngModel)]="editForm.store_uid" name="store_uid" />
+            <label for="user-store-uid">Store UID</label>
+            <input type="text" id="user-store-uid" [(ngModel)]="editForm.store_uid" name="store_uid" />
           </div>
           <div class="form-group">
-            <label>Price Type UID</label>
-            <input type="text" [(ngModel)]="editForm.price_type_uid" name="price_type_uid" />
+            <label for="user-price-type-uid">Price Type UID</label>
+            <input type="text" id="user-price-type-uid" [(ngModel)]="editForm.price_type_uid" name="price_type_uid" />
           </div>
           <div class="form-actions">
-            <button type="button" class="btn-cancel" (click)="cancelEdit()">Cancel</button>
-            <button type="submit" class="btn-save">Save</button>
+            <button type="button" class="btn-cancel" (click)="cancelEdit()" [attr.aria-label]="'Cancel editing'">Cancel</button>
+            <button type="submit" class="btn-save" [attr.aria-label]="isCreating ? 'Create user' : 'Save changes'">Save</button>
           </div>
         </form>
       </div>

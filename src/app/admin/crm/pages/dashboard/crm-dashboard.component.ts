@@ -4,6 +4,7 @@ import { Subscription } from 'rxjs';
 import { CrmService } from '../../services/crm.service';
 import { CrmDashboardStats, CrmPipelineStageStats, CrmWorkloadStats, CrmTaskStats, CrmDashboardFilters } from '../../models/crm-dashboard.model';
 import { CrmActivity } from '../../models/crm-activity.model';
+import { PageTitleService } from '../../../../core/services/page-title.service';
 
 @Component({
     selector: 'app-crm-dashboard',
@@ -30,17 +31,20 @@ export class CrmDashboardComponent implements OnInit, OnDestroy {
   // UI state
   loading = false;
   error: string | null = null;
+  isFiltersExpanded = false;
 
   // Filters
   currentFilters: CrmDashboardFilters = {};
 
   constructor(
     private crmService: CrmService,
-    private router: Router,
-    private cdr: ChangeDetectorRef
+    public router: Router,
+    private cdr: ChangeDetectorRef,
+    private pageTitleService: PageTitleService
   ) {}
 
   ngOnInit(): void {
+    this.pageTitleService.setTitle('CRM Dashboard');
     this.loadDashboard();
   }
 
@@ -83,21 +87,9 @@ export class CrmDashboardComponent implements OnInit, OnDestroy {
     this.loadDashboard();
   }
 
-  // Navigation
-  goToPipelineBoard(): void {
-    this.router.navigate(['/admin/crm']);
-  }
-
-  goToMyTasks(): void {
-    this.router.navigate(['/admin/crm/my-tasks']);
-  }
-
-  goToSettings(): void {
-    this.router.navigate(['/admin/crm/settings']);
-  }
-
-  goToWorkload(): void {
-    this.router.navigate(['/admin/crm/workload']);
+  toggleFilters(): void {
+    this.isFiltersExpanded = !this.isFiltersExpanded;
+    this.cdr.detectChanges();
   }
 
   // Computed values

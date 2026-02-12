@@ -1,3 +1,5 @@
+@use '../../../styles/mixins' as *;
+
 .dashboard-container {
   .dashboard-header {
     display: flex;
@@ -24,40 +26,36 @@
       }
 
       .store-select {
+        @include input-focus;
         padding: var(--spacing-sm) var(--spacing-sm-md);
-        border: 1px solid var(--color-border);
-        border-radius: var(--radius-sm);
+        border: 2px solid var(--color-border);
+        border-radius: var(--radius-md);
         font-size: 14px;
         background-color: var(--input-bg);
         color: var(--input-text);
         cursor: pointer;
         min-width: 200px;
+        min-height: var(--touch-target-min);
         transition: border-color 0.2s;
 
         &:hover:not(:disabled) {
           border-color: var(--color-info);
         }
 
-        &:focus {
-          outline: none;
-          border-color: var(--color-info);
-          box-shadow: var(--focus-ring);
-        }
-
         &:disabled {
+          @include disabled-state;
           background-color: var(--color-background-secondary);
-          cursor: not-allowed;
-          opacity: 0.6;
         }
       }
     }
   }
 }
 
-.loading, .error {
+.loading,
+.error {
   padding: var(--spacing-md-lg);
   text-align: center;
-  background-color: var(--card-bg);
+  background-color: var(--color-background-elevated);
   border-radius: var(--radius-md);
   margin-bottom: var(--spacing-md-lg);
 }
@@ -66,15 +64,17 @@
   color: var(--color-danger);
 
   button {
+    @include button-typography;
     margin-left: var(--spacing-sm-md);
-    padding: var(--spacing-sm-md) var(--spacing-sm-md);
+    padding: var(--spacing-sm-md);
+    min-height: var(--touch-target-min);
     background-color: var(--color-info);
     color: var(--color-text-inverse);
     border: none;
-    border-radius: var(--radius-sm);
+    border-radius: var(--radius-md);
     cursor: pointer;
 
-    &:hover {
+    &:hover:not(:disabled) {
       background-color: var(--color-info-dark);
     }
   }
@@ -87,7 +87,7 @@
 }
 
 .stat-card {
-  background-color: var(--card-bg);
+  background-color: var(--color-background-elevated);
   border-radius: var(--radius-md);
   padding: var(--spacing-lg);
   box-shadow: var(--shadow-sm);
@@ -225,7 +225,7 @@
     .dashboard-header {
       flex-direction: column;
       align-items: stretch;
-      gap: 15px;
+      gap: var(--spacing-md);
 
       h1 {
         font-size: 1.5rem;
@@ -234,7 +234,7 @@
       .store-filter {
         flex-direction: column;
         align-items: stretch;
-        gap: 8px;
+        gap: var(--spacing-sm);
 
         label {
           font-size: 0.9rem;
@@ -243,7 +243,7 @@
         .store-select {
           min-width: unset;
           width: 100%;
-          padding: 12px;
+          padding: var(--spacing-md-sm);
           font-size: 16px; // Prevents iOS zoom
         }
       }
@@ -252,11 +252,11 @@
 
   .stats-grid {
     grid-template-columns: 1fr;
-    gap: 15px;
+    gap: var(--spacing-md);
   }
 
   .stat-card {
-    padding: 20px;
+    padding: var(--spacing-md-lg);
 
     h2 {
       font-size: 1.1rem;
@@ -277,7 +277,7 @@
 
     thead th,
     tbody td {
-      padding: 8px;
+      padding: var(--spacing-sm);
       font-size: 0.9rem;
     }
   }
@@ -285,7 +285,7 @@
 
 @media (max-width: 480px) {
   .stat-card {
-    padding: 16px;
+    padding: var(--spacing-md);
 
     .stat-value {
       font-size: 1.75rem;
@@ -301,4 +301,3 @@
     padding: 6px 0;
   }
 }
-

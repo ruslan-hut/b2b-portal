@@ -1,35 +1,46 @@
 <div class="my-tasks-container">
-  <div class="page-header">
-    <div class="header-left">
-      <button class="btn-back" (click)="goToCrmBoard()">
-        <span>&larr;</span>
-      </button>
-      <div>
-        <h1>My Tasks</h1>
-        <p class="subtitle">Tasks assigned to you</p>
-      </div>
-    </div>
-    <div class="header-right">
-      <div class="filters">
-        <select [(ngModel)]="statusFilter" (change)="onFilterChange()" class="status-filter">
-          <option value="all">All Statuses</option>
-          <option value="pending">Pending</option>
-          <option value="in_progress">In Progress</option>
-          <option value="completed">Completed</option>
-          <option value="cancelled">Cancelled</option>
-        </select>
+  <app-action-bar>
+    <div actionBarLeft>
+      <select [(ngModel)]="statusFilter" (change)="onFilterChange()" class="status-filter">
+        <option value="all">All Statuses</option>
+        <option value="pending">Pending</option>
+        <option value="in_progress">In Progress</option>
+        <option value="completed">Completed</option>
+        <option value="cancelled">Cancelled</option>
+      </select>
 
-        <button
-          class="btn-overdue"
-          [class.active]="showOverdueOnly"
-          (click)="toggleOverdueOnly()"
-        >
-          <span class="icon">&#9888;</span>
-          Overdue Only
-        </button>
-      </div>
+      <button
+        class="btn-overdue"
+        [class.active]="showOverdueOnly"
+        (click)="toggleOverdueOnly()"
+      >
+        <span class="material-icons">warning</span>
+        <span class="btn-text">Overdue Only</span>
+      </button>
     </div>
-  </div>
+    <div actionBarRight>
+      <a routerLink="/admin/crm" [routerLinkActiveOptions]="{exact: true}" routerLinkActive="active" class="btn-nav">
+        <span class="material-icons">view_kanban</span>
+        <span class="btn-text">Pipeline</span>
+      </a>
+      <a routerLink="/admin/crm/dashboard" routerLinkActive="active" class="btn-nav">
+        <span class="material-icons">dashboard</span>
+        <span class="btn-text">Dashboard</span>
+      </a>
+      <a routerLink="/admin/crm/workload" routerLinkActive="active" class="btn-nav">
+        <span class="material-icons">bar_chart</span>
+        <span class="btn-text">Workload</span>
+      </a>
+      <a routerLink="/admin/crm/my-tasks" routerLinkActive="active" class="btn-nav">
+        <span class="material-icons">task_alt</span>
+        <span class="btn-text">My Tasks</span>
+      </a>
+      <a routerLink="/admin/crm/settings" routerLinkActive="active" class="btn-nav">
+        <span class="material-icons">settings</span>
+        <span class="btn-text">Settings</span>
+      </a>
+    </div>
+  </app-action-bar>
 
   <div *ngIf="error" class="error-message">
     {{ error }}

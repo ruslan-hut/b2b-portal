@@ -1,0 +1,288 @@
+<div class="invoice-admin-container">
+  <app-action-bar>
+    <div class="page-title" actionBarLeft>
+      <h1>{{ 'invoice.title' | translate }}</h1>
+    </div>
+    <div actionBarRight>
+      <div class="tabs">
+        <button class="tab" [class.active]="activeTab === 'types'" (click)="setActiveTab('types')">
+          <span class="material-icons">category</span>
+          <span class="tab-text">{{ 'invoice.types' | translate }}</span>
+        </button>
+        <button class="tab" [class.active]="activeTab === 'history'" (click)="setActiveTab('history')">
+          <span class="material-icons">history</span>
+          <span class="tab-text">{{ 'invoice.history' | translate }}</span>
+        </button>
+      </div>
+    </div>
+  </app-action-bar>
+
+  @if (error) {
+    <div class="error-message">{{ error }}</div>
+  }
+
+  <!-- Types Tab -->
+  @if (activeTab === 'types') {
+    <div class="tab-content types-tab">
+      <div class="toolbar">
+        <div class="toolbar-left">
+          <button class="btn-primary" (click)="openNewType()">
+            <span class="material-icons">add</span>
+            <span>Add Type</span>
+          </button>
+        </div>
+        <div class="toolbar-right">
+          <div class="settings-toggle" [class.disabled]="settingsLoading">
+            <span class="toggle-label">{{ 'invoice.enabled' | translate }}</span>
+            <label class="toggle-switch">
+              <input type="checkbox"
+                     [checked]="settings?.enabled"
+                     [disabled]="settingsLoading"
+                     (change)="toggleSettings()">
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      @if (typesLoading) {
+        <div class="loading">{{ 'common.loading' | translate }}</div>
+      } @else {
+        <table class="data-table types-table">
+          <thead>
+            <tr>
+              <th>{{ 'invoice.form.name' | translate }}</th>
+              <th>{{ 'invoice.form.url' | translate }}</th>
+              <th>{{ 'invoice.form.method' | translate }}</th>
+              <th>{{ 'invoice.form.store' | translate }}</th>
+              <th>{{ 'invoice.form.active' | translate }}</th>
+              <th>{{ 'common.actions' | translate }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (type of invoiceTypes; track type.uid) {
+              <tr>
+                <td [attr.data-label]="'invoice.form.name' | translate">{{ type.name }}</td>
+                <td [attr.data-label]="'invoice.form.url' | translate" class="url-cell" [title]="type.url">{{ type.url }}</td>
+                <td [attr.data-label]="'invoice.form.method' | translate">{{ type.method }}</td>
+                <td [attr.data-label]="'invoice.form.store' | translate">{{ getStoreName(type.store_uid) }}</td>
+                <td [attr.data-label]="'invoice.form.active' | translate">
+                  <label class="toggle-switch small">
+                    <input type="checkbox" [checked]="type.active" (change)="toggleTypeActive(type)">
+                    <span class="slider"></span>
+                  </label>
+                </td>
+                <td class="actions-cell">
+                  <button class="btn-icon" (click)="openEditType(type)" title="Edit">
+                    <span class="material-icons">edit</span>
+                  </button>
+                  <button class="btn-icon danger" (click)="deleteType(type)" title="Delete">
+                    <span class="material-icons">delete</span>
+                  </button>
+                </td>
+              </tr>
+            }
+            @if (invoiceTypes.length === 0) {
+              <tr>
+                <td colspan="6" class="no-data">No invoice types configured</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+
+        @if (typesTotalPages > 1) {
+          <div class="pagination">
+            <button [disabled]="typesPage === 1" (click)="goToTypesPage(typesPage - 1)">
+              <span class="material-icons">chevron_left</span>
+            </button>
+            <span>{{ typesPage }} / {{ typesTotalPages }}</span>
+            <button [disabled]="typesPage === typesTotalPages" (click)="goToTypesPage(typesPage + 1)">
+              <span class="material-icons">chevron_right</span>
+            </button>
+          </div>
+        }
+      }
+    </div>
+  }
+
+  <!-- History Tab -->
+  @if (activeTab === 'history') {
+    <div class="tab-content history-tab">
+      <div class="toolbar">
+        <button class="btn-secondary" (click)="cleanupInvoices()">
+          <span class="material-icons">delete_sweep</span>
+          <span>{{ 'invoice.cleanup' | translate }}</span>
+        </button>
+        <button class="btn-secondary" (click)="loadInvoices()">
+          <span class="material-icons">refresh</span>
+          <span>Refresh</span>
+        </button>
+      </div>
+
+      @if (invoicesLoading) {
+        <div class="loading">{{ 'common.loading' | translate }}</div>
+      } @else {
+        <table class="data-table history-table">
+          <thead>
+            <tr>
+              <th>{{ 'common.date' | translate }}</th>
+              <th>Order</th>
+              <th>{{ 'invoice.type' | translate }}</th>
+              <th>{{ 'common.status' | translate }}</th>
+              <th>{{ 'common.actions' | translate }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (invoice of invoices; track invoice.uid) {
+              <tr [class]="getInvoiceStatusClass(invoice)">
+                <td [attr.data-label]="'common.date' | translate">{{ formatDate(invoice.created_at) }}</td>
+                <td data-label="Order">{{ invoice.order_uid }}</td>
+                <td [attr.data-label]="'invoice.type' | translate">{{ getTypeName(invoice.type_uid) }}</td>
+                <td [attr.data-label]="'common.status' | translate">
+                  @if (invoice.error) {
+                    <span class="status-badge error" [title]="invoice.error">Error</span>
+                  } @else if (invoice.response_type === 'link') {
+                    <span class="status-badge link">{{ 'invoice.link' | translate }}</span>
+                  } @else {
+                    <span class="status-badge file">{{ invoice.file_name || 'File' }}</span>
+                  }
+                </td>
+                <td class="actions-cell">
+                  @if (!invoice.error) {
+                    <button class="btn-icon" (click)="openInvoice(invoice)" [title]="invoice.response_type === 'link' ? 'Open' : 'Download'">
+                      <span class="material-icons">{{ invoice.response_type === 'link' ? 'open_in_new' : 'download' }}</span>
+                    </button>
+                  }
+                  <button class="btn-icon danger" (click)="deleteInvoice(invoice)" title="Delete">
+                    <span class="material-icons">delete</span>
+                  </button>
+                </td>
+              </tr>
+            }
+            @if (invoices.length === 0) {
+              <tr>
+                <td colspan="5" class="no-data">No invoice history</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+
+        @if (invoicesTotalPages > 1) {
+          <div class="pagination">
+            <button [disabled]="invoicesPage === 1" (click)="goToInvoicesPage(invoicesPage - 1)">
+              <span class="material-icons">chevron_left</span>
+            </button>
+            <span>{{ invoicesPage }} / {{ invoicesTotalPages }}</span>
+            <button [disabled]="invoicesPage === invoicesTotalPages" (click)="goToInvoicesPage(invoicesPage + 1)">
+              <span class="material-icons">chevron_right</span>
+            </button>
+          </div>
+        }
+      }
+    </div>
+  }
+</div>
+
+<!-- Type Edit Modal -->
+@if (showTypeForm) {
+  <div class="modal-overlay" (click)="closeTypeForm()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>{{ editingType ? 'Edit Invoice Type' : 'New Invoice Type' }}</h3>
+        <button class="btn-close" (click)="closeTypeForm()">
+          <span class="material-icons">close</span>
+        </button>
+      </div>
+      <form [formGroup]="typeForm" (ngSubmit)="saveType()">
+        <div class="modal-body">
+          <div class="form-group">
+            <label>{{ 'invoice.form.name' | translate }} *</label>
+            <input type="text" formControlName="name" placeholder="Invoice type name">
+          </div>
+
+          <div class="form-group">
+            <label>{{ 'invoice.form.url' | translate }} *</label>
+            <input type="text" formControlName="url" placeholder="https://api.example.com/invoice">
+          </div>
+
+          <div class="form-group">
+            <label>{{ 'invoice.form.method' | translate }}</label>
+            <select formControlName="method">
+              <option value="GET">GET</option>
+              <option value="POST">POST</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>{{ 'invoice.form.store' | translate }}</label>
+            <select formControlName="store_uid">
+              <option [value]="null">All Stores</option>
+              @for (store of stores; track store.uid) {
+                <option [value]="store.uid">{{ store.name }}</option>
+              }
+            </select>
+          </div>
+
+          <!-- Headers -->
+          <div class="form-group headers-group">
+            <div class="headers-label">
+              <label>{{ 'invoice.form.headers' | translate }}</label>
+              <button type="button" class="btn-add-header" (click)="addHeader()">
+                <span class="material-icons">add</span>
+              </button>
+            </div>
+            @if (headers.length > 0) {
+              <div class="headers-list">
+                @for (header of headers; track $index) {
+                  <div class="header-row">
+                    <input type="text" [(ngModel)]="header.key" [ngModelOptions]="{standalone: true}" placeholder="Header name">
+                    <input type="text" [(ngModel)]="header.value" [ngModelOptions]="{standalone: true}" placeholder="Header value">
+                    <button type="button" class="btn-remove-header" (click)="removeHeader($index)">
+                      <span class="material-icons">close</span>
+                    </button>
+                  </div>
+                }
+              </div>
+            } @else {
+              <div class="headers-empty">No custom headers</div>
+            }
+          </div>
+
+          <div class="form-group checkbox-group">
+            <label>
+              <input type="checkbox" formControlName="active">
+              <span>{{ 'invoice.form.active' | translate }}</span>
+            </label>
+          </div>
+
+          <!-- Test Result -->
+          @if (testResult) {
+            <div class="test-result" [class.success]="testResult.success" [class.error]="!testResult.success">
+              @if (testResult.success) {
+                <span class="material-icons">check_circle</span>
+                <span>{{ 'invoice.testSuccess' | translate }} ({{ testResult.statusCode }})</span>
+              } @else {
+                <span class="material-icons">error</span>
+                <span>{{ 'invoice.testError' | translate }}: {{ testResult.error }}</span>
+              }
+            </div>
+          }
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" (click)="testType()" [disabled]="testLoading || !typeForm.get('url')?.valid">
+            @if (testLoading) {
+              <span class="spinner"></span>
+            } @else {
+              <span class="material-icons">science</span>
+            }
+            <span>{{ 'invoice.test' | translate }}</span>
+          </button>
+          <button type="button" class="btn-secondary" (click)="closeTypeForm()">{{ 'common.cancel' | translate }}</button>
+          <button type="submit" class="btn-primary" [disabled]="typeForm.invalid || typesLoading">
+            {{ 'common.save' | translate }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}

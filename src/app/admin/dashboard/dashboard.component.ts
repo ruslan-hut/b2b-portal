@@ -1,6 +1,7 @@
 import { Component, OnInit, OnDestroy, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
 import { Subscription } from 'rxjs';
 import { AdminService, DashboardStats, DiscountScale } from '../../core/services/admin.service';
+import { PageTitleService } from '../../core/services/page-title.service';
 
 interface Store {
   uid: string;
@@ -29,10 +30,12 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   constructor(
     private adminService: AdminService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private pageTitleService: PageTitleService
   ) {}
 
   ngOnInit(): void {
+    this.pageTitleService.setTitle('Dashboard');
     this.loadStores();
     this.loadDashboardStats();
   }

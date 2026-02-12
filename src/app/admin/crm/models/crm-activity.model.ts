@@ -5,7 +5,11 @@ export type CrmActivityType =
   | 'assignment'
   | 'unassignment'
   | 'order_created'
-  | 'status_change';
+  | 'status_change'
+  | 'order_edit'
+  | 'items_changed'
+  | 'total_changed'
+  | 'discount_changed';
 
 export interface CrmActivity {
   uid: string;
@@ -15,7 +19,12 @@ export interface CrmActivity {
   activity_type: CrmActivityType;
   content?: string;
   is_internal: boolean;
-  metadata?: CrmStageChangeMetadata | CrmAssignmentMetadata;
+  metadata?:
+    | CrmStageChangeMetadata
+    | CrmAssignmentMetadata
+    | CrmOrderFieldChangeMetadata[]
+    | CrmItemChangeMetadata[]
+    | CrmTotalChangeMetadata;
   created_at: string;
 }
 
@@ -33,6 +42,31 @@ export interface CrmAssignmentMetadata {
   assigned_by_name?: string;
   previous_user_uid?: string;
   previous_user_name?: string;
+}
+
+export interface CrmOrderFieldChangeMetadata {
+  field_name: string;
+  old_value?: any;
+  new_value: any;
+}
+
+export interface CrmItemChangeMetadata {
+  action: 'added' | 'removed' | 'modified';
+  product_uid: string;
+  product_name?: string;
+  sku?: string;
+  old_quantity?: number;
+  new_quantity?: number;
+}
+
+export interface CrmTotalChangeMetadata {
+  old_total: number;
+  new_total: number;
+  old_subtotal?: number;
+  new_subtotal?: number;
+  old_vat?: number;
+  new_vat?: number;
+  item_count: number;
 }
 
 export interface CrmCreateActivityRequest {

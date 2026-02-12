@@ -3,7 +3,7 @@
 Base path: `/api/v1`
 
 Detailed documentation:
-- [API_DOCUMENTATION.md](API_DOCUMENTATION.md) - Authentication, common patterns, response structure
+- [api_documentation.md](api_documentation.md) - Authentication, common patterns, response structure
 - [FRONTEND_API.md](FRONTEND_API.md) - Frontend API for clients
 - [DATA_MANAGEMENT_API.md](DATA_MANAGEMENT_API.md) - Data management endpoints for staff
 - [ADMIN_API.md](ADMIN_API.md) - Admin-only endpoints
@@ -15,10 +15,8 @@ Detailed documentation:
 | Endpoint | Description | Details |
 |----------|-------------|---------|
 | `GET /health` | Health check | - |
-| `GET /debug/static` | Static files diagnostic | - |
-| `POST /auth/login` | Login | [API_DOCUMENTATION.md](API_DOCUMENTATION.md#login) |
-| `POST /auth/refresh` | Refresh token | [API_DOCUMENTATION.md](API_DOCUMENTATION.md#refresh-token) |
-| `POST /logs` | Submit frontend logs | - |
+| `POST /auth/login` | Login | [api_documentation.md](api_documentation.md#login) |
+| `POST /auth/refresh` | Refresh token | [api_documentation.md](api_documentation.md#refresh-token) |
 
 ---
 
@@ -30,8 +28,11 @@ See [FRONTEND_API.md](FRONTEND_API.md) for detailed documentation.
 | Endpoint | Description |
 |----------|-------------|
 | `GET /products` | List products with calculated prices |
+| `GET /categories` | List categories for filter dropdown |
+| `GET /languages` | List available languages for product descriptions |
 | `POST /product/images` | Get main product images (batch) |
 | `POST /cart/update` | Update cart |
+| `POST /cart/delete` | Delete cart |
 | `POST /orders/preview` | Preview order |
 | `POST /orders/confirm` | Confirm order |
 | `GET /orders/history` | Get order history |
@@ -56,11 +57,11 @@ See [DATA_MANAGEMENT_API.md](DATA_MANAGEMENT_API.md) for detailed documentation.
 ### `/auth`
 | Endpoint | Description | Details |
 |----------|-------------|---------|
-| `POST /logout` | Logout | [API_DOCUMENTATION.md](API_DOCUMENTATION.md#logout-revoke-current-token) |
-| `GET /me` | Get current user | [API_DOCUMENTATION.md](API_DOCUMENTATION.md#get-current-userclient-info) |
-| `GET /tokens` | List tokens | [API_DOCUMENTATION.md](API_DOCUMENTATION.md#list-active-tokens-all-devices) |
-| `DELETE /tokens/{token_uid}` | Revoke token | [API_DOCUMENTATION.md](API_DOCUMENTATION.md#revoke-specific-token-logout-from-specific-device) |
-| `POST /tokens/revoke-all` | Revoke all tokens | [API_DOCUMENTATION.md](API_DOCUMENTATION.md#revoke-all-tokens-logout-from-all-devices) |
+| `POST /logout` | Logout | [api_documentation.md](api_documentation.md#logout-revoke-current-token) |
+| `GET /me` | Get current user | [api_documentation.md](api_documentation.md#get-current-userclient-info) |
+| `GET /tokens` | List tokens | [api_documentation.md](api_documentation.md#list-active-tokens-all-devices) |
+| `DELETE /tokens/{token_uid}` | Revoke token | [api_documentation.md](api_documentation.md#revoke-specific-token-logout-from-specific-device) |
+| `POST /tokens/revoke-all` | Revoke all tokens | [api_documentation.md](api_documentation.md#revoke-all-tokens-logout-from-all-devices) |
 
 ### `/client`
 | Endpoint | Description | Details |
@@ -216,6 +217,34 @@ See [DATA_MANAGEMENT_API.md](DATA_MANAGEMENT_API.md) for detailed documentation.
 | `POST /delete` | Delete discount scale | [DATA_MANAGEMENT_API.md](DATA_MANAGEMENT_API.md#delete-discount-scale-entry) |
 | `DELETE /store` | Delete discount scales by store | [DATA_MANAGEMENT_API.md](DATA_MANAGEMENT_API.md#delete-all-discount-scales-for-store) |
 
+### `/product_discount_limit`
+| Endpoint | Description | Details |
+|----------|-------------|---------|
+| `GET /` | Get product discount limits by store | [DATA_MANAGEMENT_API.md](DATA_MANAGEMENT_API.md#get-product-discount-limits-by-store) |
+| `POST /` | Upsert product discount limits (batch, for CRM sync) | [DATA_MANAGEMENT_API.md](DATA_MANAGEMENT_API.md#upsert-product-discount-limits-batch) |
+| `POST /delete` | Delete product discount limit | [DATA_MANAGEMENT_API.md](DATA_MANAGEMENT_API.md#delete-product-discount-limit) |
+
+### `/crm` (ERP Integration)
+| Endpoint | Description | Details |
+|----------|-------------|---------|
+| `GET /stages` | List active pipeline stages | [DATA_MANAGEMENT_API.md](DATA_MANAGEMENT_API.md#list-active-pipeline-stages) |
+| `POST /stages/batch` | Get stages by UIDs | [DATA_MANAGEMENT_API.md](DATA_MANAGEMENT_API.md#get-stages-batch) |
+| `GET /board` | Get full pipeline board | [DATA_MANAGEMENT_API.md](DATA_MANAGEMENT_API.md#get-pipeline-board) |
+| `GET /board/orders` | Get orders by stage (paginated) | [DATA_MANAGEMENT_API.md](DATA_MANAGEMENT_API.md#get-orders-by-stage) |
+| `POST /board/move` | Move order to stage | [DATA_MANAGEMENT_API.md](DATA_MANAGEMENT_API.md#move-order-to-stage) |
+| `POST /board/pipeline/batch` | Get order pipeline info batch | [DATA_MANAGEMENT_API.md](DATA_MANAGEMENT_API.md#get-order-pipeline-info-batch) |
+
+### `/changes` (Change Tracking for ERP)
+| Endpoint | Description | Details |
+|----------|-------------|---------|
+| `GET /` | Get pending changes for sync | [DATA_MANAGEMENT_API.md](DATA_MANAGEMENT_API.md#get-pending-changes) |
+| `POST /confirm` | Confirm processed changes | [DATA_MANAGEMENT_API.md](DATA_MANAGEMENT_API.md#confirm-changes) |
+
+### `/user` (ERP User Upload)
+| Endpoint | Description | Details |
+|----------|-------------|---------|
+| `POST /` | Upsert ERP users (batch, creates managers with no password) | [DATA_MANAGEMENT_API.md](DATA_MANAGEMENT_API.md#upsert-erp-users) |
+
 ---
 
 ## Admin (Authenticated + User role required)
@@ -228,6 +257,14 @@ See [ADMIN_API.md](ADMIN_API.md) for detailed documentation.
 | Endpoint | Description | Details |
 |----------|-------------|---------|
 | `GET /dashboard` | Dashboard statistics | [ADMIN_API.md](ADMIN_API.md#get-dashboard-statistics) |
+| `GET /discount_scale` | Get discount scales for dashboard | [ADMIN_API.md](ADMIN_API.md#discount-scale-dashboard) |
+
+#### `/admin/product_discount_limits`
+| Endpoint | Description | Details |
+|----------|-------------|---------|
+| `GET /` | Get product discount limits by store | [ADMIN_API.md](ADMIN_API.md#product-discount-limits) |
+| `POST /` | Upsert product discount limits (batch) | [ADMIN_API.md](ADMIN_API.md#product-discount-limits) |
+| `POST /delete` | Delete product discount limit | [ADMIN_API.md](ADMIN_API.md#product-discount-limits) |
 
 #### `/admin/clients`
 | Endpoint | Description | Details |
@@ -248,6 +285,37 @@ See [ADMIN_API.md](ADMIN_API.md) for detailed documentation.
 | `POST /status` | Update order status | [ADMIN_API.md](ADMIN_API.md#update-order-status) |
 | `POST /delete` | Delete orders batch | [ADMIN_API.md](ADMIN_API.md#delete-orders-batch) |
 | `POST /item/delete` | Delete order items batch | [ADMIN_API.md](ADMIN_API.md#delete-order-items-batch) |
+| `POST /edit` | Edit order (recalculate with modified items) | [ADMIN_API.md](ADMIN_API.md#edit-order) |
+| `POST /edit/preview` | Preview order edit without saving | [ADMIN_API.md](ADMIN_API.md#preview-order-edit) |
+| `POST /edit/check` | Check if order can be edited | [ADMIN_API.md](ADMIN_API.md#can-edit-order) |
+
+#### `/admin/orders/invoice`
+| Endpoint | Description | Details |
+|----------|-------------|---------|
+| `POST /request` | Request invoice generation | [ADMIN_API.md](ADMIN_API.md#request-invoice) |
+| `POST /types` | Get invoice types available for order | [ADMIN_API.md](ADMIN_API.md#get-invoice-types-for-order) |
+| `POST /list` | Get invoices for orders | [ADMIN_API.md](ADMIN_API.md#get-invoices-for-orders) |
+| `GET /{uid}` | Download invoice file | [ADMIN_API.md](ADMIN_API.md#download-invoice) |
+
+#### `/admin/orders/shipment`
+| Endpoint | Description | Details |
+|----------|-------------|---------|
+| `POST /create` | Create shipment for order | [ADMIN_API.md](ADMIN_API.md#create-shipment) |
+| `POST /list` | Get shipments by order | [ADMIN_API.md](ADMIN_API.md#get-shipments-by-order) |
+| `POST /batch` | Get shipments batch | [ADMIN_API.md](ADMIN_API.md#get-shipments-batch) |
+| `GET /` | List all shipments | [ADMIN_API.md](ADMIN_API.md#list-shipments) |
+| `GET /{uid}` | Get shipment details | [ADMIN_API.md](ADMIN_API.md#get-shipment) |
+| `GET /{uid}/label` | Download shipment label | [ADMIN_API.md](ADMIN_API.md#get-shipment-label) |
+| `POST /{uid}/track` | Update tracking info | [ADMIN_API.md](ADMIN_API.md#update-tracking) |
+| `POST /{uid}/cancel` | Cancel shipment | [ADMIN_API.md](ADMIN_API.md#cancel-shipment) |
+| `GET /{uid}/events` | Get shipment tracking events | [ADMIN_API.md](ADMIN_API.md#get-shipment-events) |
+
+#### `/admin/shipment` (Read-only for Admin/Manager)
+| Endpoint | Description | Details |
+|----------|-------------|---------|
+| `GET /settings` | Get shipment service settings | [ADMIN_API.md](ADMIN_API.md#shipment-settings) |
+| `POST /carriers/active` | List active carriers | [ADMIN_API.md](ADMIN_API.md#list-active-carriers) |
+| `GET /boxes/active` | Get active box templates | [ADMIN_API.md](ADMIN_API.md#get-active-boxes) |
 
 #### `/admin/changes`
 | Endpoint | Description | Details |
@@ -266,6 +334,7 @@ See [ADMIN_API.md](ADMIN_API.md) for detailed documentation.
 |----------|-------------|---------|
 | `GET /` | List products | [ADMIN_API.md](ADMIN_API.md#list-all-products) |
 | `GET /details` | List products with details | [ADMIN_API.md](ADMIN_API.md#product-management) |
+| `GET /search` | Search products for order editing | [ADMIN_API.md](ADMIN_API.md#search-products-for-order) |
 | `POST /batch` | Get products batch | [ADMIN_API.md](ADMIN_API.md#get-products-batch) |
 | `POST /find/category` | Find products by category UIDs | [ADMIN_API.md](ADMIN_API.md#find-products-by-category-batch) |
 | `POST /` | Upsert product | [ADMIN_API.md](ADMIN_API.md#upsert-products-create-or-update) |
@@ -274,7 +343,94 @@ See [ADMIN_API.md](ADMIN_API.md) for detailed documentation.
 | `POST /description` | Upsert product description | [ADMIN_API.md](ADMIN_API.md#product-management) |
 | `POST /description/delete` | Delete product descriptions batch | [ADMIN_API.md](ADMIN_API.md#product-management) |
 
+#### `/admin/crm` (Pipeline Board - Admin/Manager)
+
+**Stages & Transitions (read-only)**
+| Endpoint | Description | Details |
+|----------|-------------|---------|
+| `GET /stages` | List pipeline stages | [ADMIN_API.md](ADMIN_API.md#list-stages) |
+| `POST /stages/batch` | Get stages by UIDs | [ADMIN_API.md](ADMIN_API.md#get-stages-batch) |
+| `GET /transitions` | List stage transitions | [ADMIN_API.md](ADMIN_API.md#list-transitions) |
+
+**Board Operations**
+| Endpoint | Description | Details |
+|----------|-------------|---------|
+| `GET /board` | Get full pipeline board | [ADMIN_API.md](ADMIN_API.md#get-board) |
+| `GET /board/changes` | Get board changes since timestamp | [ADMIN_API.md](ADMIN_API.md#get-board-changes) |
+| `POST /board/move` | Move order to stage | [ADMIN_API.md](ADMIN_API.md#move-order) |
+| `POST /board/pipeline/batch` | Get order pipeline info batch | [ADMIN_API.md](ADMIN_API.md#get-order-pipeline-batch) |
+| `POST /board/populate` | Populate pipeline with existing orders | [ADMIN_API.md](ADMIN_API.md#populate-pipeline) |
+
+**Assignments**
+| Endpoint | Description | Details |
+|----------|-------------|---------|
+| `POST /assignments` | Assign orders to user | [ADMIN_API.md](ADMIN_API.md#assign-orders) |
+| `POST /assignments/batch` | Get assignments by order UIDs | [ADMIN_API.md](ADMIN_API.md#get-assignments-batch) |
+| `POST /assignments/delete` | Unassign orders | [ADMIN_API.md](ADMIN_API.md#unassign-orders) |
+| `GET /assignments/my` | Get current user's assignments | [ADMIN_API.md](ADMIN_API.md#get-my-assignments) |
+
+**Activities**
+| Endpoint | Description | Details |
+|----------|-------------|---------|
+| `GET /activities/{order_uid}` | Get activity timeline for order | [ADMIN_API.md](ADMIN_API.md#get-activity-timeline) |
+| `POST /activities` | Create activity entry | [ADMIN_API.md](ADMIN_API.md#create-activity) |
+| `DELETE /activities/{uid}` | Delete activity | [ADMIN_API.md](ADMIN_API.md#delete-activity) |
+| `POST /activities/delete` | Delete activities batch | [ADMIN_API.md](ADMIN_API.md#delete-activities-batch) |
+
+**Tasks**
+| Endpoint | Description | Details |
+|----------|-------------|---------|
+| `POST /tasks` | Create task | [ADMIN_API.md](ADMIN_API.md#create-task) |
+| `GET /tasks` | List tasks (paginated) | [ADMIN_API.md](ADMIN_API.md#list-tasks) |
+| `GET /tasks/my` | Get current user's tasks | [ADMIN_API.md](ADMIN_API.md#get-my-tasks) |
+| `GET /tasks/overdue` | Get overdue tasks | [ADMIN_API.md](ADMIN_API.md#get-overdue-tasks) |
+| `GET /tasks/order/{order_uid}` | Get tasks for order | [ADMIN_API.md](ADMIN_API.md#get-tasks-by-order) |
+| `POST /tasks/batch` | Get tasks batch | [ADMIN_API.md](ADMIN_API.md#get-tasks-batch) |
+| `POST /tasks/delete` | Delete tasks batch | [ADMIN_API.md](ADMIN_API.md#delete-tasks-batch) |
+| `GET /tasks/{uid}` | Get task details | [ADMIN_API.md](ADMIN_API.md#get-task) |
+| `PUT /tasks/{uid}` | Update task | [ADMIN_API.md](ADMIN_API.md#update-task) |
+| `DELETE /tasks/{uid}` | Delete task | [ADMIN_API.md](ADMIN_API.md#delete-task) |
+| `POST /tasks/{uid}/status` | Update task status | [ADMIN_API.md](ADMIN_API.md#update-task-status) |
+| `POST /tasks/{uid}/complete` | Complete task | [ADMIN_API.md](ADMIN_API.md#complete-task) |
+
+**Dashboard & Analytics**
+| Endpoint | Description | Details |
+|----------|-------------|---------|
+| `GET /dashboard` | CRM dashboard statistics | [ADMIN_API.md](ADMIN_API.md#crm-dashboard) |
+| `GET /workload` | Team workload overview | [ADMIN_API.md](ADMIN_API.md#crm-workload) |
+| `GET /pipeline-stats` | Pipeline statistics | [ADMIN_API.md](ADMIN_API.md#pipeline-stats) |
+| `GET /task-stats` | Task statistics | [ADMIN_API.md](ADMIN_API.md#task-stats) |
+
+**Users**
+| Endpoint | Description | Details |
+|----------|-------------|---------|
+| `GET /users` | Get assignable users for CRM | [ADMIN_API.md](ADMIN_API.md#get-assignable-users) |
+
 ### Admin Role Only
+
+#### `/admin/crm` (Pipeline Configuration - Admin Only)
+| Endpoint | Description | Details |
+|----------|-------------|---------|
+| `POST /stages` | Upsert pipeline stages | [ADMIN_API.md](ADMIN_API.md#upsert-stages) |
+| `POST /stages/delete` | Delete stages | [ADMIN_API.md](ADMIN_API.md#delete-stages) |
+| `POST /stages/reorder` | Reorder stages | [ADMIN_API.md](ADMIN_API.md#reorder-stages) |
+| `POST /transitions` | Upsert transitions | [ADMIN_API.md](ADMIN_API.md#upsert-transitions) |
+| `POST /transitions/delete` | Delete transitions | [ADMIN_API.md](ADMIN_API.md#delete-transitions) |
+
+#### `/admin/shipment` (Configuration - Admin Only)
+| Endpoint | Description | Details |
+|----------|-------------|---------|
+| `PUT /settings` | Update shipment service settings | [ADMIN_API.md](ADMIN_API.md#update-shipment-settings) |
+| `POST /restart` | Restart shipment service | [ADMIN_API.md](ADMIN_API.md#restart-shipment-service) |
+| `GET /carriers` | List all carriers | [ADMIN_API.md](ADMIN_API.md#list-carriers) |
+| `POST /carriers` | Upsert carriers | [ADMIN_API.md](ADMIN_API.md#upsert-carriers) |
+| `POST /carriers/batch` | Get carriers batch | [ADMIN_API.md](ADMIN_API.md#get-carriers-batch) |
+| `POST /carriers/delete` | Delete carriers | [ADMIN_API.md](ADMIN_API.md#delete-carriers) |
+| `POST /carriers/test` | Test carrier connection | [ADMIN_API.md](ADMIN_API.md#test-carrier) |
+| `POST /boxes` | Upsert box templates | [ADMIN_API.md](ADMIN_API.md#upsert-boxes) |
+| `GET /boxes` | List box templates | [ADMIN_API.md](ADMIN_API.md#list-boxes) |
+| `POST /boxes/batch` | Get box templates batch | [ADMIN_API.md](ADMIN_API.md#get-boxes-batch) |
+| `POST /boxes/delete` | Delete box templates | [ADMIN_API.md](ADMIN_API.md#delete-boxes) |
 
 #### `/admin/user`
 | Endpoint | Description | Details |
@@ -297,3 +453,57 @@ See [ADMIN_API.md](ADMIN_API.md) for detailed documentation.
 |----------|-------------|---------|
 | `GET /` | List logs | [ADMIN_API.md](ADMIN_API.md#logs-viewer) |
 | `DELETE /cleanup` | Cleanup logs | [ADMIN_API.md](ADMIN_API.md#logs-viewer) |
+
+#### `/admin/webhooks`
+| Endpoint | Description | Details |
+|----------|-------------|---------|
+| `GET /` | List webhooks | [ADMIN_API.md](ADMIN_API.md#list-webhooks) |
+| `POST /` | Upsert webhooks | [ADMIN_API.md](ADMIN_API.md#upsert-webhooks) |
+| `POST /batch` | Get webhooks batch | [ADMIN_API.md](ADMIN_API.md#get-webhooks-batch) |
+| `POST /delete` | Delete webhooks | [ADMIN_API.md](ADMIN_API.md#delete-webhooks) |
+| `POST /active` | Update webhook active status | [ADMIN_API.md](ADMIN_API.md#update-webhook-active-status) |
+| `POST /test` | Test webhook delivery | [ADMIN_API.md](ADMIN_API.md#test-webhook) |
+| `GET /deliveries` | List all webhook deliveries | [ADMIN_API.md](ADMIN_API.md#list-webhook-deliveries) |
+| `GET /deliveries/{webhook_uid}` | List deliveries for webhook | [ADMIN_API.md](ADMIN_API.md#list-webhook-deliveries-by-webhook) |
+| `DELETE /deliveries/cleanup` | Cleanup old deliveries | [ADMIN_API.md](ADMIN_API.md#cleanup-webhook-deliveries) |
+
+#### `/admin/telegram`
+| Endpoint | Description | Details |
+|----------|-------------|---------|
+| `GET /subscriptions` | List telegram subscriptions | [ADMIN_API.md](ADMIN_API.md#list-telegram-subscriptions) |
+| `POST /subscriptions/batch` | Get subscriptions batch | [ADMIN_API.md](ADMIN_API.md#get-telegram-subscriptions-batch) |
+| `POST /subscriptions/delete` | Delete subscriptions | [ADMIN_API.md](ADMIN_API.md#delete-telegram-subscriptions) |
+| `POST /subscriptions/update` | Update subscription | [ADMIN_API.md](ADMIN_API.md#update-telegram-subscription) |
+| `PUT /subscriptions/types` | Update subscription types | [ADMIN_API.md](ADMIN_API.md#update-telegram-subscription-types) |
+| `GET /subscriptions/by-user` | Get subscriptions by user | [ADMIN_API.md](ADMIN_API.md#get-telegram-subscriptions-by-user) |
+| `GET /invites` | List invite codes | [ADMIN_API.md](ADMIN_API.md#list-telegram-invite-codes) |
+| `POST /invites` | Generate invite codes | [ADMIN_API.md](ADMIN_API.md#generate-telegram-invite-codes) |
+| `POST /invites/batch` | Get invite codes batch | [ADMIN_API.md](ADMIN_API.md#get-telegram-invite-codes-batch) |
+| `POST /invites/delete` | Delete invite codes | [ADMIN_API.md](ADMIN_API.md#delete-telegram-invite-codes) |
+| `GET /settings` | Get bot settings | [ADMIN_API.md](ADMIN_API.md#get-telegram-bot-settings) |
+| `PUT /settings` | Update bot settings | [ADMIN_API.md](ADMIN_API.md#update-telegram-bot-settings) |
+| `POST /settings/test` | Test bot connection | [ADMIN_API.md](ADMIN_API.md#test-telegram-bot-connection) |
+| `POST /settings/restart` | Restart bot | [ADMIN_API.md](ADMIN_API.md#restart-telegram-bot) |
+
+#### `/admin/mail`
+| Endpoint | Description | Details |
+|----------|-------------|---------|
+| `GET /settings` | Get mail service settings | [ADMIN_API.md](ADMIN_API.md#get-mail-settings) |
+| `PUT /settings` | Update mail settings | [ADMIN_API.md](ADMIN_API.md#update-mail-settings) |
+| `POST /test` | Test mail connection | [ADMIN_API.md](ADMIN_API.md#test-mail-connection) |
+| `POST /restart` | Restart mail service | [ADMIN_API.md](ADMIN_API.md#restart-mail-service) |
+
+#### `/admin/invoice`
+| Endpoint | Description | Details |
+|----------|-------------|---------|
+| `GET /settings` | Get invoice settings | [ADMIN_API.md](ADMIN_API.md#get-invoice-settings) |
+| `PUT /settings` | Update invoice settings | [ADMIN_API.md](ADMIN_API.md#update-invoice-settings) |
+| `GET /types` | List invoice types | [ADMIN_API.md](ADMIN_API.md#list-invoice-types) |
+| `POST /types` | Upsert invoice types | [ADMIN_API.md](ADMIN_API.md#upsert-invoice-types) |
+| `POST /types/batch` | Get invoice types batch | [ADMIN_API.md](ADMIN_API.md#get-invoice-types-batch) |
+| `POST /types/delete` | Delete invoice types | [ADMIN_API.md](ADMIN_API.md#delete-invoice-types) |
+| `POST /types/active` | Update invoice type active status | [ADMIN_API.md](ADMIN_API.md#update-invoice-type-active-status) |
+| `POST /types/test` | Test invoice type | [ADMIN_API.md](ADMIN_API.md#test-invoice-type) |
+| `GET /history` | List invoice history | [ADMIN_API.md](ADMIN_API.md#list-invoices) |
+| `POST /history/delete` | Delete invoices | [ADMIN_API.md](ADMIN_API.md#delete-invoices) |
+| `DELETE /history/cleanup` | Cleanup old invoices | [ADMIN_API.md](ADMIN_API.md#cleanup-invoices) |

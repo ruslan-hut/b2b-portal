@@ -1,27 +1,35 @@
 <div class="crm-container">
-  <div class="crm-header">
-    <div class="header-left">
-      <h1>CRM Pipeline</h1>
-      <p class="subtitle">Manage orders through your sales pipeline</p>
+  <app-action-bar>
+    <div actionBarLeft>
+      <select [(ngModel)]="selectedStoreUid" (change)="onStoreChange()" class="store-filter">
+        <option *ngFor="let option of storeOptions" [value]="option.value">
+          {{ option.label }}
+        </option>
+      </select>
     </div>
-    <div class="header-right">
-      <div class="filters">
-        <select [(ngModel)]="selectedStoreUid" (change)="onStoreChange()" class="store-filter">
-          <option *ngFor="let option of storeOptions" [value]="option.value">
-            {{ option.label }}
-          </option>
-        </select>
-      </div>
-      <button class="btn-my-tasks" (click)="goToMyTasks()">
-        <span class="icon">&#9745;</span>
-        My Tasks
-      </button>
-      <button class="btn-settings" (click)="goToSettings()">
-        <span class="icon">&#9881;</span>
-        Settings
-      </button>
+    <div actionBarRight>
+      <a routerLink="/admin/crm" [routerLinkActiveOptions]="{exact: true}" routerLinkActive="active" class="btn-nav">
+        <span class="material-icons">view_kanban</span>
+        <span class="btn-text">Pipeline</span>
+      </a>
+      <a routerLink="/admin/crm/dashboard" routerLinkActive="active" class="btn-nav">
+        <span class="material-icons">dashboard</span>
+        <span class="btn-text">Dashboard</span>
+      </a>
+      <a routerLink="/admin/crm/workload" routerLinkActive="active" class="btn-nav">
+        <span class="material-icons">bar_chart</span>
+        <span class="btn-text">Workload</span>
+      </a>
+      <a routerLink="/admin/crm/my-tasks" routerLinkActive="active" class="btn-nav">
+        <span class="material-icons">task_alt</span>
+        <span class="btn-text">My Tasks</span>
+      </a>
+      <a routerLink="/admin/crm/settings" routerLinkActive="active" class="btn-nav">
+        <span class="material-icons">settings</span>
+        <span class="btn-text">Settings</span>
+      </a>
     </div>
-  </div>
+  </app-action-bar>
 
   <div *ngIf="error" class="error-message">
     {{ error }}

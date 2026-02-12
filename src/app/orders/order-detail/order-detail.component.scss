@@ -17,7 +17,7 @@
     }
 
     .btn-back {
-      padding: 10px 16px;
+      padding: 8px 16px;
       border: 2px solid var(--color-border);
       background: var(--card-bg);
       border-radius: var(--radius-md);
@@ -60,13 +60,6 @@
         background: var(--color-primary-dark);
       }
     }
-
-    h2 {
-      margin: 0;
-      font-size: 32px;
-      font-weight: 700;
-      color: var(--color-text-primary);
-    }
   }
 
   .section {
@@ -82,6 +75,46 @@
       font-size: 20px;
       font-weight: 700;
       color: var(--color-text-primary);
+    }
+  }
+
+  // Combined order details card (desktop only)
+  .order-details-combined {
+    background: var(--card-bg);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    margin-bottom: 20px;
+    box-shadow: var(--shadow-md);
+
+    // Subsections within the combined card
+    .order-info-subsection,
+    .delivery-info-subsection,
+    .items-subsection,
+    .totals-subsection {
+      padding-bottom: 24px;
+      margin-bottom: 24px;
+      border-bottom: 1px solid var(--color-border-light);
+
+      &:last-child {
+        padding-bottom: 0;
+        margin-bottom: 0;
+        border-bottom: none;
+      }
+
+      h3 {
+        margin-top: 0;
+        margin-bottom: 16px;
+        font-size: 20px;
+        font-weight: 700;
+        color: var(--color-text-primary);
+      }
+    }
+
+    .totals-subsection {
+      .totals-breakdown {
+        max-width: 400px;
+        margin-left: auto;
+      }
     }
   }
 
@@ -150,6 +183,8 @@
     font-size: 12px;
     font-weight: 600;
     text-transform: uppercase;
+    vertical-align: middle;
+    margin-left: 4px;
 
     &.status-draft {
       background-color: var(--status-draft-bg);
@@ -175,6 +210,37 @@
       background-color: var(--status-cancelled-bg);
       color: var(--status-cancelled-text);
     }
+
+    // Custom CRM stage styles
+    &.status-custom-default {
+      background-color: var(--status-custom-default-bg);
+      color: var(--status-custom-default-text);
+    }
+
+    &.status-custom-processing {
+      background-color: var(--status-custom-processing-bg);
+      color: var(--status-custom-processing-text);
+    }
+
+    &.status-custom-confirmed {
+      background-color: var(--status-custom-confirmed-bg);
+      color: var(--status-custom-confirmed-text);
+    }
+
+    &.status-custom-cancelled {
+      background-color: var(--status-custom-cancelled-bg);
+      color: var(--status-custom-cancelled-text);
+    }
+
+    // Handle long custom stage names
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    @media (max-width: 768px) {
+      max-width: 120px;
+    }
   }
 
   .loading, .error {
@@ -195,7 +261,9 @@
     background-color: var(--color-danger-light);
   }
 
-  .totals-section {
+  // Totals section styles (used in both standalone section and combined subsection)
+  .totals-section,
+  .totals-subsection {
     .totals-breakdown {
       max-width: 400px;
       margin-left: auto;
@@ -274,10 +342,6 @@
       gap: 8px;
       margin-bottom: 12px;
 
-      h2 {
-        font-size: 22px;
-      }
-
       .header-actions {
         gap: 8px;
       }
@@ -285,13 +349,13 @@
       .btn-back {
         flex: 1;
         min-height: 44px;
-        padding: 10px 14px;
+        padding: 8px 14px;
         font-size: 13px;
       }
 
       .btn-export {
         min-height: 44px;
-        padding: 10px 12px;
+        padding: 8px 12px;
         font-size: 12px;
 
         .material-icons {
@@ -308,6 +372,37 @@
       h3 {
         font-size: 15px;
         margin-bottom: 10px;
+      }
+    }
+
+    // On mobile, break up the combined card into separate sections
+    .order-details-combined {
+      background: transparent;
+      padding: 0;
+      margin-bottom: 0;
+      box-shadow: none;
+
+      .order-info-subsection,
+      .delivery-info-subsection,
+      .items-subsection,
+      .totals-subsection {
+        background: var(--card-bg);
+        border-radius: var(--radius-md);
+        padding: 12px;
+        margin-bottom: 10px;
+        box-shadow: var(--shadow-md);
+        border-bottom: none;
+
+        h3 {
+          font-size: 15px;
+          margin-bottom: 10px;
+        }
+      }
+
+      .totals-subsection {
+        .totals-breakdown {
+          max-width: 100%;
+        }
       }
     }
 
@@ -371,7 +466,7 @@
       .item-card-collapsed {
         display: flex;
         align-items: center;
-        padding: 10px 12px;
+        padding: 8px 12px;
         gap: 8px;
 
         .collapsed-main {
@@ -433,7 +528,7 @@
 
       // Expanded details
       .item-card-expanded {
-        padding: 10px 12px;
+        padding: 8px 12px;
         background: var(--color-background-secondary);
         border-top: 1px solid var(--color-border);
 
@@ -441,7 +536,7 @@
           display: flex;
           justify-content: space-between;
           align-items: center;
-          padding: 5px 0;
+          padding: 4px 0;
 
           .detail-label {
             font-size: 12px;
@@ -469,7 +564,7 @@
         .discount-row {
           background: var(--color-success-light);
           margin: 2px -12px;
-          padding: 5px 12px;
+          padding: 4px 12px;
         }
 
         .total-row {
@@ -484,7 +579,7 @@
     .history-card {
       background: var(--card-bg);
       border-radius: var(--radius-md);
-      padding: 10px 12px;
+      padding: 8px 12px;
       border: 1px solid var(--color-border);
       border-left: 3px solid var(--color-primary);
 
@@ -567,7 +662,8 @@
     }
 
     // Totals section adjustments
-    .totals-section {
+    .totals-section,
+    .totals-subsection {
       .totals-breakdown {
         max-width: 100%;
       }
@@ -608,7 +704,7 @@
     padding: 12px 10px;
 
     .section {
-      padding: 10px;
+      padding: 8px;
     }
 
     .item-card {

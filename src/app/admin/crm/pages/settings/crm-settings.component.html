@@ -1,10 +1,34 @@
 <div class="settings-container">
-  <div class="settings-header">
-    <button class="btn-back" (click)="goBack()">
-      <span>&larr;</span> Back to Board
-    </button>
-    <h1>CRM Pipeline Settings</h1>
-  </div>
+  <app-action-bar>
+    <div actionBarLeft>
+      <button class="btn-primary" (click)="addStage()" *ngIf="canEdit">
+        <span class="material-icons">add</span>
+        <span class="btn-text">Add Stage</span>
+      </button>
+    </div>
+    <div actionBarRight>
+      <a routerLink="/admin/crm" [routerLinkActiveOptions]="{exact: true}" routerLinkActive="active" class="btn-nav">
+        <span class="material-icons">view_kanban</span>
+        <span class="btn-text">Pipeline</span>
+      </a>
+      <a routerLink="/admin/crm/dashboard" routerLinkActive="active" class="btn-nav">
+        <span class="material-icons">dashboard</span>
+        <span class="btn-text">Dashboard</span>
+      </a>
+      <a routerLink="/admin/crm/workload" routerLinkActive="active" class="btn-nav">
+        <span class="material-icons">bar_chart</span>
+        <span class="btn-text">Workload</span>
+      </a>
+      <a routerLink="/admin/crm/my-tasks" routerLinkActive="active" class="btn-nav">
+        <span class="material-icons">task_alt</span>
+        <span class="btn-text">My Tasks</span>
+      </a>
+      <a routerLink="/admin/crm/settings" routerLinkActive="active" class="btn-nav">
+        <span class="material-icons">settings</span>
+        <span class="btn-text">Settings</span>
+      </a>
+    </div>
+  </app-action-bar>
 
   <div *ngIf="error" class="alert error">
     {{ error }}
@@ -25,9 +49,6 @@
     <section class="settings-section">
       <div class="section-header">
         <h2>Pipeline Stages</h2>
-        <button class="btn-add" (click)="addStage()">
-          <span>+</span> Add Stage
-        </button>
       </div>
 
       <div class="stages-list">
@@ -48,11 +69,15 @@
             <div class="stage-badges">
               <span *ngIf="stage.is_initial" class="badge initial">Initial</span>
               <span *ngIf="stage.is_final" class="badge final">Final</span>
+              <span *ngIf="!stage.allow_edit" class="badge no-edit">No Edit</span>
+              <span *ngIf="stage.allow_create_shipment" class="badge shipment">Shipments</span>
+              <span *ngIf="stage.creates_allocation" class="badge allocation-create">+ Allocations</span>
+              <span *ngIf="stage.deletes_allocation" class="badge allocation-delete">- Allocations</span>
               <span *ngIf="stage.store_uid" class="badge store">{{ getStoreName(stage.store_uid) }}</span>
             </div>
           </div>
 
-          <div class="stage-actions">
+          <div class="stage-actions" *ngIf="canEdit">
             <button class="btn-edit" (click)="editStage(stage)">Edit</button>
             <button class="btn-delete" (click)="deleteStage(stage)">Delete</button>
           </div>
@@ -69,7 +94,8 @@
     <section class="settings-section" *ngIf="stages.length > 1">
       <div class="section-header">
         <h2>Allowed Transitions</h2>
-        <p class="section-description">Click cells to allow/disallow transitions between stages</p>
+        <p class="section-description" *ngIf="canEdit">Click cells to allow/disallow transitions between stages</p>
+        <p class="section-description" *ngIf="!canEdit">View allowed transitions between stages (read-only)</p>
       </div>
 
       <div class="transitions-matrix">
@@ -96,7 +122,8 @@
                 class="transition-cell"
                 [class.same]="fromStage.uid === toStage.uid"
                 [class.allowed]="hasTransition(fromStage.uid, toStage.uid)"
-                (click)="toggleTransition(fromStage.uid, toStage.uid)"
+                [class.read-only]="!canEdit"
+                (click)="canEdit && toggleTransition(fromStage.uid, toStage.uid)"
               >
                 <span *ngIf="fromStage.uid === toStage.uid" class="diagonal">-</span>
                 <span *ngIf="fromStage.uid !== toStage.uid" class="check">
@@ -162,6 +189,30 @@
             <input type="checkbox" [(ngModel)]="stageForm.is_final" />
             <span>Final Stage</span>
             <small>Orders in this stage are considered completed</small>
+          </label>
+
+          <label class="checkbox-label">
+            <input type="checkbox" [(ngModel)]="stageForm.allow_edit" />
+            <span>Allow Order Editing</span>
+            <small>Orders in this stage can be edited by admins/managers</small>
+          </label>
+
+          <label class="checkbox-label">
+            <input type="checkbox" [(ngModel)]="stageForm.allow_create_shipment" />
+            <span>Allow Create Shipment</span>
+            <small>Allow creating shipping labels for orders in this stage</small>
+          </label>
+
+          <label class="checkbox-label">
+            <input type="checkbox" [(ngModel)]="stageForm.creates_allocation" />
+            <span>Create Allocations</span>
+            <small>Reserve stock when orders enter this stage</small>
+          </label>
+
+          <label class="checkbox-label">
+            <input type="checkbox" [(ngModel)]="stageForm.deletes_allocation" />
+            <span>Delete Allocations</span>
+            <small>Release stock when orders enter this stage</small>
           </label>
         </div>
       </div>

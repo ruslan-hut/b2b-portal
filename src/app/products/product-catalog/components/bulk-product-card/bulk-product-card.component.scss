@@ -1,0 +1,343 @@
+.bulk-product-card {
+  background: var(--card-bg);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm-lg);
+  border-left: 4px solid transparent;
+  transition: all 0.2s ease;
+  overflow: hidden;
+
+  &.expanded {
+    box-shadow: var(--shadow-md-lg);
+  }
+
+  &.in-cart {
+    border-left-color: var(--color-success);
+  }
+
+  &.out-of-stock {
+    opacity: 0.7;
+  }
+
+  .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: var(--spacing-md-sm) var(--spacing-md);
+    gap: var(--spacing-md-sm);
+
+    .card-header-left {
+      flex: 1;
+      min-width: 0;
+
+      .card-sku {
+        font-family: monospace;
+        font-size: 11px;
+        color: var(--color-text-secondary);
+        margin-bottom: var(--spacing-xs);
+      }
+
+      .card-name {
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--color-text-primary);
+        margin-bottom: var(--spacing-xs);
+        line-height: 1.3;
+      }
+
+      .card-category {
+        font-size: 12px;
+        color: var(--color-primary);
+        font-weight: 600;
+        margin-bottom: 6px;
+      }
+
+      .product-badges {
+        display: flex;
+        gap: var(--spacing-xs);
+        margin-bottom: var(--spacing-xs);
+
+        .badge {
+          padding: 2px var(--spacing-sm);
+          border-radius: var(--radius-sm);
+          font-size: 11px;
+          font-weight: 600;
+          text-transform: uppercase;
+
+          &.badge-new {
+            background: var(--color-success);
+            color: white;
+          }
+
+          &.badge-hot-sale {
+            background: var(--color-danger);
+            color: white;
+          }
+        }
+      }
+
+      .card-quantity-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--spacing-xs);
+        padding: var(--spacing-xs) var(--spacing-sm-md);
+        background: var(--gradient-primary);
+        border-radius: var(--radius-lg);
+        color: var(--color-text-inverse);
+        font-size: 13px;
+        font-weight: 600;
+        margin-top: var(--spacing-xs);
+
+        .quantity-icon {
+          font-size: 16px;
+          display: inline-flex;
+          align-items: center;
+          vertical-align: middle;
+        }
+
+        .quantity-badge-text {
+          line-height: 1;
+        }
+      }
+    }
+
+    .card-header-right {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 6px;
+      flex-shrink: 0;
+
+      .card-price-row {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-sm);
+
+        .card-quantity-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 3px;
+          padding: 3px var(--spacing-sm);
+          background: var(--gradient-primary);
+          border-radius: var(--radius-sm-md);
+          color: var(--color-text-inverse);
+          font-size: 12px;
+          font-weight: 600;
+          margin: 0;
+
+          .quantity-icon {
+            font-size: 14px;
+            display: inline-flex;
+            align-items: center;
+          }
+        }
+
+        .card-price-container {
+          display: flex;
+          flex-direction: column;
+          align-items: flex-end;
+
+          .original-price {
+            font-size: 12px;
+            color: var(--color-text-secondary);
+            text-decoration: line-through;
+            margin-bottom: 2px;
+          }
+
+          .card-price-line {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+
+            .card-price {
+              font-size: 16px;
+              font-weight: 700;
+              color: var(--color-text-primary);
+
+              &.has-discount {
+                color: var(--color-danger);
+              }
+            }
+
+            .discount-tag-mobile {
+              padding: 2px 6px;
+              background: var(--color-danger);
+              color: white;
+              border-radius: var(--radius-sm);
+              font-size: 11px;
+              font-weight: 600;
+            }
+          }
+        }
+      }
+
+      .status-dot {
+        width: var(--spacing-md-sm);
+        height: var(--spacing-md-sm);
+        border-radius: var(--radius-pill);
+        display: inline-block;
+
+        &.available {
+          background-color: var(--color-success);
+          box-shadow: 0 0 0 2px rgba(var(--color-success-rgb), 0.2);
+        }
+
+        &.unavailable {
+          background-color: var(--color-danger);
+          box-shadow: 0 0 0 2px rgba(var(--color-danger-rgb), 0.2);
+        }
+      }
+    }
+  }
+
+  .card-content {
+    padding: var(--spacing-md-sm) var(--spacing-md);
+    border-top: 1px solid var(--color-border);
+    background: var(--color-background-secondary);
+
+    .card-content-row {
+      display: flex;
+      gap: var(--spacing-md);
+      align-items: flex-start;
+    }
+
+    .card-image-section {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+
+      .card-product-image {
+        width: 75%;
+        height: auto;
+        object-fit: contain;
+        cursor: pointer;
+        transition: transform 0.2s ease;
+
+        &:hover {
+          transform: scale(1.02);
+        }
+
+        &:active {
+          transform: scale(0.98);
+        }
+      }
+    }
+
+    .card-quantity-section {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-md-sm);
+      min-width: 0;
+
+      .quantity-label {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--color-text-secondary);
+      }
+
+      .quantity-controls {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-sm);
+        width: 100%;
+
+        .btn-quantity {
+          width: 36px;
+          height: 36px;
+          flex-shrink: 0;
+          border: 2px solid var(--color-border);
+          border-radius: var(--radius-md);
+          background: var(--card-bg);
+          font-size: 20px;
+          font-weight: 600;
+          color: var(--color-primary);
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: all 0.2s ease;
+
+          &:hover:not(:disabled) {
+            border-color: var(--color-primary);
+            background: var(--dropdown-item-active-bg);
+          }
+
+          &:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+          }
+        }
+
+        .quantity-input-card {
+          flex: 1;
+          min-width: 0;
+          padding: var(--spacing-sm) var(--spacing-md-sm);
+          border: 2px solid var(--color-border);
+          border-radius: var(--radius-md);
+          font-size: 16px;
+          font-weight: 600;
+          text-align: center;
+          outline: none;
+          transition: all 0.2s ease;
+          background: var(--input-bg);
+          color: var(--input-text);
+
+          &::placeholder {
+            color: var(--input-placeholder);
+          }
+
+          &:focus {
+            border-color: var(--color-primary);
+            box-shadow: var(--focus-ring);
+          }
+
+          &:disabled {
+            background-color: var(--color-background-secondary);
+            cursor: not-allowed;
+          }
+        }
+      }
+
+      .card-subtotal {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: var(--spacing-md-sm);
+        background: var(--card-bg);
+        border-radius: var(--radius-md);
+
+        .subtotal-label {
+          font-size: 14px;
+          font-weight: 600;
+          color: var(--color-text-secondary);
+        }
+
+        .subtotal-value {
+          font-size: 18px;
+          font-weight: 700;
+          color: var(--color-primary);
+        }
+      }
+
+      .card-cart-indicator {
+        padding: var(--spacing-sm) var(--spacing-md-sm);
+        background: var(--color-success-light);
+        border-radius: var(--radius-md);
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--color-success-dark);
+        text-align: center;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+
+        .material-icons {
+          font-size: 18px;
+        }
+      }
+    }
+  }
+}

@@ -4,5 +4,7 @@
 export const environment = {
   production: true,
   apiUrl: '/api/v1', // Relative path for monolith deployment
-  appTitle: 'B2B Portal' // Default application title (can be overridden by APP_TITLE env var)
+  appTitle: 'B2B Portal', // Default application title (can be overridden by APP_TITLE env var)
+  chatWsUrl: 'https://bot.darkbyrior.com/api/v1',
+  chatWsToken: ''
 };

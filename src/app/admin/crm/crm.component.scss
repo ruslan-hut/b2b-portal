@@ -1,45 +1,21 @@
+@use '../../../styles/mixins' as *;
+
 .crm-container {
-  padding: var(--spacing-lg);
+  padding: 0;
   height: calc(100vh - 80px);
   display: flex;
   flex-direction: column;
   overflow: hidden;
 }
 
-.crm-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: var(--spacing-lg);
-  flex-shrink: 0;
-
-  h1 {
-    margin: 0 0 var(--spacing-xs) 0;
-    font-size: 24px;
-    font-weight: 600;
-    color: var(--color-text-primary);
-  }
-
-  .subtitle {
-    margin: 0;
-    font-size: 14px;
-    color: var(--color-text-muted);
-  }
-}
-
-.header-right {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-md);
-}
-
-.filters {
+[actionBarRight] {
   display: flex;
   gap: var(--spacing-sm);
 }
 
 .store-filter {
   padding: var(--spacing-sm) var(--spacing-md);
+  min-height: var(--touch-target-min);
   border: 2px solid var(--color-border);
   border-radius: var(--radius-md);
   font-size: 14px;
@@ -47,57 +23,50 @@
   color: var(--input-text);
   min-width: 180px;
   cursor: pointer;
-  transition: border-color 0.3s ease;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
 
   &:focus {
     outline: none;
     border-color: var(--color-primary);
+    box-shadow: var(--focus-ring);
   }
 }
 
-.btn-my-tasks {
-  display: flex;
+.btn-nav {
+  @include button-typography;
+  display: inline-flex;
   align-items: center;
   gap: var(--spacing-xs);
   padding: var(--spacing-sm) var(--spacing-md);
-  background: var(--color-primary);
-  border: 2px solid var(--color-primary);
+  min-height: var(--spacing-2xl);
+  background: transparent;
+  border: none;
   border-radius: var(--radius-md);
-  font-size: 14px;
-  color: white;
+  color: var(--color-text-secondary);
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+  text-decoration: none;
+  font-size: 0.9rem;
 
-  &:hover {
-    background: var(--color-primary-dark);
-    border-color: var(--color-primary-dark);
+  .material-icons {
+    font-size: 18px;
   }
 
-  .icon {
-    font-size: 16px;
-  }
-}
-
-.btn-settings {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-xs);
-  padding: var(--spacing-sm) var(--spacing-md);
-  background: var(--color-surface);
-  border: 2px solid var(--color-border);
-  border-radius: var(--radius-md);
-  font-size: 14px;
-  color: var(--color-text-primary);
-  cursor: pointer;
-  transition: all 0.3s ease;
-
-  &:hover {
-    background: var(--color-surface-hover);
-    border-color: var(--color-primary);
+  &:hover:not(:disabled):not(.active) {
+    background: var(--color-background-secondary);
   }
 
-  .icon {
-    font-size: 16px;
+  &.active {
+    background: var(--color-primary-container);
+    color: var(--color-on-primary-container);
+    border-bottom: 3px solid var(--color-primary);
+
+    .material-icons,
+    .btn-text {
+      color: var(--color-on-primary-container);
+    }
   }
 }
 
@@ -111,20 +80,21 @@
   border: 1px solid var(--color-danger);
   border-radius: var(--radius-md);
   color: var(--color-danger);
-  margin-bottom: var(--spacing-lg);
+  margin: var(--spacing-md) var(--spacing-lg);
 }
 
 .btn-retry {
+  @include button-typography;
   padding: var(--spacing-xs) var(--spacing-md);
+  min-height: var(--touch-target-min);
   background: var(--color-danger);
   border: none;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   color: white;
-  font-size: 13px;
   cursor: pointer;
   transition: opacity 0.3s ease;
 
-  &:hover {
+  &:hover:not(:disabled) {
     opacity: 0.9;
   }
 }
@@ -156,6 +126,13 @@
   to {
     transform: rotate(360deg);
   }
+}
+
+app-pipeline-board {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  padding: 0 var(--spacing-lg);
 }
 
 // Order Details Panel
@@ -220,10 +197,7 @@
 }
 
 .order-status {
-  font-size: 11px;
-  font-weight: 500;
-  padding: 4px 8px;
-  border-radius: var(--radius-sm);
+  @include badge-typography;
   text-transform: capitalize;
 
   &.status-draft {
@@ -248,15 +222,10 @@
 }
 
 .btn-close {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
+  @include icon-button(40px);
   background: transparent;
   border: none;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
+  border-radius: var(--radius-md);
   transition: background 0.2s ease;
 
   span {
@@ -265,7 +234,7 @@
     line-height: 1;
   }
 
-  &:hover {
+  &:hover:not(:disabled) {
     background: var(--color-surface-hover);
 
     span {
@@ -323,34 +292,34 @@
 }
 
 .btn-view-full {
+  @include button-typography;
   flex: 1;
   padding: var(--spacing-sm) var(--spacing-md);
+  min-height: var(--touch-target-min);
   background: var(--color-primary);
   border: none;
   border-radius: var(--radius-md);
-  font-size: 14px;
-  font-weight: 500;
   color: white;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: opacity 0.2s ease;
 
-  &:hover {
-    background: var(--color-primary-hover);
+  &:hover:not(:disabled) {
+    opacity: 0.9;
   }
 }
 
 .btn-assign {
+  @include button-typography;
   padding: var(--spacing-sm) var(--spacing-md);
+  min-height: var(--touch-target-min);
   background: var(--color-surface);
   border: 2px solid var(--color-border);
   border-radius: var(--radius-md);
-  font-size: 14px;
-  font-weight: 500;
   color: var(--color-text-primary);
   cursor: pointer;
   transition: all 0.2s ease;
 
-  &:hover {
+  &:hover:not(:disabled) {
     background: var(--color-surface-hover);
     border-color: var(--color-primary);
     color: var(--color-primary);
@@ -360,26 +329,7 @@
 // Mobile responsive
 @media (max-width: 768px) {
   .crm-container {
-    padding: var(--spacing-md);
     height: calc(100vh - 60px);
-  }
-
-  .crm-header {
-    flex-direction: column;
-    gap: var(--spacing-md);
-
-    h1 {
-      font-size: 20px;
-    }
-  }
-
-  .header-right {
-    width: 100%;
-    flex-wrap: wrap;
-  }
-
-  .filters {
-    width: 100%;
   }
 
   .store-filter {
@@ -387,9 +337,10 @@
     min-width: 0;
   }
 
-  .btn-settings {
-    flex: 1;
-    justify-content: center;
+  .btn-nav {
+    .btn-text {
+      display: none;
+    }
   }
 
   .order-details-panel {

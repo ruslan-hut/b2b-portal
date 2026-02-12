@@ -1,0 +1,56 @@
+@if (product) {
+  <div class="bulk-detail-section bulk-detail-desktop">
+    <div class="detail-card" (click)="onCardClick($event)">
+      <div class="detail-image">
+        <img
+          [src]="getProductImageUrl()"
+          [alt]="product.name"
+          (error)="onImageError($event)"
+          />
+      </div>
+      <div class="detail-content">
+        <div class="detail-category">{{ product.category }}</div>
+        <h2 class="detail-title">{{ product.name }}</h2>
+        @if (product.isNew || product.isHotSale) {
+          <div class="product-badges">
+            @if (product.isNew) {
+              <span class="badge badge-new">{{ 'products.new' | translate }}</span>
+            }
+            @if (product.isHotSale) {
+              <span class="badge badge-hot-sale">{{ 'products.hotSale' | translate }}</span>
+            }
+          </div>
+        }
+        <div class="detail-sku">{{ 'products.sku' | translate }}: {{ product.sku }}</div>
+        <div class="detail-price-section">
+          <div class="detail-price">
+            @if (product.price && product.price > 0) {
+              @if (hasDiscount) {
+                <div class="original-price">
+                  <span class="strikethrough">{{ originalPrice.toFixed(2) }}</span>
+                </div>
+              }
+              <div class="discounted-price" [class.has-discount]="hasDiscount">
+                {{ priceWithVat.toFixed(2) }}
+              </div>
+            } @else {
+              {{ 'products.priceNotAvailable' | translate }}
+            }
+          </div>
+          <span class="price-label">{{ currencyName ? currencyName : '' }}</span>
+        </div>
+        <div class="detail-stock">
+          <span class="stock-indicator">
+            <span class="status-dot" [class.available]="product.inStock" [class.unavailable]="!product.inStock"></span>
+            @if (product.inStock) {
+              {{ 'products.stock' | translate }}
+            }
+            @if (!product.inStock) {
+              {{ 'products.outOfStock' | translate }}
+            }
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+}

@@ -1,0 +1,36 @@
+.products-grid-container {
+  // Grid container styling handled by parent
+}
+
+.products-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-2xl);
+}
+
+.empty-state {
+  text-align: center;
+  padding: 80px var(--spacing-md-lg);
+
+  .empty-icon {
+    font-size: 80px;
+    margin-bottom: var(--spacing-md-lg);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    color: var(--color-text-muted);
+  }
+
+  h2 {
+    font-size: 24px;
+    color: var(--color-text-primary);
+    margin-bottom: var(--spacing-sm-md);
+  }
+
+  p {
+    color: var(--color-text-secondary);
+    font-size: 16px;
+  }
+}

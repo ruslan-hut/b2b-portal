@@ -1,0 +1,38 @@
+<div class="chat-list">
+  <div class="chat-list-header">
+    <h2>{{ 'chat.title' | translate }}</h2>
+  </div>
+
+  @if (chats.length === 0) {
+    <div class="empty-state">
+      <span class="material-icons">chat_bubble_outline</span>
+      <p>{{ 'chat.noChats' | translate }}</p>
+    </div>
+  }
+
+  <div class="conversations">
+    @for (chat of chats; track chat.platform + ':' + chat.user_id) {
+      <div
+        class="conversation-item"
+        [class.active]="isActive(chat)"
+        (click)="onSelect(chat)"
+      >
+        <div class="platform-icon" [ngClass]="getPlatformClass(chat.platform)">
+          <span class="material-icons">{{ getPlatformIcon(chat.platform) }}</span>
+        </div>
+        <div class="conversation-info">
+          <div class="conversation-top">
+            <span class="user-name">{{ chat.user_name }}</span>
+            <span class="time">{{ formatTime(chat.last_time) }}</span>
+          </div>
+          <div class="conversation-bottom">
+            <span class="last-message">{{ chat.last_message }}</span>
+            @if (chat.unread > 0) {
+              <span class="unread-badge">{{ chat.unread }}</span>
+            }
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+</div>

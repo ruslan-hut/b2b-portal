@@ -1,6 +1,7 @@
 import { Component, OnInit, OnDestroy, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
 import { Subscription } from 'rxjs';
 import { LogService, LogEntry, LogFilters } from '../../core/services/log.service';
+import { PageTitleService } from '../../core/services/page-title.service';
 
 @Component({
     selector: 'app-logs',
@@ -39,10 +40,12 @@ export class LogsComponent implements OnInit, OnDestroy {
 
   constructor(
     private logService: LogService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private pageTitleService: PageTitleService
   ) {}
 
   ngOnInit(): void {
+    this.pageTitleService.setTitle('Logs');
     this.loadLogs();
   }
 
@@ -187,6 +190,7 @@ export class LogsComponent implements OnInit, OnDestroy {
   // Mobile UI methods
   toggleFilters(): void {
     this.isFiltersExpanded = !this.isFiltersExpanded;
+    this.cdr.detectChanges();
   }
 }
 

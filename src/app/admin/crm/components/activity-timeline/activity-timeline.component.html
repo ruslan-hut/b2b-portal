@@ -75,8 +75,33 @@
           {{ getAssignmentDescription(activity) }}
         </div>
 
-        <!-- Note/Comment Content -->
-        <div class="activity-content" *ngIf="activity.content">
+        <!-- Order Edit Details -->
+        <div class="activity-details order-edit" *ngIf="activity.activity_type === 'order_edit'">
+          {{ getOrderEditDescription(activity) }}
+        </div>
+
+        <!-- Items Changed Details -->
+        <div class="activity-details items-changed" *ngIf="activity.activity_type === 'items_changed'">
+          <div class="summary">{{ getItemsChangedDescription(activity) }}</div>
+          <ul class="item-changes" *ngIf="hasItemChangeDetails(activity)">
+            <li *ngFor="let detail of getItemChangeDetailsArray(activity)">
+              {{ detail }}
+            </li>
+          </ul>
+        </div>
+
+        <!-- Total Changed Details -->
+        <div class="activity-details total-changed" *ngIf="activity.activity_type === 'total_changed'">
+          {{ getTotalChangedDescription(activity) }}
+        </div>
+
+        <!-- Discount Changed Details -->
+        <div class="activity-details discount-changed" *ngIf="activity.activity_type === 'discount_changed'">
+          {{ activity.content || 'Discount percentage changed' }}
+        </div>
+
+        <!-- Note/Comment Content (only for notes/comments, not for system activities) -->
+        <div class="activity-content" *ngIf="activity.content && activity.activity_type === 'note'">
           {{ activity.content }}
         </div>
 

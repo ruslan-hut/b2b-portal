@@ -1,7 +1,10 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 
-export type Language = 'en' | 'uk';
+export type Language = string;
+
+// Languages that have UI translation files
+const SUPPORTED_UI_LANGUAGES = ['en', 'uk'];
 
 export interface TranslationData {
   [key: string]: string | TranslationData;
@@ -13,11 +16,11 @@ export interface TranslationData {
 export class TranslationService {
   private currentLanguageSubject = new BehaviorSubject<Language>('en');
   private translationsSubject = new BehaviorSubject<TranslationData>({});
-  
+
   public currentLanguage$ = this.currentLanguageSubject.asObservable();
   public translations$ = this.translationsSubject.asObservable();
 
-  private translations: { [key in Language]?: TranslationData } = {};
+  private translations: { [key: string]: TranslationData } = {};
   private readonly LANGUAGE_KEY = 'app_language';
   private translationsLoaded = false;
 
@@ -29,8 +32,8 @@ export class TranslationService {
    * Initialize language from localStorage or default to 'en'
    */
   private initializeLanguage(): void {
-    const savedLanguage = localStorage.getItem(this.LANGUAGE_KEY) as Language;
-    if (savedLanguage && (savedLanguage === 'en' || savedLanguage === 'uk')) {
+    const savedLanguage = localStorage.getItem(this.LANGUAGE_KEY);
+    if (savedLanguage) {
       this.currentLanguageSubject.next(savedLanguage);
     }
   }
@@ -70,10 +73,12 @@ export class TranslationService {
 
   /**
    * Update translations observable with current language
+   * Falls back to 'en' if the current language has no UI translations loaded
    */
   private updateCurrentTranslations(): void {
     const currentLang = this.currentLanguageSubject.value;
-    this.translationsSubject.next(this.translations[currentLang] || {});
+    const uiLang = this.translations[currentLang] ? currentLang : 'en';
+    this.translationsSubject.next(this.translations[uiLang] || {});
   }
 
   /**
@@ -111,7 +116,8 @@ export class TranslationService {
    */
   translate(key: string, params?: { [key: string]: string | number }): string {
     const currentLang = this.getCurrentLanguage();
-    const translations = this.translations[currentLang] || {};
+    const uiLang = this.translations[currentLang] ? currentLang : 'en';
+    const translations = this.translations[uiLang] || {};
     
     // Navigate through nested keys
     const keys = key.split('.');

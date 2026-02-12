@@ -1,3 +1,5 @@
+@use '../../../../../styles/mixins' as *;
+
 .activity-timeline {
   background: var(--color-background);
   border: 1px solid var(--color-border);
@@ -22,21 +24,22 @@
 }
 
 .btn-add-note {
+  @include button-typography;
   display: flex;
   align-items: center;
   gap: 4px;
   padding: 6px 12px;
+  min-height: var(--touch-target-min);
   background: var(--color-primary);
   border: none;
   border-radius: var(--radius-sm);
   font-size: 13px;
-  font-weight: 500;
   color: white;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: opacity 0.2s ease;
 
   &:hover:not(:disabled) {
-    background: var(--color-primary-hover);
+    opacity: 0.9;
   }
 
   &:disabled {
@@ -108,18 +111,19 @@
 }
 
 .btn-save {
+  @include button-typography;
   padding: 8px 16px;
+  min-height: var(--touch-target-min);
   background: var(--color-primary);
   border: none;
   border-radius: var(--radius-sm);
   font-size: 13px;
-  font-weight: 500;
   color: white;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: opacity 0.2s ease;
 
   &:hover:not(:disabled) {
-    background: var(--color-primary-hover);
+    opacity: 0.9;
   }
 
   &:disabled {
@@ -242,14 +246,12 @@
 }
 
 .internal-badge {
-  display: inline-block;
+  @include badge-typography;
   margin-left: 8px;
   padding: 2px 6px;
   background: rgba(var(--color-warning-rgb), 0.1);
   color: var(--color-warning);
   font-size: 10px;
-  font-weight: 500;
-  border-radius: var(--radius-sm);
 }
 
 .activity-time {
@@ -294,14 +296,11 @@
 }
 
 .btn-delete {
+  @include icon-button(48px);
   position: absolute;
   top: var(--spacing-xs);
   right: var(--spacing-xs);
-  padding: 4px;
   background: transparent;
-  border: none;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
   opacity: 0;
   transition: all 0.2s ease;
 
@@ -310,7 +309,7 @@
     color: var(--color-text-muted);
   }
 
-  &:hover {
+  &:hover:not(:disabled) {
     background: rgba(var(--color-danger-rgb), 0.1);
 
     .material-icon {
@@ -330,7 +329,9 @@
   border-top: 1px solid var(--color-border);
 
   button {
+    @include button-typography;
     padding: 8px 16px;
+    min-height: var(--touch-target-min);
     background: var(--color-surface);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-sm);

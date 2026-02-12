@@ -1,0 +1,18 @@
+<div class="message-input">
+  <textarea
+    #textarea
+    [(ngModel)]="text"
+    (keydown)="onKeydown($event)"
+    (input)="onInput()"
+    [placeholder]="'chat.placeholder' | translate"
+    rows="1"
+  ></textarea>
+  <button
+    class="send-btn"
+    (click)="onSend()"
+    [disabled]="!text.trim()"
+    [title]="'chat.send' | translate"
+  >
+    <span class="material-icons">send</span>
+  </button>
+</div>

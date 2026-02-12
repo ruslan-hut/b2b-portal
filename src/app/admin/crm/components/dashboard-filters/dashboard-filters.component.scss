@@ -1,9 +1,7 @@
+@use '../../../../../styles/mixins' as *;
+
 .filters-container {
-  background: white;
-  border-radius: var(--radius-lg);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  padding: var(--spacing-md) var(--spacing-lg);
-  margin-bottom: var(--spacing-lg);
+  // Styling removed - parent handles background and padding
 }
 
 .filters-row {
@@ -41,7 +39,7 @@
     background: var(--input-bg, white);
     color: var(--input-text, var(--color-text-primary));
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
-    min-height: 40px;
+    min-height: var(--touch-target-min);
 
     &:focus {
       outline: none;
@@ -86,10 +84,12 @@
 }
 
 .btn-clear {
+  @include button-typography;
   display: flex;
   align-items: center;
   gap: var(--spacing-xs);
   padding: var(--spacing-sm) var(--spacing-md);
+  min-height: var(--touch-target-min);
   background: var(--color-bg-tertiary);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
@@ -99,14 +99,13 @@
   transition: all 0.2s ease;
   opacity: 0;
   pointer-events: none;
-  min-height: 40px;
 
   &.visible {
     opacity: 1;
     pointer-events: auto;
   }
 
-  &:hover {
+  &:hover:not(:disabled) {
     background: var(--color-bg-hover);
     color: var(--color-text-primary);
     border-color: var(--color-primary);
@@ -119,10 +118,6 @@
 
 // Responsive adjustments
 @media (max-width: 768px) {
-  .filters-container {
-    padding: var(--spacing-sm) var(--spacing-md);
-  }
-
   .filter-group {
     width: 100%;
     min-width: unset;

@@ -5,6 +5,15 @@ import { WebhooksComponent } from './webhooks.component';
 const routes: Routes = [
   {
     path: '',
+    redirectTo: 'webhooks',
+    pathMatch: 'full'
+  },
+  {
+    path: 'webhooks',
+    component: WebhooksComponent
+  },
+  {
+    path: 'deliveries',
     component: WebhooksComponent
   }
 ];

@@ -1,24 +1,29 @@
 <div class="webhooks-container">
   <app-action-bar>
-    <div class="nav-tabs" actionBarLeft>
-      <button class="tab" [class.active]="activeTab === 'webhooks'" (click)="switchTab('webhooks')">
-        Webhooks
-      </button>
-      <button class="tab" [class.active]="activeTab === 'deliveries'" (click)="switchTab('deliveries')">
-        Deliveries
-      </button>
+    <div class="action-bar-left" actionBarLeft>
+      <div class="nav-tabs">
+        <a routerLink="/admin/webhooks/webhooks" routerLinkActive="active" class="tab">Webhooks</a>
+        <a routerLink="/admin/webhooks/deliveries" routerLinkActive="active" class="tab">Deliveries</a>
+      </div>
+      @if (isDeliveriesRoute()) {
+        <button class="btn-filter" (click)="toggleFilters()" [class.active]="isFiltersExpanded">
+          <span class="material-icons">filter_list</span>
+          <span class="btn-text">Filters</span>
+          <span class="material-icons toggle-icon">{{ isFiltersExpanded ? 'expand_less' : 'expand_more' }}</span>
+        </button>
+      }
     </div>
     <div class="actions" actionBarRight>
       <button class="btn-icon" (click)="refresh()" [disabled]="loading" title="Refresh">
         <span class="material-icons">refresh</span>
       </button>
-      @if (activeTab === 'webhooks') {
+      @if (isWebhooksRoute()) {
         <button class="btn-primary" (click)="openNewWebhook()">
           <span class="material-icons">add</span>
           <span class="btn-text">Add</span>
         </button>
       }
-      @if (activeTab === 'deliveries') {
+      @if (isDeliveriesRoute()) {
         <button class="btn-icon btn-cleanup" (click)="cleanupDeliveries()" title="Cleanup Old Logs">
           <span class="material-icons">delete_sweep</span>
         </button>
@@ -41,7 +46,7 @@
   }
 
   <!-- Webhooks Tab -->
-  @if (activeTab === 'webhooks' && !loading) {
+  @if (isWebhooksRoute() && !loading) {
     <div class="webhooks-list">
       @for (webhook of webhooks; track webhook.uid) {
         <div class="webhook-card" [class.inactive]="!webhook.active">
@@ -106,16 +111,18 @@
   }
 
   <!-- Deliveries Tab -->
-  @if (activeTab === 'deliveries' && !loading) {
+  @if (isDeliveriesRoute() && !loading) {
     <!-- Webhook Filter -->
-    <div class="filter-bar">
-      <label>Filter by webhook:</label>
-      <select [(ngModel)]="selectedWebhookUID" (change)="filterByWebhook(selectedWebhookUID)">
-        <option [ngValue]="null">All Webhooks</option>
-        @for (webhook of webhooks; track webhook.uid) {
-          <option [value]="webhook.uid">{{ webhook.name }}</option>
-        }
-      </select>
+    <div class="filters" [class.expanded]="isFiltersExpanded">
+      <div class="filter-group">
+        <label>Webhook:</label>
+        <select [(ngModel)]="selectedWebhookUID" (change)="filterByWebhook(selectedWebhookUID)">
+          <option [ngValue]="null">All Webhooks</option>
+          @for (webhook of webhooks; track webhook.uid) {
+            <option [value]="webhook.uid">{{ webhook.name }}</option>
+          }
+        </select>
+      </div>
     </div>
 
     <div class="deliveries-list">

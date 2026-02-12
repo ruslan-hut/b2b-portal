@@ -153,6 +153,36 @@
                 >
             </div>
           </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="business_registration_number">{{ 'profile.businessRegistrationNumber' | translate }}</label>
+              <input
+                type="text"
+                id="business_registration_number"
+                [value]="client.business_registration_number || ''"
+                readonly
+                [class.warning-empty]="!client.business_registration_number"
+                >
+              @if (!client.business_registration_number) {
+                <span class="warning-message">
+                  {{ 'profile.businessRegNumberRequired' | translate }}
+                </span>
+              }
+            </div>
+            <div class="form-group">
+              <label for="language">{{ 'profile.language' | translate }}</label>
+              <select
+                id="language"
+                [value]="selectedLanguage"
+                (change)="changeLanguage($event)"
+                [disabled]="languageLoading"
+                >
+                @for (lang of availableLanguages; track lang) {
+                  <option [value]="lang" [selected]="lang === selectedLanguage">{{ lang.toUpperCase() }}</option>
+                }
+              </select>
+            </div>
+          </div>
           <!-- Success/Error Messages -->
           @if (profileSuccess) {
             <div class="message success">

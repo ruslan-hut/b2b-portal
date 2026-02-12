@@ -65,9 +65,32 @@ const routes: Routes = [
         data: { title: 'Telegram' }
       },
       {
+        path: 'mail',
+        canActivate: [adminOnlyGuard],
+        loadChildren: () => import('./mail/mail.module').then(m => m.MailModule),
+        data: { title: 'Mail' }
+      },
+      {
+        path: 'invoice',
+        canActivate: [adminOnlyGuard],
+        loadChildren: () => import('./invoice/invoice.module').then(m => m.InvoiceModule),
+        data: { title: 'Invoice' }
+      },
+      {
         path: 'crm',
         loadChildren: () => import('./crm/crm.module').then(m => m.CrmModule),
         data: { title: 'CRM' }
+      },
+      {
+        path: 'chat',
+        loadChildren: () => import('./chat/chat.module').then(m => m.ChatModule),
+        data: { title: 'Chat' }
+      },
+      {
+        path: 'shipment',
+        canActivate: [adminOnlyGuard],
+        loadChildren: () => import('./shipment/shipment.module').then(m => m.ShipmentModule),
+        data: { title: 'Shipment' }
       }
     ]
   }

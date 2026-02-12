@@ -1,24 +1,26 @@
+@use '../../../../styles/mixins' as *;
+
 .client-edit-container {
   max-width: 900px;
   margin: 0 auto;
-  padding: 20px;
+  padding: var(--spacing-md-lg);
 }
 
 .page-header {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 24px;
+  gap: var(--spacing-md-sm);
+  margin-bottom: var(--spacing-lg);
 
   h1 {
     font-size: 1.5rem;
-    font-weight: 700;
+    font-weight: var(--font-weight-bold);
     color: var(--color-text-primary);
     margin: 0;
     flex: 1;
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: var(--spacing-sm-md);
 
     .unsaved-warning-icon {
       font-size: 22px;
@@ -30,24 +32,13 @@
 }
 
 .btn-icon-header {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  padding: 0;
+  @include icon-button(40px);
   background: var(--color-background-secondary);
   border: 1px solid var(--color-border);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   color: var(--color-text-primary);
-  cursor: pointer;
-  transition: all 0.2s ease;
 
-  .material-icons {
-    font-size: 20px;
-  }
-
-  &:hover {
+  &:hover:not(:disabled) {
     background: var(--color-border);
   }
 
@@ -62,18 +53,17 @@
     }
 
     &:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
+      @include disabled-state;
     }
   }
 }
 
 .loading-container {
   text-align: center;
-  padding: 60px 20px;
+  padding: 60px var(--spacing-md-lg);
 
   &.small {
-    padding: 20px;
+    padding: var(--spacing-md-lg);
   }
 
   .spinner-large {
@@ -120,7 +110,7 @@
 .client-form {
   display: flex;
   flex-direction: column;
-  gap: 30px;
+  gap: var(--spacing-xl);
 }
 
 .form-section {
@@ -131,7 +121,7 @@
 
   h2 {
     font-size: 20px;
-    font-weight: 700;
+    font-weight: var(--font-weight-bold);
     color: var(--color-text-primary);
     margin: 0 0 20px 0;
     padding-bottom: 15px;
@@ -142,7 +132,7 @@
 .form-row {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 20px;
+  gap: var(--spacing-md-lg);
   margin-bottom: 15px;
 
   &:last-child {
@@ -160,7 +150,7 @@
   label {
     display: block;
     font-size: 14px;
-    font-weight: 600;
+    font-weight: var(--font-weight-semibold);
     color: var(--color-text-primary);
     margin-bottom: 8px;
   }
@@ -225,6 +215,11 @@
     font-size: 12px;
     color: var(--color-text-muted);
     margin-top: 5px;
+
+    &.field-hint-success {
+      color: var(--color-success);
+      font-weight: var(--font-weight-medium);
+    }
   }
 
   .input-with-button {
@@ -236,13 +231,13 @@
     }
 
     .btn-generate {
-      padding: 10px 16px;
+      padding: 8px 16px;
       background: var(--color-success);
       color: var(--color-text-inverse);
       border: none;
       border-radius: 8px;
       font-size: 13px;
-      font-weight: 600;
+      font-weight: var(--font-weight-semibold);
       cursor: pointer;
       white-space: nowrap;
       transition: background 0.3s ease;
@@ -252,6 +247,7 @@
       }
     }
   }
+
 }
 
 // Switch toggle styles
@@ -313,7 +309,7 @@
 
   .switch-text {
     font-size: 14px;
-    font-weight: 700;
+    font-weight: var(--font-weight-bold);
     color: var(--color-danger);
     transition: color 0.3s ease;
     min-width: 60px;
@@ -326,7 +322,7 @@
 
 .radio-group {
   display: flex;
-  gap: 20px;
+  gap: var(--spacing-md-lg);
   padding-top: 5px;
 
   .radio-label {
@@ -351,7 +347,7 @@
   .checkbox-label {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: var(--spacing-md-sm);
     cursor: pointer;
 
     input[type="checkbox"] {
@@ -378,7 +374,7 @@
 .btn {
   padding: 12px 24px;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: var(--font-weight-semibold);
   border: none;
   border-radius: 8px;
   cursor: pointer;
@@ -439,7 +435,7 @@
   }
 
   &.btn-close {
-    padding: 5px 10px;
+    padding: 4px 10px;
     background: transparent;
     font-size: 24px;
     color: var(--color-text-secondary);
@@ -489,7 +485,7 @@
 .addresses-list {
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: var(--spacing-md);
 }
 
 .address-card {
@@ -513,7 +509,7 @@
     .address-country {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: var(--spacing-md-sm);
 
       strong {
         font-size: 16px;
@@ -525,7 +521,7 @@
         background: var(--color-info);
         color: var(--color-text-inverse);
         font-size: 11px;
-        font-weight: 600;
+        font-weight: var(--font-weight-semibold);
         text-transform: uppercase;
         border-radius: 12px;
       }
@@ -533,7 +529,7 @@
 
     .address-actions {
       display: flex;
-      gap: 5px;
+      gap: var(--spacing-xs);
     }
   }
 
@@ -591,8 +587,8 @@
       .autocomplete-item {
         display: flex;
         align-items: center;
-        gap: 10px;
-        padding: 10px 14px;
+        gap: var(--spacing-md-sm);
+        padding: 8px 14px;
         cursor: pointer;
         transition: background 0.2s ease;
 
@@ -606,7 +602,7 @@
 
         .country-code {
           font-size: 12px;
-          font-weight: 600;
+          font-weight: var(--font-weight-semibold);
           color: var(--color-info);
           background: rgba(var(--color-info-rgb), 0.1);
           padding: 2px 6px;
@@ -665,7 +661,7 @@
     h3 {
       margin: 0;
       font-size: 20px;
-      font-weight: 700;
+      font-weight: var(--font-weight-bold);
       color: var(--color-text-primary);
     }
   }
@@ -706,7 +702,7 @@
 // Responsive
 @media (max-width: 768px) {
   .page-header {
-    gap: 10px;
+    gap: var(--spacing-md-sm);
 
     h1 {
       font-size: 1.25rem;
@@ -723,12 +719,12 @@
   }
 
   .addresses-section .section-header {
-    gap: 10px;
+    gap: var(--spacing-md-sm);
   }
 
   .address-card .address-header {
     flex-direction: column;
-    gap: 10px;
+    gap: var(--spacing-md-sm);
     align-items: flex-start;
   }
 

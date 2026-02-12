@@ -10,6 +10,7 @@ import { Observable, throwError, BehaviorSubject } from 'rxjs';
 import { catchError, filter, take, switchMap } from 'rxjs/operators';
 import { AuthService } from '../services/auth.service';
 import { Router } from '@angular/router';
+import {environment} from "../../../environments/environment";
 
 @Injectable()
 export class AuthInterceptor implements HttpInterceptor {
@@ -40,7 +41,7 @@ export class AuthInterceptor implements HttpInterceptor {
 
   private addToken(request: HttpRequest<any>, token: string): HttpRequest<any> {
     // Don't add token to login and refresh endpoints
-    if (request.url.includes('/auth/login') || request.url.includes('/auth/refresh')) {
+    if (request.url.includes('/auth/login') || request.url.includes('/auth/refresh') || request.url.includes(environment.chatWsUrl)) {
       return request;
     }
 

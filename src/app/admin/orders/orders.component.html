@@ -1,10 +1,10 @@
 <div class="orders-container">
   <app-action-bar>
     <div actionBarLeft>
-      <button class="btn-filter" (click)="toggleFilters()" [class.active]="isFiltersExpanded">
-        <span class="material-icons">filter_list</span>
+      <button class="btn-filter" (click)="toggleFilters()" [class.active]="isFiltersExpanded" [attr.aria-label]="'Toggle filters'" [attr.aria-expanded]="isFiltersExpanded">
+        <span class="material-icons" aria-hidden="true">filter_list</span>
         <span class="btn-text">Filters</span>
-        <span class="material-icons toggle-icon">{{ isFiltersExpanded ? 'expand_less' : 'expand_more' }}</span>
+        <span class="material-icons toggle-icon" aria-hidden="true">{{ isFiltersExpanded ? 'expand_less' : 'expand_more' }}</span>
       </button>
     </div>
     <div actionBarRight></div>
@@ -12,8 +12,8 @@
 
   <div class="filters" [class.expanded]="isFiltersExpanded">
     <div class="filter-group">
-      <label>Status:</label>
-      <select [(ngModel)]="statusFilter" (change)="onFilterChange()">
+      <label for="orders-status-filter">Status:</label>
+      <select id="orders-status-filter" [(ngModel)]="statusFilter" (change)="onFilterChange()" [attr.aria-label]="'Filter orders by status'">
         @for (option of statusOptions; track option) {
           <option [value]="option.value">
             {{ option.label }}
@@ -22,8 +22,8 @@
       </select>
     </div>
     <div class="filter-group">
-      <label>Store:</label>
-      <select [(ngModel)]="storeFilter" (change)="onFilterChange()">
+      <label for="orders-store-filter">Store:</label>
+      <select id="orders-store-filter" [(ngModel)]="storeFilter" (change)="onFilterChange()" [attr.aria-label]="'Filter orders by store'">
         @for (option of storeOptions; track option) {
           <option [value]="option.value">
             {{ option.label }}
@@ -32,8 +32,8 @@
       </select>
     </div>
     <div class="filter-group">
-      <label>Price Type:</label>
-      <select [(ngModel)]="priceTypeFilter" (change)="onFilterChange()">
+      <label for="orders-price-type-filter">Price Type:</label>
+      <select id="orders-price-type-filter" [(ngModel)]="priceTypeFilter" (change)="onFilterChange()" [attr.aria-label]="'Filter orders by price type'">
         @for (option of priceTypeOptions; track option) {
           <option [value]="option.value">
             {{ option.label }}
@@ -42,12 +42,14 @@
       </select>
     </div>
     <div class="filter-group">
-      <label>Search:</label>
+      <label for="orders-search">Search:</label>
       <input
         type="text"
+        id="orders-search"
         [(ngModel)]="searchTerm"
         (input)="onSearchChange()"
         placeholder="Search by order number or client"
+        [attr.aria-label]="'Search orders by order number or client name'"
         />
     </div>
   </div>
@@ -62,70 +64,87 @@
   @if (!loading && !error) {
     <!-- Desktop Table View -->
     <div class="orders-table desktop-only">
-      <table>
+      <table role="table" [attr.aria-label]="'Orders table'">
         <thead>
           <tr>
-            <th>Created</th>
-            <th>Order Number</th>
-            <th>Status</th>
-            <th>Client Name</th>
-            <th>Store</th>
-            <th>Price Type</th>
-            <th title="Client discount percentage applied to this order (0-100%)">Discount</th>
-            <th title="VAT rate percentage used for this order (0-100%)">VAT Rate</th>
-            <th title="Order subtotal before VAT (net amount)">Subtotal (Net)</th>
-            <th title="Total VAT amount calculated for this order">VAT Amount</th>
-            <th title="Order total including VAT (gross amount)">Total (Gross)</th>
-            <th>Currency</th>
-            <th>Updated</th>
-            <th>Actions</th>
+            <th scope="col" id="col-created">Created</th>
+            <th scope="col" id="col-number">Order Number</th>
+            <th scope="col" id="col-status">Status</th>
+            <th scope="col" id="col-client">Client Name</th>
+            <th scope="col" id="col-store">Store</th>
+            <th scope="col" id="col-price-type">Price Type</th>
+            <th scope="col" id="col-discount" [attr.aria-describedby]="'discount-help'">Discount</th>
+            <th scope="col" id="col-vat-rate" [attr.aria-describedby]="'vat-rate-help'">VAT Rate</th>
+            <th scope="col" id="col-total" [attr.aria-describedby]="'total-help'">Total (Gross)</th>
+            <th scope="col" id="col-currency">Currency</th>
+            @if (isAdmin) {
+              <th scope="col" id="col-actions">Actions</th>
+            }
           </tr>
         </thead>
         <tbody>
           @for (order of filteredOrders; track order) {
             <tr
               class="clickable-row"
-              (click)="viewOrderDetail(order)">
-              <td>{{ formatDate(order.created_at) }}</td>
-              <td>{{ order.number || order.uid }}</td>
-              <td>
-                <span [class]="getStatusClass(order.status)">
+              (click)="viewOrderDetail(order)"
+              (keydown.enter)="viewOrderDetail(order)"
+              (keydown.space)="viewOrderDetail(order); $event.preventDefault()"
+              tabindex="0"
+              role="button"
+              [attr.aria-label]="'View order ' + (order.number || order.uid)">
+              <td headers="col-created">{{ formatDate(order.created_at) }}</td>
+              <td headers="col-number">{{ order.number || order.uid }}</td>
+              <td headers="col-status">
+                <span [class]="getStatusClass(order.status)" [attr.aria-label]="'Status: ' + order.status" role="status">
+                  <span class="status-icon" aria-hidden="true">●</span>
                   {{ order.status }}
                 </span>
               </td>
-              <td>{{ getClientName(order.client_uid) }}</td>
-              <td>{{ getStoreName(order.store_uid) }}</td>
-              <td>{{ getPriceTypeName(order.price_type_uid) }}</td>
-              <td>{{ order.discount_percent !== undefined ? order.discount_percent + '%' : '-' }}</td>
-              <td>{{ order.vat_rate !== undefined ? order.vat_rate + '%' : '-' }}</td>
-              <td>{{ order.subtotal !== undefined ? (order.subtotal/100).toFixed(2) : '-' }}</td>
-              <td>{{ order.total_vat !== undefined ? (order.total_vat/100).toFixed(2) : '-' }}</td>
-              <td>{{ (order.total/100).toFixed(2) }}</td>
-              <td>{{ order.currency_code }}</td>
-              <td>{{ formatDate(order.last_update || order.created_at) }}</td>
-              <td class="actions" (click)="$event.stopPropagation()">
-                <button class="btn-edit" (click)="editStatus(order)">Change Status</button>
-                <button class="btn-delete" (click)="deleteOrder(order)">Delete</button>
-              </td>
+              <td headers="col-client">{{ getClientName(order.client_uid) }}</td>
+              <td headers="col-store">{{ getStoreName(order.store_uid) }}</td>
+              <td headers="col-price-type">{{ getPriceTypeName(order.price_type_uid) }}</td>
+              <td headers="col-discount">{{ order.discount_percent !== undefined ? order.discount_percent + '%' : '-' }}</td>
+              <td headers="col-vat-rate">{{ order.vat_rate !== undefined ? order.vat_rate + '%' : '-' }}</td>
+              <td headers="col-total">{{ (order.total/100).toFixed(2) }}</td>
+              <td headers="col-currency">{{ order.currency_code }}</td>
+              @if (isAdmin) {
+                <td headers="col-actions" class="actions" (click)="$event.stopPropagation()">
+                  <button class="btn-delete" (click)="deleteOrder(order)" [attr.aria-label]="'Delete order ' + (order.number || order.uid)">Delete</button>
+                </td>
+              }
             </tr>
           }
           @if (filteredOrders.length === 0) {
             <tr>
-              <td colspan="14" class="no-data">No orders found</td>
+              <td [attr.colspan]="isAdmin ? 11 : 10" class="no-data">No orders found</td>
             </tr>
           }
         </tbody>
       </table>
+      <!-- Screen reader only help text -->
+      <p id="discount-help" class="sr-only">Client discount percentage applied to this order (0-100%)</p>
+      <p id="vat-rate-help" class="sr-only">VAT rate percentage used for this order (0-100%)</p>
+      <p id="total-help" class="sr-only">Order total including VAT (gross amount)</p>
     </div>
 
     <!-- Mobile Card View -->
     <div class="orders-cards mobile-only">
       @for (order of filteredOrders; track order) {
-        <div class="order-card" [class.expanded]="isCardExpanded(order.uid)" (click)="toggleCardExpanded(order.uid)">
-          <div class="card-header">
+        <div class="order-card" [class.expanded]="isCardExpanded(order.uid)">
+          <div
+            class="card-header"
+            (click)="toggleCardExpanded(order.uid)"
+            (keydown.enter)="toggleCardExpanded(order.uid)"
+            (keydown.space)="toggleCardExpanded(order.uid); $event.preventDefault()"
+            role="button"
+            tabindex="0"
+            [attr.aria-expanded]="isCardExpanded(order.uid)"
+            [attr.aria-label]="'Expand details for order ' + (order.number || order.uid)"
+          >
             <div class="card-title">
               <span class="order-number">{{ order.number || order.uid }}</span>
-              <span class="status-badge" [class]="getStatusClass(order.status)">
+              <span class="status-badge" [class]="getStatusClass(order.status)" [attr.aria-label]="'Status: ' + order.status" role="status">
+                <span class="status-icon" aria-hidden="true">●</span>
                 {{ order.status }}
               </span>
             </div>
@@ -139,7 +158,7 @@
             <div class="summary-item">
               <span class="value date">{{ formatDate(order.created_at).split(' ')[0] }}</span>
             </div>
-            <span class="material-icons expand-icon">{{ isCardExpanded(order.uid) ? 'expand_less' : 'expand_more' }}</span>
+            <span class="material-icons expand-icon" aria-hidden="true">{{ isCardExpanded(order.uid) ? 'expand_less' : 'expand_more' }}</span>
           </div>
           @if (isCardExpanded(order.uid)) {
             <div class="card-details">
@@ -159,22 +178,10 @@
                 <span class="label">VAT Rate:</span>
                 <span class="value">{{ order.vat_rate !== undefined ? order.vat_rate + '%' : '-' }}</span>
               </div>
-              <div class="detail-row">
-                <span class="label">Subtotal:</span>
-                <span class="value">{{ order.subtotal !== undefined ? (order.subtotal/100).toFixed(2) : '-' }}</span>
-              </div>
-              <div class="detail-row">
-                <span class="label">VAT Amount:</span>
-                <span class="value">{{ order.total_vat !== undefined ? (order.total_vat/100).toFixed(2) : '-' }}</span>
-              </div>
               <div class="card-actions">
-                <button class="btn-view" (click)="viewOrderDetail(order); $event.stopPropagation()">
-                  <span class="material-icons">visibility</span>
+                <button class="btn-view" (click)="viewOrderDetail(order); $event.stopPropagation()" [attr.aria-label]="'View details for order ' + (order.number || order.uid)">
+                  <span class="material-icons" aria-hidden="true">visibility</span>
                   View Details
-                </button>
-                <button class="btn-status" (click)="editStatus(order); $event.stopPropagation()">
-                  <span class="material-icons">edit</span>
-                  Status
                 </button>
               </div>
             </div>
@@ -189,37 +196,29 @@
     <!-- Pagination -->
     @if (totalPages > 1) {
       <div class="pagination">
-        <button [disabled]="currentPage === 1" (click)="goToPage(currentPage - 1)">Previous</button>
-        <span>Page {{ currentPage }} of {{ totalPages }} ({{ total }} total)</span>
-        <button [disabled]="currentPage === totalPages" (click)="goToPage(currentPage + 1)">Next</button>
+        <div class="pagination-info" role="status" [attr.aria-live]="'polite'">
+          <span>Page {{ currentPage }} of {{ totalPages }} ({{ total }} total orders)</span>
+        </div>
+        <nav class="pagination-controls" [attr.aria-label]="'Pagination navigation'">
+          <button
+            class="pagination-btn prev"
+            [disabled]="currentPage === 1"
+            (click)="goToPage(currentPage - 1)"
+            [attr.aria-label]="'Go to previous page'"
+            [attr.title]="'Previous page'">
+            Previous
+          </button>
+          <button
+            class="pagination-btn next"
+            [disabled]="currentPage === totalPages"
+            (click)="goToPage(currentPage + 1)"
+            [attr.aria-label]="'Go to next page'"
+            [attr.title]="'Next page'">
+            Next
+          </button>
+        </nav>
       </div>
     }
   }
 
-  <!-- Status Edit Modal -->
-  @if (showStatusModal) {
-    <div class="modal-overlay" (click)="cancelEdit()">
-      <div class="modal-content" (click)="$event.stopPropagation()">
-        <h2>Change Order Status</h2>
-        <div class="order-info">
-          <p><strong>Order:</strong> {{ editingOrder?.number || editingOrder?.uid }}</p>
-          <p><strong>Current Status:</strong> {{ editingOrder?.status }}</p>
-        </div>
-        <div class="form-group">
-          <label>New Status:</label>
-          <select [(ngModel)]="newStatus">
-            @for (option of statusOptions; track option) {
-              <option [value]="option.value" [disabled]="option.value === ''">
-                {{ option.label }}
-              </option>
-            }
-          </select>
-        </div>
-        <div class="form-actions">
-          <button type="button" class="btn-cancel" (click)="cancelEdit()">Cancel</button>
-          <button type="button" class="btn-save" (click)="saveStatus()">Save</button>
-        </div>
-      </div>
-    </div>
-  }
 </div>

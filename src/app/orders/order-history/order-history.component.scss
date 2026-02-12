@@ -4,40 +4,6 @@
   padding: var(--spacing-2xl) var(--spacing-md-lg);
 }
 
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: var(--spacing-xl);
-
-  h1 {
-    font-size: 32px;
-    font-weight: 700;
-    color: var(--color-text-primary);
-    margin: 0;
-  }
-
-  .btn {
-    padding: var(--spacing-sm-md) var(--spacing-lg);
-    font-size: 14px;
-    font-weight: 600;
-    border: none;
-    border-radius: var(--radius-md);
-    cursor: pointer;
-    transition: all 0.3s ease;
-
-    &.btn-primary {
-      background: var(--gradient-primary);
-      color: var(--color-text-inverse);
-
-      &:hover {
-        transform: translateY(-2px);
-        box-shadow: var(--shadow-primary);
-      }
-    }
-  }
-}
-
 .loading-container {
   text-align: center;
   padding: var(--spacing-3xl) var(--spacing-md-lg);
@@ -318,6 +284,37 @@
         background-color: var(--status-cancelled-bg);
         color: var(--status-cancelled-text);
       }
+
+      // Custom CRM stage styles
+      &.status-custom-default {
+        background-color: var(--status-custom-default-bg);
+        color: var(--status-custom-default-text);
+      }
+
+      &.status-custom-processing {
+        background-color: var(--status-custom-processing-bg);
+        color: var(--status-custom-processing-text);
+      }
+
+      &.status-custom-confirmed {
+        background-color: var(--status-custom-confirmed-bg);
+        color: var(--status-custom-confirmed-text);
+      }
+
+      &.status-custom-cancelled {
+        background-color: var(--status-custom-cancelled-bg);
+        color: var(--status-custom-cancelled-text);
+      }
+
+      // Handle long custom stage names
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+
+      @media (max-width: 768px) {
+        max-width: 120px;
+      }
     }
 
     .chevron-icon {
@@ -368,17 +365,6 @@
     padding: 16px 12px;
   }
 
-  .page-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
-    margin-bottom: 16px;
-
-    h1 {
-      font-size: 22px;
-    }
-  }
-
   .loading-container {
     padding: 40px 16px;
 
@@ -424,7 +410,7 @@
       padding: 12px;
       flex-direction: column;
       align-items: stretch;
-      gap: 10px;
+      gap: 8px;
 
       .filter-group {
         min-width: 100%;
@@ -436,7 +422,7 @@
 
         .filter-select,
         .filter-input {
-          padding: 10px 12px;
+          padding: 8px 12px;
           font-size: 16px; // Prevents iOS zoom
           border-radius: var(--radius-md);
         }
@@ -445,7 +431,7 @@
       .btn {
         width: 100%;
         min-height: 44px;
-        padding: 10px 16px;
+        padding: 8px 16px;
         font-size: 14px;
       }
     }
@@ -552,24 +538,24 @@
 
   .filters-section {
     .filters-header {
-      padding: 10px;
+      padding: 8px;
     }
 
     .filters-container {
-      padding: 10px;
+      padding: 8px;
       gap: 8px;
 
       .filter-group {
         .filter-select,
         .filter-input {
-          padding: 10px;
+          padding: 8px;
         }
       }
     }
   }
 
   .order-card {
-    padding: 10px;
+    padding: 8px;
 
     .order-row {
       gap: 6px;

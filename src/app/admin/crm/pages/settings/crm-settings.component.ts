@@ -5,6 +5,8 @@ import { CrmService } from '../../services/crm.service';
 import { CrmStage, CrmTransition } from '../../models/crm-stage.model';
 import { StoreService } from '../../../../core/services/store.service';
 import { Store } from '../../../../core/models/store.model';
+import { PageTitleService } from '../../../../core/services/page-title.service';
+import { AuthService } from '../../../../core/services/auth.service';
 
 @Component({
     selector: 'app-crm-settings',
@@ -41,11 +43,14 @@ export class CrmSettingsComponent implements OnInit, OnDestroy {
   constructor(
     private crmService: CrmService,
     private storeService: StoreService,
-    private router: Router,
-    private cdr: ChangeDetectorRef
+    private authService: AuthService,
+    public router: Router,
+    private cdr: ChangeDetectorRef,
+    private pageTitleService: PageTitleService
   ) {}
 
   ngOnInit(): void {
+    this.pageTitleService.setTitle('CRM Pipeline Settings');
     this.loadData();
   }
 
@@ -104,6 +109,10 @@ export class CrmSettingsComponent implements OnInit, OnDestroy {
       sort_order: this.stages.length,
       is_initial: this.stages.length === 0,
       is_final: false,
+      allow_edit: true,
+      allow_create_shipment: false,
+      creates_allocation: this.stages.length === 0, // Default: initial stage creates allocations
+      deletes_allocation: false,
       store_uid: '',
       active: true
     };
@@ -136,6 +145,10 @@ export class CrmSettingsComponent implements OnInit, OnDestroy {
       sort_order: this.stageForm.sort_order || 0,
       is_initial: this.stageForm.is_initial || false,
       is_final: this.stageForm.is_final || false,
+      allow_edit: this.stageForm.allow_edit !== false,
+      allow_create_shipment: this.stageForm.allow_create_shipment || false,
+      creates_allocation: this.stageForm.creates_allocation || false,
+      deletes_allocation: this.stageForm.deletes_allocation || false,
       store_uid: this.stageForm.store_uid || undefined,
       active: this.stageForm.active !== false
     };
@@ -146,6 +159,7 @@ export class CrmSettingsComponent implements OnInit, OnDestroy {
           this.saving = false;
           this.showStageModal = false;
           this.successMessage = 'Stage saved successfully';
+          this.cdr.detectChanges();
           this.loadData();
           setTimeout(() => {
             this.successMessage = null;
@@ -248,12 +262,14 @@ export class CrmSettingsComponent implements OnInit, OnDestroy {
     }
   }
 
+  get canEdit(): boolean {
+    const currentEntity = this.authService.currentEntityValue;
+    // Check if it's a User (has role property) and is admin
+    return !!(currentEntity && 'role' in currentEntity && currentEntity.role === 'admin');
+  }
+
   getStoreName(uid: string | undefined): string {
     if (!uid) return 'All Stores';
     return this.stores[uid]?.name || uid;
-  }
-
-  goBack(): void {
-    this.router.navigate(['/admin/crm']);
   }
 }

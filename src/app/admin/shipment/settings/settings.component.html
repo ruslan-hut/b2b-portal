@@ -1,0 +1,211 @@
+<div class="settings-container">
+  <app-action-bar>
+    <div class="page-title" actionBarLeft>
+      <h1>Shipment Settings</h1>
+    </div>
+    <div actionBarRight>
+      <a routerLink="../carriers" class="btn btn-secondary">
+        <span class="material-icons">local_shipping</span>
+        <span class="btn-text">Manage Carriers</span>
+      </a>
+      <a routerLink="../boxes" class="btn btn-secondary">
+        <span class="material-icons">inventory_2</span>
+        <span class="btn-text">Manage Boxes</span>
+      </a>
+      <button class="btn-icon" (click)="refresh()" [disabled]="loading" title="Refresh">
+        <span class="material-icons">refresh</span>
+      </button>
+    </div>
+  </app-action-bar>
+
+  <!-- Error Message -->
+  @if (error) {
+    <div class="error-message">
+      {{ error }}
+    </div>
+  }
+
+  <!-- Success Message -->
+  @if (successMessage) {
+    <div class="success-message">
+      {{ successMessage }}
+    </div>
+  }
+
+  <!-- Loading Indicator -->
+  @if (loading) {
+    <div class="loading">
+      Loading...
+    </div>
+  }
+
+  @if (!loading && settings) {
+    <!-- Service Status Card -->
+    <div class="settings-card status-card">
+      <div class="card-header">
+        <h2>Service Status</h2>
+        <span class="status-indicator" [class.connected]="settings.service_running && settings.active_carrier_count > 0">
+          <span class="material-icons">{{ settings.service_running && settings.active_carrier_count > 0 ? 'check_circle' : 'cancel' }}</span>
+          {{ settings.service_running && settings.active_carrier_count > 0 ? 'Active' : 'Inactive' }}
+        </span>
+      </div>
+      <div class="card-body">
+        <div class="status-grid">
+          <div class="status-item">
+            <span class="status-label">Service Enabled</span>
+            <span class="status-value">{{ settings.enabled ? 'Yes' : 'No' }}</span>
+          </div>
+          <div class="status-item">
+            <span class="status-label">Active Carriers</span>
+            <span class="status-value">{{ settings.active_carrier_count }}</span>
+          </div>
+          <div class="status-item">
+            <span class="status-label">Auto Track Updates</span>
+            <span class="status-value">{{ settings.auto_track_updates ? 'Yes' : 'No' }}</span>
+          </div>
+          <div class="status-item">
+            <span class="status-label">Last Updated</span>
+            <span class="status-value">{{ formatDate(settings.last_update) }}</span>
+          </div>
+        </div>
+        <div class="status-actions">
+          <button
+            class="btn btn-primary"
+            (click)="restartService()"
+            [disabled]="restarting"
+            title="Restart shipment service with current settings"
+          >
+            @if (restarting) {
+              <span class="material-icons spinning">sync</span>
+              Restarting...
+            } @else {
+              <span class="material-icons">restart_alt</span>
+              Restart Service
+            }
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Settings Form Card -->
+    <div class="settings-card">
+      <div class="card-header">
+        <h2>Service Configuration</h2>
+      </div>
+      <div class="card-body">
+        <form (ngSubmit)="saveSettings()">
+          <!-- Enabled Toggle -->
+          <div class="form-group">
+            <label>Service Enabled</label>
+            <div class="toggle-container">
+              <label class="toggle">
+                <input type="checkbox" [(ngModel)]="enabled" name="enabled" />
+                <span class="toggle-slider"></span>
+              </label>
+              <span class="toggle-label">{{ enabled ? 'Shipment service is enabled' : 'Shipment service is disabled' }}</span>
+            </div>
+            <span class="form-hint">Enable or disable the entire shipment service</span>
+          </div>
+
+          <!-- Default Carrier -->
+          <div class="form-group">
+            <label for="defaultCarrier">Default Carrier</label>
+            <select id="defaultCarrier" [(ngModel)]="defaultCarrierUid" name="defaultCarrier">
+              <option [ngValue]="null">-- No default --</option>
+              @for (carrier of carriers; track carrier.uid) {
+                <option [value]="carrier.uid">{{ carrier.name }} ({{ getCarrierTypeName(carrier.carrier_type) }})</option>
+              }
+            </select>
+            <span class="form-hint">The default carrier used when creating shipments</span>
+          </div>
+
+          <!-- Auto Track Updates Toggle -->
+          <div class="form-group">
+            <label>Auto Track Updates</label>
+            <div class="toggle-container">
+              <label class="toggle">
+                <input type="checkbox" [(ngModel)]="autoTrackUpdates" name="autoTrackUpdates" />
+                <span class="toggle-slider"></span>
+              </label>
+              <span class="toggle-label">{{ autoTrackUpdates ? 'Automatically update tracking' : 'Manual tracking only' }}</span>
+            </div>
+            <span class="form-hint">Automatically poll carriers for tracking updates</span>
+          </div>
+
+          <!-- Tracking Poll Interval -->
+          <div class="form-group">
+            <label for="pollInterval">Tracking Poll Interval</label>
+            <select id="pollInterval" [(ngModel)]="trackingPollIntervalMinutes" name="pollInterval" [disabled]="!autoTrackUpdates">
+              @for (option of pollIntervalOptions; track option.value) {
+                <option [value]="option.value">{{ option.label }}</option>
+              }
+            </select>
+            <span class="form-hint">How often to check for tracking updates</span>
+          </div>
+
+          <!-- Save Button -->
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary" [disabled]="saving">
+              @if (saving) {
+                <span class="material-icons spinning">sync</span>
+                Saving...
+              } @else {
+                <span class="material-icons">save</span>
+                Save Settings
+              }
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Active Carriers Card -->
+    @if (carriers.length > 0) {
+      <div class="settings-card">
+        <div class="card-header">
+          <h2>Active Carriers</h2>
+        </div>
+        <div class="card-body">
+          <div class="carriers-list">
+            @for (carrier of carriers; track carrier.uid) {
+              <div class="carrier-item">
+                <div class="carrier-icon">
+                  <span class="material-icons">local_shipping</span>
+                </div>
+                <div class="carrier-info">
+                  <div class="carrier-name">{{ carrier.name }}</div>
+                  <div class="carrier-type">{{ getCarrierTypeName(carrier.carrier_type) }}</div>
+                </div>
+                <div class="carrier-status" [class.active]="carrier.active">
+                  {{ carrier.active ? 'Active' : 'Inactive' }}
+                </div>
+              </div>
+            }
+          </div>
+          <div class="carriers-footer">
+            <a routerLink="../carriers" class="btn btn-secondary btn-sm">
+              <span class="material-icons">settings</span>
+              Manage Carriers
+            </a>
+          </div>
+        </div>
+      </div>
+    } @else {
+      <div class="settings-card">
+        <div class="card-header">
+          <h2>Active Carriers</h2>
+        </div>
+        <div class="card-body">
+          <div class="empty-state">
+            <span class="material-icons">local_shipping</span>
+            <p>No active carriers configured</p>
+            <a routerLink="../carriers" class="btn btn-primary">
+              <span class="material-icons">add</span>
+              Add Carrier
+            </a>
+          </div>
+        </div>
+      </div>
+    }
+  }
+</div>

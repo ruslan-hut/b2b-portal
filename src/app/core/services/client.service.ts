@@ -19,6 +19,7 @@ export interface ClientProfileUpdate {
   email?: string;
   phone?: string;
   vat_number?: string;
+  language?: string;
 }
 
 // Country entity
@@ -159,6 +160,24 @@ export class ClientService {
       }),
       catchError(error => {
         console.error('Set default address error:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  /**
+   * Get available languages for product descriptions
+   */
+  getAvailableLanguages(): Observable<string[]> {
+    return this.http.get<ApiResponse<string[]>>(`${this.apiUrl}/frontend/languages`).pipe(
+      map(response => {
+        if (!response.success) {
+          throw new Error(response.status_message || 'Failed to get languages');
+        }
+        return response.data || ['en'];
+      }),
+      catchError(error => {
+        console.error('Get languages error:', error);
         return throwError(() => error);
       })
     );

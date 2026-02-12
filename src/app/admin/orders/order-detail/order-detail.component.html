@@ -5,6 +5,30 @@
       <span class="btn-text">Back</span>
     </button>
     <h2>Order Details</h2>
+    @if (canEdit && !checkingEditPermission) {
+      <button class="btn-edit-order" (click)="editOrder()">
+        <span class="material-icons">edit</span>
+        <span class="btn-text">Edit Order</span>
+      </button>
+    }
+    @if (client) {
+      <button class="btn-view-client" (click)="viewClientProfile()">
+        <span class="material-icons">person</span>
+        <span class="btn-text">View Client</span>
+      </button>
+    }
+    @if (canRequestInvoice && !invoiceLoading) {
+      <button class="btn-invoice" (click)="openInvoiceModal()" [disabled]="invoiceRequesting">
+        <span class="material-icons">receipt_long</span>
+        <span class="btn-text">{{ 'invoice.request' | translate }}</span>
+      </button>
+    }
+    @if (canCreateShipment && !shipmentLoading) {
+      <button class="btn-shipment" (click)="openCreateShipmentModal()" [disabled]="creatingShipment">
+        <span class="material-icons">local_shipping</span>
+        <span class="btn-text">Create Shipment</span>
+      </button>
+    }
   </div>
 
   @if (loading) {
@@ -16,183 +40,410 @@
 
   @if (!loading && !error && order) {
     <div class="detail-content">
-      <div class="section order-info">
-        <h3>Order Information</h3>
-        <div class="info-grid">
-          <div><strong>Order:</strong> {{ order.number || order.uid }}</div>
-          <div><strong>Status: </strong> <span [class]="getStatusClass(order.status)">{{ order.status }}</span></div>
-          <div><strong>Created:</strong> {{ formatDate(order.created_at) }}</div>
-          <div><strong>Updated:</strong> {{ formatDate(order.last_update || order.created_at) }}</div>
-          @if (order.comment) {
-            <div><strong>Comment:</strong> {{ order.comment }}</div>
+      <!-- Combined order details card (desktop: single card, mobile: separate sections) -->
+      <div class="section order-details-combined">
+        <!-- Order Information -->
+        <div class="order-info-subsection">
+          <h3>Order Information</h3>
+          <div class="info-grid">
+            <div><strong>Order:</strong> {{ order.number || order.uid }}</div>
+            <div><strong>Status: </strong> <span [class]="getStatusClass(order.status)">{{ order.status }}</span></div>
+            <div><strong>Created:</strong> {{ formatDate(order.created_at) }}</div>
+            <div><strong>Updated:</strong> {{ formatDate(order.last_update || order.created_at) }}</div>
+            @if (order.comment) {
+              <div><strong>Comment:</strong> {{ order.comment }}</div>
+            }
+          </div>
+        </div>
+
+        <!-- Client Information -->
+        <div class="client-info-subsection">
+          <h3>Client Information</h3>
+          @if (client) {
+            <div>
+              <div class="info-grid">
+                <div><strong>Name:</strong> {{ client.name }}</div>
+                <div><strong>Email:</strong> {{ client.email }}</div>
+                <div><strong>Phone:</strong> {{ client.phone }}</div>
+                <div><strong>Discount:</strong> {{ client.discount || 0 }}%</div>
+                <div><strong>VAT Rate:</strong> {{ client.vat_rate !== undefined ? client.vat_rate + '%' : '-' }}</div>
+                <div><strong>VAT Number:</strong> {{ client.vat_number || '-' }}</div>
+              </div>
+            </div>
+          } @else {
+            <div class="no-data">Client information not available</div>
           }
         </div>
-      </div>
-      <div class="section client-info">
-        <h3>Client Information</h3>
-        @if (client) {
-          <div>
-            <div class="info-grid">
-              <div><strong>Name:</strong> {{ client.name }}</div>
-              <div><strong>Email:</strong> {{ client.email }}</div>
-              <div><strong>Phone:</strong> {{ client.phone }}</div>
-              <div><strong>Discount:</strong> {{ client.discount || 0 }}%</div>
-              <div><strong>VAT Rate:</strong> {{ client.vat_rate !== undefined ? client.vat_rate + '%' : '-' }}</div>
-              <div><strong>VAT Number:</strong> {{ client.vat_number || '-' }}</div>
-            </div>
-          </div>
-        } @else {
-          <div class="no-data">Client information not available</div>
-        }
-      </div>
-      <div class="section shipping-info">
-        <h3>Delivery Address</h3>
-        @if (hasDeliveryAddress()) {
-          <div class="info-grid">
-            @if (order.address_text) {
-              <div>
-                <strong>Street:</strong> {{ order.address_text }}
-              </div>
-            }
-            @if (order.city) {
-              <div>
-                <strong>City:</strong> {{ order.city }}
-              </div>
-            }
-            @if (order.zipcode) {
-              <div>
-                <strong>Zip Code:</strong> {{ order.zipcode }}
-              </div>
-            }
-            @if (order.country_code) {
-              <div>
-                <strong>Country:</strong> {{ order.country_code }}
-              </div>
-            }
-          </div>
-        } @else {
-          <p class="no-data">No address provided</p>
-        }
-      </div>
-      <div class="section items-section">
-        <h3>Order Items ({{ items.length }})</h3>
 
-        <!-- Desktop Table -->
-        <table class="items-table desktop-only">
-          <thead>
-            <tr>
-              <th>SKU</th>
-              <th>Product Name</th>
-              <th>Quantity</th>
-              <th title="Base unit price without discount or VAT">Base Price</th>
-              <th title="Base price with VAT (before discount)">Price + VAT</th>
-              <th title="Discount percentage applied to this item">Discount (%)</th>
-              <th title="Unit price after discount, with VAT">Price w/ Discount + VAT</th>
-              <th title="Total including VAT for this item">Total</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (item of items; track item) {
+        <!-- Delivery Address -->
+        <div class="shipping-info-subsection">
+          <h3>Delivery Address</h3>
+          @if (hasDeliveryAddress()) {
+            <div class="info-grid">
+              @if (order.address_text) {
+                <div>
+                  <strong>Street:</strong> {{ order.address_text }}
+                </div>
+              }
+              @if (order.city) {
+                <div>
+                  <strong>City:</strong> {{ order.city }}
+                </div>
+              }
+              @if (order.zipcode) {
+                <div>
+                  <strong>Zip Code:</strong> {{ order.zipcode }}
+                </div>
+              }
+              @if (order.country_code) {
+                <div>
+                  <strong>Country:</strong> {{ order.country_code }}
+                </div>
+              }
+            </div>
+          } @else {
+            <p class="no-data">No address provided</p>
+          }
+        </div>
+
+        <!-- Order Items -->
+        <div class="items-subsection">
+          <h3>Order Items ({{ items.length }})</h3>
+
+          <!-- Desktop Table -->
+          <table class="items-table desktop-only">
+            <thead>
               <tr>
-                <td>{{ item.product_sku || '-' }}</td>
-                <td>{{ getProductName(item.product_uid) }}</td>
-                <td>{{ item.quantity }}</td>
-                <td>{{ (item.price/100).toFixed(2) }}</td>
-                <td>{{ (item.price_with_vat/100).toFixed(2) }}</td>
-                <td>{{ item.discount !== undefined ? item.discount + '%' : '-' }}</td>
-                <td>{{ (item.price_after_discount_with_vat/100).toFixed(2) }}</td>
-                <td>{{ (item.total/100).toFixed(2) }}</td>
+                <th>SKU</th>
+                <th>Product Name</th>
+                <th>Quantity</th>
+                <th>Available</th>
+                <th title="Base unit price without discount or VAT">Base Price</th>
+                <th title="Base price with VAT (before discount)">Price + VAT</th>
+                <th title="Discount percentage applied to this item">Discount (%)</th>
+                <th title="Unit price after discount, with VAT">Price w/ Discount + VAT</th>
+                <th title="Total including VAT for this item">Total</th>
               </tr>
+            </thead>
+            <tbody>
+              @for (item of items; track item) {
+                <tr>
+                  <td>{{ item.product_sku || '-' }}</td>
+                  <td>{{ getProductName(item.product_uid) }}</td>
+                  <td>{{ item.quantity }}</td>
+                  <td>
+                    @if (getInventoryQuantity(item.product_uid) !== null) {
+                      <span [class.stock-sufficient]="isStockSufficient(item.quantity, item.product_uid)"
+                            [class.stock-insufficient]="isStockInsufficient(item.quantity, item.product_uid)">
+                        {{ getInventoryQuantity(item.product_uid) }}
+                      </span>
+                    } @else {
+                      <span class="stock-unknown">-</span>
+                    }
+                  </td>
+                  <td>{{ (item.price/100).toFixed(2) }}</td>
+                  <td>{{ (item.price_with_vat/100).toFixed(2) }}</td>
+                  <td>{{ item.discount !== undefined ? item.discount + '%' : '-' }}</td>
+                  <td>{{ (item.price_after_discount_with_vat/100).toFixed(2) }}</td>
+                  <td>{{ (item.total/100).toFixed(2) }}</td>
+                </tr>
+              }
+              @if (items.length === 0) {
+                <tr>
+                  <td colspan="9" class="no-data">No items found for this order</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+
+          <!-- Mobile Cards -->
+          <div class="items-cards mobile-only">
+            @for (item of visibleItems; track item) {
+              <div class="item-card">
+                <div class="item-card-header">
+                  <span class="item-name">{{ getProductName(item.product_uid) }}</span>
+                  <span class="item-total">{{ (item.total/100).toFixed(2) }}</span>
+                </div>
+                <div class="item-card-sku">SKU: {{ item.product_sku || '-' }}</div>
+                <div class="item-card-details">
+                  <div class="detail-item">
+                    <span class="label">Qty:</span>
+                    <span class="value">{{ item.quantity }}</span>
+                  </div>
+                  <div class="detail-item">
+                    <span class="label">Avail:</span>
+                    @if (getInventoryQuantity(item.product_uid) !== null) {
+                      <span class="value" [class.stock-sufficient]="isStockSufficient(item.quantity, item.product_uid)"
+                                          [class.stock-insufficient]="isStockInsufficient(item.quantity, item.product_uid)">
+                        {{ getInventoryQuantity(item.product_uid) }}
+                      </span>
+                    } @else {
+                      <span class="value stock-unknown">-</span>
+                    }
+                  </div>
+                  <div class="detail-item">
+                    <span class="label">Base:</span>
+                    <span class="value">{{ (item.price/100).toFixed(2) }}</span>
+                  </div>
+                  <div class="detail-item">
+                    <span class="label">+VAT:</span>
+                    <span class="value">{{ (item.price_with_vat/100).toFixed(2) }}</span>
+                  </div>
+                  @if (item.discount) {
+                    <div class="detail-item discount">
+                      <span class="label">Disc:</span>
+                      <span class="value">-{{ item.discount }}%</span>
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+            @if (hasMoreItems) {
+              <button class="btn-show-more" (click)="toggleShowAllItems()">
+                @if (showAllItems) {
+                  <span class="material-icons">expand_less</span>
+                  <span>Show less</span>
+                } @else {
+                  <span class="material-icons">expand_more</span>
+                  <span>Show {{ hiddenItemsCount }} more items</span>
+                }
+              </button>
             }
             @if (items.length === 0) {
-              <tr>
-                <td colspan="8" class="no-data">No items found for this order</td>
-              </tr>
+              <div class="no-data-card">No items found for this order</div>
             }
-          </tbody>
-        </table>
+          </div>
+        </div>
 
-        <!-- Mobile Cards -->
-        <div class="items-cards mobile-only">
-          @for (item of visibleItems; track item) {
-            <div class="item-card">
-              <div class="item-card-header">
-                <span class="item-name">{{ getProductName(item.product_uid) }}</span>
-                <span class="item-total">{{ (item.total/100).toFixed(2) }}</span>
+        <!-- Order Totals -->
+        <div class="totals-subsection">
+          <h3>Order Totals</h3>
+          <div class="totals-breakdown">
+            @if (order.discount_percent && order.discount_percent > 0 && order.original_total) {
+              <div class="total-row">
+                <span class="total-label">Original Total:</span>
+                <span class="total-value">{{ (order.original_total/100).toFixed(2) }}</span>
               </div>
-              <div class="item-card-sku">SKU: {{ item.product_sku || '-' }}</div>
-              <div class="item-card-details">
-                <div class="detail-item">
-                  <span class="label">Qty:</span>
-                  <span class="value">{{ item.quantity }}</span>
+            }
+            @if (order.discount_percent && order.discount_percent > 0 && order.discount_amount) {
+              <div class="total-row discount-row">
+                <span class="total-label">Discount ({{ order.discount_percent }}%):</span>
+                <span class="total-value discount-value">-{{ (order.discount_amount/100).toFixed(2) }}</span>
+              </div>
+            }
+            <div class="total-row subtotal-row">
+              <span class="total-label">Subtotal (Net):</span>
+              <span class="total-value">{{ order.subtotal !== undefined ? (order.subtotal/100).toFixed(2) : '-' }}</span>
+            </div>
+            @if (order.total_vat && order.total_vat > 0) {
+              <div class="total-row vat-row">
+                <span class="total-label">VAT@if (order.vat_rate) {
+                  <span> ({{ order.vat_rate }}%)</span>
+                }:</span>
+                <span class="total-value">{{ (order.total_vat/100).toFixed(2) }}</span>
+              </div>
+            }
+            <div class="total-row final-total-row">
+              <span class="total-label">Total (Gross):</span>
+              <span class="total-value final-total">{{ (order.total/100).toFixed(2) }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Generated Invoices section -->
+      @if (orderInvoices.length > 0) {
+        <div class="section invoices-section">
+          <h3>{{ 'invoice.generated' | translate }}</h3>
+
+          <!-- Desktop Table -->
+          <table class="items-table invoices-table desktop-only">
+            <thead>
+              <tr>
+                <th>{{ 'common.date' | translate }}</th>
+                <th>{{ 'invoice.type' | translate }}</th>
+                <th>{{ 'common.status' | translate }}</th>
+                <th>{{ 'invoice.requestedBy' | translate }}</th>
+                <th>{{ 'common.actions' | translate }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (inv of orderInvoices; track inv.uid) {
+                <tr [class]="getInvoiceStatusClass(inv)">
+                  <td>{{ formatDate(inv.created_at) }}</td>
+                  <td>{{ getInvoiceTypeName(inv.type_uid) }}</td>
+                  <td>
+                    @if (inv.error) {
+                      <span class="invoice-status-error" [title]="inv.error">{{ 'common.error' | translate }}</span>
+                    } @else if (inv.response_type === 'link') {
+                      <span class="invoice-status-link">{{ 'invoice.link' | translate }}</span>
+                    } @else {
+                      <span class="invoice-status-file">{{ inv.file_name || 'invoice.file' | translate }}</span>
+                    }
+                  </td>
+                  <td>{{ getRequestedByName(inv.requested_by) }}</td>
+                  <td>
+                    @if (!inv.error) {
+                      <button class="btn-open-invoice" (click)="openInvoice(inv)">
+                        <span class="material-icons">{{ inv.response_type === 'link' ? 'open_in_new' : 'download' }}</span>
+                      </button>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+
+          <!-- Mobile Cards -->
+          <div class="invoices-cards mobile-only">
+            @for (inv of orderInvoices; track inv.uid) {
+              <div class="invoice-card" [class]="getInvoiceStatusClass(inv)">
+                <div class="invoice-card-header">
+                  <span class="invoice-type">{{ getInvoiceTypeName(inv.type_uid) }}</span>
+                  <span class="invoice-date">{{ formatDate(inv.created_at) }}</span>
                 </div>
-                <div class="detail-item">
-                  <span class="label">Base:</span>
-                  <span class="value">{{ (item.price/100).toFixed(2) }}</span>
+                <div class="invoice-card-status">
+                  @if (inv.error) {
+                    <span class="invoice-status-error">{{ 'common.error' | translate }}: {{ inv.error }}</span>
+                  } @else if (inv.response_type === 'link') {
+                    <span class="invoice-status-link">{{ 'invoice.link' | translate }}</span>
+                  } @else {
+                    <span class="invoice-status-file">{{ inv.file_name || 'invoice.file' | translate }}</span>
+                  }
                 </div>
-                <div class="detail-item">
-                  <span class="label">+VAT:</span>
-                  <span class="value">{{ (item.price_with_vat/100).toFixed(2) }}</span>
+                <div class="invoice-card-requested">
+                  <span class="label">{{ 'invoice.requestedBy' | translate }}:</span>
+                  <span>{{ getRequestedByName(inv.requested_by) }}</span>
                 </div>
-                @if (item.discount) {
-                  <div class="detail-item discount">
-                    <span class="label">Disc:</span>
-                    <span class="value">-{{ item.discount }}%</span>
-                  </div>
+                @if (!inv.error) {
+                  <button class="btn-open-invoice-mobile" (click)="openInvoice(inv)">
+                    <span class="material-icons">{{ inv.response_type === 'link' ? 'open_in_new' : 'download' }}</span>
+                    <span>{{ inv.response_type === 'link' ? ('common.open' | translate) : ('common.download' | translate) }}</span>
+                  </button>
                 }
               </div>
-            </div>
-          }
-          @if (hasMoreItems) {
-            <button class="btn-show-more" (click)="toggleShowAllItems()">
-              @if (showAllItems) {
-                <span class="material-icons">expand_less</span>
-                <span>Show less</span>
-              } @else {
-                <span class="material-icons">expand_more</span>
-                <span>Show {{ hiddenItemsCount }} more items</span>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- Shipments section -->
+      @if (orderShipments.length > 0 || shipmentServiceEnabled) {
+        <div class="section shipments-section">
+          <h3>Shipments</h3>
+
+          @if (orderShipments.length === 0) {
+            <div class="no-shipments">
+              <span class="material-icons">local_shipping</span>
+              <p>No shipments created yet</p>
+              @if (canCreateShipment) {
+                <button class="btn-create-shipment" (click)="openCreateShipmentModal()">
+                  <span class="material-icons">add</span>
+                  Create Shipment
+                </button>
               }
-            </button>
-          }
-          @if (items.length === 0) {
-            <div class="no-data-card">No items found for this order</div>
+            </div>
+          } @else {
+            <div class="shipments-list">
+              @for (shipment of orderShipments; track shipment.uid) {
+                <div class="shipment-card" [class]="getShipmentStatusClass(shipment.status)">
+                  <div class="shipment-header">
+                    <div class="shipment-info">
+                      <div class="shipment-title">
+                        <span class="carrier-name">{{ getCarrierName(shipment.carrier_uid) }}</span>
+                        @if (shipment.carrier_shipment_id) {
+                          <span class="shipment-number">#{{ shipment.carrier_shipment_id }}</span>
+                        }
+                        <button
+                          class="btn-track-icon"
+                          (click)="refreshShipmentTracking(shipment)"
+                          [disabled]="trackingShipmentUid === shipment.uid"
+                          title="Refresh tracking info">
+                          <span class="material-icons" [class.spinning]="trackingShipmentUid === shipment.uid">sync</span>
+                        </button>
+                      </div>
+                      @if (shipment.tracking_number) {
+                        <div class="tracking-number">
+                          Track:
+                          <a
+                            [href]="shipment.tracking_url || ('https://mojdhl.pl/tracking?AWB=' + shipment.tracking_number)"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="tracking-link"
+                            title="Open carrier tracking page">
+                            {{ shipment.tracking_number }}
+                            <span class="material-icons">open_in_new</span>
+                          </a>
+                        </div>
+                      }
+                    </div>
+                    <span class="shipment-status">{{ shipment.status }}</span>
+                  </div>
+                  <div class="shipment-details">
+                    <div class="detail-row">
+                      <span class="label">Receiver:</span>
+                      <span class="value">{{ shipment.receiver_name }}, {{ shipment.receiver_city }}</span>
+                    </div>
+                    @if (shipment.shipped_at) {
+                      <div class="detail-row">
+                        <span class="label">Shipped:</span>
+                        <span class="value">{{ formatShipmentDate(shipment.shipped_at) }}</span>
+                      </div>
+                    }
+                    @if (shipment.delivered_at) {
+                      <div class="detail-row">
+                        <span class="label">Delivered:</span>
+                        <span class="value">{{ formatShipmentDate(shipment.delivered_at) }}</span>
+                      </div>
+                    }
+                    @if (shipment.error_message) {
+                      <div class="detail-row error">
+                        <span class="label">Error:</span>
+                        <span class="value">{{ shipment.error_message }}</span>
+                      </div>
+                    }
+                  </div>
+
+                  <!-- Tracking events timeline -->
+                  @if (shipment.events && shipment.events.length > 0) {
+                    <div class="tracking-timeline">
+                      <h4>Tracking Events</h4>
+                      <div class="timeline">
+                        @for (event of shipment.events; track event.uid) {
+                          <div class="timeline-item">
+                            <div class="timeline-marker"></div>
+                            <div class="timeline-content">
+                              <div class="event-header">
+                                <span class="event-status">{{ event.event_status }}</span>
+                                <span class="event-time">{{ formatShipmentDate(event.event_timestamp) }}</span>
+                              </div>
+                              @if (event.event_description) {
+                                <div class="event-description">{{ event.event_description }}</div>
+                              }
+                              @if (event.terminal_city) {
+                                <div class="event-location">{{ event.terminal_name || '' }} {{ event.terminal_city }}</div>
+                              }
+                            </div>
+                          </div>
+                        }
+                      </div>
+                    </div>
+                  }
+
+                  @if (shipment.label_format) {
+                    <div class="shipment-actions">
+                      <button class="btn-label" (click)="downloadLabel(shipment)" title="Download Label">
+                        <span class="material-icons">print</span>
+                        <span class="btn-text">Label</span>
+                      </button>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
           }
         </div>
-      </div>
-      <!-- Order Totals Section -->
-      <div class="section totals-section">
-        <h3>Order Totals</h3>
-        <div class="totals-breakdown">
-          @if (order.discount_percent && order.discount_percent > 0 && order.original_total) {
-            <div class="total-row">
-              <span class="total-label">Original Total:</span>
-              <span class="total-value">{{ (order.original_total/100).toFixed(2) }}</span>
-            </div>
-          }
-          @if (order.discount_percent && order.discount_percent > 0 && order.discount_amount) {
-            <div class="total-row discount-row">
-              <span class="total-label">Discount ({{ order.discount_percent }}%):</span>
-              <span class="total-value discount-value">-{{ (order.discount_amount/100).toFixed(2) }}</span>
-            </div>
-          }
-          <div class="total-row subtotal-row">
-            <span class="total-label">Subtotal (Net):</span>
-            <span class="total-value">{{ order.subtotal !== undefined ? (order.subtotal/100).toFixed(2) : '-' }}</span>
-          </div>
-          @if (order.total_vat && order.total_vat > 0) {
-            <div class="total-row vat-row">
-              <span class="total-label">VAT@if (order.vat_rate) {
-                <span> ({{ order.vat_rate }}%)</span>
-              }:</span>
-              <span class="total-value">{{ (order.total_vat/100).toFixed(2) }}</span>
-            </div>
-          }
-          <div class="total-row final-total-row">
-            <span class="total-label">Total (Gross):</span>
-            <span class="total-value final-total">{{ (order.total/100).toFixed(2) }}</span>
-          </div>
-        </div>
-      </div>
+      }
+
       <!-- Status history section -->
       <div class="section history-section">
         <h3>Status History</h3>
@@ -246,3 +497,127 @@
     </div>
   }
 </div>
+
+<!-- Invoice Type Selection Modal -->
+@if (showInvoiceModal) {
+  <div class="modal-overlay" (click)="closeInvoiceModal()">
+    <div class="modal-content invoice-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>{{ 'invoice.selectType' | translate }}</h3>
+        <button class="btn-close-modal" (click)="closeInvoiceModal()">
+          <span class="material-icons">close</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="invoice-type-list">
+          @for (type of invoiceTypes; track type.uid) {
+            <label class="invoice-type-option" [class.selected]="selectedInvoiceTypeUid === type.uid">
+              <input type="radio" name="invoiceType" [value]="type.uid" [(ngModel)]="selectedInvoiceTypeUid">
+              <span class="option-content">
+                <span class="option-name">{{ type.name }}</span>
+                <span class="option-method">{{ type.method }}</span>
+              </span>
+            </label>
+          }
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" (click)="closeInvoiceModal()">{{ 'common.cancel' | translate }}</button>
+        <button class="btn-request" (click)="requestInvoice()" [disabled]="!selectedInvoiceTypeUid || invoiceRequesting">
+          @if (invoiceRequesting) {
+            <span class="spinner"></span>
+            <span>{{ 'invoice.requesting' | translate }}</span>
+          } @else {
+            <span class="material-icons">receipt_long</span>
+            <span>{{ 'invoice.request' | translate }}</span>
+          }
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Create Shipment Modal -->
+@if (showCreateShipmentModal) {
+  <div class="modal-overlay" (click)="closeCreateShipmentModal()">
+    <div class="modal-content shipment-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Create Shipment</h3>
+        <button class="btn-close-modal" (click)="closeCreateShipmentModal()">
+          <span class="material-icons">close</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Carrier</label>
+          <select [(ngModel)]="selectedCarrierUid">
+            <option value="">-- Select carrier --</option>
+            @for (carrier of shipmentCarriers; track carrier.uid) {
+              <option [value]="carrier.uid">{{ carrier.name }}</option>
+            }
+          </select>
+        </div>
+
+        <!-- Box Selection -->
+        <div class="form-group">
+          <label>Box Template (Optional)</label>
+          <select [(ngModel)]="selectedBoxUID" (change)="onBoxSelected()">
+            <option [value]="null">-- Manual entry --</option>
+            @for (box of availableBoxes; track box.uid) {
+              <option [value]="box.uid">
+                {{ box.name }} ({{ box.length_cm }}×{{ box.width_cm }}×{{ box.height_cm }} cm)
+              </option>
+            }
+          </select>
+        </div>
+
+        <!-- Dimensions (auto-filled from box or manual entry) -->
+        <div class="form-row">
+          <div class="form-group">
+            <label>Length (cm)</label>
+            <input type="number" [(ngModel)]="shipmentLength" min="1" step="1" [disabled]="selectedBoxUID !== null">
+          </div>
+          <div class="form-group">
+            <label>Width (cm)</label>
+            <input type="number" [(ngModel)]="shipmentWidth" min="1" step="1" [disabled]="selectedBoxUID !== null">
+          </div>
+          <div class="form-group">
+            <label>Height (cm)</label>
+            <input type="number" [(ngModel)]="shipmentHeight" min="1" step="1" [disabled]="selectedBoxUID !== null">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Weight (kg)</label>
+            <input type="number" [(ngModel)]="shipmentWeight" min="0.1" step="0.1">
+          </div>
+          <div class="form-group">
+            <label>Pieces</label>
+            <input type="number" [(ngModel)]="shipmentPieces" min="1" step="1">
+          </div>
+        </div>
+        @if (order && hasDeliveryAddress()) {
+          <div class="delivery-preview">
+            <label>Delivery Address</label>
+            <div class="address-text">
+              {{ order.address_text }}, {{ order.city }}, {{ order.zipcode }} {{ order.country_code }}
+            </div>
+          </div>
+        }
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" (click)="closeCreateShipmentModal()">Cancel</button>
+        <button class="btn-create" (click)="createShipment()" [disabled]="!selectedCarrierUid || creatingShipment">
+          @if (creatingShipment) {
+            <span class="spinner"></span>
+            <span>Creating...</span>
+          } @else {
+            <span class="material-icons">local_shipping</span>
+            <span>Create Shipment</span>
+          }
+        </button>
+      </div>
+    </div>
+  </div>
+}

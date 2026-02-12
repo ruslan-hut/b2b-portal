@@ -1,0 +1,21 @@
+<div class="chat-container" [class.mobile-show-chat]="mobileShowChat">
+  <aside class="chat-sidebar">
+    <app-chat-list
+      [chats]="(chats$ | async) || []"
+      [activeChat]="activeChat ? { platform: activeChat.platform, userId: activeChat.userId } : null"
+      (selectChat)="onSelectChat($event)"
+    ></app-chat-list>
+  </aside>
+  <section class="chat-main">
+    <app-chat-window
+      [messages]="messages"
+      [activeChat]="activeChat"
+      [loading]="loading"
+      [typingIndicator]="typingIndicator"
+      [wsConnected]="wsConnected"
+      (loadMore)="onLoadMore()"
+      (sendMessage)="onSendMessage($event)"
+      (goBack)="onGoBack()"
+    ></app-chat-window>
+  </section>
+</div>

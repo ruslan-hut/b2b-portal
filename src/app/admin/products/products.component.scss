@@ -1,14 +1,16 @@
+@use '../../../styles/mixins' as *;
+
 .products-container {
-  padding: 0 4px; // Small padding on sides for mobile
-  
+  padding: 0 var(--spacing-xs);
+
   h1 {
-    margin-bottom: 16px;
+    margin-bottom: var(--spacing-md);
     color: var(--color-text-primary);
     font-size: 1.5rem;
-    
+
     @media (max-width: 768px) {
       font-size: 1.25rem;
-      margin-bottom: 12px;
+      margin-bottom: var(--spacing-md-sm);
     }
   }
 }
@@ -17,12 +19,12 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
+  margin-bottom: var(--spacing-sm-md);
   flex-wrap: wrap;
-  gap: 12px;
+  gap: var(--spacing-sm-md);
 
   @media (max-width: 768px) {
-    margin-bottom: 12px;
+    margin-bottom: var(--spacing-sm);
   }
 }
 
@@ -32,14 +34,18 @@
 }
 
 .filters {
-  display: grid;
+  display: none;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 12px;
-  margin-bottom: 20px;
-  padding: 12px;
+  gap: var(--spacing-sm-md);
+  margin-bottom: var(--spacing-sm-md);
+  padding: var(--spacing-sm-md);
   background-color: var(--card-bg);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   box-shadow: var(--shadow-sm);
+
+  &.expanded {
+    display: grid;
+  }
 
   // On very small screens, stack all filters
   @media (max-width: 480px) {
@@ -65,7 +71,7 @@
 .filter-group {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--spacing-sm);
   min-width: 0; // Allow shrinking below content size
   
   label {
@@ -103,15 +109,17 @@
   }
 
   .btn-clear {
-    padding: 6px 10px;
+    @include button-typography;
+    padding: var(--spacing-sm) var(--spacing-sm-md);
+    min-height: var(--touch-target-min);
     background-color: var(--color-text-secondary);
     color: var(--color-text-inverse);
     border: none;
-    border-radius: 4px;
+    border-radius: var(--radius-md);
     cursor: pointer;
     font-size: 0.85rem;
 
-    &:hover {
+    &:hover:not(:disabled) {
       background-color: var(--color-text-muted);
     }
   }
@@ -131,10 +139,10 @@
 
 .products-table {
   background-color: var(--card-bg);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   box-shadow: var(--shadow-sm);
   overflow-x: auto;
-  margin-bottom: 16px;
+  margin-bottom: 8px;
 }
 
 table {
@@ -147,48 +155,55 @@ table {
     color: var(--table-header-text);
 
     th {
-      padding: 10px 8px;
+      @include table-cell-padding;
       text-align: left;
       font-weight: 600;
       font-size: 0.85rem;
       white-space: nowrap;
-      
+
       @media (max-width: 768px) {
-        padding: 8px 6px;
+        padding: var(--spacing-sm) 6px;
         font-size: 0.8rem;
       }
     }
   }
-  
+
   tbody {
     tr {
       border-bottom: 1px solid var(--color-border-light);
-      
+
       &:hover {
         background-color: var(--color-background-secondary);
       }
     }
-    
+
     td {
-      padding: 10px 8px;
+      @include table-cell-padding;
       color: var(--color-text-primary);
-      
+
       @media (max-width: 768px) {
-        padding: 8px 6px;
+        padding: var(--spacing-sm) 6px;
         font-size: 0.85rem;
       }
     }
   }
 }
 
-.active {
-  color: var(--color-success);
-  font-weight: 600;
-}
+// Status icon styling
+.status-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  line-height: 1;
 
-.inactive {
-  color: var(--color-danger);
-  font-weight: 600;
+  &.status-active {
+    color: var(--color-success);
+  }
+
+  &.status-inactive {
+    color: var(--color-danger);
+  }
 }
 
 .no-data {
@@ -201,16 +216,16 @@ table {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px;
+  padding: var(--spacing-md);
   border-top: 1px solid var(--color-border-light);
   flex-wrap: wrap;
-  gap: 12px;
+  gap: var(--spacing-md-sm);
   background-color: var(--color-background-secondary);
-  
+
   @media (max-width: 768px) {
     flex-direction: column;
     align-items: stretch;
-    gap: 10px;
+    gap: var(--spacing-sm-md);
   }
   
   .pagination-info {
@@ -250,23 +265,8 @@ table {
   }
   
   .pagination-btn {
-    padding: 8px 12px;
-    background-color: var(--card-bg);
-    color: var(--color-text-primary);
-    border: 1px solid var(--color-border);
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 0.9rem;
-    font-weight: 500;
-    min-width: 40px;
-    transition: all 0.2s ease;
-    
-    @media (max-width: 768px) {
-      padding: 6px 10px;
-      font-size: 0.85rem;
-      min-width: 36px;
-    }
-    
+    @include pagination-button;
+
     &:hover:not(:disabled) {
       background-color: var(--color-info);
       color: var(--color-text-inverse);
@@ -306,7 +306,7 @@ table {
   padding: 20px;
   text-align: center;
   background-color: var(--card-bg);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   margin-bottom: 20px;
 }
 
@@ -332,7 +332,7 @@ table {
 .product-card {
   background: var(--card-bg);
   border: 1px solid var(--card-border);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   box-shadow: var(--shadow-sm);
   overflow: hidden;
   cursor: pointer;
@@ -369,23 +369,6 @@ table {
       flex: 1;
     }
 
-    .status-badge {
-      font-size: 0.75rem;
-      font-weight: 600;
-      padding: 2px 8px;
-      border-radius: 12px;
-      white-space: nowrap;
-
-      &.active {
-        background-color: var(--status-success-bg);
-        color: var(--status-success-text);
-      }
-
-      &.inactive {
-        background-color: var(--status-error-bg);
-        color: var(--status-error-text);
-      }
-    }
   }
 
   .card-subtitle {
@@ -423,7 +406,7 @@ table {
       font-size: 0.7rem;
       font-weight: 700;
       padding: 2px 6px;
-      border-radius: 4px;
+      border-radius: var(--radius-sm);
     }
 
     .expand-icon {
@@ -476,7 +459,7 @@ table {
   text-align: center;
   padding: 40px 20px;
   background: var(--card-bg);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   color: var(--color-text-muted);
   font-size: 0.95rem;
 }
@@ -493,7 +476,7 @@ table {
     margin-bottom: 12px;
     background: var(--card-bg);
     border: 1px solid var(--color-border);
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     color: var(--color-text-primary);
     font-size: 0.95rem;
     font-weight: 500;
@@ -518,19 +501,14 @@ table {
     }
   }
 
-  // Collapsible filters
+  // Collapsible filters - margin override for mobile
   .filters {
-    display: none;
-    margin-bottom: 12px;
-
-    &.expanded {
-      display: grid;
-    }
+    margin-bottom: 8px;
   }
 
   .filter-group {
     select, input {
-      padding: 10px;
+      padding: 8px;
       font-size: 16px;
       min-height: 44px;
     }
@@ -548,7 +526,7 @@ table {
   // Pagination
   .pagination {
     background: var(--card-bg);
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     margin-top: 12px;
   }
 }

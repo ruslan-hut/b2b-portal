@@ -2,10 +2,12 @@ import { Component, OnInit, OnDestroy, ChangeDetectorRef, ChangeDetectionStrateg
 import { Router } from '@angular/router';
 import { Subscription, forkJoin } from 'rxjs';
 import { CrmService } from './services/crm.service';
+import { CrmPollingService } from './services/crm-polling.service';
 import { CrmBoardResponse, CrmBoardColumn, CrmBoardOrder } from './models/crm-board.model';
 import { CrmStage, CrmTransition } from './models/crm-stage.model';
 import { StoreService } from '../../core/services/store.service';
 import { Store } from '../../core/models/store.model';
+import { PageTitleService } from '../../core/services/page-title.service';
 
 @Component({
     selector: 'app-crm',
@@ -38,16 +40,35 @@ export class CrmComponent implements OnInit, OnDestroy {
 
   constructor(
     private crmService: CrmService,
+    private pollingService: CrmPollingService,
     private storeService: StoreService,
-    private router: Router,
-    private cdr: ChangeDetectorRef
+    public router: Router,
+    private cdr: ChangeDetectorRef,
+    private pageTitleService: PageTitleService
   ) {}
 
   ngOnInit(): void {
+    this.pageTitleService.setTitle('CRM Pipeline');
     this.loadInitialData();
+    this.startChangePolling();
+  }
+
+  private startChangePolling(): void {
+    this.pollingService.startPolling(this.selectedStoreUid || undefined);
+    this.subscriptions.add(
+      this.pollingService.changes$.subscribe(changes => {
+        // Don't refresh while assignment modal is open to avoid disrupting user
+        if (changes.has_changes && !this.showAssignmentModal) {
+          this.loadBoard();
+          // Reset polling timestamp after refresh
+          this.pollingService.resetLastChecked();
+        }
+      })
+    );
   }
 
   ngOnDestroy(): void {
+    this.pollingService.stopPolling();
     this.subscriptions.unsubscribe();
   }
 
@@ -105,6 +126,9 @@ export class CrmComponent implements OnInit, OnDestroy {
 
   onStoreChange(): void {
     this.loadBoard();
+    // Restart polling with new store filter
+    this.pollingService.stopPolling();
+    this.pollingService.startPolling(this.selectedStoreUid || undefined);
   }
 
   onOrderMoved(event: { orderUid: string; fromStageUid: string; toStageUid: string }): void {
@@ -154,13 +178,6 @@ export class CrmComponent implements OnInit, OnDestroy {
     return this.stores[uid]?.name || uid;
   }
 
-  goToSettings(): void {
-    this.router.navigate(['/admin/crm/settings']);
-  }
-
-  goToMyTasks(): void {
-    this.router.navigate(['/admin/crm/my-tasks']);
-  }
 
   viewOrder(order: CrmBoardOrder): void {
     this.selectedOrderForDetails = order;
@@ -176,12 +193,12 @@ export class CrmComponent implements OnInit, OnDestroy {
 
   navigateToOrderDetails(): void {
     if (this.selectedOrderForDetails) {
-      this.router.navigate(['/admin/orders', this.selectedOrderForDetails.uid]);
+      this.router.navigate(['/admin/orders', this.selectedOrderForDetails.uid], { queryParams: { from: 'crm' } });
     }
   }
 
   navigateToOrderPage(order: CrmBoardOrder): void {
-    this.router.navigate(['/admin/orders', order.uid]);
+    this.router.navigate(['/admin/orders', order.uid], { queryParams: { from: 'crm' } });
   }
 
   formatPrice(amount: number, currencyCode: string): string {

@@ -4,6 +4,7 @@ import { Subscription } from 'rxjs';
 import { CrmService, CrmAssignableUser } from '../../services/crm.service';
 import { CrmTask, CrmTaskStatus, CrmTaskPriority } from '../../models/crm-task.model';
 import { AuthService } from '../../../../core/services/auth.service';
+import { PageTitleService } from '../../../../core/services/page-title.service';
 
 @Component({
     selector: 'app-my-tasks',
@@ -36,11 +37,13 @@ export class MyTasksComponent implements OnInit, OnDestroy {
   constructor(
     private crmService: CrmService,
     private authService: AuthService,
-    private router: Router,
-    private cdr: ChangeDetectorRef
+    public router: Router,
+    private cdr: ChangeDetectorRef,
+    private pageTitleService: PageTitleService
   ) {}
 
   ngOnInit(): void {
+    this.pageTitleService.setTitle('My Tasks');
     // Get current user UID
     const currentEntity = this.authService.currentEntityValue;
     if (currentEntity && 'uid' in currentEntity) {
@@ -182,11 +185,7 @@ export class MyTasksComponent implements OnInit, OnDestroy {
   }
 
   goToOrder(task: CrmTask): void {
-    this.router.navigate(['/admin/orders', task.order_uid]);
-  }
-
-  goToCrmBoard(): void {
-    this.router.navigate(['/admin/crm']);
+    this.router.navigate(['/admin/orders', task.order_uid], { queryParams: { from: 'crm' } });
   }
 
   getPriorityClass(priority: CrmTaskPriority): string {

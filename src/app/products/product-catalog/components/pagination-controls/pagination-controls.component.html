@@ -1,0 +1,22 @@
+<!-- Scroll to Top Button -->
+@if (showScrollToTop) {
+  <button class="btn-scroll-to-top" (click)="onScrollToTopClick()" aria-label="Scroll to top">
+    <span class="material-icons">keyboard_arrow_up</span>
+  </button>
+}
+
+<!-- Floating Show More Button -->
+@if (showFloating && !loading) {
+  <button
+    class="btn-floating-show-more"
+    (click)="onLoadMoreClick()"
+    [disabled]="loading"
+    aria-label="Load more products"
+  >
+    @if (loading) {
+      <span class="material-icons spinner">sync</span>
+    } @else {
+      <span class="material-icons">expand_more</span>
+    }
+  </button>
+}

@@ -1,27 +1,16 @@
 <div class="order-card" [style.--accent-color]="stageColor">
-  <div class="card-header">
+  <div class="card-line first-line">
     <span class="order-number">{{ order.number || order.uid | slice:0:8 }}</span>
-    <button class="btn-open-details" (click)="onOpenDetailsClick($event)" title="Open order details">
-      <span>&#8599;</span>
-    </button>
+    <span class="created-date">{{ formatDate(order.created_at) }}</span>
   </div>
 
-  <div class="card-body">
-    <div class="client-info">
-      <span class="client-icon">&#128100;</span>
-      <span class="client-name">{{ order.client_name || 'Unknown Client' }}</span>
-    </div>
-
-    <div class="order-total">
-      {{ formatPrice(order.total, order.currency_code) }}
-    </div>
+  <div class="card-line second-line">
+    <span class="client-icon">&#128100;</span>
+    <span class="client-name">{{ order.client_name || 'Unknown Client' }}</span>
   </div>
 
-  <div class="card-footer">
-    <div class="created-date">
-      {{ formatDate(order.created_at) }}
-    </div>
-
+  <div class="card-line third-line">
+    <span class="order-total">{{ formatPrice(order.total, order.currency_code) }}</span>
     <div class="manager-info" *ngIf="order.assigned_user_name">
       <span class="manager-icon">&#128101;</span>
       <span class="manager-name">{{ order.assigned_user_name }}</span>

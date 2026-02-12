@@ -1,36 +1,15 @@
 <div class="catalog-container">
   @if (viewMode === 'grid') {
-    <div class="search-bar">
-      <div class="search-filter-container">
-        <select
-          [(ngModel)]="selectedCategory"
-          (ngModelChange)="onCategoryChange()"
-          class="category-selector"
-          >
-          <option value="">{{ 'products.allCategories' | translate }}</option>
-          @for (category of allCategories; track category.uid) {
-            <option [value]="category.uid">
-              {{ category.name }}
-            </option>
-          }
-        </select>
-        <div class="search-input-wrapper">
-          <input
-            type="text"
-            [(ngModel)]="searchQuery"
-            (keyup.enter)="onSearchChange()"
-            [placeholder]="'products.searchPlaceholder' | translate"
-            class="search-input"
-            />
-          <button type="button" class="search-icon-btn" (click)="onSearchChange()">
-            <span class="material-icons">search</span>
-          </button>
-        </div>
-      </div>
-      <div class="cart-total-info">
-        {{ 'products.total' | translate }}: <span class="cart-total-amount">{{ getCartTotal().toFixed(2) }}{{ currencyName ? ' ' + currencyName : '' }}</span>
-      </div>
-    </div>
+    <app-search-bar
+      [viewMode]="viewMode"
+      [categories]="allCategories"
+      [selectedCategory]="selectedCategory"
+      [searchQuery]="searchQuery"
+      [cartTotal]="getCartTotal()"
+      [currencyName]="currencyName"
+      (search)="onSearchChange($event)"
+      (categoryChange)="onCategoryChange($event)"
+    />
   }
 
   @if (loading) {
@@ -42,431 +21,84 @@
 
   <!-- Grid View -->
   @if (!loading && viewMode === 'grid') {
-    <div class="products-grid-container">
-      @if (filteredProducts.length === 0) {
-        <div class="empty-state">
-          <span class="material-icons empty-icon">search</span>
-          <h2>{{ 'products.noProducts' | translate }}</h2>
-          <p>{{ 'common.search' | translate }}</p>
-        </div>
-      } @else {
-        @for (category of categories; track category) {
-          <div>
-            <div class="category-header">
-              <h2 class="category-title">{{ category }}</h2>
-              <div class="category-divider"></div>
-            </div>
-            <div class="products-grid">
-              @for (product of productsByCategory.get(category); track product) {
-                <div class="product-card" (click)="openProductDetails(product, $event)">
-                  <div class="product-image" style="position:relative;">
-                    <img
-                      [src]="getProductImageUrl(product)"
-                      [alt]="product.name"
-                      (error)="onImageError($event)" />
-                    <!-- product badges as direct children so they stack in a column (moved styles to SCSS) -->
-                    <div class="product-badges">
-                      @if (product.isNew) {
-                        <span class="badge badge-new">{{ 'products.new' | translate }}</span>
-                      }
-                      @if (product.isHotSale) {
-                        <span class="badge badge-hot-sale">{{ 'products.hotSale' | translate }}</span>
-                      }
-                    </div>
-                    @if (getCartQuantity(product.id) > 0) {
-                      <div class="quantity-badge">
-                        <span class="material-icons quantity-icon">shopping_cart</span>
-                        <span class="quantity-badge-text">{{ getCartQuantity(product.id) }}</span>
-                      </div>
-                    }
-                  </div>
-                  <div class="product-info">
-                    <div class="product-category">{{ product.category }}</div>
-                    <h3 class="product-name">{{ product.name }}</h3>
-                    <div class="product-sku">{{ 'products.sku' | translate }}: {{ product.sku }}</div>
-                    <div class="product-footer">
-                      <div class="product-price">
-                        <!-- product.price is in dollars (may be 0 if price is not available for user's price type) -->
-                        @if (product.price && product.price > 0) {
-                          <div class="price-row">
-                            <div class="price-values">
-                              <!-- Original price with VAT (strikethrough if discount) -->
-                              @if (hasDiscount()) {
-                                <div class="original-price">
-                                  <span class="strikethrough">{{ getOriginalPriceWithVat(product).toFixed(2) }}</span>
-                                </div>
-                              }
-                              <!-- Discounted price (prominent) -->
-                              <div class="price-amount" [class.discounted]="hasDiscount()">
-                                {{ getPriceWithVat(product).toFixed(2) }}
-                              </div>
-                            </div>
-                            @if (product.discountPercent && product.discountPercent > 0) {
-                              <span class="discount-tag">{{ product.discountPercent }}%</span>
-                            }
-                          </div>
-                          <div class="price-label small">{{ 'products.price' | translate }}</div>
-                        } @else {
-                          {{ 'products.priceNotAvailable' | translate }}
-                        }
-                      </div>
-                      <button
-                        class="btn btn-add-to-cart"
-                        (click)="addToCart(product); $event.stopPropagation()"
-                        [disabled]="!product.inStock"
-                        >
-                        {{ product.inStock ? ('products.addToCart' | translate) : ('products.outOfStock' | translate) }}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              }
-            </div>
-          </div>
-        }
-      }
-    </div>
+    <app-product-grid
+      [products]="filteredProducts"
+      [cartItems]="cartItems"
+      [currency]="currency"
+      [discount]="currentDiscount"
+      [vatRate]="currentVatRate"
+      (addToCart)="addToCart($event)"
+      (imagePreview)="handleImagePreview($event)"
+      (productDetails)="openProductDetails($event)"
+    />
   }
 
   <!-- Bulk Order View -->
   @if (!loading && viewMode === 'bulk') {
     <div class="bulk-view-container">
       <div class="bulk-table-section">
-        <div class="bulk-actions-bar">
-          <div class="search-filter-container-bulk">
-            <select
-              [(ngModel)]="selectedCategory"
-              (ngModelChange)="onCategoryChange()"
-              class="category-selector-bulk"
-              >
-              <option value="">{{ 'products.allCategories' | translate }}</option>
-              @for (category of allCategories; track category.uid) {
-                <option [value]="category.uid">
-                  {{ category.name }}
-                </option>
-              }
-            </select>
-            <div class="search-input-wrapper">
-              <input
-                type="text"
-                [(ngModel)]="searchQuery"
-                (keyup.enter)="onSearchChange()"
-                [placeholder]="'products.searchPlaceholder' | translate"
-                class="search-input-bulk"
-                />
-              <button type="button" class="search-icon-btn" (click)="onSearchChange()">
-                <span class="material-icons">search</span>
-              </button>
-            </div>
-          </div>
-          <div class="bulk-actions-right">
-            <div class="bulk-info">
-              <span class="cart-total-label">{{ 'products.total' | translate }}: <span class="cart-total-value">{{ getCartTotal().toFixed(2) }}{{ currencyName ? ' ' + currencyName : '' }}</span></span>
-            </div>
-          </div>
-        </div>
+        <!-- Actions Bar -->
+        <app-bulk-actions-bar
+          [categories]="allCategories"
+          [selectedCategory]="selectedCategory"
+          [searchQuery]="searchQuery"
+          [cartTotal]="getCartTotal()"
+          [currencyName]="currencyName"
+          (search)="onSearchChange($event)"
+          (categoryChange)="onCategoryChange($event)"
+        />
+
         <!-- Desktop Table View -->
         <div class="bulk-table-wrapper bulk-table-desktop">
-          @if (filteredProducts.length === 0) {
-            <div class="empty-state">
-              <span class="material-icons empty-icon">search</span>
-              <h2>{{ 'products.noProducts' | translate }}</h2>
-              <p>{{ 'common.search' | translate }}</p>
-            </div>
-          } @else {
-            <table class="bulk-table">
-              <thead>
-                <tr>
-                  <th>{{ 'products.sku' | translate }}</th>
-                  <th>{{ 'navigation.products' | translate }}</th>
-                  <th>{{ 'products.category' | translate }}</th>
-                  <th>{{ 'products.price' | translate }}</th>
-                  @if (hasDiscount()) {
-                    <th class="discount-header">%</th>
-                  }
-                  <th class="stock-header">{{ 'products.stock' | translate }}</th>
-                  <th>{{ 'products.quantity' | translate }}</th>
-                  <th>{{ 'products.total' | translate }}</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (product of filteredProducts; track product) {
-                  <tr
-                    class="bulk-row"
-                    [class.selected]="selectedProduct?.id === product.id"
-                    [class.out-of-stock]="!product.inStock"
-                    [class.in-cart]="isInCart(product.id)"
-                    (mouseenter)="selectProduct(product)"
-                    (click)="selectProduct(product)"
-                    >
-                    <td class="sku-cell">{{ product.sku }}</td>
-                    <td class="name-cell">
-                      <div class="product-name-cell">{{ product.name }}</div>
-                      @if (product.isNew || product.isHotSale) {
-                        <div class="product-badges">
-                          @if (product.isNew) {
-                            <span class="badge badge-new">{{ 'products.new' | translate }}</span>
-                          }
-                          @if (product.isHotSale) {
-                            <span class="badge badge-hot-sale">{{ 'products.hotSale' | translate }}</span>
-                          }
-                        </div>
-                      }
-                    </td>
-                    <td class="category-cell">{{ product.category }}</td>
-                    <td class="price-cell">
-                      <div class="price-with-discount">
-                        @if (hasDiscount()) {
-                          <span class="original-price">
-                            {{ getOriginalPriceWithVat(product).toFixed(2) }}
-                          </span>
-                        }
-                        <span class="discounted-price" [class.has-discount]="hasDiscount()">
-                          {{ getPriceWithVat(product).toFixed(2) }}
-                        </span>
-                      </div>
-                    </td>
-                    @if (hasDiscount()) {
-                      <td class="discount-cell">
-                        @if (product.discountPercent && product.discountPercent > 0) {
-                          <span class="discount-value">{{ product.discountPercent }}%</span>
-                        }
-                      </td>
-                    }
-                    <td class="stock-cell">
-                      <span class="stock-qty" [class.out-of-stock]="!product.inStock">
-                        {{ product.availableQuantity ?? 0 }}
-                      </span>
-                    </td>
-                    <td class="quantity-cell">
-                      <div class="quantity-cell-wrapper">
-                        <input
-                          type="number"
-                          class="quantity-input"
-                          [value]="getBulkQuantity(product.id)"
-                          (input)="setBulkQuantity(product, +$any($event.target).value)"
-                          (focus)="selectProduct(product)"
-                          min="0"
-                          [max]="product.availableQuantity ?? 0"
-                          [disabled]="!product.inStock"
-                          placeholder="0"
-                          />
-                        @if (isInCart(product.id)) {
-                          <span class="material-icons cart-badge">
-                            shopping_cart
-                          </span>
-                        }
-                      </div>
-                    </td>
-                    <td class="subtotal-cell">
-                      @if (getBulkQuantity(product.id) > 0) {
-                        <span>
-                          {{ getItemSubtotalWithVat(product, getBulkQuantity(product.id)).toFixed(2) }}
-                        </span>
-                      }
-                      @if (getBulkQuantity(product.id) === 0) {
-                        <span>-</span>
-                      }
-                    </td>
-                  </tr>
-                }
-              </tbody>
-            </table>
-          }
+          <app-bulk-table
+            [products]="filteredProducts"
+            [cartItems]="cartItems"
+            [discount]="currentDiscount"
+            [vatRate]="currentVatRate"
+            [bulkQuantities]="bulkQuantities"
+            [selectedProduct]="selectedProduct"
+            (productSelect)="selectProduct($event)"
+            (quantityChange)="setBulkQuantity($event.product, $event.quantity)"
+          />
         </div>
+
         <!-- Mobile Card View -->
         <div class="bulk-cards-wrapper bulk-cards-mobile">
-          @if (filteredProducts.length === 0) {
-            <div class="empty-state">
-              <span class="material-icons empty-icon">search</span>
-              <h2>{{ 'products.noProducts' | translate }}</h2>
-              <p>{{ 'common.search' | translate }}</p>
-            </div>
-          } @else {
-            @for (product of filteredProducts; track product) {
-            <div
-              class="bulk-product-card"
-              [class.expanded]="isProductCardExpanded(product.id)"
-              [class.out-of-stock]="!product.inStock"
-              [class.in-cart]="isInCart(product.id)"
-              (click)="toggleProductCard(product.id); selectProduct(product)"
-              >
-              <div class="card-header">
-                <div class="card-header-left">
-                  <div class="card-sku">{{ product.sku }}</div>
-                  <div class="card-name">{{ product.name }}</div>
-                  @if (product.isNew || product.isHotSale) {
-                    <div class="product-badges">
-                      @if (product.isNew) {
-                        <span class="badge badge-new">{{ 'products.new' | translate }}</span>
-                      }
-                      @if (product.isHotSale) {
-                        <span class="badge badge-hot-sale">{{ 'products.hotSale' | translate }}</span>
-                      }
-                    </div>
-                  }
-                  <div class="card-category">{{ product.category }}</div>
-                </div>
-                <div class="card-header-right">
-                  <div class="card-price-row">
-                    @if (getBulkQuantity(product.id) > 0) {
-                      <div class="card-quantity-badge">
-                        <span class="material-icons quantity-icon">shopping_cart</span>
-                        <span class="quantity-badge-text">{{ getBulkQuantity(product.id) }}</span>
-                      </div>
-                    }
-                    <div class="card-price-container">
-                      @if (hasDiscount()) {
-                        <div class="original-price">
-                          {{ getOriginalPriceWithVat(product).toFixed(2) }}
-                        </div>
-                      }
-                      <div class="card-price-line">
-                        <span class="card-price" [class.has-discount]="hasDiscount()">
-                          {{ getPriceWithVat(product).toFixed(2) }}
-                        </span>
-                        @if (product.discountPercent && product.discountPercent > 0) {
-                          <span class="discount-tag-mobile">{{ product.discountPercent }}%</span>
-                        }
-                      </div>
-                    </div>
-                  </div>
-                  <span class="status-dot" [class.available]="product.inStock" [class.unavailable]="!product.inStock"></span>
-                </div>
-              </div>
-              @if (isProductCardExpanded(product.id)) {
-                <div class="card-content">
-                  <div class="card-content-row">
-                    <div class="card-image-section">
-                      <img
-                        [src]="getProductImageUrl(product)"
-                        [alt]="product.name"
-                        (error)="onImageError($event)"
-                        (click)="openImagePreview(getProductImageUrl(product), product.name, $event)"
-                        class="card-product-image"
-                        />
-                    </div>
-                    <div class="card-quantity-section">
-                      <div class="quantity-label">{{ 'products.quantity' | translate }}</div>
-                      <div class="quantity-controls">
-                        <button
-                          class="btn-quantity btn-decrement"
-                          (click)="decrementQuantity(product.id, product); $event.stopPropagation()"
-                          [disabled]="getBulkQuantity(product.id) === 0"
-                          >
-                          −
-                        </button>
-                        <input
-                          type="number"
-                          class="quantity-input-card"
-                          [value]="getBulkQuantity(product.id)"
-                          (input)="onMobileQuantityChange(product.id, product, +$any($event.target).value); $event.stopPropagation()"
-                          (click)="$event.stopPropagation()"
-                          min="0"
-                          [max]="product.availableQuantity ?? 0"
-                          [disabled]="!product.inStock"
-                          placeholder="0"
-                          />
-                        <button
-                          class="btn-quantity btn-increment"
-                          (click)="incrementQuantity(product.id, product); $event.stopPropagation()"
-                          [disabled]="!product.inStock || getBulkQuantity(product.id) >= (product.availableQuantity ?? 0)"
-                          >
-                          +
-                        </button>
-                      </div>
-                      @if (getBulkQuantity(product.id) > 0) {
-                        <div class="card-subtotal">
-                          <span class="subtotal-label">{{ 'products.total' | translate }}:</span>
-                          <span class="subtotal-value">{{ (getItemSubtotalWithVat(product, getBulkQuantity(product.id)) * 100) | currencyFormat: currency }}</span>
-                        </div>
-                      }
-                    </div>
-                  </div>
-                </div>
-              }
-            </div>
-          }
-          }
+          <app-bulk-card-list
+            [products]="filteredProducts"
+            [cartItems]="cartItems"
+            [currency]="currency"
+            [discount]="currentDiscount"
+            [vatRate]="currentVatRate"
+            [bulkQuantities]="bulkQuantities"
+            (productSelect)="selectProduct($event)"
+            (quantityIncrement)="incrementQuantity($event.productId, $event.product)"
+            (quantityDecrement)="decrementQuantity($event.productId, $event.product)"
+            (quantityChange)="onMobileQuantityChange($event.productId, $event.product, $event.quantity)"
+            (imageClick)="handleBulkImageClick($event)"
+          />
         </div>
       </div>
-      @if (selectedProduct) {
-        <div class="bulk-detail-section bulk-detail-desktop">
-          <div class="detail-card" (click)="openProductDetails(selectedProduct, $event)">
-            <div class="detail-image">
-              <img
-                [src]="getProductImageUrl(selectedProduct)"
-                [alt]="selectedProduct.name"
-                (error)="onImageError($event)" />
-            </div>
-            <div class="detail-content">
-              <div class="detail-category">{{ selectedProduct.category }}</div>
-              <h2 class="detail-title">{{ selectedProduct.name }}</h2>
-              @if (selectedProduct.isNew || selectedProduct.isHotSale) {
-                <div class="product-badges">
-                  @if (selectedProduct.isNew) {
-                    <span class="badge badge-new">{{ 'products.new' | translate }}</span>
-                  }
-                  @if (selectedProduct.isHotSale) {
-                    <span class="badge badge-hot-sale">{{ 'products.hotSale' | translate }}</span>
-                  }
-                </div>
-              }
-              <div class="detail-sku">{{ 'products.sku' | translate }}: {{ selectedProduct.sku }}</div>
-              <div class="detail-price-section">
-                <div class="detail-price">
-                  @if (selectedProduct.price && selectedProduct.price > 0) {
-                    <!-- Original price with VAT (strikethrough if discount) -->
-                    @if (hasDiscount()) {
-                      <div class="original-price">
-                        <span class="strikethrough">{{ getOriginalPriceWithVat(selectedProduct).toFixed(2) }}</span>
-                      </div>
-                    }
-                    <!-- Discounted price (prominent) -->
-                    <div class="discounted-price" [class.has-discount]="hasDiscount()">
-                      {{ getPriceWithVat(selectedProduct).toFixed(2) }}
-                    </div>
-                  } @else {
-                    {{ 'products.priceNotAvailable' | translate }}
-                  }
-                </div>
-                <span class="price-label">{{ currencyName ? currencyName: '' }}</span>
-              </div>
-              <div class="detail-stock">
-                <span class="stock-indicator">
-                  <span class="status-dot" [class.available]="selectedProduct.inStock" [class.unavailable]="!selectedProduct.inStock"></span>
-                  @if (selectedProduct.inStock) {
-                    {{ 'products.stock' | translate }}
-                  }
-                  @if (!selectedProduct.inStock) {
-                    {{ 'products.outOfStock' | translate }}
-                  }
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      }
 
+      <!-- Desktop Detail Panel -->
+      <app-bulk-detail-panel
+        [product]="selectedProduct"
+        [priceWithVat]="selectedProduct ? getPriceWithVat(selectedProduct) : 0"
+        [originalPrice]="selectedProduct ? getOriginalPriceWithVat(selectedProduct) : 0"
+        [hasDiscount]="hasDiscount()"
+        [currencyName]="currencyName"
+        (cardClick)="handleDetailCardClick()"
+      />
     </div>
   }
 
   <!-- Full-size Image Preview Modal -->
   @if (selectedImageForPreview) {
-    <div class="image-preview-overlay" (click)="closeImagePreview()">
-      <div class="image-preview-container" (click)="$event.stopPropagation()">
-        <button class="image-preview-close" (click)="closeImagePreview()">
-          <span class="material-icons">close</span>
-        </button>
-        <img
-          [src]="selectedImageForPreview.url"
-          [alt]="selectedImageForPreview.alt"
-          (error)="onImageError($event)"
-          class="image-preview-img"
-          />
-        <div class="image-preview-caption">{{ selectedImageForPreview.alt }}</div>
-      </div>
-    </div>
+    <app-image-preview-modal
+      [imageUrl]="selectedImageForPreview.url"
+      [altText]="selectedImageForPreview.alt"
+      (closed)="closeImagePreview()"
+    />
   }
 
   <!-- Product Details Overlay -->
@@ -477,26 +109,13 @@
     ></app-product-details-overlay>
   }
 
-  <!-- Scroll to Top Button (Mobile) -->
-  @if (showScrollToTop) {
-    <button class="btn-scroll-to-top" (click)="scrollToTop()" aria-label="Scroll to top">
-      <span class="material-icons">keyboard_arrow_up</span>
-    </button>
-  }
-
-  <!-- Floating Show More Button -->
-  @if (showFloatingShowMore && !loading) {
-    <button
-      class="btn-floating-show-more"
-      (click)="loadMoreProducts()"
-      [disabled]="loadingMore"
-      aria-label="Load more products"
-    >
-      @if (loadingMore) {
-        <span class="material-icons spinner">sync</span>
-      } @else {
-        <span class="material-icons">expand_more</span>
-      }
-    </button>
-  }
+  <!-- Pagination Controls -->
+  <app-pagination-controls
+    [hasMore]="hasMoreProducts"
+    [loading]="loadingMore"
+    [showScrollToTop]="showScrollToTop"
+    [showFloating]="showFloatingShowMore"
+    (loadMore)="loadMoreProducts()"
+    (scrollToTop)="scrollToTop()"
+  />
 </div>

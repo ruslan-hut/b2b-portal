@@ -10,6 +10,9 @@ import { PriceType } from '../../core/models/price-type.model';
 import { PriceTypeService } from '../../core/services/price-type.service';
 import { forkJoin, Subscription } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
+import { PageTitleService } from '../../core/services/page-title.service';
+import { AuthService } from '../../core/services/auth.service';
+import { User } from '../../core/models/user.model';
 
 export interface AdminOrder {
   uid: string;
@@ -56,6 +59,7 @@ export class OrdersComponent implements OnInit, OnDestroy {
   filteredOrders: AdminOrder[] = [];
   loading = false;
   error: string | null = null;
+  isAdmin = false;
 
   // Pagination
   currentPage = 1;
@@ -84,11 +88,6 @@ export class OrdersComponent implements OnInit, OnDestroy {
   storeOptions: { value: string; label: string; }[] = [];
   priceTypeOptions: { value: string; label: string; }[] = [];
 
-  // Edit
-  editingOrder: AdminOrder | null = null;
-  showStatusModal = false;
-  newStatus = '';
-
   // Data maps
   currencies: { [code: string]: Currency } = {};
   stores: { [uid: string]: Store } = {};
@@ -101,10 +100,28 @@ export class OrdersComponent implements OnInit, OnDestroy {
     private storeService: StoreService,
     private priceTypeService: PriceTypeService,
     private router: Router,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private pageTitleService: PageTitleService,
+    private authService: AuthService
   ) {}
 
   ngOnInit(): void {
+    this.pageTitleService.setTitle('Orders');
+
+    // Check if user is admin
+    this.subscriptions.add(
+      this.authService.currentEntity$.subscribe(entity => {
+        if (entity && this.authService.entityTypeValue === 'user') {
+          const user = entity as User;
+          this.isAdmin = user?.role === 'admin';
+          this.cdr.markForCheck();
+        } else {
+          this.isAdmin = false;
+          this.cdr.markForCheck();
+        }
+      })
+    );
+
     this.loadInitialData();
   }
 
@@ -256,42 +273,6 @@ export class OrdersComponent implements OnInit, OnDestroy {
     this.applySearch();
   }
 
-  editStatus(order: AdminOrder): void {
-    this.editingOrder = order;
-    this.newStatus = order.status;
-    this.showStatusModal = true;
-  }
-
-  saveStatus(): void {
-    if (!this.editingOrder || !this.newStatus) {
-      return;
-    }
-
-    this.subscriptions.add(
-      this.http.post(`${environment.apiUrl}/admin/orders/status`, {
-        data: [{
-          uid: this.editingOrder.uid,
-          status: this.newStatus
-        }]
-      }).subscribe({
-        next: () => {
-          this.showStatusModal = false;
-          this.loadOrders();
-        },
-        error: (err) => {
-          console.error('Failed to update order status:', err);
-          alert('Failed to update order status');
-        }
-      })
-    );
-  }
-
-  cancelEdit(): void {
-    this.showStatusModal = false;
-    this.editingOrder = null;
-    this.newStatus = '';
-  }
-
   deleteOrder(order: AdminOrder): void {
     if (!confirm(`Are you sure you want to delete order "${order.number || order.uid}"?`)) {
       return;
@@ -336,6 +317,7 @@ export class OrdersComponent implements OnInit, OnDestroy {
   // Mobile UI methods
   toggleFilters(): void {
     this.isFiltersExpanded = !this.isFiltersExpanded;
+    this.cdr.detectChanges();
   }
 
   toggleCardExpanded(uid: string): void {

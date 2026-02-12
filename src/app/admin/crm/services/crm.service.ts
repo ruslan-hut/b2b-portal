@@ -405,9 +405,25 @@ export class CrmService {
 
   // ============= Users (for assignment) =============
 
-  getAssignableUsers(): Observable<CrmAssignableUser[]> {
-    return this.http.get<ApiResponse<CrmAssignableUser[]>>(`${environment.apiUrl}/admin/user?offset=0&limit=100`).pipe(
-      map(response => (response.data || []).filter(u => u.role === 'admin' || u.role === 'manager'))
+  getAssignableUsers(storeUid?: string): Observable<CrmAssignableUser[]> {
+    let params = new HttpParams();
+    if (storeUid) {
+      params = params.set('store_uid', storeUid);
+    }
+    return this.http.get<ApiResponse<CrmAssignableUser[]>>(`${this.baseUrl}/users`, { params }).pipe(
+      map(response => response.data || [])
+    );
+  }
+
+  // ============= Board Changes (Polling) =============
+
+  checkForChanges(since: string, storeUid?: string): Observable<CrmBoardChanges> {
+    let params = new HttpParams().set('since', since);
+    if (storeUid) {
+      params = params.set('store_uid', storeUid);
+    }
+    return this.http.get<ApiResponse<CrmBoardChanges>>(`${this.baseUrl}/board/changes`, { params }).pipe(
+      map(response => response.data || { last_change_at: '', has_changes: false, affected_stages: [], change_count: 0 })
     );
   }
 }
@@ -419,4 +435,11 @@ export interface CrmAssignableUser {
   first_name: string;
   last_name: string;
   role: string;
+}
+
+export interface CrmBoardChanges {
+  last_change_at: string;
+  has_changes: boolean;
+  affected_stages: string[];
+  change_count: number;
 }

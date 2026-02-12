@@ -64,6 +64,27 @@ export interface DiscountScale {
   last_update?: string;
 }
 
+export interface AdminClientFull {
+  uid: string;
+  name: string;
+  email: string;
+  phone: string;
+  pin_code: string;
+  address: string;
+  discount: number;
+  vat_rate?: number;
+  vat_number?: string;
+  business_registration_number?: string;
+  manager_uid?: string;
+  balance: number;
+  fixed_discount: boolean;
+  cumulative_discount: boolean;
+  price_type_uid: string;
+  store_uid: string;
+  active: boolean;
+  last_update: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -210,6 +231,34 @@ export class AdminService {
     return this.http.get<any>(url).pipe(
       map((response: any) => {
         // Handle both { success: true, data: [...] } and direct array responses
+        return response.data || response || [];
+      })
+    );
+  }
+
+  /**
+   * Get clients by UIDs (batch operation)
+   * @param clientUids Array of client UIDs
+   */
+  getClientsBatch(clientUids: string[]): Observable<AdminClientFull[]> {
+    return this.http.post<any>(`${this.apiUrl}/client/batch`, {
+      data: clientUids
+    }).pipe(
+      map((response: any) => {
+        return response.data || response || [];
+      })
+    );
+  }
+
+  /**
+   * Upsert (create or update) clients
+   * @param clients Array of clients to upsert
+   */
+  upsertClients(clients: Partial<AdminClientFull>[]): Observable<string[]> {
+    return this.http.post<any>(`${this.apiUrl}/client`, {
+      data: clients
+    }).pipe(
+      map((response: any) => {
         return response.data || response || [];
       })
     );
