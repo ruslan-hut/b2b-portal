@@ -218,5 +218,5 @@ If the application cannot connect to the API after deployment:
 
 - [Documentation Index](../README.md) - Documentation overview
 - [Frontend Overview](../architecture/frontend-overview.md) - Project overview and setup
-- [AGENTS.md](../../CLAUDE.md) - Development guidelines
+- [CLAUDE.md](../../CLAUDE.md) - Development guidelines
 - [Frontend API Integration](../api/frontend-integration.md) - Frontend API reference
