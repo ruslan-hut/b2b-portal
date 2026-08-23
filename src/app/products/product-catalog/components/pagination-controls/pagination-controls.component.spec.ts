@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { PaginationControlsComponent } from './pagination-controls.component';
+import { IconComponent } from '../../../../shared/components/icon/icon.component';
 
 describe('PaginationControlsComponent', () => {
   let component: PaginationControlsComponent;
@@ -7,7 +8,7 @@ describe('PaginationControlsComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [PaginationControlsComponent]
+      declarations: [PaginationControlsComponent, IconComponent]
     })
     .compileComponents();
 

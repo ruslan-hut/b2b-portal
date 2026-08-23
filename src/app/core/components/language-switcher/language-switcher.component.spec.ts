@@ -1,5 +1,7 @@
+import { CommonModule } from '@angular/common';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { LanguageSwitcherComponent } from './language-switcher.component';
+import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { TranslationService } from '../../services/translation.service';
 import { of } from 'rxjs';
 
@@ -16,7 +18,8 @@ describe('LanguageSwitcherComponent', () => {
     translationServiceSpy.getCurrentLanguage.and.returnValue('en');
 
     await TestBed.configureTestingModule({
-      declarations: [ LanguageSwitcherComponent ],
+      declarations: [ LanguageSwitcherComponent, IconComponent ],
+      imports: [ CommonModule ],
       providers: [
         { provide: TranslationService, useValue: translationServiceSpy }
       ]

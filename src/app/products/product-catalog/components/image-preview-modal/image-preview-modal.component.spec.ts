@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ImagePreviewModalComponent } from './image-preview-modal.component';
+import { IconComponent } from '../../../../shared/components/icon/icon.component';
 
 describe('ImagePreviewModalComponent', () => {
   let component: ImagePreviewModalComponent;
@@ -7,7 +8,7 @@ describe('ImagePreviewModalComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ImagePreviewModalComponent]
+      declarations: [ImagePreviewModalComponent, IconComponent]
     })
     .compileComponents();
 
