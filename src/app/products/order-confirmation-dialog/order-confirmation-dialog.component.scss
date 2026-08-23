@@ -4,7 +4,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: var(--overlay-bg-light);
   z-index: 1000;
   display: flex;
   align-items: center;
@@ -14,8 +14,8 @@
 
 .dialog-content {
   background: var(--card-bg);
-  border-radius: 16px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-xl);
   max-width: 500px;
   width: 90%;
   animation: slideUp 0.3s ease;
@@ -48,7 +48,7 @@
     justify-content: center;
     transition: color 0.2s ease;
 
-    .material-icons {
+    app-icon {
       font-size: 24px;
     }
 
@@ -72,7 +72,7 @@
     height: 80px;
     margin: 0 auto 24px;
     background: var(--gradient-success);
-    color: white;
+    color: var(--color-on-primary);
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -85,7 +85,7 @@
     height: 80px;
     margin: 0 auto 24px;
     background: var(--gradient-primary);
-    color: white;
+    color: var(--color-on-primary);
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -117,17 +117,17 @@
     font-size: 16px;
     color: var(--color-text-secondary);
     line-height: 1.5;
-    margin-bottom: 24px;
+    margin-bottom: var(--spacing-lg);
   }
 
   .order-total-section {
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 12px;
-    padding: 20px;
+    gap: var(--spacing-md-sm);
+    padding: var(--spacing-md-lg);
     background: var(--color-background-secondary);
-    border-radius: 12px;
+    border-radius: var(--radius-lg);
 
     .total-label {
       font-size: 20px;
@@ -147,24 +147,24 @@
   padding: 16px 24px 24px;
   display: flex;
   justify-content: center;
-  gap: 12px;
+  gap: var(--spacing-md-sm);
 
   .btn {
     padding: 14px 32px;
     font-size: 16px;
     font-weight: 600;
     border: none;
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     cursor: pointer;
     transition: all 0.3s ease;
 
     &.btn-primary {
       background: var(--gradient-primary);
-      color: white;
+      color: var(--color-on-primary);
 
       &:hover:not(:disabled) {
         transform: translateY(-2px);
-        box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        box-shadow: var(--shadow-primary);
       }
 
       &:disabled {
@@ -235,7 +235,7 @@
       height: 64px;
       font-size: 36px;
 
-      .material-icons {
+      app-icon {
         font-size: 36px;
       }
     }
@@ -250,7 +250,7 @@
 
     .order-total-section {
       flex-direction: column;
-      gap: 8px;
+      gap: var(--spacing-sm);
     }
   }
 

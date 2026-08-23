@@ -5,14 +5,17 @@ export interface CrmDashboardFilters {
   dateFrom?: string;
   dateTo?: string;
   assigneeUid?: string;
+  currencyCode?: string;
 }
 
 export interface CrmPipelineStageStats {
   stage_uid: string;
   stage_name: string;
   stage_color: string;
+  is_final: boolean;
   order_count: number;
   total_value: number;
+  currency_code: string;
   avg_days_in_stage: number;
 }
 

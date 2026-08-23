@@ -1,0 +1,53 @@
+:host {
+  display: contents;
+}
+
+.maintenance-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm, 8px);
+  padding: var(--spacing-xs, 4px) var(--spacing-md, 16px);
+  min-height: var(--control-h-md, 32px);
+
+  background: var(--color-alert-warning-bg);
+  color: var(--color-alert-warning-text);
+  border-bottom: 1px solid var(--color-alert-warning-border);
+
+  font-size: var(--text-sm, 12px);
+  line-height: 1.4;
+}
+
+.banner-icon {
+  font-size: var(--icon-md, 18px);
+  flex-shrink: 0;
+}
+
+.banner-body {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--spacing-xs, 4px) var(--spacing-sm, 8px);
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.banner-title {
+  font-weight: 600;
+  font-size: var(--text-sm, 12px);
+}
+
+.banner-message {
+  font-size: var(--text-sm, 12px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.banner-countdown {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  font-size: var(--text-sm, 12px);
+  padding: 2px var(--spacing-sm, 8px);
+  background: color-mix(in srgb, var(--color-alert-warning-text) 12%, transparent);
+  border-radius: var(--radius-control, 6px);
+  flex-shrink: 0;
+}

@@ -1,0 +1,216 @@
+<div class="modal-overlay" (click)="onBackdropClick()">
+  <div
+    class="modal-content"
+    role="dialog"
+    aria-modal="true"
+    [attr.aria-label]="'admin.orders.splitOrder' | translate"
+    (click)="$event.stopPropagation()"
+  >
+    <div class="modal-header">
+      <h3>{{ 'admin.orders.splitOrder' | translate }}</h3>
+      <button type="button" class="btn-close-modal" [disabled]="splitting()" (click)="onClose()">
+        <app-icon name="close"></app-icon>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <p class="split-hint">{{ 'admin.orders.splitHint' | translate }}</p>
+
+      <div class="split-source">
+        <span>{{ 'orders.orderNumber' | translate }} {{ orderNumber() }}</span>
+        <strong>{{ format(orderTotal()) }}</strong>
+      </div>
+
+      <div class="split-modes" role="radiogroup">
+        <button
+          type="button"
+          class="split-mode"
+          role="radio"
+          [class.selected]="mode() === 'parts'"
+          [attr.aria-checked]="mode() === 'parts'"
+          (click)="setMode('parts')"
+        >
+          {{ 'admin.orders.splitByParts' | translate }}
+        </button>
+        <button
+          type="button"
+          class="split-mode"
+          role="radio"
+          [class.selected]="mode() === 'limit'"
+          [attr.aria-checked]="mode() === 'limit'"
+          (click)="setMode('limit')"
+        >
+          {{ 'admin.orders.splitByLimit' | translate }}
+        </button>
+      </div>
+
+      <div class="split-params">
+        @if (mode() === 'parts') {
+          <label class="split-field">
+            <span>{{ 'admin.orders.splitPartsCount' | translate }}</span>
+            <input
+              type="number"
+              min="2"
+              max="100"
+              [ngModel]="parts()"
+              (ngModelChange)="parts.set($event); invalidatePreview()"
+            />
+          </label>
+        } @else {
+          <label class="split-field">
+            <span>{{ 'admin.orders.splitLimitAmount' | translate }}</span>
+            <input
+              type="number"
+              min="1"
+              step="1"
+              [ngModel]="limit()"
+              (ngModelChange)="limit.set($event); invalidatePreview()"
+            />
+          </label>
+        }
+
+        <label class="split-field">
+          <span>{{ 'admin.orders.splitTolerance' | translate }}</span>
+          <input
+            type="number"
+            min="0"
+            max="50"
+            [ngModel]="tolerance()"
+            (ngModelChange)="tolerance.set($event); invalidatePreview()"
+          />
+        </label>
+
+        <button
+          type="button"
+          class="adm-btn adm-btn--ghost"
+          [disabled]="!canPreview()"
+          (click)="loadPreview()"
+        >
+          @if (previewing()) {
+            <span class="spinner"></span>
+          } @else {
+            <app-icon name="calculate"></app-icon>
+          }
+          {{ 'admin.orders.splitCalculate' | translate }}
+        </button>
+      </div>
+
+      <p class="split-note">{{ 'admin.orders.splitToleranceHint' | translate }}</p>
+
+      @if (preview(); as result) {
+        <div class="split-parts">
+          @for (part of result.parts; track part.index) {
+            <div class="split-part">
+              <div class="split-part__head">
+                <span class="split-part__title">
+                  {{ 'admin.orders.splitPart' | translate }} {{ part.index }}
+                </span>
+                <strong>{{ format(part.total) }}</strong>
+              </div>
+
+              <div class="split-part__billing">
+                <label class="split-part__select">
+                  <span>{{ 'admin.orders.splitCompany' | translate }}</span>
+                  <select
+                    [value]="companyValue(part.index)"
+                    (change)="setCompany(part.index, $any($event.target).value)"
+                  >
+                    <option [value]="inherit">{{ 'admin.orders.splitInherit' | translate }}</option>
+                    <option value="">{{ 'admin.orders.splitNoCompany' | translate }}</option>
+                    @for (company of companyOptions(); track company.uid) {
+                      <option [value]="company.uid">{{ company.name }}</option>
+                    }
+                  </select>
+                </label>
+
+                <label class="split-part__select">
+                  <span>{{ 'admin.orders.splitPayer' | translate }}</span>
+                  <select
+                    [value]="branchValue(part.index)"
+                    (change)="setBranch(part.index, $any($event.target).value)"
+                  >
+                    <option [value]="inherit">{{ 'admin.orders.splitInherit' | translate }}</option>
+                    @for (payer of payerOptions(); track payer.uid) {
+                      <option [value]="payer.uid" [disabled]="!selectable(payer)">
+                        {{ payer.name }}
+                        @if (!payer.vat_neutral) {
+                          — {{ 'admin.orders.splitVatWouldChange' | translate }} ({{ payer.result_vat_rate }}%)
+                        } @else if (!payer.active) {
+                          — {{ 'admin.orders.splitPayerInactive' | translate }}
+                        }
+                      </option>
+                    }
+                  </select>
+                </label>
+              </div>
+
+              @if (part.payer_name || part.company_name) {
+                <p class="split-part__resolved">
+                  {{ part.company_name || ('admin.orders.splitNoCompany' | translate) }}
+                  &rarr;
+                  {{ part.payer_name }}
+                  <span class="split-part__vat">{{ 'admin.orders.splitVatRate' | translate }} {{ part.vat_rate }}%</span>
+                </p>
+              }
+
+              @for (warning of part.warnings; track warning) {
+                <p class="split-part__warning">
+                  <app-icon name="warning"></app-icon>
+                  {{ warningKey(warning) | translate }}
+                </p>
+              }
+              <ul class="split-part__lines">
+                @for (item of part.items; track item.product_uid) {
+                  <li>
+                    <span class="split-part__sku">{{ item.sku || item.product_uid }}</span>
+                    <span class="split-part__qty">&times;{{ item.quantity }}</span>
+                    @if (item.divided) {
+                      <span class="split-part__divided">{{ 'admin.orders.splitDivided' | translate }}</span>
+                    }
+                    <span class="split-part__amount">{{ format(item.total) }}</span>
+                  </li>
+                }
+              </ul>
+            </div>
+          }
+        </div>
+
+        <p class="split-note">{{ 'admin.orders.splitBillingHint' | translate }}</p>
+
+        @if (!result.within_tolerance) {
+          <div class="split-warning">
+            <app-icon name="warning"></app-icon>
+            {{ 'admin.orders.splitOutsideTolerance' | translate }}
+          </div>
+        }
+        @if (result.divided_products?.length) {
+          <div class="split-warning">
+            <app-icon name="call_split"></app-icon>
+            {{ 'admin.orders.splitDividedProducts' | translate }}: {{ result.divided_products?.join(', ') }}
+          </div>
+        }
+      }
+
+      @if (error(); as message) {
+        <div class="split-error">
+          <app-icon name="error_outline"></app-icon>
+          {{ message }}
+        </div>
+      }
+    </div>
+
+    <div class="modal-footer">
+      <button type="button" class="adm-btn adm-btn--ghost" [disabled]="splitting()" (click)="onClose()">
+        {{ 'common.cancel' | translate }}
+      </button>
+      <button type="button" class="adm-btn adm-btn--primary" [disabled]="!canSplit()" (click)="confirmSplit()">
+        @if (splitting()) {
+          <span class="spinner"></span>
+        } @else {
+          <app-icon name="call_split"></app-icon>
+        }
+        {{ 'admin.orders.splitConfirm' | translate }}
+      </button>
+    </div>
+  </div>
+</div>

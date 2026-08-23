@@ -28,11 +28,15 @@ export interface CrmActivity {
   created_at: string;
 }
 
+export type CrmActivitySource = 'user' | 'erp' | 'invoice_auto' | 'system';
+
 export interface CrmStageChangeMetadata {
   from_stage_uid?: string;
   from_stage_name?: string;
   to_stage_uid: string;
   to_stage_name?: string;
+  source?: CrmActivitySource;
+  actor_name?: string;
 }
 
 export interface CrmAssignmentMetadata {

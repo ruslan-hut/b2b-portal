@@ -1,0 +1,110 @@
+@use '../../../../styles/mixins' as *;
+
+:host {
+  display: block;
+}
+
+/* ---------- Call-the-courier panel ---------- */
+.pck-call {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+}
+
+.pck-call__title {
+  margin: 0;
+  font-size: var(--text-md);
+  font-weight: var(--font-weight-semibold);
+}
+
+.pck-call__hint {
+  margin: var(--spacing-2xs) 0 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  max-width: 60ch;
+}
+
+.pck-call__controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--spacing-sm);
+}
+
+.pck-call__when {
+  min-width: 9rem;
+}
+
+.pck-call__note {
+  min-width: 18rem;
+  flex: 1;
+}
+
+.pck-call__submit {
+  /* Sits on the input baseline rather than the label's. */
+  margin-block-end: 1px;
+}
+
+.pck-call__carrier {
+  min-width: 16rem;
+}
+
+.pck-empty {
+  padding: var(--spacing-lg);
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: var(--text-md);
+}
+
+.pck-table-wrap {
+  overflow-x: auto;
+}
+
+.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: var(--text-xs);
+}
+
+.pck-delivered {
+  margin-left: var(--spacing-2xs);
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+}
+
+/* ---------- State chip ---------- */
+.pck-state {
+  display: inline-flex;
+  align-items: center;
+  height: var(--control-h-xs);
+  padding: 0 var(--spacing-sm);
+  border-radius: 999px;
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-medium);
+  background: var(--color-surface-variant);
+  color: var(--color-text-primary);
+
+  &.is-complete {
+    background: var(--color-surface-variant);
+    color: var(--color-text-muted);
+  }
+}
+
+.pck-actions-col {
+  width: 1%;
+  white-space: nowrap;
+  text-align: right;
+}
+
+@media (max-width: 40rem) {
+  .pck-call__controls {
+    width: 100%;
+  }
+
+  .pck-call__carrier {
+    min-width: 0;
+    flex: 1;
+  }
+}

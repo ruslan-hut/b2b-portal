@@ -1,0 +1,129 @@
+<div class="adm-page">
+
+  <header class="adm-bar">
+    <div class="adm-bar__crumbs">
+      <span class="adm-crumb adm-crumb--active">{{ 'admin.shipments.allShipments' | translate }}</span>
+    </div>
+    <div class="adm-bar__actions">
+      <button
+        type="button"
+        class="adm-btn adm-btn--ghost"
+        (click)="filters.toggle()"
+        [class.is-active]="filters.expanded"
+        [attr.aria-expanded]="filters.expanded"
+      >
+        <app-icon name="filter_list"></app-icon>
+        {{ 'common.filters' | translate }}
+      </button>
+      <button type="button" class="adm-btn adm-btn--ghost" (click)="loadShipments()" [title]="'common.refresh' | translate">
+        <app-icon name="refresh"></app-icon>
+        {{ 'common.refresh' | translate }}
+      </button>
+    </div>
+  </header>
+
+  <div class="adm-grid adm-grid--full">
+
+    @if (filters.expanded) {
+      <section class="adm-section shp-filters">
+        <div class="adm-fields">
+          <label class="adm-field">
+            <span class="adm-field__label">{{ 'common.status' | translate }}</span>
+            <select class="adm-input" [(ngModel)]="statusFilter" (change)="onFilterChange()">
+              @for (option of statusOptions; track option.value) {
+                <option [value]="option.value">{{ option.label }}</option>
+              }
+            </select>
+          </label>
+
+          <label class="adm-field">
+            <span class="adm-field__label">{{ 'admin.shipments.driver' | translate }}</span>
+            <select class="adm-input" [(ngModel)]="driverFilter" (change)="onFilterChange()">
+              <option value="">{{ 'common.all' | translate }}</option>
+              @for (option of driverOptions; track option.uid) {
+                <option [value]="option.uid">{{ option.name }}</option>
+              }
+            </select>
+          </label>
+
+          <label class="adm-field">
+            <span class="adm-field__label">{{ 'common.search' | translate }}</span>
+            <input
+              type="text"
+              class="adm-input"
+              [(ngModel)]="searchTerm"
+              (input)="onSearchChange()"
+              [placeholder]="'admin.shipments.searchPlaceholder' | translate"
+            />
+          </label>
+        </div>
+      </section>
+    }
+
+    @if (loading) {
+      <div class="adm-loading">{{ 'common.loading' | translate }}</div>
+    } @else if (error) {
+      <div class="adm-error" role="alert">{{ error }}</div>
+    } @else if (shipments.length === 0) {
+      <div class="adm-section shp-empty">{{ 'admin.shipments.noShipments' | translate }}</div>
+    } @else {
+
+      @if (filtered.length === 0) {
+        <div class="adm-section shp-empty">{{ 'admin.shipments.noMatch' | translate }}</div>
+      } @else {
+        <div class="shp-table-wrap">
+          <table class="data-table" [attr.aria-label]="'admin.shipments.allShipments' | translate">
+            <thead>
+              <tr>
+                <th>{{ 'common.created' | translate }}</th>
+                <th>{{ 'admin.shipments.order' | translate }}</th>
+                <th>{{ 'admin.shipments.driver' | translate }}</th>
+                <th>{{ 'common.status' | translate }}</th>
+                <th>{{ 'admin.shipments.tracking' | translate }}</th>
+                <th>{{ 'admin.shipments.receiver' | translate }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (s of filtered; track s.uid) {
+                <tr class="shp-row">
+                  <td>{{ formatDate(s.created_at) }}</td>
+                  <!-- A consolidated waybill covers several orders. Naming only
+                       the lead would hide the rest from anyone searching the list. -->
+                  <td class="mono">
+                    @if (s.orders && s.orders.length > 1) {
+                      <span class="shp-orders">
+                        @for (o of s.orders; track o.order_uid; let last = $last) {
+                          <a class="shp-link" [routerLink]="['/admin/orders', o.order_uid]">{{ o.number || o.order_uid }}</a>@if (!last) {<span class="shp-sep">,</span>}
+                        }
+                      </span>
+                    } @else {
+                      <a class="shp-link" [routerLink]="['/admin/orders', s.order_uid]">{{ s.order_number || s.order_uid }}</a>
+                    }
+                  </td>
+                  <td>{{ getDriverName(s.carrier_uid) }}</td>
+                  <td>
+                    <span class="shp-status" [ngClass]="getStatusClass(s.status)" role="status">
+                      <span class="shp-status__dot" aria-hidden="true"></span>
+                      {{ s.status }}
+                    </span>
+                  </td>
+                  <td class="mono">{{ s.tracking_number || '—' }}</td>
+                  <td>{{ s.receiver_name }}<span class="shp-city">, {{ s.receiver_city }}</span></td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+
+      <app-pagination
+        [currentPage]="currentPage"
+        [totalPages]="totalPages"
+        [total]="total"
+        [pageSize]="pageSize"
+        [itemLabel]="'admin.shipments.totalShipments' | translate"
+        (pageChange)="goToPage($event)"
+      ></app-pagination>
+    }
+  </div>
+</div>

@@ -1,0 +1,28 @@
+// =============================================================================
+// STOCK BRAND — the palette the portal ships with
+// =============================================================================
+// A brand file overrides tokens; it does not define a palette. The full palette
+// comes from styles/_themes.scss and is included first, so anything left out
+// here simply keeps its stock value. That is why this file is empty: the stock
+// brand *is* the stock palette.
+//
+// Copy this file to _<installation>.scss to start a new one, and select it with
+// the THEME build argument (see docs/development/theming-contract.md).
+//
+// Both mixins must exist even when empty — styles.scss includes them
+// unconditionally, and a missing one is a build error rather than a silent
+// half-applied brand.
+//
+// What may go in here is not "any token". See §3 of the contract: the seed, the
+// neutral ground, admin chrome, the table header and the two font families.
+// Semantic colour, status and phase badges, and user-data colour are fixed —
+// green means live in every installation.
+// =============================================================================
+
+@mixin light-overrides {
+  // Stock brand: nothing to override.
+}
+
+@mixin dark-overrides {
+  // Stock brand: nothing to override.
+}

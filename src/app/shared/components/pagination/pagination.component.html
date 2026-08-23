@@ -1,0 +1,63 @@
+@if (totalPages > 1) {
+  <div class="pagination">
+    <div class="pagination-info" role="status" [attr.aria-live]="'polite'">
+      <span>
+        {{ 'common.showing' | translate }} {{ startItem }} - {{ endItem }}
+        {{ 'common.of' | translate }} {{ total }}
+        @if (itemLabel) { {{ itemLabel }} }
+      </span>
+    </div>
+    <nav class="pagination-controls" [attr.aria-label]="'Pagination navigation'">
+      @if (showFirstLast) {
+        <button
+          class="pagination-btn first"
+          [disabled]="currentPage === 1"
+          (click)="goToPage(1)"
+          [attr.aria-label]="'Go to first page'"
+          [attr.title]="'First page'">
+          ««
+        </button>
+      }
+      <button
+        class="pagination-btn prev"
+        [disabled]="currentPage === 1"
+        (click)="goToPage(currentPage - 1)"
+        [attr.aria-label]="'Go to previous page'"
+        [attr.title]="'Previous page'">
+        ‹
+      </button>
+
+      @if (showPageNumbers) {
+        @for (page of getPageNumbers(); track page) {
+          <button
+            class="pagination-btn page-number"
+            [class.active]="page === currentPage"
+            (click)="goToPage(page)"
+            [attr.aria-label]="'Go to page ' + page"
+            [attr.aria-current]="page === currentPage ? 'page' : null">
+            {{ page }}
+          </button>
+        }
+      }
+
+      <button
+        class="pagination-btn next"
+        [disabled]="currentPage === totalPages"
+        (click)="goToPage(currentPage + 1)"
+        [attr.aria-label]="'Go to next page'"
+        [attr.title]="'Next page'">
+        ›
+      </button>
+      @if (showFirstLast) {
+        <button
+          class="pagination-btn last"
+          [disabled]="currentPage === totalPages"
+          (click)="goToPage(totalPages)"
+          [attr.aria-label]="'Go to last page'"
+          [attr.title]="'Last page'">
+          »»
+        </button>
+      }
+    </nav>
+  </div>
+}

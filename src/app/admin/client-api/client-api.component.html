@@ -1,0 +1,462 @@
+<div class="adm-page">
+
+  <header class="adm-bar">
+    <div class="adm-bar__crumbs">
+      <button type="button" class="adm-crumb-back" routerLink="/admin/settings" [attr.aria-label]="'common.back' | translate">
+        <app-icon name="arrow_back"></app-icon>
+      </button>
+      <a class="adm-crumb" routerLink="/admin/settings">{{ 'admin.settings.title' | translate }}</a>
+      <span class="adm-crumb-sep">/</span>
+      <span class="adm-crumb adm-crumb--active">{{ 'admin.clientApi.title' | translate }}</span>
+      <nav class="adm-bar__tabs">
+        <a routerLink="/admin/client-api/keys" routerLinkActive="is-active" class="adm-bar__tab" (click)="tab = 'keys'; loadKeys()">{{ 'admin.clientApi.tabKeys' | translate }}</a>
+        <a routerLink="/admin/client-api/requests" routerLinkActive="is-active" class="adm-bar__tab" (click)="tab = 'requests'; loadRequests()">{{ 'admin.clientApi.tabRequests' | translate }}</a>
+        <a routerLink="/admin/client-api/usage" routerLinkActive="is-active" class="adm-bar__tab" (click)="tab = 'usage'; loadUsage()">{{ 'admin.clientApi.tabUsage' | translate }}</a>
+        @if (isAdmin) {
+          <a routerLink="/admin/client-api/settings" routerLinkActive="is-active" class="adm-bar__tab" (click)="tab = 'settings'; loadSettings()">{{ 'admin.clientApi.tabSettings' | translate }}</a>
+        }
+      </nav>
+    </div>
+    <div class="adm-bar__actions">
+      @if (tab === 'keys') {
+        <button type="button" class="adm-btn adm-btn--ghost" (click)="showKeyFilters = !showKeyFilters" [class.is-active]="showKeyFilters">
+          <app-icon name="filter_list"></app-icon>{{ 'common.filters' | translate }}
+        </button>
+      }
+      @if (tab === 'requests') {
+        <button type="button" class="adm-btn adm-btn--ghost" (click)="showRequestFilters = !showRequestFilters" [class.is-active]="showRequestFilters">
+          <app-icon name="filter_list"></app-icon>{{ 'common.filters' | translate }}
+        </button>
+      }
+      <button type="button" class="adm-icon-btn" (click)="refresh()" [disabled]="loading" [title]="'common.refresh' | translate" [attr.aria-label]="'common.refresh' | translate">
+        <app-icon name="refresh"></app-icon>
+      </button>
+      @if (tab === 'keys' && isAdmin) {
+        <button type="button" class="adm-btn adm-btn--primary" (click)="openNewKey()">
+          <app-icon name="add"></app-icon>{{ 'admin.clientApi.newKey' | translate }}
+        </button>
+      }
+    </div>
+  </header>
+
+  <div class="adm-grid adm-grid--full">
+    @if (error) { <div class="adm-error" role="alert">{{ error }}</div> }
+    @if (settings && !settings.enabled && tab !== 'settings') {
+      <div class="adm-warning">{{ 'admin.clientApi.disabledBanner' | translate }}</div>
+    }
+
+    <!-- ============================== KEYS ============================== -->
+    @if (tab === 'keys') {
+      @if (showKeyFilters) {
+        <section class="adm-section capi-filters">
+          <div class="adm-fields">
+            <label class="adm-field">
+              <span class="adm-field__label">{{ 'common.search' | translate }}</span>
+              <input class="adm-input" [(ngModel)]="keyFilter.search" (keydown.enter)="applyKeyFilters()" [placeholder]="'admin.clientApi.searchPlaceholder' | translate" />
+            </label>
+            <label class="adm-field">
+              <span class="adm-field__label">{{ 'admin.clientApi.clientUid' | translate }}</span>
+              <input class="adm-input adm-input--mono" [(ngModel)]="keyFilter.client_uid" (keydown.enter)="applyKeyFilters()" />
+            </label>
+            <label class="adm-field">
+              <span class="adm-field__label">{{ 'common.store' | translate }}</span>
+              <select class="adm-input" [(ngModel)]="keyFilter.store_uid">
+                <option value="">{{ 'admin.webhooks.allStores' | translate }}</option>
+                @for (s of stores; track s.uid) { <option [value]="s.uid">{{ s.name }}</option> }
+              </select>
+            </label>
+            <label class="adm-field">
+              <span class="adm-field__label">{{ 'common.status' | translate }}</span>
+              <select class="adm-input" [(ngModel)]="keyFilter.status">
+                <option value="">{{ 'common.all' | translate }}</option>
+                <option value="active">{{ 'common.active' | translate }}</option>
+                <option value="expired">{{ 'admin.clientApi.expired' | translate }}</option>
+                <option value="revoked">{{ 'admin.clientApi.revoked' | translate }}</option>
+              </select>
+            </label>
+            <label class="adm-field">
+              <span class="adm-field__label">{{ 'admin.clientApi.scope' | translate }}</span>
+              <select class="adm-input" [(ngModel)]="keyFilter.scope">
+                <option value="">{{ 'common.all' | translate }}</option>
+                @for (s of scopes; track s) { <option [value]="s">{{ s }}</option> }
+              </select>
+            </label>
+            <label class="adm-field">
+              <span class="adm-field__label">{{ 'admin.clientApi.mode' | translate }}</span>
+              <select class="adm-input" [(ngModel)]="keyFilter.is_test">
+                <option [ngValue]="null">{{ 'common.all' | translate }}</option>
+                <option [ngValue]="false">{{ 'admin.clientApi.live' | translate }}</option>
+                <option [ngValue]="true">{{ 'admin.clientApi.test' | translate }}</option>
+              </select>
+            </label>
+            <label class="adm-field">
+              <span class="adm-field__label">{{ 'admin.clientApi.expiringWithin' | translate }}</span>
+              <select class="adm-input" [(ngModel)]="keyFilter.expiring_days">
+                <option [ngValue]="null">—</option>
+                <option [ngValue]="7">7 {{ 'admin.clientApi.days' | translate }}</option>
+                <option [ngValue]="30">30 {{ 'admin.clientApi.days' | translate }}</option>
+                <option [ngValue]="90">90 {{ 'admin.clientApi.days' | translate }}</option>
+              </select>
+            </label>
+          </div>
+          <div class="capi-filters__actions">
+            <button type="button" class="adm-btn adm-btn--primary" (click)="applyKeyFilters()">{{ 'admin.clientApi.apply' | translate }}</button>
+            <button type="button" class="adm-btn adm-btn--ghost" (click)="clearKeyFilters()">{{ 'common.clear' | translate }}</button>
+          </div>
+        </section>
+      }
+
+      @if (loading) { <div class="adm-loading">{{ 'common.loading' | translate }}</div> }
+      @else if (keys.length === 0) {
+        <div class="adm-section capi-empty">
+          <app-icon name="vpn_key" class="capi-empty__icon"></app-icon>
+          <p class="capi-empty__text">{{ 'admin.clientApi.noKeys' | translate }}</p>
+          @if (isAdmin) {
+            <button type="button" class="adm-btn adm-btn--primary" (click)="openNewKey()"><app-icon name="add"></app-icon>{{ 'admin.clientApi.newKey' | translate }}</button>
+          }
+        </div>
+      } @else {
+        <section class="adm-section adm-section--table">
+          <div class="capi-table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>{{ 'admin.clientApi.key' | translate }}</th>
+                  <th>{{ 'admin.clientApi.client' | translate }}</th>
+                  <th>{{ 'admin.clientApi.scopes' | translate }}</th>
+                  <th>{{ 'common.status' | translate }}</th>
+                  <th>{{ 'admin.clientApi.expires' | translate }}</th>
+                  <th>{{ 'admin.clientApi.lastUsed' | translate }}</th>
+                  <th class="num">24h</th>
+                  <th class="num">7d</th>
+                  <th class="num">{{ 'admin.clientApi.errors24h' | translate }}</th>
+                  <th class="actions-col"></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (k of keys; track k.uid) {
+                  <tr [class.is-muted]="k.status === 'revoked'">
+                    <td>
+                      <div class="capi-keycell">
+                        <span class="capi-keycell__name">{{ k.name }}</span>
+                        <span class="capi-keycell__prefix mono" [copyOnClick]="k.display_label">{{ k.display_label }}</span>
+                        @if (k.is_test) { <span class="capi-tag capi-tag--test">{{ 'admin.clientApi.test' | translate }}</span> }
+                        @if (k.created_by_type === 'client') { <span class="capi-tag">{{ 'admin.clientApi.selfService' | translate }}</span> }
+                      </div>
+                    </td>
+                    <td>
+                      <a class="capi-link" [routerLink]="['/admin/clients/edit', k.client_uid]">{{ k.client_name || k.client_uid }}</a>
+                      <div class="capi-sub">{{ storeName(k.store_uid) }}</div>
+                    </td>
+                    <td><div class="capi-scopes">@for (s of k.scopes; track s) { <span class="capi-scope">{{ s }}</span> }</div></td>
+                    <td>
+                      <span class="capi-status" [attr.data-state]="keyState(k)">{{ ('admin.clientApi.state.' + keyState(k)) | translate }}</span>
+                    </td>
+                    <td class="capi-nowrap">{{ formatDate(k.expires_at) }}</td>
+                    <td class="capi-nowrap">
+                      {{ formatDate(k.last_used_at) }}
+                      @if (k.last_used_ip) { <div class="capi-sub mono">{{ k.last_used_ip }}</div> }
+                    </td>
+                    <td class="num">{{ k.requests_24h }}</td>
+                    <td class="num">{{ k.requests_7d }}</td>
+                    <td class="num" [class.capi-err]="k.errors_24h > 0">{{ k.errors_24h }}</td>
+                    <td class="actions-col">
+                      <button type="button" class="adm-icon-btn" (click)="viewKeyRequests(k)" [title]="'admin.clientApi.viewRequests' | translate"><app-icon name="receipt_long"></app-icon></button>
+                      @if (isAdmin && k.status === 'active') {
+                        <button type="button" class="adm-icon-btn" (click)="openEditKey(k)" [title]="'common.edit' | translate"><app-icon name="edit"></app-icon></button>
+                        <button type="button" class="adm-icon-btn" (click)="rotateKey(k)" [title]="'admin.clientApi.rotate' | translate"><app-icon name="sync"></app-icon></button>
+                        <button type="button" class="adm-icon-btn adm-icon-btn--danger" (click)="revokeKey(k)" [title]="'admin.clientApi.revoke' | translate"><app-icon name="block"></app-icon></button>
+                      }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </section>
+        @if (keysTotalPages > 1) {
+          <div class="capi-pager">
+            <button type="button" class="adm-btn adm-btn--ghost" [disabled]="keysPage === 1" (click)="goKeysPage(keysPage - 1)">{{ 'common.previous' | translate }}</button>
+            <span>{{ 'common.page' | translate }} {{ keysPage }} {{ 'common.of' | translate }} {{ keysTotalPages }} ({{ keysTotal }})</span>
+            <button type="button" class="adm-btn adm-btn--ghost" [disabled]="keysPage >= keysTotalPages" (click)="goKeysPage(keysPage + 1)">{{ 'common.next' | translate }}</button>
+          </div>
+        }
+      }
+    }
+
+    <!-- ============================== REQUESTS ============================== -->
+    @if (tab === 'requests') {
+      @if (showRequestFilters) {
+        <section class="adm-section capi-filters">
+          <div class="adm-fields">
+            <label class="adm-field"><span class="adm-field__label">{{ 'admin.clientApi.keyUid' | translate }}</span><input class="adm-input adm-input--mono" [(ngModel)]="requestFilter.key_uid" (keydown.enter)="applyRequestFilters()" /></label>
+            <label class="adm-field"><span class="adm-field__label">{{ 'admin.clientApi.clientUid' | translate }}</span><input class="adm-input adm-input--mono" [(ngModel)]="requestFilter.client_uid" (keydown.enter)="applyRequestFilters()" /></label>
+            <label class="adm-field"><span class="adm-field__label">Request ID</span><input class="adm-input adm-input--mono" [(ngModel)]="requestFilter.request_id" (keydown.enter)="applyRequestFilters()" /></label>
+            <label class="adm-field"><span class="adm-field__label">{{ 'admin.clientApi.route' | translate }}</span><input class="adm-input adm-input--mono" [(ngModel)]="requestFilter.route" placeholder="/api/client/v1/orders" (keydown.enter)="applyRequestFilters()" /></label>
+            <label class="adm-field"><span class="adm-field__label">{{ 'admin.clientApi.statusMin' | translate }}</span><input class="adm-input" type="number" [(ngModel)]="requestFilter.status_min" /></label>
+            <label class="adm-field"><span class="adm-field__label">{{ 'admin.clientApi.statusMax' | translate }}</span><input class="adm-input" type="number" [(ngModel)]="requestFilter.status_max" /></label>
+            <label class="adm-field"><span class="adm-field__label">{{ 'admin.clientApi.from' | translate }}</span><input class="adm-input" type="date" [(ngModel)]="requestFilter.from" /></label>
+            <label class="adm-field"><span class="adm-field__label">{{ 'admin.clientApi.to' | translate }}</span><input class="adm-input" type="date" [(ngModel)]="requestFilter.to" /></label>
+          </div>
+          <div class="capi-filters__actions">
+            <button type="button" class="adm-btn adm-btn--primary" (click)="applyRequestFilters()">{{ 'admin.clientApi.apply' | translate }}</button>
+            <button type="button" class="adm-btn adm-btn--ghost" (click)="clearRequestFilters()">{{ 'common.clear' | translate }}</button>
+          </div>
+        </section>
+      }
+      @if (loading) { <div class="adm-loading">{{ 'common.loading' | translate }}</div> }
+      @else if (requests.length === 0) {
+        <div class="adm-section capi-empty"><app-icon name="receipt_long" class="capi-empty__icon"></app-icon><p class="capi-empty__text">{{ 'admin.clientApi.noRequests' | translate }}</p></div>
+      } @else {
+        <section class="adm-section adm-section--table">
+          <div class="capi-table-wrap">
+            <table class="data-table capi-requests">
+              <thead>
+                <tr>
+                  <th>{{ 'common.time' | translate }}</th>
+                  <th>{{ 'admin.clientApi.method' | translate }}</th>
+                  <th>{{ 'admin.clientApi.route' | translate }}</th>
+                  <th class="num">{{ 'common.status' | translate }}</th>
+                  <th class="num">ms</th>
+                  <th>{{ 'admin.clientApi.error' | translate }}</th>
+                  <th>{{ 'admin.clientApi.keyUid' | translate }}</th>
+                  <th>IP</th>
+                  <th>Request ID</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (r of requests; track r.id) {
+                  <tr>
+                    <td class="capi-nowrap">{{ formatDate(r.timestamp) }}</td>
+                    <td class="mono">{{ r.method }}</td>
+                    <td class="mono" [title]="r.path">{{ shortRoute(r.route) }}@if (r.is_test) { <span class="capi-tag capi-tag--test">test</span> }</td>
+                    <td class="num"><span class="capi-code" [ngClass]="statusClass(r.status_code)">{{ r.status_code }}</span></td>
+                    <td class="num">{{ r.duration_ms }}</td>
+                    <td class="mono capi-err">{{ r.error_code || '' }}</td>
+                    <td class="mono capi-uid" [copyOnClick]="r.key_uid" [title]="r.key_uid">{{ r.key_uid | slice:0:8 }}…</td>
+                    <td class="mono">{{ r.ip_address }}</td>
+                    <td class="mono capi-uid" [copyOnClick]="r.request_id" [title]="r.request_id">{{ r.request_id | slice:0:8 }}…</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </section>
+        @if (requestsTotalPages > 1) {
+          <div class="capi-pager">
+            <button type="button" class="adm-btn adm-btn--ghost" [disabled]="requestsPage === 1" (click)="goRequestsPage(requestsPage - 1)">{{ 'common.previous' | translate }}</button>
+            <span>{{ 'common.page' | translate }} {{ requestsPage }} {{ 'common.of' | translate }} {{ requestsTotalPages }} ({{ requestsTotal }})</span>
+            <button type="button" class="adm-btn adm-btn--ghost" [disabled]="requestsPage >= requestsTotalPages" (click)="goRequestsPage(requestsPage + 1)">{{ 'common.next' | translate }}</button>
+          </div>
+        }
+      }
+    }
+
+    <!-- ============================== USAGE ============================== -->
+    @if (tab === 'usage') {
+      <section class="adm-section capi-usage-head">
+        <div class="adm-chips">
+          @for (d of [1, 7, 30]; track d) {
+            <button type="button" class="adm-chip" [class.is-active]="usageDays === d" (click)="setUsageDays(d)">{{ d }} {{ 'admin.clientApi.days' | translate }}</button>
+          }
+        </div>
+        <div class="capi-usage-head__filters">
+          <input class="adm-input adm-input--mono" [(ngModel)]="usageKeyUid" [placeholder]="'admin.clientApi.keyUid' | translate" (keydown.enter)="loadUsage()" />
+          <input class="adm-input adm-input--mono" [(ngModel)]="usageClientUid" [placeholder]="'admin.clientApi.clientUid' | translate" (keydown.enter)="loadUsage()" />
+          <button type="button" class="adm-btn adm-btn--ghost" (click)="loadUsage()">{{ 'admin.clientApi.apply' | translate }}</button>
+        </div>
+      </section>
+
+      @if (loading) { <div class="adm-loading">{{ 'common.loading' | translate }}</div> }
+      @else {
+        <div class="capi-kpis">
+          <div class="capi-kpi"><span class="capi-kpi__value">{{ usageTotals.requests }}</span><span class="capi-kpi__label">{{ 'admin.clientApi.requests' | translate }}</span></div>
+          <div class="capi-kpi"><span class="capi-kpi__value">{{ usageTotals.ok }}</span><span class="capi-kpi__label">2xx</span></div>
+          <div class="capi-kpi" [class.is-warn]="usageTotals.errors4xx > 0"><span class="capi-kpi__value">{{ usageTotals.errors4xx }}</span><span class="capi-kpi__label">4xx</span></div>
+          <div class="capi-kpi" [class.is-warn]="usageTotals.throttled > 0"><span class="capi-kpi__value">{{ usageTotals.throttled }}</span><span class="capi-kpi__label">429</span></div>
+          <div class="capi-kpi" [class.is-bad]="usageTotals.errors5xx > 0"><span class="capi-kpi__value">{{ usageTotals.errors5xx }}</span><span class="capi-kpi__label">5xx</span></div>
+          <div class="capi-kpi"><span class="capi-kpi__value">{{ usageTotals.avg }}<small> ms</small></span><span class="capi-kpi__label">{{ 'admin.clientApi.avgLatency' | translate }}</span></div>
+        </div>
+
+        <section class="adm-section capi-chart">
+          <h2 class="adm-section__title">{{ 'admin.clientApi.requestsOverTime' | translate }}</h2>
+          @if (usageTotals.requests === 0) {
+            <p class="capi-chart__note">{{ 'admin.clientApi.noUsage' | translate }}</p>
+          }
+          <div class="capi-chart__bars" role="img" [attr.aria-label]="'admin.clientApi.requestsOverTime' | translate">
+            @for (b of usageBuckets; track b.hour) {
+              <div class="capi-bar" [title]="b.hour + ' — ' + b.requests + ' (' + b.errors + ' err)'">
+                <div class="capi-bar__stack" [style.height]="barHeight(b.requests)">
+                  <div class="capi-bar__err" [style.height]="b.requests ? (b.errors / b.requests * 100) + '%' : '0'"></div>
+                </div>
+                <span class="capi-bar__label">{{ bucketLabel(b) }}</span>
+              </div>
+            }
+          </div>
+        </section>
+
+        @if (usageRoutes.length > 0) {
+          <section class="adm-section adm-section--table">
+            <table class="data-table">
+              <thead><tr><th>{{ 'admin.clientApi.route' | translate }}</th><th class="num">{{ 'admin.clientApi.requests' | translate }}</th><th class="num">{{ 'admin.clientApi.errors' | translate }}</th><th class="num">avg ms</th></tr></thead>
+              <tbody>
+                @for (r of usageRoutes; track r.route) {
+                  <tr><td class="mono">{{ shortRoute(r.route) }}</td><td class="num">{{ r.requests }}</td><td class="num" [class.capi-err]="r.errors > 0">{{ r.errors }}</td><td class="num">{{ r.avg }}</td></tr>
+                }
+              </tbody>
+            </table>
+          </section>
+        }
+      }
+    }
+
+    <!-- ============================== SETTINGS ============================== -->
+    @if (tab === 'settings') {
+      @if (loading && !settings) { <div class="adm-loading">{{ 'common.loading' | translate }}</div> }
+      @else {
+        <form [formGroup]="settingsForm" (ngSubmit)="saveSettings()" class="capi-settings">
+          <section class="adm-section">
+            <header class="adm-section__head"><div><h2 class="adm-section__title">{{ 'admin.clientApi.access' | translate }}</h2><p class="adm-section__sub">{{ 'admin.clientApi.accessSub' | translate }}</p></div></header>
+            <div class="adm-fields">
+              <label class="adm-toggle adm-field--span2"><input type="checkbox" formControlName="enabled" /><span class="adm-toggle__track"><span class="adm-toggle__dot"></span></span><span class="adm-toggle__text">{{ 'admin.clientApi.enabled' | translate }}</span></label>
+              <label class="adm-toggle adm-field--span2"><input type="checkbox" formControlName="stores_enabled_by_default" /><span class="adm-toggle__track"><span class="adm-toggle__dot"></span></span><span class="adm-toggle__text">{{ 'admin.clientApi.storesEnabledByDefault' | translate }}</span></label>
+              <label class="adm-toggle adm-field--span2"><input type="checkbox" formControlName="self_service_enabled" /><span class="adm-toggle__track"><span class="adm-toggle__dot"></span></span><span class="adm-toggle__text">{{ 'admin.clientApi.selfServiceEnabled' | translate }}</span></label>
+            </div>
+            @if (stores.length > 0) {
+              <div class="capi-stores">
+                <span class="adm-field__label">{{ 'admin.clientApi.perStore' | translate }}</span>
+                @for (s of stores; track s.uid) {
+                  <label class="adm-toggle">
+                    <input type="checkbox" [checked]="storeEnabled(s.uid)" (change)="toggleStore(s.uid)" />
+                    <span class="adm-toggle__track"><span class="adm-toggle__dot"></span></span>
+                    <span class="adm-toggle__text">{{ s.name }} @if (!storeExplicit(s.uid)) { <em class="capi-sub">({{ 'admin.clientApi.default' | translate }})</em> }</span>
+                  </label>
+                }
+              </div>
+            }
+          </section>
+
+          <section class="adm-section">
+            <header class="adm-section__head"><div><h2 class="adm-section__title">{{ 'admin.clientApi.keysAndLimits' | translate }}</h2></div></header>
+            <div class="adm-fields">
+              <label class="adm-field"><span class="adm-field__label">{{ 'admin.clientApi.maxKeysPerClient' | translate }}</span><input class="adm-input" type="number" formControlName="max_keys_per_client" /></label>
+              <label class="adm-field"><span class="adm-field__label">{{ 'admin.clientApi.defaultTtl' | translate }}</span><input class="adm-input" type="number" formControlName="default_key_ttl_days" /></label>
+              <label class="adm-field"><span class="adm-field__label">{{ 'admin.clientApi.maxTtl' | translate }}</span><input class="adm-input" type="number" formControlName="max_key_ttl_days" /></label>
+              <label class="adm-field"><span class="adm-field__label">{{ 'admin.clientApi.rotationGrace' | translate }}</span><input class="adm-input" type="number" formControlName="rotation_grace_hours" /></label>
+              <label class="adm-field"><span class="adm-field__label">{{ 'admin.clientApi.readRpm' | translate }}</span><input class="adm-input" type="number" formControlName="default_read_rpm" /></label>
+              <label class="adm-field"><span class="adm-field__label">{{ 'admin.clientApi.writeRpm' | translate }}</span><input class="adm-input" type="number" formControlName="default_write_rpm" /></label>
+              <label class="adm-field"><span class="adm-field__label">{{ 'admin.clientApi.authFailureLimit' | translate }}</span><input class="adm-input" type="number" formControlName="auth_failure_limit" /></label>
+              <label class="adm-field"><span class="adm-field__label">{{ 'admin.clientApi.authFailureWindow' | translate }}</span><input class="adm-input" type="number" formControlName="auth_failure_window_minutes" /></label>
+            </div>
+          </section>
+
+          <section class="adm-section">
+            <header class="adm-section__head"><div><h2 class="adm-section__title">{{ 'admin.clientApi.retentionAlerts' | translate }}</h2></div></header>
+            <div class="adm-fields">
+              <label class="adm-field"><span class="adm-field__label">{{ 'admin.clientApi.requestLogRetention' | translate }}</span><input class="adm-input" type="number" formControlName="request_log_retention_days" /></label>
+              <label class="adm-field"><span class="adm-field__label">{{ 'admin.clientApi.usageRetention' | translate }}</span><input class="adm-input" type="number" formControlName="usage_retention_days" /></label>
+              <label class="adm-field"><span class="adm-field__label">{{ 'admin.clientApi.expiryWarnDays' | translate }}</span><input class="adm-input" type="number" formControlName="expiry_warn_days" /></label>
+              <label class="adm-toggle"><input type="checkbox" formControlName="alert_key_events" /><span class="adm-toggle__track"><span class="adm-toggle__dot"></span></span><span class="adm-toggle__text">{{ 'admin.clientApi.alertKeyEvents' | translate }}</span></label>
+            </div>
+          </section>
+
+          <div class="capi-settings__actions">
+            <button type="submit" class="adm-btn adm-btn--primary" [disabled]="settingsSaving || settingsForm.invalid">
+              <app-icon name="save"></app-icon>{{ (settingsSaving ? 'common.saving' : 'common.save') | translate }}
+            </button>
+          </div>
+        </form>
+      }
+    }
+  </div>
+
+  <!-- ============================== KEY DIALOG ============================== -->
+  @if (showKeyDialog) {
+    <div class="capi-modal-overlay" (click)="closeKeyDialog()">
+      <div class="capi-modal" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+        <header class="capi-modal__head">
+          <h3 class="capi-modal__title">{{ (editingKey ? 'admin.clientApi.editKey' : 'admin.clientApi.newKey') | translate }}</h3>
+          <button type="button" class="adm-icon-btn" (click)="closeKeyDialog()" [attr.aria-label]="'common.close' | translate"><app-icon name="close"></app-icon></button>
+        </header>
+        <form [formGroup]="keyForm" (ngSubmit)="saveKey()" class="capi-modal__body">
+          <div class="adm-fields">
+            <div class="adm-field adm-field--span2">
+              <span class="adm-field__label">{{ 'admin.clientApi.client' | translate }} <em>*</em></span>
+              @if (pickedClient) {
+                <div class="capi-picked">
+                  <span>{{ pickedClient.name }} <span class="capi-sub mono">{{ pickedClient.uid }}</span></span>
+                  @if (!editingKey) { <button type="button" class="adm-icon-btn" (click)="clearClient()"><app-icon name="close"></app-icon></button> }
+                </div>
+              } @else {
+                <input class="adm-input" [placeholder]="'admin.clientApi.searchClient' | translate" (input)="onClientQuery($any($event.target).value)" autocomplete="off" />
+                @if (clientResults.length > 0) {
+                  <ul class="capi-picker">
+                    @for (c of clientResults; track c.uid) {
+                      <li><button type="button" (click)="pickClient(c)">{{ c.name }} <span class="capi-sub mono">{{ c.uid }}</span></button></li>
+                    }
+                  </ul>
+                }
+              }
+            </div>
+            <label class="adm-field adm-field--span2">
+              <span class="adm-field__label">{{ 'common.name' | translate }} <em>*</em></span>
+              <input class="adm-input" formControlName="name" [placeholder]="'admin.clientApi.namePlaceholder' | translate" />
+            </label>
+            <div class="adm-field adm-field--span2">
+              <span class="adm-field__label">{{ 'admin.clientApi.scopes' | translate }}</span>
+              <div class="capi-scope-picks">
+                @for (s of scopes; track s) {
+                  <button type="button" class="adm-chip" [class.is-active]="hasScope(s)" (click)="toggleScope(s)">{{ s }}</button>
+                }
+              </div>
+            </div>
+            <label class="adm-toggle adm-field--span2">
+              <input type="checkbox" formControlName="is_test" /><span class="adm-toggle__track"><span class="adm-toggle__dot"></span></span>
+              <span class="adm-toggle__text">{{ 'admin.clientApi.testMode' | translate }} <em class="capi-sub">— {{ 'admin.clientApi.testModeHint' | translate }}</em></span>
+            </label>
+            @if (!editingKey) {
+              <label class="adm-field"><span class="adm-field__label">{{ 'admin.clientApi.ttlDays' | translate }}</span><input class="adm-input" type="number" formControlName="ttl_days" [placeholder]="'admin.clientApi.default' | translate" /></label>
+            }
+            <label class="adm-field"><span class="adm-field__label">{{ 'admin.clientApi.readRpm' | translate }}</span><input class="adm-input" type="number" formControlName="rate_limit_read" [placeholder]="'admin.clientApi.default' | translate" /></label>
+            <label class="adm-field"><span class="adm-field__label">{{ 'admin.clientApi.writeRpm' | translate }}</span><input class="adm-input" type="number" formControlName="rate_limit_write" [placeholder]="'admin.clientApi.default' | translate" /></label>
+          </div>
+        </form>
+        <footer class="capi-modal__foot">
+          <button type="button" class="adm-btn adm-btn--ghost" (click)="closeKeyDialog()">{{ 'common.cancel' | translate }}</button>
+          <button type="button" class="adm-btn adm-btn--primary" (click)="saveKey()" [disabled]="keySaving || keyForm.invalid || (!editingKey && !pickedClient)">
+            {{ (editingKey ? 'common.save' : 'admin.clientApi.createKey') | translate }}
+          </button>
+        </footer>
+      </div>
+    </div>
+  }
+
+  <!-- ============================== SHOW-ONCE DIALOG ============================== -->
+  @if (createdKey) {
+    <div class="capi-modal-overlay">
+      <div class="capi-modal" role="dialog" aria-modal="true">
+        <header class="capi-modal__head">
+          <h3 class="capi-modal__title">{{ 'admin.clientApi.keyCreatedTitle' | translate }}</h3>
+        </header>
+        <div class="capi-modal__body">
+          <div class="adm-warning">{{ 'admin.clientApi.keyCreatedWarning' | translate }}</div>
+          <div class="capi-secret">
+            <code class="capi-secret__value">{{ createdKey.plaintext_key }}</code>
+            <button type="button" class="adm-btn adm-btn--ghost" (click)="copyCreatedKey()">
+              <app-icon [name]="createdKeyCopied ? 'check' : 'content_copy'"></app-icon>{{ (createdKeyCopied ? 'admin.clientApi.copied' : 'common.copy') | translate }}
+            </button>
+          </div>
+          <dl class="capi-kv">
+            <dt>{{ 'common.name' | translate }}</dt><dd>{{ createdKey.key.name }}</dd>
+            <dt>{{ 'admin.clientApi.scopes' | translate }}</dt><dd>{{ createdKey.key.scopes.join(', ') }}</dd>
+            <dt>{{ 'admin.clientApi.expires' | translate }}</dt><dd>{{ formatDate(createdKey.key.expires_at) }}</dd>
+            <dt>{{ 'admin.clientApi.mode' | translate }}</dt><dd>{{ (createdKey.key.is_test ? 'admin.clientApi.test' : 'admin.clientApi.live') | translate }}</dd>
+          </dl>
+        </div>
+        <footer class="capi-modal__foot">
+          <button type="button" class="adm-btn adm-btn--primary" (click)="closeCreatedKey()">{{ 'admin.clientApi.keySaved' | translate }}</button>
+        </footer>
+      </div>
+    </div>
+  }
+</div>

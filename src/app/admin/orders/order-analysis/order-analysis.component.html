@@ -1,0 +1,279 @@
+<div class="adm-page">
+
+  <header class="adm-bar">
+    <div class="adm-bar__crumbs">
+      <span class="adm-crumb adm-crumb--active">{{ 'admin.analysis.title' | translate }}</span>
+    </div>
+    <div class="adm-bar__actions">
+      @if (hasActiveCriteria) {
+        <button type="button" class="adm-btn adm-btn--ghost" (click)="resetCriteria()">
+          <app-icon name="restart_alt"></app-icon>
+          {{ 'common.reset' | translate }}
+        </button>
+      }
+      <button
+        type="button"
+        class="adm-btn adm-btn--primary"
+        (click)="exportToExcel()"
+        [disabled]="exporting || loading || total === 0"
+      >
+        <app-icon name="download"></app-icon>
+        {{ (exporting ? 'admin.analysis.exporting' : 'admin.analysis.export') | translate }}
+      </button>
+    </div>
+  </header>
+
+  <app-menu-bar [items]="menuItems"></app-menu-bar>
+
+  <div class="adm-grid">
+
+    <!-- Criteria rail -->
+    <aside class="adm-side">
+      <section class="adm-section ana-rail">
+        <div class="adm-section__head">
+          <div>
+            <h2 class="adm-section__title">{{ 'admin.analysis.criteria' | translate }}</h2>
+            <p class="adm-section__sub">{{ 'admin.analysis.criteriaHint' | translate }}</p>
+          </div>
+        </div>
+
+        <app-filter-criterion
+          [label]="'admin.analysis.invoiceTypes' | translate"
+          icon="description"
+          [options]="invoiceTypeOptions"
+          [selection]="selections.invoiceTypes"
+          [expanded]="isOpen('invoiceTypes')"
+          (selectionChange)="onSelectionChange('invoiceTypes', $event)"
+          (expandedChange)="onCriterionExpanded('invoiceTypes', $event)"
+        ></app-filter-criterion>
+
+        <app-filter-criterion
+          [label]="'admin.orders.stage' | translate"
+          icon="view_kanban"
+          [options]="stageOptions"
+          [selection]="selections.stages"
+          [expanded]="isOpen('stages')"
+          (selectionChange)="onSelectionChange('stages', $event)"
+          (expandedChange)="onCriterionExpanded('stages', $event)"
+        ></app-filter-criterion>
+
+        @if (hasFinalStageConflict) {
+          <p class="ana-conflict" role="status">
+            <app-icon name="info"></app-icon>
+            {{ 'admin.analysis.finalStageConflict' | translate }}
+          </p>
+        }
+
+        <app-filter-criterion
+          [label]="'common.priceType' | translate"
+          icon="sell"
+          [options]="priceTypeOptions"
+          [selection]="selections.priceTypes"
+          [expanded]="isOpen('priceTypes')"
+          (selectionChange)="onSelectionChange('priceTypes', $event)"
+          (expandedChange)="onCriterionExpanded('priceTypes', $event)"
+        ></app-filter-criterion>
+
+        <app-filter-criterion
+          [label]="'admin.nav.clients' | translate"
+          icon="people"
+          [options]="clientOptions"
+          [selection]="selections.clients"
+          [note]="clientsNote"
+          [expanded]="isOpen('clients')"
+          (selectionChange)="onSelectionChange('clients', $event)"
+          (expandedChange)="onCriterionExpanded('clients', $event)"
+        ></app-filter-criterion>
+
+        <app-filter-criterion
+          [label]="'admin.analysis.country' | translate"
+          icon="public"
+          [options]="countryOptions"
+          [selection]="selections.countries"
+          [expanded]="isOpen('countries')"
+          (selectionChange)="onSelectionChange('countries', $event)"
+          (expandedChange)="onCriterionExpanded('countries', $event)"
+        ></app-filter-criterion>
+
+        <!-- The page's premise: working documents only. Kept out of the stage
+             picker so the intent is stated, not buried in a list, and sat below
+             the criteria it qualifies rather than above them. -->
+        <label class="ana-premise">
+          <input type="checkbox" [(ngModel)]="excludeFinalStages" (change)="onFilterChange()" />
+          <span>
+            <span class="ana-premise__label">{{ 'admin.analysis.excludeFinal' | translate }}</span>
+            <span class="ana-premise__hint">{{ 'admin.analysis.excludeFinalHint' | translate }}</span>
+          </span>
+        </label>
+      </section>
+
+      <section class="adm-section">
+        <div class="adm-fields">
+          @if (!storeLocked) {
+            <label class="adm-field">
+              <span class="adm-field__label">{{ 'common.store' | translate }}</span>
+              <select class="adm-input" [(ngModel)]="storeFilter" (change)="onFilterChange()">
+                @for (option of storeOptions; track option.value) {
+                  <option [value]="option.value">{{ option.label }}</option>
+                }
+              </select>
+            </label>
+          }
+          <label class="adm-field">
+            <span class="adm-field__label">{{ 'common.search' | translate }}</span>
+            <input
+              type="search"
+              class="adm-input"
+              [(ngModel)]="searchTerm"
+              (input)="onSearchChange()"
+              [placeholder]="'admin.orders.searchPlaceholder' | translate"
+            />
+          </label>
+        </div>
+      </section>
+    </aside>
+
+    <!-- Results -->
+    <main class="adm-main">
+
+      @if (!loading && !error) {
+        <p class="ana-summary">
+          <strong>{{ total }}</strong> {{ 'admin.analysis.matchingOrders' | translate }}
+          @if (total > exportMaxRows) {
+            <span class="ana-summary__cap">{{ 'admin.analysis.exportCapHint' | translate }}</span>
+          }
+        </p>
+      }
+
+      @if (loading) {
+        <div class="adm-loading">{{ 'admin.analysis.loading' | translate }}</div>
+      } @else if (error) {
+        <div class="adm-error" role="alert">{{ error }}</div>
+      } @else if (rows.length === 0) {
+        <div class="adm-section ana-empty">{{ 'admin.analysis.noMatches' | translate }}</div>
+      } @else {
+
+        <!-- Desktop table -->
+        <div class="ana-table-wrap desktop-only">
+          <table class="data-table" [attr.aria-label]="'admin.analysis.title' | translate">
+            <thead>
+              <tr>
+                <th>{{ 'common.created' | translate }}</th>
+                <th>{{ 'orders.orderNumber' | translate }}</th>
+                <th>{{ 'common.status' | translate }}</th>
+                <th>{{ 'admin.orders.clientName' | translate }}</th>
+                <th>{{ 'common.store' | translate }}</th>
+                <th>{{ 'admin.analysis.country' | translate }}</th>
+                <th class="num">{{ 'orders.totalGross' | translate }}</th>
+                <th>{{ 'common.currency' | translate }}</th>
+                <th>{{ 'invoice.title' | translate }}</th>
+                <th class="mark-col">{{ 'admin.orders.shipments' | translate }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of rows; track row.uid) {
+                <tr
+                  class="ana-row"
+                  (click)="viewOrder(row)"
+                  (keydown.enter)="viewOrder(row)"
+                  (keydown.space)="viewOrder(row); $event.preventDefault()"
+                  tabindex="0"
+                  role="button"
+                  [attr.aria-label]="'View order ' + (row.number || row.uid)"
+                >
+                  <td>{{ formatDate(row.created_at) }}</td>
+                  <td class="mono">{{ row.number || row.uid }}</td>
+                  <td>
+                    <span
+                      class="ana-status"
+                      [style.color]="getStageColor(row)"
+                      [style.border-color]="getStageColor(row)"
+                      role="status"
+                    >
+                      <span class="ana-status__dot" aria-hidden="true"></span>
+                      {{ row.stage_name || row.status }}
+                    </span>
+                  </td>
+                  <td>{{ row.client_name || row.client_uid }}</td>
+                  <td>{{ getStoreName(row.store_uid) }}</td>
+                  <td>{{ getCountryName(row.country_code) }}</td>
+                  <td class="num">{{ (row.total / 100).toFixed(2) }}</td>
+                  <td>{{ row.currency_code }}</td>
+                  <td>
+                    @if (row.invoice_types?.length) {
+                      <span class="ana-marks">
+                        @for (type of row.invoice_types; track type) {
+                          <span class="ana-chip">{{ type }}</span>
+                        }
+                      </span>
+                    } @else {
+                      <span class="ana-mark-missing">{{ 'admin.analysis.none' | translate }}</span>
+                    }
+                  </td>
+                  <td class="mark-col">
+                    @if (row.has_shipment) {
+                      <app-icon name="local_shipping" class="ana-mark" role="img" [title]="'admin.orders.hasShipment' | translate" [attr.aria-label]="'admin.orders.hasShipment' | translate"></app-icon>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Mobile cards -->
+        <div class="ana-cards mobile-only">
+          @for (row of rows; track row.uid) {
+            <article
+              class="ana-card"
+              (click)="viewOrder(row)"
+              (keydown.enter)="viewOrder(row)"
+              tabindex="0"
+              role="button"
+            >
+              <div class="ana-card__head">
+                <span class="ana-card__number mono">{{ row.number || row.uid }}</span>
+                <span
+                  class="ana-status"
+                  [style.color]="getStageColor(row)"
+                  [style.border-color]="getStageColor(row)"
+                >
+                  <span class="ana-status__dot" aria-hidden="true"></span>
+                  {{ row.stage_name || row.status }}
+                </span>
+              </div>
+              <div class="ana-card__sub">{{ row.client_name || row.client_uid }}</div>
+              <div class="ana-card__row">
+                <span class="ana-card__label">{{ 'orders.totalGross' | translate }}</span>
+                <span class="ana-card__value">{{ (row.total / 100).toFixed(2) }} {{ row.currency_code }}</span>
+              </div>
+              <div class="ana-card__row">
+                <span class="ana-card__label">{{ 'invoice.title' | translate }}</span>
+                <span class="ana-card__value">
+                  @if (row.invoice_types?.length) {
+                    <span class="ana-marks">
+                      @for (type of row.invoice_types; track type) {
+                        <span class="ana-chip">{{ type }}</span>
+                      }
+                    </span>
+                  } @else {
+                    <span class="ana-mark-missing">{{ 'admin.analysis.none' | translate }}</span>
+                  }
+                </span>
+              </div>
+            </article>
+          }
+        </div>
+
+        <app-pagination
+          [currentPage]="currentPage"
+          [totalPages]="totalPages"
+          [total]="total"
+          [pageSize]="pageSize"
+          [itemLabel]="'admin.orders.totalOrders' | translate"
+          (pageChange)="goToPage($event)"
+        ></app-pagination>
+      }
+    </main>
+  </div>
+</div>

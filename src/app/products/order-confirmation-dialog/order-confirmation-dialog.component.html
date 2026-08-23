@@ -5,11 +5,11 @@
       <div class="dialog-header">
         <h2>{{ 'products.orderConfirmed' | translate }}</h2>
         <button class="close-btn" (click)="onClose()">
-          <span class="material-icons">close</span>
+          <app-icon name="close"></app-icon>
         </button>
       </div>
       <div class="dialog-body">
-        <span class="material-icons success-icon">check_circle</span>
+        <app-icon name="check_circle" class="success-icon"></app-icon>
         <p class="confirmation-message">{{ 'products.orderConfirmationMessage' | translate }}</p>
         <div class="order-total-section">
           <span class="total-label">{{ 'products.total' | translate }}:</span>

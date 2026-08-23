@@ -1,0 +1,361 @@
+<div class="adm-page">
+
+  <header class="adm-bar">
+    <div class="adm-bar__crumbs">
+      <span class="adm-crumb adm-crumb--active">{{ 'admin.content.title' | translate }}</span>
+
+      <nav class="adm-bar__tabs" [attr.aria-label]="'admin.content.title' | translate">
+        <a
+          class="adm-bar__tab"
+          routerLink="/admin/content"
+          routerLinkActive="is-active"
+          [routerLinkActiveOptions]="{ exact: true }"
+        >{{ 'admin.content.tabPages' | translate }}</a>
+        <a
+          class="adm-bar__tab"
+          routerLink="/admin/content/files"
+          routerLinkActive="is-active"
+        >{{ 'admin.contentFiles.title' | translate }}</a>
+        @if (isAdmin) {
+          <a
+            class="adm-bar__tab"
+            routerLink="/admin/content/languages"
+            routerLinkActive="is-active"
+          >{{ 'admin.contentLanguages.title' | translate }}</a>
+        }
+      </nav>
+    </div>
+    <div class="adm-bar__actions">
+      <input
+        type="search"
+        class="adm-input mf-search"
+        [(ngModel)]="search"
+        (change)="onSearchChange()"
+        [placeholder]="'admin.contentFiles.searchPlaceholder' | translate"
+        [attr.aria-label]="'admin.contentFiles.searchPlaceholder' | translate"
+      />
+      <button type="button" class="adm-btn adm-btn--primary" (click)="picker.click()">
+        <app-icon name="upload"></app-icon>
+        {{ 'admin.contentFiles.upload' | translate }}
+      </button>
+      <input #picker type="file" multiple hidden (change)="onFilesPicked($event)" />
+    </div>
+  </header>
+
+  <div class="adm-grid adm-grid--full">
+
+    <!-- Drop zone. Also the empty state, so the first thing an editor sees
+         tells them how to add something. -->
+    <!-- Full height while the library is empty, a slim bar once it isn't:
+         the instruction earns the space only until it has been followed. -->
+    <div
+      class="mf-drop"
+      [class.is-compact]="files.length > 0"
+      [class.is-dragging]="isDragging"
+      (dragover)="onDragOver($event)"
+      (dragleave)="onDragLeave($event)"
+      (drop)="onDrop($event)"
+    >
+      <app-icon name="cloud_upload" class="mf-drop__icon"></app-icon>
+      <p class="mf-drop__title">{{ 'admin.contentFiles.dropTitle' | translate }}</p>
+      <p class="mf-drop__hint">{{ 'admin.contentFiles.dropHint' | translate }}</p>
+    </div>
+
+    @if (uploads.length) {
+      <div class="adm-section mf-uploads">
+        @for (upload of uploads; track trackByName($index, upload)) {
+          <div class="mf-upload" [class.has-error]="!!upload.error">
+            <span class="mf-upload__name">{{ upload.name }}</span>
+            @if (upload.error) {
+              <span class="mf-upload__error">{{ upload.error }}</span>
+              <button
+                type="button"
+                class="adm-icon-btn"
+                (click)="dismissUpload(upload)"
+                [attr.aria-label]="'common.close' | translate"
+              >
+                <app-icon name="close"></app-icon>
+              </button>
+            } @else {
+              <div
+                class="mf-upload__bar"
+                role="progressbar"
+                [attr.aria-valuenow]="upload.percent"
+                aria-valuemin="0"
+                aria-valuemax="100"
+              >
+                <div class="mf-upload__fill" [style.width.%]="upload.percent"></div>
+              </div>
+              <span class="mf-upload__pct">{{ upload.percent }}%</span>
+            }
+          </div>
+        }
+      </div>
+    }
+
+    <div class="adm-chips" role="group" [attr.aria-label]="'common.filter' | translate">
+      @for (option of mimeOptions; track option.value) {
+        <button
+          type="button"
+          class="adm-chip"
+          [class.is-active]="mimeFilter === option.value"
+          [attr.aria-pressed]="mimeFilter === option.value"
+          (click)="onMimeFilterChange(option.value)"
+        >
+          {{ option.labelKey | translate }}
+        </button>
+      }
+    </div>
+
+    @if (loading) {
+      <div class="adm-loading">{{ 'admin.contentFiles.loading' | translate }}</div>
+    } @else if (error) {
+      <div class="adm-error" role="alert">{{ error }}</div>
+    } @else if (files.length === 0) {
+      <div class="adm-section">
+        <div class="mf-empty">{{ 'admin.contentFiles.empty' | translate }}</div>
+      </div>
+    } @else {
+
+      <!-- Desktop table -->
+      <div class="adm-section adm-section--table mf-table-wrap desktop-only">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th scope="col">{{ 'admin.contentFiles.colFile' | translate }}</th>
+              <th scope="col">{{ 'admin.contentFiles.colRevision' | translate }}</th>
+              <th scope="col">{{ 'admin.contentFiles.colSize' | translate }}</th>
+              <th scope="col">{{ 'admin.contentFiles.colUsage' | translate }}</th>
+              <th scope="col">{{ 'admin.contentFiles.colDownloads' | translate }}</th>
+              <th scope="col" class="actions-col">{{ 'common.actions' | translate }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (file of files; track trackByUid($index, file)) {
+              <tr [class.is-superseded]="isSuperseded(file)">
+                <td>
+                  <!-- Pictures are shown, not named. A media library that
+                       renders every image as a row of filename text makes an
+                       editor open each one to find out which is which. -->
+                  <button type="button" class="mf-file" (click)="openDetails(file)">
+                    <span class="mf-thumb" [class.is-picture]="file.mime_type.startsWith('image/')">
+                      @if (file.mime_type.startsWith('image/')) {
+                        <img [src]="file.uid | contentFileUrl | async" alt="" loading="lazy" />
+                      } @else {
+                        <app-icon [name]="iconFor(file)" class="mf-file__icon"></app-icon>
+                      }
+                    </span>
+                    <span class="mf-file__text">
+                      <span class="mf-file__name">{{ file.filename }}</span>
+                      <span class="mf-file__meta">
+                        @if (file.language) {
+                          <span class="mf-lang">{{ file.language | uppercase }}</span>
+                        }
+                        @if (isSuperseded(file)) {
+                          <span class="mf-status mf-status--superseded">
+                            {{ 'admin.contentFiles.superseded' | translate }}
+                          </span>
+                        }
+                      </span>
+                    </span>
+                  </button>
+                </td>
+                <td class="mf-num">{{ file.revision_date ? (file.revision_date | dateFormat) : '—' }}</td>
+                <td class="mf-num">{{ formatSize(file.size_bytes) }}</td>
+                <td class="mf-num">{{ file.usage_count }}</td>
+                <td class="mf-num">{{ file.download_count }}</td>
+                <td class="actions-col">
+                  <button
+                    type="button"
+                    class="adm-icon-btn"
+                    (click)="openDetails(file)"
+                    [attr.aria-label]="'admin.contentFiles.details' | translate"
+                    [title]="'admin.contentFiles.details' | translate"
+                  >
+                    <app-icon name="edit"></app-icon>
+                  </button>
+                  <button
+                    type="button"
+                    class="adm-icon-btn"
+                    (click)="download(file)"
+                    [disabled]="downloading.has(file.uid)"
+                    [attr.aria-label]="'admin.contentFiles.download' | translate"
+                    [title]="'admin.contentFiles.download' | translate"
+                  >
+                    <app-icon [name]="downloading.has(file.uid) ? 'hourglass_empty' : 'download'"></app-icon>
+                  </button>
+                  <button
+                    type="button"
+                    class="adm-icon-btn adm-icon-btn--danger"
+                    (click)="deleteFile(file)"
+                    [attr.aria-label]="'admin.contentFiles.delete' | translate"
+                    [title]="'admin.contentFiles.delete' | translate"
+                  >
+                    <app-icon name="delete"></app-icon>
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Mobile cards -->
+      <div class="mf-cards mobile-only">
+        @for (file of files; track trackByUid($index, file)) {
+          <div class="mf-card" [class.is-superseded]="isSuperseded(file)">
+            <button type="button" class="mf-card__head" (click)="openDetails(file)">
+              <span class="mf-thumb" [class.is-picture]="file.mime_type.startsWith('image/')">
+                @if (file.mime_type.startsWith('image/')) {
+                  <img [src]="file.uid | contentFileUrl | async" alt="" loading="lazy" />
+                } @else {
+                  <app-icon [name]="iconFor(file)" class="mf-file__icon"></app-icon>
+                }
+              </span>
+              <span class="mf-file__name">{{ file.filename }}</span>
+            </button>
+            <div class="mf-card__meta">
+              @if (file.revision_date) {
+                <span class="mf-card__item">
+                  {{ 'admin.contentFiles.colRevision' | translate }}:
+                  <span class="mf-num">{{ file.revision_date | dateFormat }}</span>
+                </span>
+              }
+              <span class="mf-card__item">{{ formatSize(file.size_bytes) }}</span>
+              <span class="mf-card__item">
+                {{ 'admin.contentFiles.colUsage' | translate }}: {{ file.usage_count }}
+              </span>
+            </div>
+            <div class="mf-card__actions">
+              <button type="button" class="adm-btn adm-btn--ghost" (click)="download(file)"
+                      [disabled]="downloading.has(file.uid)">
+                <app-icon [name]="downloading.has(file.uid) ? 'hourglass_empty' : 'download'"></app-icon>
+                {{ 'admin.contentFiles.download' | translate }}
+              </button>
+              <button type="button" class="adm-icon-btn adm-icon-btn--danger" (click)="deleteFile(file)">
+                <app-icon name="delete"></app-icon>
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+
+      <app-pagination
+        [currentPage]="currentPage"
+        [totalPages]="totalPages"
+        [total]="total"
+        [pageSize]="pageSize"
+        [itemLabel]="'admin.contentFiles.title' | translate"
+        (pageChange)="goToPage($event)"
+      ></app-pagination>
+    }
+  </div>
+</div>
+
+<!-- File details.
+     Everything about a document that is not its bytes: what it is called, what
+     language it is in, and what revision it carries. Those last two were
+     display-only columns until now — the API has always accepted them, nothing
+     ever sent them, and the page editor was left guessing a file's language
+     from its filename. -->
+@if (editing && draft) {
+  <div class="mf-details" role="dialog" aria-modal="true"
+       [attr.aria-label]="'admin.contentFiles.details' | translate">
+    <div class="mf-details__panel">
+
+      <header class="mf-details__head">
+        <app-icon [name]="iconFor(editing)" class="mf-details__mark"></app-icon>
+        <h2 class="mf-details__title">{{ 'admin.contentFiles.details' | translate }}</h2>
+        <button type="button" class="adm-icon-btn" (click)="closeDetails()"
+                [attr.aria-label]="'common.close' | translate">
+          <app-icon name="close"></app-icon>
+        </button>
+      </header>
+
+      <div class="mf-details__body">
+
+        @if (isImage) {
+          <div class="mf-details__preview">
+            <img [src]="editing.uid | contentFileUrl | async" alt="" />
+          </div>
+        }
+
+        <label class="adm-field">
+          <span class="adm-field__label">{{ 'admin.contentFiles.colFile' | translate }}</span>
+          <input type="text" class="adm-input" [(ngModel)]="draft.filename" name="filename" autocomplete="off" />
+          <span class="adm-field__hint">{{ 'admin.contentFiles.nameHint' | translate }}</span>
+        </label>
+
+        <div class="mf-details__pair">
+          <label class="adm-field">
+            <span class="adm-field__label">{{ 'common.language' | translate }}</span>
+            <input
+              type="text"
+              class="adm-input mf-details__code"
+              [(ngModel)]="draft.language"
+              name="language"
+              maxlength="5"
+              placeholder="en"
+              autocomplete="off"
+            />
+            <span class="adm-field__hint">{{ 'admin.contentFiles.languageHint' | translate }}</span>
+          </label>
+
+          <label class="adm-field">
+            <span class="adm-field__label">{{ 'admin.contentFiles.colRevision' | translate }}</span>
+            <input type="date" class="adm-input" [(ngModel)]="draft.revision_date" name="revision_date" />
+            <span class="adm-field__hint">{{ 'admin.contentFiles.revisionHint' | translate }}</span>
+          </label>
+        </div>
+
+        <dl class="mf-facts">
+          <div class="mf-facts__row">
+            <dt>{{ 'admin.contentFiles.colSize' | translate }}</dt>
+            <dd>{{ formatSize(editing.size_bytes) }}</dd>
+          </div>
+          <div class="mf-facts__row">
+            <dt>{{ 'admin.contentFiles.colUsage' | translate }}</dt>
+            <dd>{{ 'admin.contentFiles.usageCount' | translate:{ count: editing.usage_count } }}</dd>
+          </div>
+          <div class="mf-facts__row">
+            <dt>{{ 'admin.contentFiles.colDownloads' | translate }}</dt>
+            <dd>{{ editing.download_count }}</dd>
+          </div>
+        </dl>
+
+        <!-- Replacing keeps the uid, so every page already linking this
+             document serves the new revision without being edited. That is the
+             difference between reissuing an SDS and re-authoring four pages. -->
+        <div class="mf-replace">
+          <p class="mf-replace__title">{{ 'admin.contentFiles.replaceTitle' | translate }}</p>
+          <p class="mf-replace__hint">{{ 'admin.contentFiles.replaceHint' | translate }}</p>
+
+          @if (replacing) {
+            <div class="mf-upload__bar" role="progressbar"
+                 [attr.aria-valuenow]="replacePercent" aria-valuemin="0" aria-valuemax="100">
+              <div class="mf-upload__fill" [style.width.%]="replacePercent"></div>
+            </div>
+          } @else {
+            <label class="adm-btn adm-btn--ghost mf-replace__pick">
+              <app-icon name="upload"></app-icon>
+              {{ 'admin.contentFiles.replaceAction' | translate }}
+              <input type="file" hidden (change)="onReplacePicked($event)" />
+            </label>
+          }
+        </div>
+      </div>
+
+      <footer class="mf-details__foot">
+        <button type="button" class="adm-btn adm-btn--ghost" [disabled]="savingDraft || replacing"
+                (click)="closeDetails()">
+          {{ 'common.cancel' | translate }}
+        </button>
+        <button type="button" class="adm-btn adm-btn--primary" [disabled]="savingDraft || replacing"
+                (click)="saveDetails()">
+          <app-icon name="save"></app-icon>
+          {{ (savingDraft ? 'common.saving' : 'common.save') | translate }}
+        </button>
+      </footer>
+    </div>
+  </div>
+}

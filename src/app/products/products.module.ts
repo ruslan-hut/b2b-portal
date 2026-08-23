@@ -8,6 +8,7 @@ import { ProductDetailsOverlayComponent } from './product-details-overlay/produc
 import { CartPageComponent } from './cart-page/cart-page.component';
 import { CartAddressComponent } from './cart-address/cart-address.component';
 import { OrderConfirmationDialogComponent } from './order-confirmation-dialog/order-confirmation-dialog.component';
+import { OrderErrorDialogComponent } from './order-error-dialog/order-error-dialog.component';
 import { SharedModule } from '../shared/shared.module';
 import { CategoryHeaderComponent } from './product-catalog/components/category-header/category-header.component';
 import { ProductCardComponent } from './product-catalog/components/product-card/product-card.component';
@@ -29,6 +30,7 @@ import { BulkDetailPanelComponent } from './product-catalog/components/bulk-deta
     CartPageComponent,
     CartAddressComponent,
     OrderConfirmationDialogComponent,
+    OrderErrorDialogComponent,
     CategoryHeaderComponent,
     ProductCardComponent,
     ImagePreviewModalComponent,

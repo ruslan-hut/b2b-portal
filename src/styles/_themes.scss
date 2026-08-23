@@ -1,0 +1,667 @@
+// =============================================================================
+// THEME PALETTES
+// =============================================================================
+// The colour half of the token system, one mixin per scheme. Everything that is
+// NOT a colour — spacing, type scale, radii, control heights, z-index — stays in
+// the base `:root` block in styles.scss, because it is shared by every scheme
+// and every installation.
+//
+// Why mixins and not three plain CSS blocks: the dark palette has to appear
+// twice, once under `[data-theme="dark"]` and once under
+// `@media (prefers-color-scheme: dark) [data-theme="system"]`. Those cannot be
+// merged into one selector list (only the second is media-gated), so before
+// this file the ~200 declarations were maintained as two hand-synced copies.
+// They had already drifted once. Include the mixin in both places instead.
+//
+// Per-installation theming (see docs/development/theming-contract.md) overrides
+// the SEED block at the top of each palette; everything below the seed derives
+// from it and must not restate a brand hue.
+// =============================================================================
+
+@mixin light-palette {
+  /* Primary Colors */
+  --color-primary: #667eea;
+  --color-primary-dark: #5568d3;
+  --color-primary-light: #8099ff;
+
+  --color-secondary: #764ba2;
+  --color-secondary-dark: #5f3d85;
+
+  /* Material Design 3 Color Roles */
+  --color-on-primary: #ffffff;
+  --color-primary-container: #e8edff;
+  --color-on-primary-container: #1e0060;
+
+  --color-on-secondary: #ffffff;
+  --color-secondary-container: #f3e5ff;
+  --color-on-secondary-container: #2a0052;
+
+  --color-surface: var(--card-bg);
+  --color-surface-variant: #f0f4ff;
+  --color-on-surface: var(--color-text-primary);
+  --color-on-surface-variant: var(--color-text-secondary);
+
+  --color-error: var(--color-danger);
+  --color-on-error: #ffffff;
+  --color-error-container: #f9dedc;
+  --color-on-error-container: #490909;
+
+  /* Gradients */
+  --gradient-primary: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+  --gradient-primary-hover: linear-gradient(135deg, var(--color-primary-dark) 0%, var(--color-secondary-dark) 100%);
+  --gradient-danger: linear-gradient(135deg, #ff6b6b 0%, #ff4757 100%);
+  --gradient-success: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+
+  /* Semantic Colors */
+  --color-success: #28a745;
+  --color-success-light: #d4edda;
+  --color-success-dark: #155724;
+
+  --color-danger: #dc3545;
+  --color-danger-light: #fff5f5;
+  --color-danger-dark: #c82333;
+
+  --color-warning: #ff6b6b;
+  --color-warning-light: #fff0f0;
+
+  --color-info: #3498db;
+  --color-info-light: #d6eaf8;
+  --color-info-dark: #1f6391;
+
+  /* Status banner backgrounds (aliases for form feedback banners) */
+  --status-success-bg: var(--color-success-light);
+  --status-error-bg:   var(--color-danger-light);
+  --status-warning-bg: var(--color-warning-light);
+  --status-info-bg:      var(--color-info-light);
+  --status-success-text: var(--color-success-dark);
+  --status-error-text:   var(--color-alert-error-text);
+  --status-warning-text: var(--color-alert-warning-text);
+  --status-error-border: var(--color-alert-error-border);
+
+  /* Success container (M3 role — completes the set beside primary / secondary / error).
+     Was referenced by partners/page and crm/workload but never defined. */
+  --color-success-container: #e3f5e9;
+  --color-on-success-container: #10361d;
+  /* Warning / info containers (M3 roles). Aliases of the alert tints above:
+     the palette should carry one warning tint, not two that drift apart. */
+  --color-warning-container: var(--color-alert-warning-bg);
+  --color-on-warning-container: var(--color-alert-warning-text);
+  --color-info-container: var(--color-info-light);
+  --color-on-info-container: var(--color-info-dark);
+
+
+
+  /* Platform Brand Colors */
+  --color-platform-telegram: #0088cc;
+  --color-platform-instagram: #E4405F;
+  --color-platform-whatsapp: #25D366;
+
+  /* Alert Banner Colors */
+  --color-alert-warning-bg: #fff3cd;
+  --color-alert-warning-text: #856404;
+  --color-alert-warning-border: #f0d375;
+  --color-alert-error-bg: #fef2f2;
+  --color-alert-error-text: #dc2626;
+  --color-alert-error-border: #fca5a5;
+
+  /* Background Colors */
+  --color-background: #f5f7fa;
+  --color-background-secondary: #f8f9fa;
+  --color-background-elevated: #ffffff;
+  --color-background-card: #ffffff;
+  --color-background-hover: #f0f4ff;
+  --color-background-active: #e8ecff;
+
+  /* Text Colors */
+  --color-text-primary: #333333;
+  --color-text-secondary: #666666;
+  --color-text-muted: #999999;
+  --color-text-light: #777777;
+  --color-text-inverse: #ffffff;
+
+  /* Border Colors */
+  --color-border: #e1e8ed;
+  --color-border-light: #f0f0f0;
+  --color-border-focus: var(--color-primary);
+
+  /* Shadows */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
+  --shadow-sm-lg: 0 2px 8px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 2px 10px rgba(0, 0, 0, 0.1);
+  --shadow-md-lg: 0 4px 12px rgba(0, 0, 0, 0.12);
+  --shadow-lg: 0 5px 20px rgba(0, 0, 0, 0.15);
+  --shadow-xl: 0 10px 40px rgba(0, 0, 0, 0.2);
+  /* Side drawer: a horizontal cast, so it cannot reuse the vertical scale. */
+  --shadow-drawer: -4px 0 20px rgba(0, 0, 0, 0.15);
+  --shadow-primary: 0 5px 20px color-mix(in srgb, var(--color-primary) 40%, transparent);
+  --shadow-primary-lg: 0 8px 28px color-mix(in srgb, var(--color-primary) 50%, transparent);
+
+  /* Material Design 3 Elevation System */
+  --elevation-0: none;
+  --elevation-1: var(--shadow-xs);     /* Cards, raised elements */
+  --elevation-2: var(--shadow-sm-lg);  /* Hover cards, buttons */
+  --elevation-3: var(--shadow-md-lg);  /* Dialogs, menus */
+  --elevation-4: var(--shadow-lg);     /* Modals */
+  --elevation-5: var(--shadow-xl);     /* FABs, tooltips */
+
+  /* Focus rings */
+  --focus-ring-color: color-mix(in srgb, var(--color-primary) 25%, transparent);
+  --focus-ring-width: 3px;
+  --focus-ring: 0 0 0 var(--focus-ring-width) var(--focus-ring-color);
+
+  /* Primary color overlays (for backgrounds with transparency) */
+  --color-primary-overlay-light: color-mix(in srgb, var(--color-primary) 8%, transparent);
+  --color-primary-overlay: color-mix(in srgb, var(--color-primary) 12%, transparent);
+  --color-primary-overlay-medium: color-mix(in srgb, var(--color-primary) 20%, transparent);
+
+  /* Component: Inputs */
+  --input-bg: #ffffff;
+  --input-border: var(--color-border);
+  --input-text: var(--color-text-primary);
+  --input-placeholder: #999999;
+  --input-disabled-bg: #f5f5f5;
+
+  /* Component: Buttons */
+  --btn-secondary-bg: #f8f9fa;
+  --btn-secondary-border: var(--color-border);
+  --btn-secondary-text: var(--color-text-primary);
+  --btn-secondary-hover-bg: #e9ecef;
+
+  /* Component: Header */
+  --header-bg: #ffffff;
+  --header-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+
+  /* Component: Admin sticky bar.
+     The bar is chrome, the cards below it are content, so it sits on its own
+     ground rather than sharing --card-bg. Controls inside it take
+     --adm-bar-control-bg so a ghost button still reads as a raised surface. */
+  --adm-bar-bg: #eceff3;
+  --adm-bar-control-bg: #ffffff;
+
+  /* Component: Cards */
+  --card-bg: #ffffff;
+  --card-border: transparent;
+  --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --card-hover-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+
+  /* Component: Tables */
+  --table-header-bg: var(--gradient-primary);
+  --table-header-text: #ffffff;
+  --table-header-border: rgba(255, 255, 255, 0.1);
+  --table-row-hover-bg: #f8f9fa;
+  --table-row-selected-bg: #e8eeff;
+  --table-row-in-cart-bg: #f0fff4;
+
+  /* Component: Content authoring (DESIGN_POLICY.md §9)
+     --content-canvas is the tray blocks sit on, a step darker than the card
+     so a stack of blocks reads as sheets rather than as more form.
+     --assist-* marks anything a machine produced and a person must review. */
+  --color-border-subtle: #eef1f5;
+  --content-canvas: #f4f6fa;
+  --assist: var(--color-secondary);
+  --assist-soft: var(--color-secondary-container);
+  --assist-ink: #4a2570;
+
+  /* Component: Code samples (Client API guide)
+     A code block is a terminal, not a card: it keeps the same dark ground in
+     both themes so a snippet a client copies looks the same wherever they read
+     it. That is why the light palette below is not light — it is deliberate,
+     and every pair here clears AA against --code-bg. */
+  --code-bg: #1b1b28;
+  --code-border: #2c2c40;
+  --code-text: #e6e6f2;
+  --code-chrome: #a3a3c6;
+  --code-comment: #9a9ac0;
+  --code-string: #9ad7a8;
+  --code-keyword: #a8b6ff;
+  --code-literal: #e8c48a;
+
+  /* Component: Dropdowns */
+  --dropdown-bg: #ffffff;
+  --dropdown-border: #e1e8ed;
+  --dropdown-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  --dropdown-item-hover-bg: #f5f7fa;
+  --dropdown-item-active-bg: #f0f4ff;
+
+  /* Component: Overlays & Modals */
+  --overlay-bg-light: rgba(0, 0, 0, 0.5);
+  --overlay-bg: rgba(0, 0, 0, 0.7);
+  --overlay-bg-heavy: rgba(0, 0, 0, 0.9);
+  --overlay-highlight-xs: rgba(255, 255, 255, 0.1);
+  --overlay-highlight-sm: rgba(255, 255, 255, 0.2);
+  --overlay-highlight-md: rgba(255, 255, 255, 0.3);
+  --modal-bg: #ffffff;
+
+  /* Component: Admin Zone */
+  --admin-nav-bg: #2c3e50;
+  --admin-nav-item-hover-bg: #34495e;
+  --admin-nav-item-active-bg: #3498db;
+  --admin-nav-text: #ecf0f1;
+  --admin-nav-border: #34495e;
+  --admin-content-bg: #f5f5f5;
+  --admin-header-bg: #2c3e50;
+  /* Admin Zone - Aliases for backward compatibility */
+  --admin-bg: var(--admin-content-bg);
+  --admin-nav-hover: var(--admin-nav-item-hover-bg);
+  --admin-nav-active: var(--admin-nav-item-active-bg);
+
+  /* Component: CRM - Priority Badges */
+  --priority-low-bg: rgba(107, 114, 128, 0.1);
+  --priority-low-color: #6b7280;
+  --priority-medium-bg: rgba(59, 130, 246, 0.1);
+  --priority-medium-color: #3b82f6;
+  --priority-high-bg: rgba(245, 158, 11, 0.1);
+  --priority-high-color: #f59e0b;
+  --priority-urgent-bg: rgba(239, 68, 68, 0.1);
+  --priority-urgent-color: #ef4444;
+
+  /* Component: CRM - Status Badges */
+  --status-pending-bg: rgba(107, 114, 128, 0.1);
+  --status-pending-color: #6b7280;
+  --status-in-progress-bg: rgba(59, 130, 246, 0.1);
+  --status-in-progress-color: #3b82f6;
+  --status-completed-bg: rgba(34, 197, 94, 0.1);
+  --status-completed-color: #22c55e;
+  --status-cancelled-bg: rgba(239, 68, 68, 0.1);
+  --status-cancelled-color: #ef4444;
+
+  /* Component: CRM - Stage Badges */
+  --stage-new-bg: #dbeafe;
+  --stage-new-color: #2563eb;
+  --stage-qualified-bg: #d1fae5;
+  --stage-qualified-color: #059669;
+  --stage-proposal-bg: #e0e7ff;
+  --stage-proposal-color: #4f46e5;
+  --stage-negotiation-bg: #fef3c7;
+  --stage-negotiation-color: #d97706;
+  --stage-won-bg: #d1fae5;
+  --stage-won-color: #059669;
+  --stage-lost-bg: #fee2e2;
+  --stage-lost-color: #dc2626;
+
+  /* Component: CRM - Alerts */
+  --alert-overdue-bg: #fee2e2;
+  --alert-overdue-border: #fca5a5;
+  --alert-overdue-color: #b91c1c;
+
+  /* Component: CRM - Order Stage Border */
+  --stage-border-warning: #f59e0b;
+
+  /* Sticky Column Shadows */
+  --shadow-sticky: 2px 0 4px rgba(0, 0, 0, 0.1);
+  --shadow-sticky-light: 2px 0 4px rgba(0, 0, 0, 0.05);
+
+  /* Status Badges (for Orders)
+     The -text values are darkened relatives of the brand status hues: badge
+     labels are 11px, and the original mid-tones sat at 2.0-3.2:1 on their own
+     tints — below the 4.5:1 WCAG AA floor. Each pair now clears 4.5:1. Keep it
+     that way when adding a status; the dark theme values below already pass. */
+  --status-draft-bg: #ecf0f1;
+  --status-draft-text: #5f6c72;
+  --status-new-bg: #d6eaf8;
+  --status-new-text: #1b6ca8;
+  --status-processing-bg: #fef5e7;
+  --status-processing-text: #8a5a00;
+  --status-confirmed-bg: #d5f4e6;
+  --status-confirmed-text: #1a7a43;
+  --status-cancelled-bg: #fadbd8;
+  --status-cancelled-text: #b03a2e;
+
+  /* Custom Stage Badges */
+  --status-custom-default-bg: #e8ecff;
+  --status-custom-default-text: #4a5bd0;
+  --status-custom-processing-bg: #fff4e6;
+  --status-custom-processing-text: #8a5a00;
+  --status-custom-confirmed-bg: #e6f7ed;
+  --status-custom-confirmed-text: #1a7a43;
+  --status-custom-cancelled-bg: #ffe6e6;
+  --status-custom-cancelled-text: #b03a2e;
+
+  /* Client Phase Badges
+     The six phases a client can see. They need their own hues rather than
+     borrowing the pairs above: --status-custom-processing/-confirmed are
+     deliberate near-duplicates of --status-processing/-confirmed (they exist to
+     give unmapped CRM stages a softer relative of the base colour), so reusing
+     them collapsed "preparing" into "shipped" and "confirmed" into "delivered".
+     The ramp walks neutral -> blue -> amber -> violet -> green so no two
+     adjacent phases share a hue, with red off the track for cancelled.
+     Every pair clears 4.5:1, same rule as the status badges above. */
+  --phase-placed-bg: #e4e8ef;
+  --phase-placed-text: #414d61;
+  --phase-confirmed-bg: #d6eaf8;
+  --phase-confirmed-text: #1b6ca8;
+  --phase-processing-bg: #fef5e7;
+  --phase-processing-text: #8a5a00;
+  --phase-shipped-bg: #ebe4fb;
+  --phase-shipped-text: #5b3fbf;
+  --phase-delivered-bg: #d5f4e6;
+  --phase-delivered-text: #1a7a43;
+  --phase-cancelled-bg: #fadbd8;
+  --phase-cancelled-text: #b03a2e;
+
+  /* Spinners */
+  --spinner-border: color-mix(in srgb, var(--color-primary) 20%, transparent);
+  --spinner-border-active: var(--color-primary);
+
+  /* Scrollbar */
+  --scrollbar-track: #f1f1f1;
+  --scrollbar-thumb: #c1c1c1;
+  --scrollbar-thumb-hover: #a1a1a1;
+}
+
+@mixin dark-palette {
+  /* Primary Colors (slightly brighter for dark backgrounds) */
+  --color-primary: #7b93f0;
+  --color-primary-dark: #667eea;
+  --color-primary-light: #9aadff;
+
+  --color-secondary: #9066c0;
+  --color-secondary-dark: #764ba2;
+
+  /* Material Design 3 Color Roles - Dark Mode */
+  --color-on-primary: #0d1117;
+  --color-primary-container: #1c2840;
+  --color-on-primary-container: #c5d0ff;
+
+  --color-on-secondary: #0d1117;
+  --color-secondary-container: #2d1f40;
+  --color-on-secondary-container: #e5d4ff;
+
+  --color-surface: var(--card-bg);
+  --color-surface-variant: #30363d;
+  --color-on-surface: var(--color-text-primary);
+  --color-on-surface-variant: var(--color-text-secondary);
+
+  --color-error: var(--color-danger);
+  --color-on-error: #0d1117;
+  --color-error-container: #3a1a1a;
+  --color-on-error-container: #fca5a5;
+
+  /* Gradients */
+  --gradient-primary: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+  --gradient-primary-hover: linear-gradient(135deg, var(--color-primary-dark) 0%, var(--color-secondary-dark) 100%);
+  --gradient-danger: linear-gradient(135deg, #ff7b72 0%, #f85149 100%);
+  --gradient-success: linear-gradient(135deg, #34d058 0%, #28a745 100%);
+
+  /* Semantic Colors */
+  --color-success: #34d058;
+  --color-success-light: #1a3a2a;
+  --color-success-dark: #85e89d;
+
+  --color-danger: #f85149;
+  --color-danger-light: #3a1a1a;
+  --color-danger-dark: #ff7b72;
+
+  --color-warning: #ff8a80;
+  --color-warning-light: #3a2a1a;
+
+  --color-info: #58a6ff;
+  --color-info-light: #1a2a3a;
+  --color-info-dark: #8ec1ff;
+
+  /* Status banner backgrounds (aliases for form feedback banners) */
+  --status-success-bg: var(--color-success-light);
+  --status-error-bg:   var(--color-danger-light);
+  --status-warning-bg: var(--color-warning-light);
+  --status-info-bg:      var(--color-info-light);
+  --status-success-text: var(--color-success-dark);
+  --status-error-text:   var(--color-alert-error-text);
+  --status-warning-text: var(--color-alert-warning-text);
+  --status-error-border: var(--color-alert-error-border);
+
+  /* Success container (M3 role — completes the set beside primary / secondary / error).
+     Was referenced by partners/page and crm/workload but never defined. */
+  --color-success-container: #16301f;
+  --color-on-success-container: #85e89d;
+  /* Warning / info containers (M3 roles). Aliases of the alert tints above:
+     the palette should carry one warning tint, not two that drift apart. */
+  --color-warning-container: var(--color-alert-warning-bg);
+  --color-on-warning-container: var(--color-alert-warning-text);
+  --color-info-container: var(--color-info-light);
+  --color-on-info-container: var(--color-info-dark);
+
+
+
+  /* Platform Brand Colors */
+  --color-platform-telegram: #0088cc;
+  --color-platform-instagram: #E4405F;
+  --color-platform-whatsapp: #25D366;
+
+  /* Alert Banner Colors */
+  --color-alert-warning-bg: #3a2a1a;
+  --color-alert-warning-text: #ffc107;
+  --color-alert-warning-border: #5a4a1f;
+  --color-alert-error-bg: #3a1a1a;
+  --color-alert-error-text: #fca5a5;
+  --color-alert-error-border: #5a2a2a;
+
+  /* Background Colors */
+  --color-background: #0d1117;
+  --color-background-secondary: #161b22;
+  --color-background-elevated: #21262d;
+  --color-background-card: #161b22;
+  --color-background-hover: #1c2128;
+  --color-background-active: #252b33;
+
+  /* Text Colors */
+  --color-text-primary: #e6edf3;
+  --color-text-secondary: #8b949e;
+  --color-text-muted: #6e7681;
+  --color-text-light: #7d8590;
+  --color-text-inverse: #0d1117;
+
+  /* Border Colors */
+  --color-border: #30363d;
+  --color-border-light: #21262d;
+  --color-border-focus: var(--color-primary);
+
+  /* Shadows */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.2);
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.3);
+  --shadow-sm-lg: 0 2px 8px rgba(0, 0, 0, 0.35);
+  --shadow-md: 0 2px 10px rgba(0, 0, 0, 0.4);
+  --shadow-md-lg: 0 4px 12px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 5px 20px rgba(0, 0, 0, 0.5);
+  --shadow-xl: 0 10px 40px rgba(0, 0, 0, 0.6);
+  /* Side drawer: a horizontal cast, so it cannot reuse the vertical scale. */
+  --shadow-drawer: -4px 0 20px rgba(0, 0, 0, 0.5);
+  --shadow-primary: 0 5px 20px color-mix(in srgb, var(--color-primary) 30%, transparent);
+  --shadow-primary-lg: 0 8px 28px color-mix(in srgb, var(--color-primary) 40%, transparent);
+
+  /* Focus rings */
+  --focus-ring-color: color-mix(in srgb, var(--color-primary) 30%, transparent);
+  --focus-ring-width: 3px;
+  --focus-ring: 0 0 0 var(--focus-ring-width) var(--focus-ring-color);
+
+  /* Primary color overlays (for backgrounds with transparency) */
+  --color-primary-overlay-light: color-mix(in srgb, var(--color-primary) 8%, transparent);
+  --color-primary-overlay: color-mix(in srgb, var(--color-primary) 12%, transparent);
+  --color-primary-overlay-medium: color-mix(in srgb, var(--color-primary) 20%, transparent);
+
+  /* Material Design 3 Elevation System */
+  --elevation-0: none;
+  --elevation-1: var(--shadow-xs);     /* Cards, raised elements */
+  --elevation-2: var(--shadow-sm-lg);  /* Hover cards, buttons */
+  --elevation-3: var(--shadow-md-lg);  /* Dialogs, menus */
+  --elevation-4: var(--shadow-lg);     /* Modals */
+  --elevation-5: var(--shadow-xl);     /* FABs, tooltips */
+
+  /* Component: Inputs */
+  --input-bg: #0d1117;
+  --input-border: var(--color-border);
+  --input-text: var(--color-text-primary);
+  --input-placeholder: #6e7681;
+  --input-disabled-bg: #21262d;
+
+  /* Component: Buttons */
+  --btn-secondary-bg: #21262d;
+  --btn-secondary-border: var(--color-border);
+  --btn-secondary-text: var(--color-text-primary);
+  --btn-secondary-hover-bg: #30363d;
+
+  /* Component: Header */
+  --header-bg: #161b22;
+  --header-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+
+  /* Component: Admin sticky bar. Recessed below the card plane: --card-bg and
+     --admin-content-bg are the same #161b22 in dark, so the bar has to go
+     darker to read as chrome at all. */
+  --adm-bar-bg: #0d1117;
+  --adm-bar-control-bg: #21262d;
+
+  /* Component: Cards */
+  --card-bg: #161b22;
+  --card-border: #30363d;  /* Visible border for dark theme (matches --color-border) */
+  --card-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+  --card-hover-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+
+  /* Component: Tables */
+  --table-header-bg: linear-gradient(135deg, #2d3748 0%, #352f44 100%);
+  --table-header-text: #e2e8f0;
+  --table-header-border: #404858;
+  --table-row-hover-bg: #1c2128;
+  --table-row-selected-bg: #1c2840;
+  --table-row-in-cart-bg: #1a3028;
+
+  /* Component: Content authoring (DESIGN_POLICY.md §9) */
+  --color-border-subtle: #23282f;
+  --content-canvas: #0f1319;
+  --assist: var(--color-secondary);
+  --assist-soft: var(--color-secondary-container);
+  --assist-ink: #e5d4ff;
+
+  /* Component: Code samples (Client API guide)
+     A code block is a terminal, not a card: it keeps the same dark ground in
+     both themes so a snippet a client copies looks the same wherever they read
+     it. That is why the light palette below is not light — it is deliberate,
+     and every pair here clears AA against --code-bg. */
+  --code-bg: #1b1b28;
+  --code-border: #2c2c40;
+  --code-text: #e6e6f2;
+  --code-chrome: #a3a3c6;
+  --code-comment: #9a9ac0;
+  --code-string: #9ad7a8;
+  --code-keyword: #a8b6ff;
+  --code-literal: #e8c48a;
+
+  /* Component: Dropdowns */
+  --dropdown-bg: #21262d;
+  --dropdown-border: #30363d;
+  --dropdown-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  --dropdown-item-hover-bg: #30363d;
+  --dropdown-item-active-bg: #1c2840;
+
+  /* Component: Overlays & Modals */
+  --overlay-bg-light: rgba(0, 0, 0, 0.6);
+  --overlay-bg: rgba(0, 0, 0, 0.85);
+  --overlay-bg-heavy: rgba(0, 0, 0, 0.95);
+  --overlay-highlight-xs: rgba(255, 255, 255, 0.08);
+  --overlay-highlight-sm: rgba(255, 255, 255, 0.15);
+  --overlay-highlight-md: rgba(255, 255, 255, 0.25);
+  --modal-bg: #161b22;
+
+  /* Component: Admin Zone */
+  --admin-nav-bg: #0d1117;
+  --admin-nav-item-hover-bg: #161b22;
+  --admin-nav-item-active-bg: #1c2840;
+  --admin-nav-text: #e6edf3;
+  --admin-nav-border: #21262d;
+  --admin-content-bg: #161b22;
+  --admin-header-bg: #0d1117;
+  /* Admin Zone - Aliases for backward compatibility */
+  --admin-bg: var(--admin-content-bg);
+  --admin-nav-hover: var(--admin-nav-item-hover-bg);
+  --admin-nav-active: var(--admin-nav-item-active-bg);
+
+  /* Component: CRM - Priority Badges (Dark Mode) */
+  --priority-low-bg: rgba(156, 163, 175, 0.15);
+  --priority-low-color: #9ca3af;
+  --priority-medium-bg: rgba(96, 165, 250, 0.15);
+  --priority-medium-color: #60a5fa;
+  --priority-high-bg: rgba(251, 191, 36, 0.15);
+  --priority-high-color: #fbbf24;
+  --priority-urgent-bg: rgba(248, 113, 113, 0.15);
+  --priority-urgent-color: #f87171;
+
+  /* Component: CRM - Status Badges (Dark Mode) */
+  --status-pending-bg: rgba(156, 163, 175, 0.15);
+  --status-pending-color: #9ca3af;
+  --status-in-progress-bg: rgba(96, 165, 250, 0.15);
+  --status-in-progress-color: #60a5fa;
+  --status-completed-bg: rgba(110, 231, 183, 0.15);
+  --status-completed-color: #6ee7b7;
+  --status-cancelled-bg: rgba(248, 113, 113, 0.15);
+  --status-cancelled-color: #f87171;
+
+  /* Component: CRM - Stage Badges (Dark Mode) */
+  --stage-new-bg: #1e3a5f;
+  --stage-new-color: #93c5fd;
+  --stage-qualified-bg: #1a4d2e;
+  --stage-qualified-color: #6ee7b7;
+  --stage-proposal-bg: #2d2a5f;
+  --stage-proposal-color: #a5b4fc;
+  --stage-negotiation-bg: #4a3a1a;
+  --stage-negotiation-color: #fcd34d;
+  --stage-won-bg: #1a4d2e;
+  --stage-won-color: #6ee7b7;
+  --stage-lost-bg: #3a1a1a;
+  --stage-lost-color: #fca5a5;
+
+  /* Component: CRM - Alerts (Dark Mode) */
+  --alert-overdue-bg: #3a1a1a;
+  --alert-overdue-border: #5a2a2a;
+  --alert-overdue-color: #fca5a5;
+
+  /* Component: CRM - Order Stage Border (Dark Mode) */
+  --stage-border-warning: #fbbf24;
+
+  /* Sticky Column Shadows */
+  --shadow-sticky: 2px 0 4px rgba(0, 0, 0, 0.3);
+  --shadow-sticky-light: 2px 0 4px rgba(0, 0, 0, 0.2);
+
+  /* Status Badges (for Orders) */
+  --status-draft-bg: #21262d;
+  --status-draft-text: #8b949e;
+  --status-new-bg: #1c2840;
+  --status-new-text: #58a6ff;
+  --status-processing-bg: #3a2a1a;
+  --status-processing-text: #f0b429;
+  --status-confirmed-bg: #1a3a2a;
+  --status-confirmed-text: #34d058;
+  --status-cancelled-bg: #3a1a1a;
+  --status-cancelled-text: #f85149;
+
+  /* Custom Stage Badges (Dark Theme) */
+  --status-custom-default-bg: #2d2f4a;
+  --status-custom-default-text: #8a9bff;
+  --status-custom-processing-bg: #3a2a1a;
+  --status-custom-processing-text: #f0b429;
+  --status-custom-confirmed-bg: #1a3a2a;
+  --status-custom-confirmed-text: #34d058;
+  --status-custom-cancelled-bg: #3a1a1a;
+  --status-custom-cancelled-text: #f85149;
+
+  /* Client Phase Badges (Dark Theme) */
+  --phase-placed-bg: #262b33;
+  --phase-placed-text: #a9b4c2;
+  --phase-confirmed-bg: #1c2840;
+  --phase-confirmed-text: #58a6ff;
+  --phase-processing-bg: #3a2a1a;
+  --phase-processing-text: #f0b429;
+  --phase-shipped-bg: #2a1f47;
+  --phase-shipped-text: #b392f0;
+  --phase-delivered-bg: #1a3a2a;
+  --phase-delivered-text: #34d058;
+  --phase-cancelled-bg: #3a1a1a;
+  --phase-cancelled-text: #f85149;
+
+  /* Spinners */
+  --spinner-border: color-mix(in srgb, var(--color-primary) 30%, transparent);
+  --spinner-border-active: var(--color-primary);
+
+  /* Scrollbar */
+  --scrollbar-track: #21262d;
+  --scrollbar-thumb: #484f58;
+  --scrollbar-thumb-hover: #6e7681;
+}

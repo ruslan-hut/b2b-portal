@@ -1,9 +1,12 @@
 <div class="app-container">
+  <!-- Maintenance mode banner (visible on every route, including /auth) -->
+  <app-maintenance-banner></app-maintenance-banner>
+
   <!-- Offline Indicator -->
   @if (!isOnline) {
     <div class="offline-indicator">
       <div class="offline-content">
-        <span class="material-icons offline-icon">signal_wifi_off</span>
+        <app-icon name="signal_wifi_off" class="offline-icon"></app-icon>
         <span class="offline-message">You are currently offline. Some features may be limited.</span>
       </div>
     </div>
@@ -13,13 +16,15 @@
     <header class="app-header" [class.hide-on-mobile-admin]="isAdminRoute">
       <div class="header-content">
         <div class="logo" (click)="navigateTo('/products/catalog')">
-          <img src="assets/favicon/icon-192.png" alt="Logo" class="logo-icon">
-          <span class="logo-text">{{ pageTitle || title }}</span>
+          <app-icon name="brand_mark" class="logo-icon"></app-icon>
+          <!-- Route titles hold i18n keys where translated; unknown keys pass
+               through unchanged (translate returns the key itself) -->
+          <span class="logo-text">{{ (pageTitle || title) | translate }}</span>
         </div>
         <div class="header-actions">
-          @if (!isAdminRoute) {
+          @if (!isAdminRoute && entityType === 'client') {
             <button class="btn-cart" (click)="navigateTo('/products/cart')">
-              <span class="material-icons cart-icon">shopping_cart</span>
+              <app-icon name="shopping_cart" class="cart-icon"></app-icon>
               <span class="cart-text">{{ 'navigation.cart' | translate }} ({{ cartItems.length }})</span>
             </button>
           }
@@ -34,8 +39,8 @@
                   <span class="user-company">{{ getClientData()?.phone }}</span>
                 }
               </div>
-              <span class="material-icons user-icon-mobile">person</span>
-              <span class="material-icons menu-arrow" [class.open]="isUserMenuOpen">keyboard_arrow_down</span>
+              <app-icon name="person" class="user-icon-mobile"></app-icon>
+              <app-icon name="keyboard_arrow_down" class="menu-arrow" [class.open]="isUserMenuOpen"></app-icon>
             </button>
             <div class="user-menu-dropdown" [class.open]="isUserMenuOpen">
               <div class="menu-section">
@@ -51,34 +56,41 @@
               </div>
               <div class="menu-section">
                 <div class="menu-item language-menu-item">
-                  <span class="material-icons menu-icon">language</span>
+                  <app-icon name="language" class="menu-icon"></app-icon>
                   <span class="menu-text">{{ 'navigation.language' | translate }}</span>
                   <app-language-switcher></app-language-switcher>
                 </div>
                 <div class="menu-item theme-menu-item">
-                  <span class="material-icons menu-icon">palette</span>
+                  <app-icon name="palette" class="menu-icon"></app-icon>
                   <span class="menu-text">{{ 'navigation.theme' | translate }}</span>
                   <app-theme-toggle></app-theme-toggle>
                 </div>
               </div>
               <div class="menu-section">
                 <a routerLink="/products/catalog" routerLinkActive="active" class="menu-item" (click)="closeUserMenu()">
-                  <span class="material-icons menu-icon">inventory_2</span>
+                  <app-icon name="inventory_2" class="menu-icon"></app-icon>
                   <span class="menu-text">{{ 'navigation.products' | translate }}</span>
                 </a>
                 <a routerLink="/orders/history" routerLinkActive="active" class="menu-item" (click)="closeUserMenu()">
-                  <span class="material-icons menu-icon">receipt</span>
+                  <app-icon name="receipt" class="menu-icon"></app-icon>
                   <span class="menu-text">{{ 'navigation.orders' | translate }}</span>
+                </a>
+                <a routerLink="/partners" routerLinkActive="active" class="menu-item" (click)="closeUserMenu()">
+                  <app-icon name="menu_book" class="menu-icon"></app-icon>
+                  <span class="menu-text">{{ 'partners.title' | translate }}</span>
                 </a>
                 @if (entityType === 'client') {
                   <a routerLink="/profile" routerLinkActive="active" class="menu-item" (click)="closeUserMenu()">
-                    <span class="material-icons menu-icon">person</span>
+                    <app-icon name="person" class="menu-icon"></app-icon>
                     <span class="menu-text">{{ 'navigation.profile' | translate }}</span>
                   </a>
                 }
                 @if (hasAdminAccess()) {
-                  <a routerLink="/admin/dashboard" routerLinkActive="active" class="menu-item admin-menu-item" (click)="closeUserMenu()">
-                    <span class="material-icons menu-icon">admin_panel_settings</span>
+                  <!-- /admin, not /admin/dashboard: adminLandingRedirect picks the
+                       landing screen per role, so a content editor arrives at the
+                       content zone instead of bouncing off the dashboard guard. -->
+                  <a routerLink="/admin" routerLinkActive="active" class="menu-item admin-menu-item" (click)="closeUserMenu()">
+                    <app-icon name="admin_panel_settings" class="menu-icon"></app-icon>
                     <span class="menu-text">Admin Zone</span>
                   </a>
                 }
@@ -86,14 +98,7 @@
               @if (showViewToggle) {
                 <div class="menu-section">
                   <button class="menu-item btn-view-toggle-menu" (click)="toggleViewMode(); closeUserMenu()">
-                    <span class="material-icons menu-icon">
-                      @if (viewMode === 'grid') {
-                        view_list
-                      }
-                      @if (viewMode === 'bulk') {
-                        view_module
-                      }
-                    </span>
+                    <app-icon class="menu-icon" [name]="viewMode === 'grid' ? 'view_list' : 'grid_view'"></app-icon>
                     <span class="menu-text">
                       @if (viewMode === 'grid') {
                         {{ 'navigation.bulkOrder' | translate }}
@@ -107,7 +112,7 @@
               }
               <div class="menu-section">
                 <button class="menu-item btn-logout-menu" (click)="logout(); closeUserMenu()">
-                  <span class="material-icons menu-icon">logout</span>
+                  <app-icon name="logout" class="menu-icon"></app-icon>
                   <span class="menu-text">{{ 'common.logout' | translate }}</span>
                 </button>
               </div>
@@ -124,4 +129,10 @@
 
   <!-- Update Notification -->
   <app-update-notification></app-update-notification>
+
+  <!-- Toast notifications (app-wide) -->
+  <app-notification-container></app-notification-container>
+
+  <!-- Confirmation dialog (app-wide) -->
+  <app-confirm-dialog></app-confirm-dialog>
 </div>

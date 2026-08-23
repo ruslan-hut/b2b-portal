@@ -1,128 +1,179 @@
 <div class="activity-timeline">
   <div class="timeline-header">
-    <h4>Activity Timeline</h4>
+    <h4>{{ 'admin.crm.activityTimeline' | translate }}</h4>
     <button class="btn-add-note" (click)="toggleAddNoteForm()" [disabled]="saving">
-      <span class="material-icon">{{ showAddNoteForm ? 'close' : 'add' }}</span>
-      {{ showAddNoteForm ? 'Cancel' : 'Add Note' }}
+      <app-icon class="material-icon" [name]="showAddNoteForm ? 'close' : 'add'"></app-icon>
+      {{ showAddNoteForm ? ('common.cancel' | translate) : ('admin.crm.addNote' | translate) }}
     </button>
   </div>
 
   <!-- Add Note Form -->
-  <div class="add-note-form" *ngIf="showAddNoteForm">
-    <textarea
-      [(ngModel)]="newNoteContent"
-      placeholder="Enter your note..."
-      rows="3"
-      [disabled]="saving"
-    ></textarea>
-    <div class="form-footer">
-      <label class="internal-checkbox">
-        <input type="checkbox" [(ngModel)]="newNoteIsInternal" [disabled]="saving">
-        <span>Internal note (not visible to client)</span>
-      </label>
-      <button class="btn-save" (click)="addNote()" [disabled]="saving || !newNoteContent.trim()">
-        {{ saving ? 'Saving...' : 'Save Note' }}
-      </button>
-    </div>
-  </div>
-
-  <!-- Error Message -->
-  <div class="error-message" *ngIf="error">
-    {{ error }}
-  </div>
-
-  <!-- Loading State -->
-  <div class="loading" *ngIf="loading && activities.length === 0">
-    <span class="spinner"></span>
-    Loading activities...
-  </div>
-
-  <!-- Empty State -->
-  <div class="empty-state" *ngIf="!loading && activities.length === 0">
-    <span class="material-icon">history</span>
-    <p>No activity recorded yet</p>
-  </div>
-
-  <!-- Timeline Items -->
-  <div class="timeline-items" *ngIf="activities.length > 0">
-    <div class="timeline-item" *ngFor="let activity of activities">
-      <div class="timeline-icon" [style.background-color]="getActivityColor(activity.activity_type)">
-        <span class="material-icon">{{ getActivityIcon(activity.activity_type) }}</span>
-      </div>
-
-      <div class="timeline-content">
-        <div class="timeline-content-header">
-          <span class="activity-type" [class.internal]="activity.is_internal">
-            {{ getActivityTypeLabel(activity.activity_type) }}
-            <span class="internal-badge" *ngIf="activity.is_internal">Internal</span>
-          </span>
-          <span class="activity-time" [title]="formatDateTime(activity.created_at)">
-            {{ formatRelativeTime(activity.created_at) }}
-          </span>
-        </div>
-
-        <div class="activity-user" *ngIf="activity.user_name">
-          by {{ activity.user_name }}
-        </div>
-
-        <!-- Stage Change Details -->
-        <div class="activity-details stage-change" *ngIf="activity.activity_type === 'stage_change'">
-          {{ getStageChangeDescription(activity) }}
-        </div>
-
-        <!-- Assignment Details -->
-        <div class="activity-details assignment" *ngIf="activity.activity_type === 'assignment' || activity.activity_type === 'unassignment'">
-          {{ getAssignmentDescription(activity) }}
-        </div>
-
-        <!-- Order Edit Details -->
-        <div class="activity-details order-edit" *ngIf="activity.activity_type === 'order_edit'">
-          {{ getOrderEditDescription(activity) }}
-        </div>
-
-        <!-- Items Changed Details -->
-        <div class="activity-details items-changed" *ngIf="activity.activity_type === 'items_changed'">
-          <div class="summary">{{ getItemsChangedDescription(activity) }}</div>
-          <ul class="item-changes" *ngIf="hasItemChangeDetails(activity)">
-            <li *ngFor="let detail of getItemChangeDetailsArray(activity)">
-              {{ detail }}
-            </li>
-          </ul>
-        </div>
-
-        <!-- Total Changed Details -->
-        <div class="activity-details total-changed" *ngIf="activity.activity_type === 'total_changed'">
-          {{ getTotalChangedDescription(activity) }}
-        </div>
-
-        <!-- Discount Changed Details -->
-        <div class="activity-details discount-changed" *ngIf="activity.activity_type === 'discount_changed'">
-          {{ activity.content || 'Discount percentage changed' }}
-        </div>
-
-        <!-- Note/Comment Content (only for notes/comments, not for system activities) -->
-        <div class="activity-content" *ngIf="activity.content && activity.activity_type === 'note'">
-          {{ activity.content }}
-        </div>
-
-        <!-- Delete Button -->
-        <button
-          class="btn-delete"
-          *ngIf="canDelete(activity)"
-          (click)="deleteActivity(activity.uid)"
-          title="Delete"
-        >
-          <span class="material-icon">delete</span>
+  @if (showAddNoteForm) {
+    <div class="add-note-form">
+      <textarea
+        [(ngModel)]="newNoteContent"
+        [placeholder]="'admin.crm.enterNote' | translate"
+        rows="3"
+        [disabled]="saving"
+      ></textarea>
+      <div class="form-footer">
+        <label class="internal-checkbox">
+          <input type="checkbox" [(ngModel)]="newNoteIsInternal" [disabled]="saving">
+          <span>{{ 'admin.crm.internalNote' | translate }}</span>
+        </label>
+        <button class="btn-save" (click)="addNote()" [disabled]="saving || !newNoteContent.trim()">
+          {{ saving ? ('common.saving' | translate) : ('admin.crm.saveNote' | translate) }}
         </button>
       </div>
     </div>
-  </div>
+  }
+
+  <!-- Error Message -->
+  @if (error) {
+    <div class="error-message">
+      {{ error }}
+    </div>
+  }
+
+  <!-- Loading State -->
+  @if (loading && activities.length === 0) {
+    <div class="loading">
+      <span class="spinner"></span>
+      {{ 'admin.crm.loadingActivities' | translate }}
+    </div>
+  }
+
+  <!-- Empty State -->
+  @if (!loading && activities.length === 0) {
+    <div class="empty-state">
+      <app-icon class="material-icon" name="history"></app-icon>
+      <p>{{ 'admin.crm.noActivity' | translate }}</p>
+    </div>
+  }
+
+  <!-- Timeline Items -->
+  @if (activities.length > 0) {
+    <div class="timeline-items">
+      @for (activity of activities; track activity.uid) {
+        <div class="timeline-item">
+          <div class="timeline-icon" [style.background-color]="getActivityColor(activity.activity_type)">
+            <app-icon class="material-icon" [name]="getActivityIcon(activity.activity_type)"></app-icon>
+          </div>
+
+          <div class="timeline-content">
+            <div class="timeline-content-header">
+              <span class="activity-type" [class.internal]="activity.is_internal">
+                {{ getActivityTypeLabel(activity.activity_type) }}
+                @if (activity.is_internal) {
+                  <span class="internal-badge">{{ 'admin.crm.internal' | translate }}</span>
+                }
+              </span>
+              <span class="activity-time" [title]="formatDateTime(activity.created_at)">
+                {{ formatRelativeTime(activity.created_at) }}
+              </span>
+            </div>
+
+            @if (activity.user_name) {
+              <div class="activity-user">
+                {{ 'admin.crm.by' | translate }} {{ activity.user_name }}
+              </div>
+            }
+
+            @switch (activity.activity_type) {
+              @case ('stage_change') {
+                <div class="activity-details stage-change">
+                  {{ getStageChangeDescription(activity) }}
+                </div>
+                @if (!activity.user_name && getStageChangeActor(activity); as actor) {
+                  <div class="activity-user">
+                    {{ 'admin.crm.by' | translate }} {{ actor }}
+                  </div>
+                }
+              }
+              @case ('status_change') {
+                <div class="activity-details stage-change">
+                  {{ getStageChangeDescription(activity) }}
+                </div>
+                @if (!activity.user_name && getStageChangeActor(activity); as actor) {
+                  <div class="activity-user">
+                    {{ 'admin.crm.by' | translate }} {{ actor }}
+                  </div>
+                }
+              }
+              @case ('assignment') {
+                <div class="activity-details assignment">
+                  {{ getAssignmentDescription(activity) }}
+                </div>
+              }
+              @case ('unassignment') {
+                <div class="activity-details assignment">
+                  {{ getAssignmentDescription(activity) }}
+                </div>
+              }
+              @case ('order_created') {
+                @if (getOrderCreatedDescription(activity); as desc) {
+                  <div class="activity-details assignment">{{ desc }}</div>
+                }
+              }
+              @case ('order_edit') {
+                <div class="activity-details order-edit">
+                  {{ getOrderEditDescription(activity) }}
+                </div>
+              }
+              @case ('items_changed') {
+                <div class="activity-details items-changed">
+                  <div class="summary">{{ getItemsChangedDescription(activity) }}</div>
+                  @if (hasItemChangeDetails(activity)) {
+                    <ul class="item-changes">
+                      @for (detail of getItemChangeDetailsArray(activity); track detail) {
+                        <li>{{ detail }}</li>
+                      }
+                    </ul>
+                  }
+                </div>
+              }
+              @case ('total_changed') {
+                <div class="activity-details total-changed">
+                  {{ getTotalChangedDescription(activity) }}
+                </div>
+              }
+              @case ('discount_changed') {
+                <div class="activity-details discount-changed">
+                  {{ activity.content || ('admin.crm.discountChanged' | translate) }}
+                </div>
+              }
+            }
+
+            <!-- Note/Comment Content (only for notes/comments, not for system activities) -->
+            @if (activity.content && activity.activity_type === 'note') {
+              <div class="activity-content">
+                {{ activity.content }}
+              </div>
+            }
+
+            <!-- Delete Button -->
+            @if (canDelete(activity)) {
+              <button
+                class="btn-delete"
+                (click)="deleteActivity(activity.uid)"
+                [title]="'common.delete' | translate"
+              >
+                <app-icon class="material-icon" name="delete"></app-icon>
+              </button>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  }
 
   <!-- Load More Button -->
-  <div class="load-more" *ngIf="hasMoreActivities">
-    <button (click)="loadMore()" [disabled]="loading">
-      {{ loading ? 'Loading...' : 'Load More' }}
-      <span class="count">({{ activities.length }} of {{ totalActivities }})</span>
-    </button>
-  </div>
+  @if (hasMoreActivities) {
+    <div class="load-more">
+      <button (click)="loadMore()" [disabled]="loading">
+        {{ loading ? ('common.loading' | translate) : ('admin.crm.loadMore' | translate) }}
+        <span class="count">({{ activities.length }} {{ 'common.of' | translate }} {{ totalActivities }})</span>
+      </button>
+    </div>
+  }
 </div>

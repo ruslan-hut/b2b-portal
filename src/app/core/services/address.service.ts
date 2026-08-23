@@ -3,32 +3,37 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
+import { ApiResponse } from '../models/api.model';
 
 export interface AdminClientAddress {
   uid: string;
   client_uid: string;
+  /** Branch this address belongs to; empty means it belongs to the client directly. */
+  branch_uid?: string;
   country_code: string;
   zipcode?: string;
   city?: string;
   address_text?: string;
   is_default: boolean;
+  is_official?: boolean;
   last_update?: string;
 }
 
 export interface AdminClientAddressUpsert {
   uid?: string;
   client_uid: string;
+  /**
+   * Omit to keep the stored branch link, send "" to clear it. The backend field
+   * is a pointer for exactly this reason, so a caller that does not manage the
+   * link cannot unlink a branch by accident.
+   */
+  branch_uid?: string;
   country_code: string;
   zipcode?: string;
   city?: string;
   address_text?: string;
   is_default: boolean;
-}
-
-interface ApiResponse<T> {
-  success: boolean;
-  data: T;
-  metadata?: any;
+  is_official?: boolean;
 }
 
 @Injectable({

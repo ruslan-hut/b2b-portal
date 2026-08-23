@@ -1,3 +1,5 @@
+import { ProductTag } from './product-tag.model';
+
 export interface Product {
   id: string;
   name: string;
@@ -7,6 +9,7 @@ export interface Product {
   imageUrl?: string;
   inStock: boolean;
   sku: string;
+  barcode?: string; // Product barcode (searchable in client catalog)
   quantity?: number; // CRM inventory quantity (total stock) - may be deprecated on backend
   availableQuantity?: number; // Available to order (quantity - allocatedQuantity)
   allocatedQuantity?: number; // Quantity allocated to pending orders
@@ -21,6 +24,12 @@ export interface Product {
   priceFinal?: number; // Final price (discount + VAT) in dollars
   vatRate?: number; // VAT rate percentage (0-100)
   discountPercent?: number; // Discount percentage (0-100)
+  tags?: ProductTag[]; // Store-scoped colored badges, filtered to current store
+  // ISO country codes the product is certified for. Informational only — what the
+  // client may order is already decided server-side by the availability filter.
+  certifiedCountries?: string[];
+  // True when the product needs no country-specific certificate at all.
+  certifiedAnyCountry?: boolean;
 }
 
 export interface ProductCategory {
@@ -44,6 +53,7 @@ export interface BackendProduct {
   is_new?: boolean; // New product badge
   is_hot_sale?: boolean; // Hot sale badge
   sort_order?: number; // Display order priority
+  tags?: ProductTag[]; // Store-scoped colored badges (already filtered server-side)
 }
 
 // Frontend API format - products with calculated prices
@@ -65,4 +75,10 @@ export interface FrontendProduct {
   is_hot_sale: boolean;
   sort_order: number;
   sku: string;
+  barcode: string;
+  tags?: ProductTag[]; // Store-scoped colored badges
+  certified_countries?: string[]; // ISO codes the product is certified for
+  certified_any_country?: boolean; // Certified with no country restriction
 }
+
+export type { ProductTag };

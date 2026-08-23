@@ -1,5 +1,6 @@
 import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { Observable, Subscription } from 'rxjs';
+import { HttpErrorResponse } from '@angular/common/http';
 import { ChatService } from './services/chat.service';
 import { ChatWebsocketService } from './services/chat-websocket.service';
 import { ChatSummary, ChatMessage, Platform, WsEvent } from './models/chat.model';
@@ -13,12 +14,13 @@ import { TranslationService } from '../../core/services/translation.service';
 })
 export class ChatComponent implements OnInit, OnDestroy {
   chats$: Observable<ChatSummary[]>;
-  activeChat: { platform: Platform; userId: string; userName?: string } | null = null;
+  activeChat: { platform: Platform; userId: string; userName?: string; messengerName?: string } | null = null;
   messages: ChatMessage[] = [];
   wsConnected = false;
   loading = false;
   typingIndicator = false;
   mobileShowChat = false;
+  sendFileError = '';
 
   private subscriptions = new Subscription();
   private typingTimeout: any;
@@ -26,7 +28,7 @@ export class ChatComponent implements OnInit, OnDestroy {
   private readonly PAGE_SIZE = 50;
 
   constructor(
-    private chatService: ChatService,
+    public chatService: ChatService,
     private wsService: ChatWebsocketService,
     private translationService: TranslationService,
     private cdr: ChangeDetectorRef
@@ -59,7 +61,8 @@ export class ChatComponent implements OnInit, OnDestroy {
     this.activeChat = {
       platform: event.platform,
       userId: event.userId,
-      userName: chat?.user_name
+      userName: chat?.user_name,
+      messengerName: chat?.messenger_name
     };
     this.messages = [];
     this.messageOffset = 0;
@@ -83,6 +86,7 @@ export class ChatComponent implements OnInit, OnDestroy {
     const optimistic: ChatMessage = {
       id: 'temp-' + Date.now(),
       platform: this.activeChat.platform,
+      user_name: this.activeChat.userName,
       user_id: this.activeChat.userId,
       direction: 'outgoing',
       sender: this.translationService.instant('chat.manager'),
@@ -93,10 +97,79 @@ export class ChatComponent implements OnInit, OnDestroy {
     this.messages = [...this.messages, optimistic];
     this.cdr.markForCheck();
 
-    this.chatService.sendMessage(this.activeChat.platform, this.activeChat.userId, text).subscribe({
-      error: () => {
-        this.messages = this.messages.filter(m => m.id !== optimistic.id);
-        this.cdr.markForCheck();
+    this.subscriptions.add(
+      this.chatService.sendMessage(this.activeChat.platform, this.activeChat.userId, text).subscribe({
+        error: () => {
+          this.messages = this.messages.filter(m => m.id !== optimistic.id);
+          this.cdr.markForCheck();
+        }
+      })
+    );
+  }
+
+  onSendFiles(event: { files: File[]; caption: string }): void {
+    if (!this.activeChat) return;
+
+    const optimistic: ChatMessage = {
+      id: 'temp-' + Date.now(),
+      platform: this.activeChat.platform,
+      user_id: this.activeChat.userId,
+      direction: 'outgoing',
+      sender: this.translationService.instant('chat.manager'),
+      text: event.caption || '',
+      created_at: new Date().toISOString(),
+      attachments: event.files.map(f => ({
+        fileId: '',
+        filename: f.name,
+        mimeType: f.type,
+        size: f.size,
+        url: ''
+      }))
+    };
+
+    this.messages = [...this.messages, optimistic];
+    this.cdr.markForCheck();
+
+    // IMPORTANT: Must add to subscriptions for cleanup on component destroy.
+    // Without this, if the user navigates away mid-upload, the callback
+    // executes on a destroyed component causing Angular errors.
+    this.subscriptions.add(
+      this.chatService.sendFiles(
+        this.activeChat.platform,
+        this.activeChat.userId,
+        event.files,
+        event.caption
+      ).subscribe({
+        error: (err: HttpErrorResponse) => {
+          this.messages = this.messages.filter(m => m.id !== optimistic.id);
+          if (err.status === 413 || err.error?.message?.includes('limit')) {
+            this.sendFileError = err.error?.message || this.translationService.instant('chat.fileTooLargeGeneric');
+          } else {
+            this.sendFileError = this.translationService.instant('chat.sendFileError');
+          }
+          this.cdr.markForCheck();
+        }
+      })
+    );
+  }
+
+  onLoadMoreChats(): void {
+    this.chatService.loadMoreChats();
+  }
+
+  onToggleUnread(): void {
+    if (this.chatService.unreadOnly) {
+      this.chatService.showAllChats();
+    } else {
+      this.chatService.showUnreadChats();
+    }
+  }
+
+  onMarkAllRead(): void {
+    const chats = this.chatService.getAllChats();
+    chats.forEach(chat => {
+      if (chat.unread > 0) {
+        this.chatService.resetUnread(chat.platform, chat.user_id);
       }
     });
   }
@@ -110,28 +183,30 @@ export class ChatComponent implements OnInit, OnDestroy {
     this.loading = true;
     this.cdr.markForCheck();
 
-    this.chatService.getMessages(
-      this.activeChat.platform,
-      this.activeChat.userId,
-      this.PAGE_SIZE,
-      this.messageOffset
-    ).subscribe({
-      next: msgs => {
+    this.subscriptions.add(
+      this.chatService.getMessages(
+        this.activeChat.platform,
+        this.activeChat.userId,
+        this.PAGE_SIZE,
+        this.messageOffset
+      ).subscribe({
+        next: msgs => {
           // API returns newest-first; reverse to chronological (oldest at top)
           const chronological = msgs.reverse();
           if (prepend) {
-              this.messages = [...chronological, ...this.messages];
-              } else {
-              this.messages = chronological;
-              }
-        this.loading = false;
-        this.cdr.markForCheck();
-      },
-      error: () => {
-        this.loading = false;
-        this.cdr.markForCheck();
-      }
-    });
+            this.messages = [...chronological, ...this.messages];
+          } else {
+            this.messages = chronological;
+          }
+          this.loading = false;
+          this.cdr.markForCheck();
+        },
+        error: () => {
+          this.loading = false;
+          this.cdr.markForCheck();
+        }
+      })
+    );
   }
 
   private handleWsEvent(event: WsEvent): void {
@@ -142,6 +217,14 @@ export class ChatComponent implements OnInit, OnDestroy {
       if (this.activeChat
         && msg.platform === this.activeChat.platform
         && msg.user_id === this.activeChat.userId) {
+
+        // Update display name from WebSocket data if missing
+        if (!this.activeChat.userName && msg.user_name) {
+          this.activeChat = { ...this.activeChat, userName: msg.user_name };
+        }
+        if (!this.activeChat.messengerName && msg.messenger_name) {
+          this.activeChat = { ...this.activeChat, messengerName: msg.messenger_name };
+        }
 
         // Fix duplicate: if outgoing, replace the temp optimistic message
         if (msg.direction === 'outgoing') {

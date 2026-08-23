@@ -6,18 +6,10 @@ import { environment } from '../../../../environments/environment';
 import { CrmStage, CrmTransition, CrmStageReorderRequest } from '../models/crm-stage.model';
 import { CrmBoardResponse, CrmBoardResponseRaw, CrmBoardColumnRaw, CrmBoardOrderRaw, CrmBoardOrder, CrmBoardColumn, CrmOrderPipeline } from '../models/crm-board.model';
 import { CrmOrderAssignment, CrmAssignOrdersRequest, CrmMyAssignedOrder } from '../models/crm-assignment.model';
-import { CrmActivity, CrmCreateActivityRequest, CrmActivityTimelineResponse } from '../models/crm-activity.model';
+import { CrmActivity, CrmCreateActivityRequest } from '../models/crm-activity.model';
 import { CrmTask, CrmCreateTaskRequest, CrmUpdateTaskRequest, CrmTaskListResponse, CrmTaskStatus } from '../models/crm-task.model';
 import { CrmDashboardStats, CrmWorkloadStats, CrmPipelineStageStats, CrmTaskStats, CrmDashboardFilters } from '../models/crm-dashboard.model';
-
-interface ApiResponse<T> {
-  success: boolean;
-  data: T;
-  message?: string;
-  metadata?: {
-    total?: number;
-  };
-}
+import { ApiResponse } from '../../../core/models/api.model';
 
 @Injectable({
   providedIn: 'root'
@@ -145,8 +137,13 @@ export class CrmService {
       total: raw.order?.total || 0,
       currency_code: raw.order?.currency_code || 'USD',
       created_at: raw.order?.created_at || '',
+      last_update: raw.order?.last_update,
       assigned_user_uid: raw.assignment?.user_uid,
-      assigned_user_name: raw.assignment?.user_name || raw.assignment?.user_uid
+      assigned_user_name: raw.assignment?.user_name || raw.assignment?.user_uid,
+      is_edited: raw.order?.is_edited || false,
+      discount_override: raw.order?.discount_override || false,
+      company_name: raw.order?.company_name,
+      erp_number: raw.order?.erp_number
     };
   }
 
@@ -158,6 +155,16 @@ export class CrmService {
     return this.http.post<ApiResponse<void>>(`${this.baseUrl}/board/move`, {
       data: { order_uid: orderUid, stage_uid: stageUid }
     }, { params }).pipe(
+      map(() => undefined)
+    );
+  }
+
+  // forceMoveOrder moves an order to any stage and bypasses transition rules.
+  // Admin-only route on the backend.
+  forceMoveOrder(orderUid: string, stageUid: string): Observable<void> {
+    return this.http.post<ApiResponse<void>>(`${this.baseUrl}/board/force-move`, {
+      data: { order_uid: orderUid, stage_uid: stageUid }
+    }).pipe(
       map(() => undefined)
     );
   }
@@ -366,6 +373,9 @@ export class CrmService {
     }
     if (filters.assigneeUid) {
       params = params.set('assignee_uid', filters.assigneeUid);
+    }
+    if (filters.currencyCode) {
+      params = params.set('currency_code', filters.currencyCode);
     }
     return params;
   }

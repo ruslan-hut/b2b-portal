@@ -1,0 +1,349 @@
+/* ============================================================
+   Admin Identity Blocks (sidebar)
+   Reference: DESIGN_POLICY.md §5
+   ============================================================ */
+
+.adm-id-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--spacing-md-lg) var(--spacing-md);
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-md);
+  text-align: center;
+}
+
+.adm-avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  color: var(--color-on-primary);
+  background: var(--color-primary);
+  margin-bottom: var(--spacing-md-sm);
+  position: relative;
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: -4px;
+    border-radius: 50%;
+    border: 1px dashed var(--color-border);
+    opacity: .8;
+  }
+
+  &[data-role="admin"]          { background: var(--color-danger); }
+  &[data-role="manager"]        { background: var(--color-primary); }
+  &[data-role="content_editor"] { background: var(--color-secondary); }
+  &[data-role="user"]           { background: var(--color-info); }
+  &[data-role="client"]         { background: var(--color-text-muted); }
+}
+
+.adm-id-name {
+  font-size: var(--text-lg);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  line-height: 1.2;
+  word-break: break-word;
+}
+
+.adm-id-username {
+  margin-top: 4px;
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.adm-id-role {
+  margin-top: var(--spacing-sm-md);
+}
+
+.adm-role-chip {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: var(--text-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  background: var(--color-background-secondary);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border-light);
+
+  &[data-role="admin"]          { color: var(--color-danger);     border-color: var(--color-danger);     background: var(--status-error-bg, transparent); }
+  &[data-role="manager"]        { color: var(--color-primary);    border-color: var(--color-primary);    background: var(--color-primary-container, transparent); }
+  &[data-role="content_editor"] { color: var(--color-secondary);  border-color: var(--color-secondary);  background: var(--color-secondary-container, transparent); }
+  &[data-role="user"]           { color: var(--color-info);       border-color: var(--color-info);       background: var(--status-info-bg, transparent); }
+  &[data-role="client"]         { color: var(--color-text-muted); }
+}
+
+/* ---------- Meta info card ---------- */
+.adm-meta {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md-sm) var(--spacing-md);
+
+  &__title {
+    font-size: var(--text-xs);
+    text-transform: uppercase;
+    letter-spacing: .12em;
+    color: var(--color-text-muted);
+    font-weight: 700;
+    margin-bottom: var(--spacing-sm);
+  }
+
+  &__row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: var(--spacing-sm);
+    padding: 6px 0;
+    font-size: var(--text-sm);
+
+    & + & {
+      border-top: 1px dashed var(--color-border-light);
+    }
+
+    &--mono .adm-meta__value {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: var(--text-xs);
+      text-align: right;
+    }
+  }
+
+  &__label {
+    color: var(--color-text-muted);
+    flex: 0 0 auto;
+  }
+  &__value {
+    color: var(--color-text-primary);
+    font-weight: 500;
+    text-align: right;
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+}
+
+.adm-uid {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  padding: 1px 6px;
+  margin: -1px -6px;
+  border-radius: var(--radius-control);
+  cursor: pointer;
+  user-select: none;
+  transition: background-color .15s ease, color .15s ease;
+  outline: none;
+
+  &__text {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* The copy affordance is a pseudo-element, so it cannot host <app-icon>.
+     It carries the same `content_copy` geometry as a mask instead of a
+     background image, which is what lets it take `currentColor` and follow the
+     row from muted to primary the way every other icon does. */
+  &::after {
+    content: '';
+    flex: 0 0 auto;
+    width: var(--icon-sm);
+    height: var(--icon-sm);
+    background-color: currentColor;
+    color: var(--color-text-muted);
+    mask: var(--icon-copy) center / contain no-repeat;
+    -webkit-mask: var(--icon-copy) center / contain no-repeat;
+    opacity: 0;
+    transition: opacity .15s ease, color .15s ease;
+  }
+
+  &:hover {
+    background: var(--color-background-secondary);
+    color: var(--color-text-primary);
+
+    &::after { opacity: 1; }
+  }
+
+  &:focus-visible {
+    background: var(--color-background-secondary);
+    box-shadow: var(--focus-ring);
+
+    &::after { opacity: 1; }
+  }
+
+  &.is-copied {
+    background: var(--status-success-bg, var(--color-background-secondary));
+    color: var(--color-success, var(--color-primary));
+
+    &::after {
+      content: 'check';
+      color: var(--color-success, var(--color-primary));
+      opacity: 1;
+    }
+  }
+}
+
+/* ---------- Danger zone ---------- */
+.adm-danger {
+  background: var(--card-bg);
+  border: 1px solid var(--color-danger);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md-sm) var(--spacing-md);
+
+  &__title {
+    font-size: var(--text-xs);
+    text-transform: uppercase;
+    letter-spacing: .12em;
+    color: var(--color-danger);
+    font-weight: 700;
+    margin-bottom: var(--spacing-xs);
+  }
+
+  &__hint {
+    margin: 0 0 var(--spacing-sm-md);
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+    line-height: 1.5;
+  }
+}
+
+/* ---------- Record header ----------
+   The in-page counterpart to .adm-id-card: identity for a detail page that has
+   a record rather than a person at the top of it. The record's own number is
+   the page's name and renders once, at heading size — not as one cell in a grid
+   of five, at the same size as its "last updated" timestamp.
+
+   Three weights, three jobs: identity, then the facts that qualify it, then the
+   timestamps that are footnotes to both. */
+.adm-record {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+
+  &__head {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: var(--spacing-sm) var(--spacing-md-sm);
+    min-width: 0;
+  }
+
+  &__id {
+    font-size: var(--text-2xl);
+    font-weight: 700;
+    letter-spacing: -.01em;
+    line-height: 1.2;
+    color: var(--color-text-primary);
+    font-variant-numeric: tabular-nums;
+    /* Identifiers arrive from the ERP and can be arbitrarily long; in the 280px
+       spine an unbreakable one would push the rest of the page sideways. */
+    min-width: 0;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+
+  &__name {
+    font-size: var(--text-md);
+    color: var(--color-text-secondary);
+    min-width: 0;
+    word-break: break-word;
+  }
+
+  /* A second identifier the record answers to — the ERP's document number
+     beside the one Comex issued. Its own row, directly under __head: in the
+     280px spine, heading + number + status does not fit on one line, and the
+     wrap orphans the status chip so it reads as a mistake. Above __name, so the
+     block runs identity → second identity → qualifying fact → footnotes.
+
+     Deliberately no new weight. This block gets three (§2.4) and it already has
+     them; the number borrows the third tier's size and colour and is told apart
+     by its face, not by a fourth treatment. */
+  &__id-alt {
+    display: flex;
+    align-items: baseline;
+    gap: var(--spacing-xs);
+    min-width: 0;
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+  }
+
+  /* Monospaced so it never reads as a variant of __id, and selectable in one
+     click: this number exists to be read back to the ERP.
+
+     Primary colour against the muted label. At tier-3 size the row would
+     otherwise be identical to the timestamps under it, and an identifier that
+     reads as a footnote is in the wrong place — the label/value colour pair
+     lifts it without spending a fourth size or weight. */
+  &__id-alt-value {
+    color: var(--color-text-primary);
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-variant-numeric: tabular-nums;
+    min-width: 0;
+    overflow-wrap: anywhere;
+    user-select: all;
+  }
+
+  /* The record's own status string. Neutral by default: it arrives from the ERP
+     as free text and only sometimes matches a known keyword, at which point a
+     .status-* class supplies the colour. */
+  &__status {
+    display: inline-flex;
+    align-items: center;
+    height: var(--control-h-xs);
+    padding: 0 var(--spacing-sm);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-pill);
+    background: var(--color-background-secondary);
+    font-size: var(--text-xs);
+    font-weight: 600;
+    letter-spacing: .02em;
+    color: var(--color-text-secondary);
+    white-space: nowrap;
+  }
+
+  &__meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 2px var(--spacing-sm);
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__sep {
+    opacity: .45;
+    user-select: none;
+  }
+
+  /* In the 280px spine the meta line always wraps, which leaves a separator
+     dangling at the end of a row. Stack the facts instead and drop them. */
+  .adm-side & {
+    &__meta {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 2px;
+    }
+
+    &__sep { display: none; }
+  }
+
+  &__flags {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--spacing-xs);
+  }
+}

@@ -1,0 +1,417 @@
+<div class="adm-page">
+
+  <header class="adm-bar">
+    <div class="adm-bar__crumbs">
+      <button
+        type="button"
+        class="adm-crumb-back"
+        routerLink="/admin/settings"
+        [attr.aria-label]="'common.back' | translate"
+      >
+        <app-icon name="arrow_back"></app-icon>
+      </button>
+      <a class="adm-crumb" routerLink="/admin/settings">{{ 'admin.settings.title' | translate }}</a>
+      <span class="adm-crumb-sep">/</span>
+      <span class="adm-crumb adm-crumb--active">{{ 'admin.sessions.title' | translate }}</span>
+    </div>
+    <div class="adm-bar__actions">
+      @if (lastRefresh) {
+        <span class="ssn-refreshed">
+          {{ 'admin.sessions.updated' | translate }} {{ formatDateShort(lastRefresh.toISOString()) }}
+        </span>
+      }
+      <button
+        type="button"
+        class="adm-btn adm-btn--ghost"
+        (click)="toggleAutoRefresh()"
+        [class.is-active]="autoRefresh"
+        [title]="'admin.sessions.autoRefreshHint' | translate"
+      >
+        <app-icon [name]="autoRefresh ? 'sync' : 'pause'"></app-icon>
+        {{ 'admin.sessions.autoRefresh' | translate }}
+      </button>
+      <button type="button" class="adm-btn adm-btn--ghost" (click)="load()">
+        <app-icon name="refresh"></app-icon>
+        {{ 'common.refresh' | translate }}
+      </button>
+      <button
+        type="button"
+        class="adm-btn adm-btn--ghost"
+        (click)="filters.toggle()"
+        [class.is-active]="filters.expanded"
+        [attr.aria-expanded]="filters.expanded"
+      >
+        <app-icon name="filter_list"></app-icon>
+        {{ 'common.filters' | translate }}
+      </button>
+    </div>
+  </header>
+
+  <div class="adm-grid adm-grid--full">
+
+    <!-- Who is connected -->
+    @if (stats) {
+      <section class="ssn-tiles">
+        <article class="ssn-tile ssn-tile--accent">
+          <span class="ssn-tile__value">{{ stats.active_sessions }}</span>
+          <span class="ssn-tile__label">{{ 'admin.sessions.tileActive' | translate }}</span>
+          <span class="ssn-tile__hint">
+            {{ stats.active_staff }} {{ 'admin.sessions.staffShort' | translate }} ·
+            {{ stats.active_clients }} {{ 'admin.sessions.clientsShort' | translate }}
+          </span>
+        </article>
+        <article class="ssn-tile">
+          <span class="ssn-tile__value">{{ stats.active_accounts }}</span>
+          <span class="ssn-tile__label">{{ 'admin.sessions.tileAccounts' | translate }}</span>
+          <span class="ssn-tile__hint">{{ 'admin.sessions.tileAccountsHint' | translate }}</span>
+        </article>
+        <article class="ssn-tile">
+          <span class="ssn-tile__value">{{ stats.live_sessions }}</span>
+          <span class="ssn-tile__label">{{ 'admin.sessions.tileLive' | translate }}</span>
+          <span class="ssn-tile__hint">
+            {{ stats.live_staff }} {{ 'admin.sessions.staffShort' | translate }} ·
+            {{ stats.live_clients }} {{ 'admin.sessions.clientsShort' | translate }}
+          </span>
+        </article>
+        <article class="ssn-tile">
+          <span class="ssn-tile__value">{{ stats.distinct_ips }}</span>
+          <span class="ssn-tile__label">{{ 'admin.sessions.tileIps' | translate }}</span>
+          <span class="ssn-tile__hint">{{ 'admin.sessions.tileIpsHint' | translate }}</span>
+        </article>
+        <article class="ssn-tile">
+          <span class="ssn-tile__value">{{ stats.started_last_24h }}</span>
+          <span class="ssn-tile__label">{{ 'admin.sessions.tileStarted' | translate }}</span>
+          <span class="ssn-tile__hint">{{ 'admin.sessions.tileStartedHint' | translate }}</span>
+        </article>
+      </section>
+
+      @if (stats.hourly.length > 0) {
+        <section class="adm-section ssn-chart">
+          <h2 class="ssn-chart__title">{{ 'admin.sessions.chartTitle' | translate }}</h2>
+          <p class="ssn-chart__note">{{ 'admin.sessions.chartNote' | translate }}</p>
+          <div class="ssn-chart__bars">
+            @for (bucket of stats.hourly; track bucket.hour) {
+              <div class="ssn-bar" [title]="formatDateTime(bucket.hour) + ' — ' + bucket.count">
+                <div class="ssn-bar__fill" [style.height]="barHeight(bucket.count)"></div>
+                <span class="ssn-bar__label">{{ hourLabel(bucket.hour) }}</span>
+              </div>
+            }
+          </div>
+        </section>
+      }
+    }
+
+    <!-- How loaded the backend is -->
+    <section class="adm-section ssn-runtime">
+      <button
+        type="button"
+        class="ssn-runtime__toggle"
+        (click)="toggleRuntime()"
+        [attr.aria-expanded]="showRuntime"
+      >
+        <app-icon name="network_check"></app-icon>
+        <span>{{ 'admin.sessions.runtimeTitle' | translate }}</span>
+        @if (runtime) {
+          <span class="ssn-runtime__summary">
+            {{ runtime.metrics.window.requests_per_min }} {{ 'admin.sessions.rpm' | translate }} ·
+            {{ runtime.metrics.in_flight }} {{ 'admin.sessions.inFlight' | translate }} ·
+            p95 {{ runtime.metrics.window.p95_ms }}ms
+          </span>
+        }
+        <app-icon [name]="showRuntime ? 'expand_less' : 'expand_more'" class="ssn-runtime__chevron"></app-icon>
+      </button>
+
+      @if (showRuntime && runtime) {
+        <div class="ssn-runtime__body">
+          <p class="ssn-runtime__note">{{ 'admin.sessions.runtimeNote' | translate }}</p>
+
+          <div class="ssn-metrics">
+            <div class="ssn-metric">
+              <span class="ssn-metric__label">{{ 'admin.sessions.requestRate' | translate }}</span>
+              <span class="ssn-metric__value">{{ runtime.metrics.window.requests_per_min }}<small>/min</small></span>
+              <span class="ssn-metric__hint">
+                {{ runtime.metrics.window.requests }} {{ 'admin.sessions.overLast' | translate }}
+                {{ runtime.metrics.window.window_minutes }}m
+              </span>
+            </div>
+            <div class="ssn-metric">
+              <span class="ssn-metric__label">{{ 'admin.sessions.latency' | translate }}</span>
+              <span class="ssn-metric__value">{{ runtime.metrics.window.p95_ms }}<small>ms p95</small></span>
+              <span class="ssn-metric__hint">
+                p50 {{ runtime.metrics.window.p50_ms }}ms ·
+                {{ 'admin.sessions.avg' | translate }} {{ runtime.metrics.window.avg_ms }}ms ·
+                max {{ runtime.metrics.window.max_ms }}ms
+              </span>
+            </div>
+            <div class="ssn-metric" [class.is-warning]="runtime.metrics.window.error_rate > 0.05">
+              <span class="ssn-metric__label">{{ 'admin.sessions.errorRate' | translate }}</span>
+              <span class="ssn-metric__value">{{ percent(runtime.metrics.window.error_rate) }}</span>
+              <span class="ssn-metric__hint">
+                {{ runtime.metrics.window.status['4xx'] }} × 4xx ·
+                {{ runtime.metrics.window.status['5xx'] }} × 5xx
+              </span>
+            </div>
+            <div class="ssn-metric">
+              <span class="ssn-metric__label">{{ 'admin.sessions.inFlightLabel' | translate }}</span>
+              <span class="ssn-metric__value">{{ runtime.metrics.in_flight }}</span>
+              <span class="ssn-metric__hint">
+                {{ runtime.metrics.total_requests }} {{ 'admin.sessions.sinceStart' | translate }}
+              </span>
+            </div>
+            @if (runtime.db; as db) {
+              <div class="ssn-metric" [class.is-warning]="db.wait_count > 0">
+                <span class="ssn-metric__label">{{ 'admin.sessions.dbPool' | translate }}</span>
+                <span class="ssn-metric__value">{{ db.in_use }}<small>/ {{ db.max_open || '∞' }}</small></span>
+                <span class="ssn-metric__hint">
+                  {{ db.idle }} {{ 'admin.sessions.idleConns' | translate }} ·
+                  {{ db.wait_count }} {{ 'admin.sessions.waits' | translate }}
+                </span>
+                @if (db.max_open > 0) {
+                  <div class="ssn-meter">
+                    <div class="ssn-meter__fill" [style.width.%]="poolUsage()"></div>
+                  </div>
+                }
+              </div>
+            }
+            <div class="ssn-metric">
+              <span class="ssn-metric__label">{{ 'admin.sessions.process' | translate }}</span>
+              <span class="ssn-metric__value">{{ runtime.go.goroutines }}<small>{{ 'admin.sessions.goroutines' | translate }}</small></span>
+              <span class="ssn-metric__hint">
+                {{ runtime.go.heap_alloc_mb | number:'1.0-0' }}MB {{ 'admin.sessions.heap' | translate }} ·
+                {{ 'admin.sessions.up' | translate }} {{ formatUptime(runtime.metrics.uptime_seconds) }}
+              </span>
+            </div>
+          </div>
+
+          @if (runtime.metrics.routes.length > 0) {
+            <h3 class="ssn-runtime__subtitle">{{ 'admin.sessions.topRoutes' | translate }}</h3>
+            <div class="ssn-table-wrap">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th scope="col">{{ 'admin.sessions.route' | translate }}</th>
+                    <th scope="col">{{ 'admin.sessions.calls' | translate }}</th>
+                    <th scope="col">{{ 'admin.sessions.avgMs' | translate }}</th>
+                    <th scope="col">{{ 'admin.sessions.maxMs' | translate }}</th>
+                    <th scope="col">{{ 'admin.sessions.errors' | translate }}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (route of runtime.metrics.routes; track route.route) {
+                    <tr>
+                      <td class="ssn-route">{{ route.route }}</td>
+                      <td>{{ route.count }}</td>
+                      <td>{{ route.avg_ms }}</td>
+                      <td>{{ route.max_ms }}</td>
+                      <td [class.ssn-errors]="route.errors > 0">{{ route.errors }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+            @if (runtime.metrics.routes_truncated) {
+              <p class="ssn-runtime__note">{{ 'admin.sessions.routesTruncated' | translate }}</p>
+            }
+          }
+        </div>
+      }
+    </section>
+
+    @if (filters.expanded) {
+      <section class="adm-section ssn-filters">
+        <div class="adm-fields">
+          <label class="adm-field">
+            <span class="adm-field__label">{{ 'admin.sessions.type' | translate }}</span>
+            <select class="adm-input" [(ngModel)]="entityTypeFilter" (change)="onFilterChange()">
+              @for (option of entityTypeOptions; track option.value) {
+                <option [value]="option.value">{{ option.labelKey | translate }}</option>
+              }
+            </select>
+          </label>
+          <label class="adm-field">
+            <span class="adm-field__label">{{ 'admin.sessions.status' | translate }}</span>
+            <select class="adm-input" [(ngModel)]="statusFilter" (change)="onFilterChange()">
+              @for (option of statusOptions; track option.value) {
+                <option [value]="option.value">{{ option.labelKey | translate }}</option>
+              }
+            </select>
+          </label>
+          <label class="adm-field">
+            <span class="adm-field__label">{{ 'common.search' | translate }}</span>
+            <input
+              type="text"
+              class="adm-input"
+              [(ngModel)]="searchTerm"
+              (change)="onFilterChange()"
+              [placeholder]="'admin.sessions.searchPlaceholder' | translate"
+              autocomplete="off"
+            />
+          </label>
+        </div>
+      </section>
+    }
+
+    @if (loading) {
+      <div class="adm-loading">{{ 'admin.sessions.loading' | translate }}</div>
+    } @else if (error) {
+      <div class="adm-error" role="alert">{{ error }}</div>
+    } @else if (sessions.length === 0) {
+      <div class="adm-section">
+        <div class="ssn-empty">{{ 'admin.sessions.noSessions' | translate }}</div>
+      </div>
+    } @else {
+
+      <!-- Desktop table -->
+      <div class="ssn-table-wrap desktop-only">
+        <table class="data-table" [attr.aria-label]="'admin.sessions.title' | translate">
+          <thead>
+            <tr>
+              <th scope="col">{{ 'admin.sessions.account' | translate }}</th>
+              <th scope="col">{{ 'admin.sessions.type' | translate }}</th>
+              <th scope="col">{{ 'admin.sessions.device' | translate }}</th>
+              <th scope="col">{{ 'admin.sessions.ip' | translate }}</th>
+              <th scope="col">{{ 'admin.sessions.lastActivity' | translate }}</th>
+              <th scope="col">{{ 'admin.sessions.started' | translate }}</th>
+              <th scope="col">{{ 'admin.sessions.expires' | translate }}</th>
+              <th scope="col">{{ 'admin.sessions.status' | translate }}</th>
+              <th scope="col" class="actions-col"></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (session of sessions; track session.token_uid) {
+              <tr [class.is-current]="session.is_current">
+                <td>
+                  <span class="ssn-account">
+                    <span class="ssn-name">{{ accountLabel(session) }}</span>
+                    @if (session.is_current) {
+                      <span class="ssn-badge ssn-badge--current">{{ 'admin.sessions.you' | translate }}</span>
+                    }
+                    @if (session.role) {
+                      <span class="adm-role-chip" [attr.data-role]="session.role">{{ session.role }}</span>
+                    }
+                  </span>
+                </td>
+                <td>
+                  {{ (session.entity_type === 'user' ? 'admin.sessions.typeStaff' : 'admin.sessions.typeClient') | translate }}
+                </td>
+                <td class="ssn-device" [title]="session.user_agent || ''">
+                  <app-icon [name]="deviceIcon(session.user_agent)"></app-icon>
+                  {{ deviceLabel(session.user_agent) }}
+                </td>
+                <td class="ssn-ip">{{ session.ip_address || '—' }}</td>
+                <td [title]="formatDateTime(session.last_used)">{{ since(session.last_used) }}</td>
+                <td [title]="formatDateTime(session.issued_at)">{{ since(session.issued_at) }}</td>
+                <td>{{ formatDateShort(session.expires_at) }}</td>
+                <td>
+                  <span class="ssn-status" [attr.data-status]="session.status">
+                    {{ ('admin.sessions.status' + (session.status | titlecase)) | translate }}
+                  </span>
+                </td>
+                <td class="actions-col">
+                  <button
+                    type="button"
+                    class="adm-icon-btn"
+                    (click)="revoke(session)"
+                    [disabled]="session.is_revoked"
+                    [attr.aria-label]="('admin.sessions.revoke' | translate) + ': ' + accountLabel(session)"
+                    [title]="'admin.sessions.revoke' | translate"
+                  >
+                    <app-icon name="block"></app-icon>
+                  </button>
+                  <button
+                    type="button"
+                    class="adm-icon-btn"
+                    (click)="revokeAccount(session)"
+                    [attr.aria-label]="('admin.sessions.revokeAll' | translate) + ': ' + accountLabel(session)"
+                    [title]="'admin.sessions.revokeAll' | translate"
+                  >
+                    <app-icon name="logout"></app-icon>
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Mobile cards -->
+      <div class="ssn-cards mobile-only">
+        @for (session of sessions; track session.token_uid) {
+          <article class="ssn-card" [class.is-expanded]="cards.isExpanded(session.token_uid)">
+            <header
+              class="ssn-card__head"
+              (click)="cards.toggle(session.token_uid)"
+              (keydown.enter)="cards.toggle(session.token_uid)"
+              (keydown.space)="cards.toggle(session.token_uid); $event.preventDefault()"
+              role="button"
+              tabindex="0"
+              [attr.aria-expanded]="cards.isExpanded(session.token_uid)"
+            >
+              <div class="ssn-card__title">
+                <span class="ssn-card__name">{{ accountLabel(session) }}</span>
+                <span class="ssn-status" [attr.data-status]="session.status">
+                  {{ ('admin.sessions.status' + (session.status | titlecase)) | translate }}
+                </span>
+              </div>
+              <div class="ssn-card__sub">
+                {{ deviceLabel(session.user_agent) }} · {{ since(session.last_used) }}
+              </div>
+              <app-icon
+                [name]="cards.isExpanded(session.token_uid) ? 'expand_less' : 'expand_more'"
+                class="ssn-card__expand"
+              ></app-icon>
+            </header>
+
+            @if (cards.isExpanded(session.token_uid)) {
+              <div class="ssn-card__details">
+                <div class="ssn-card__row">
+                  <span class="ssn-card__label">{{ 'admin.sessions.type' | translate }}</span>
+                  <span class="ssn-card__value">
+                    {{ (session.entity_type === 'user' ? 'admin.sessions.typeStaff' : 'admin.sessions.typeClient') | translate }}
+                  </span>
+                </div>
+                <div class="ssn-card__row">
+                  <span class="ssn-card__label">{{ 'admin.sessions.ip' | translate }}</span>
+                  <span class="ssn-card__value">{{ session.ip_address || '—' }}</span>
+                </div>
+                <div class="ssn-card__row">
+                  <span class="ssn-card__label">{{ 'admin.sessions.lastActivity' | translate }}</span>
+                  <span class="ssn-card__value">{{ formatDateTime(session.last_used) }}</span>
+                </div>
+                <div class="ssn-card__row">
+                  <span class="ssn-card__label">{{ 'admin.sessions.started' | translate }}</span>
+                  <span class="ssn-card__value">{{ formatDateTime(session.issued_at) }}</span>
+                </div>
+                <div class="ssn-card__row">
+                  <span class="ssn-card__label">{{ 'admin.sessions.expires' | translate }}</span>
+                  <span class="ssn-card__value">{{ formatDateTime(session.expires_at) }}</span>
+                </div>
+                <div class="ssn-card__actions">
+                  <button type="button" class="adm-btn adm-btn--ghost" (click)="revoke(session)" [disabled]="session.is_revoked">
+                    <app-icon name="block"></app-icon>
+                    {{ 'admin.sessions.revoke' | translate }}
+                  </button>
+                  <button type="button" class="adm-btn adm-btn--ghost" (click)="revokeAccount(session)">
+                    <app-icon name="logout"></app-icon>
+                    {{ 'admin.sessions.revokeAll' | translate }}
+                  </button>
+                </div>
+              </div>
+            }
+          </article>
+        }
+      </div>
+
+      <app-pagination
+        [currentPage]="currentPage"
+        [totalPages]="totalPages"
+        [total]="total"
+        [pageSize]="pageSize"
+        [itemLabel]="'admin.sessions.totalSessions' | translate"
+        [showPageNumbers]="false"
+        [showFirstLast]="false"
+        (pageChange)="goToPage($event)"
+      ></app-pagination>
+    }
+  </div>
+</div>

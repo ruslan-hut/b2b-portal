@@ -1,0 +1,1677 @@
+// ============================================================================
+// Partner Resources page editor
+//
+// The rest of the admin is a ledger: rows of ERP-owned records you inspect.
+// This is the one place a person authors something, so the shell is the
+// standard one and exactly two things change — the sidebar carries the page's
+// spine (state, languages, outline) and the block stack reads as a document
+// rather than as more form.
+//
+// Colour has four jobs here and no more:
+//   primary   — your action, committed (Save, Publish)
+//   --assist  — produced by the assistant, must be reviewed (translate, import)
+//   success   — live
+//   muted     — draft, empty, absent
+// ============================================================================
+
+// --- save state -------------------------------------------------------------
+//
+// Sits in the bar, left of the actions, and answers the question an editor has
+// open for the whole session: is what I am looking at on the server?
+//
+// It borrows the amber the preview strip uses for "draft", because both say the
+// same thing in different tenses — this is not the version partners have. The
+// settled state stays grey: nothing has happened, and nothing should be lit.
+
+.pe-savestate {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+  height: var(--control-h-md);
+  padding: 0 var(--spacing-sm-md);
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: .02em;
+  white-space: nowrap;
+  color: var(--color-text-muted);
+
+  &.is-dirty {
+    border-color: var(--color-alert-warning-border);
+    background: var(--color-alert-warning-bg);
+    color: var(--color-alert-warning-text);
+  }
+}
+
+.pe-savestate__dot {
+  width: 7px;
+  height: 7px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  border: 1px solid var(--color-text-muted);
+
+  .is-dirty & {
+    border-color: var(--color-alert-warning-text);
+    background: var(--color-alert-warning-text);
+  }
+}
+
+// The bar collapses its buttons to icons here; the chip keeps only its dot,
+// which is still the whole signal.
+@media (max-width: 768px) {
+  .pe-savestate {
+    padding: 0 var(--spacing-sm);
+  }
+
+  .pe-savestate__text {
+    display: none;
+  }
+}
+
+// --- sidebar ----------------------------------------------------------------
+
+.pe-side {
+  // The outline grows with the page; the rail must not push the sticky column
+  // past the fold.
+  @media (min-width: 961px) {
+    max-height: calc(100vh - var(--control-h-lg) - var(--spacing-2xl));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+}
+
+.pe-state {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px var(--spacing-sm);
+  padding: var(--spacing-sm-md) var(--spacing-md-sm);
+  border: 1px solid var(--card-border);
+  border-left: 3px solid var(--color-text-muted);
+  border-radius: var(--radius-md);
+  background: var(--card-bg);
+
+  &.is-published {
+    border-left-color: var(--color-success);
+  }
+}
+
+.pe-state__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1px solid var(--color-text-muted);
+
+  .is-published & {
+    border-color: var(--color-success);
+    background: var(--color-success);
+  }
+}
+
+.pe-state__text {
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+
+  .is-published & { color: var(--color-success-dark); }
+}
+
+.pe-state__slug {
+  flex: 1 1 100%;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  overflow-wrap: anywhere;
+}
+
+// --- translation rail -------------------------------------------------------
+//
+// The signature control of this section. Every other admin page treats
+// languages as a switch; here each one carries how much of the page exists in
+// it, because a page live in Polish and blank in Ukrainian is the failure this
+// module was built to prevent.
+
+.pe-rail,
+.pe-outline {
+  padding: var(--spacing-md-sm);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-md);
+  background: var(--card-bg);
+}
+
+.pe-rail__title,
+.pe-outline__title {
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-bold);
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  color: var(--color-text-muted);
+  margin-bottom: var(--spacing-sm);
+}
+
+// A row of two controls — pick this language, or drop it. The row carries the
+// surface and the selected state; the buttons inside it stay transparent.
+.pe-lang {
+  display: flex;
+  align-items: stretch;
+  gap: 2px;
+  width: 100%;
+  padding: 0 var(--spacing-xs) 0 0;
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
+  background: transparent;
+  transition: background-color .15s ease, border-color .15s ease;
+
+  & + & { margin-top: 2px; }
+
+  &:hover {
+    background: var(--color-background-hover);
+  }
+
+  &.is-active {
+    border-color: var(--color-primary);
+    background: var(--color-primary-container);
+  }
+}
+
+.pe-lang__pick {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    "code name count"
+    "meter meter meter";
+  align-items: center;
+  gap: 5px var(--spacing-xs);
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: none;
+  border-radius: var(--radius-control);
+  background: transparent;
+  font-family: var(--font-body);
+  text-align: left;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+  }
+}
+
+.pe-lang__code {
+  grid-area: code;
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: .06em;
+  color: var(--color-text-secondary);
+
+  .is-active & { color: var(--color-primary); }
+}
+
+.pe-lang__name {
+  grid-area: name;
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  .is-active & { color: var(--color-text-primary); }
+}
+
+.pe-lang__count {
+  grid-area: count;
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-muted);
+}
+
+// Hidden until the row is under the pointer or holds focus — a row of four
+// languages should read as four languages, not as four delete buttons. Never
+// hidden from the keyboard: focus reveals it, so tabbing still finds it.
+.pe-lang__remove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  align-self: center;
+  width: var(--control-h-sm);
+  height: var(--control-h-sm);
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity .15s ease, color .15s ease, background-color .15s ease;
+
+  app-icon { font-size: 14px; }
+
+  .pe-lang:hover &,
+  .pe-lang:focus-within & { opacity: .7; }
+
+  &:hover,
+  &:focus-visible {
+    opacity: 1;
+    color: var(--color-danger);
+    background: color-mix(in srgb, var(--color-danger) 10%, transparent);
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+  }
+}
+
+// A bar rather than a percentage: an editor is comparing four languages to
+// each other, not reading a number off any one of them.
+.pe-lang__meter {
+  grid-area: meter;
+  height: 3px;
+  border-radius: var(--radius-pill);
+  background: var(--color-border-light);
+  overflow: hidden;
+}
+
+.pe-lang__fill {
+  display: block;
+  height: 100%;
+  border-radius: var(--radius-pill);
+  background: var(--color-text-muted);
+  transition: width .2s ease;
+
+  .is-active & { background: var(--color-primary); }
+}
+
+// --- select actions ---------------------------------------------------------
+//
+// A native select cannot hold an icon, so the icon sits over it. Replaces the
+// ⧉ / ✨ glyphs the labels used to carry — the rest of the admin speaks
+// SVG icons and these were the only two exceptions.
+
+.pe-select {
+  position: relative;
+  display: block;
+  margin-top: var(--spacing-xs);
+
+  > app-icon {
+    position: absolute;
+    left: var(--spacing-sm);
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: var(--icon-sm);
+    color: var(--color-text-muted);
+    pointer-events: none;
+  }
+
+  .adm-input {
+    padding-left: calc(var(--spacing-sm) + var(--icon-sm) + 6px);
+    font-size: var(--text-sm);
+  }
+
+  &--add .adm-input {
+    border-style: dashed;
+    color: var(--color-text-secondary);
+  }
+
+  // Purple is reserved for work the assistant did and a person still has to
+  // check. Nothing else in the editor uses it.
+  &--assist {
+    > app-icon { color: var(--assist); }
+
+    .adm-input {
+      border-color: color-mix(in srgb, var(--assist) 45%, var(--color-border));
+      color: var(--assist);
+    }
+
+    .adm-input:focus {
+      border-color: var(--assist);
+      box-shadow: 0 0 0 var(--focus-ring-width) color-mix(in srgb, var(--assist) 25%, transparent);
+    }
+  }
+}
+
+.pe-rail__fill {
+  margin-top: var(--spacing-sm-md);
+  padding-top: var(--spacing-sm);
+  border-top: 1px dashed var(--color-border-light);
+}
+
+.pe-rail__fill-label {
+  display: block;
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+// --- outline ----------------------------------------------------------------
+
+.pe-outline__row {
+  display: flex;
+  align-items: baseline;
+  gap: var(--spacing-sm);
+  width: 100%;
+  padding: 5px var(--spacing-sm);
+  border: none;
+  border-left: 2px solid transparent;
+  border-radius: 0 var(--radius-control) var(--radius-control) 0;
+  background: transparent;
+  font-family: var(--font-body);
+  text-align: left;
+  cursor: pointer;
+  transition: background-color .15s ease, border-color .15s ease;
+
+  &:hover { background: var(--color-background-hover); }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+  }
+
+  &.is-active {
+    border-left-color: var(--color-primary);
+    background: var(--color-primary-container);
+  }
+}
+
+// Fixed width so the summaries line up into a column: a ragged left edge
+// makes an outline harder to skim than the indentation it is standing in for.
+.pe-outline__kind {
+  flex: 0 0 48px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: .04em;
+  color: var(--color-text-muted);
+
+  // Headings are the page's structure, so they carry the weight in the
+  // outline and everything else reads as what sits between them.
+  .is-heading & { color: var(--color-primary); }
+}
+
+.pe-outline__text {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  .is-heading & {
+    color: var(--color-text-primary);
+    font-weight: var(--font-weight-medium);
+  }
+}
+
+// The audience summary lives on the Audience section's own subtitle. Repeating
+// it in the sidebar put the same sentence on screen twice.
+
+// --- section chrome ---------------------------------------------------------
+
+// Which language the fields below belong to, on the section that owns them.
+// Without it a title field in a four-language page is an unlabelled box.
+.pe-lang-badge {
+  flex: 0 0 auto;
+  margin-left: auto;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  background: var(--color-primary-container);
+  color: var(--color-on-primary-container);
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: .08em;
+}
+
+// The title is the one field on this page that becomes a headline, so it is
+// set like one.
+.pe-title-input {
+  height: var(--control-h-lg);
+  font-family: var(--font-heading);
+  font-size: var(--text-lg);
+  font-weight: var(--font-weight-semibold);
+}
+
+// --- icon picker ------------------------------------------------------------
+
+.pe-icon-button {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  text-align: left;
+  cursor: pointer;
+  color: var(--color-text-primary);
+
+  app-icon { font-size: var(--icon-md); color: var(--color-primary); }
+}
+
+.pe-icon-button__name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--text-sm);
+}
+
+.pe-icon-button__chevron {
+  flex: 0 0 auto;
+  color: var(--color-text-muted) !important;
+  font-size: var(--icon-sm) !important;
+}
+
+.pe-icon-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(36px, 1fr));
+  gap: var(--spacing-xs);
+  margin-top: var(--spacing-xs);
+  padding: var(--spacing-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--content-canvas);
+}
+
+.pe-icon-option {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 36px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
+  background: var(--card-bg);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: border-color .15s ease, color .15s ease, transform .1s ease;
+
+  app-icon { font-size: var(--icon-md); }
+
+  &:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+    transform: translateY(-1px);
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+  }
+
+  &.is-active {
+    border-color: var(--color-primary);
+    color: var(--color-on-primary);
+    background: var(--color-primary);
+  }
+}
+
+// --- layout picker ----------------------------------------------------------
+
+.pe-layouts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: var(--spacing-sm);
+}
+
+.pe-layout {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm-md) var(--spacing-md-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  background: var(--card-bg);
+  cursor: pointer;
+  transition: border-color .15s ease, background-color .15s ease;
+
+  input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  &:hover { border-color: var(--color-text-muted); }
+
+  &:focus-within {
+    box-shadow: var(--focus-ring);
+  }
+
+  &.is-active {
+    border-color: var(--color-primary);
+    background: var(--color-primary-container);
+  }
+}
+
+// Matches .adm-role-card's dot: this is the same kind of control — one choice
+// out of an enum — so it should not look like a different one.
+.pe-layout__mark {
+  flex: 0 0 auto;
+  width: 10px;
+  height: 10px;
+  margin-top: 4px;
+  border-radius: 50%;
+  background: var(--color-border);
+  transition: background-color .15s ease, box-shadow .15s ease;
+
+  .is-active & {
+    background: var(--color-primary);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 22%, transparent);
+  }
+}
+
+.pe-layout__text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.pe-layout__name {
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--text-sm);
+  color: var(--color-text-primary);
+}
+
+.pe-layout__hint {
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+  line-height: 1.4;
+}
+
+// --- audience ---------------------------------------------------------------
+
+// The language-scope chips use the shared .adm-chip (styles/admin/_chips.scss).
+
+// Silent targeting mistakes on legal documents are expensive, so the reach
+// count sits directly under the control that causes them.
+.pe-reach {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-xs);
+  margin: 0;
+  padding: var(--spacing-sm) var(--spacing-sm-md);
+  border-radius: var(--radius-control);
+  background: var(--color-primary-container);
+  color: var(--color-on-primary-container);
+  font-size: var(--text-sm);
+  line-height: 1.45;
+
+  app-icon { font-size: var(--icon-sm); flex: 0 0 auto; margin-top: 1px; }
+}
+
+// --- blocks -----------------------------------------------------------------
+
+// The block stack sits on a tray one step off the card, so a page reads as
+// sheets on a desk rather than as a taller form.
+.adm-section--doc {
+  .pe-blocks {
+    padding: var(--spacing-sm);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-md);
+    background: var(--content-canvas);
+  }
+}
+
+.pe-blocks {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.pe-blocks__empty {
+  margin: 0;
+  padding: var(--spacing-xl) var(--spacing-md);
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.pe-block {
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-sm-md);
+  background: var(--card-bg);
+  transition: border-color .15s ease, box-shadow .15s ease;
+
+  &:hover { border-color: var(--color-border); }
+
+  &.is-open {
+    border-color: var(--color-primary);
+    box-shadow: var(--card-shadow);
+  }
+}
+
+.pe-block__row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-xs) var(--spacing-sm);
+}
+
+// The type icon doubles as the block's spine — the one place a block type is
+// colour-coded, and only while it is open.
+.pe-block__grip {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--control-h-sm);
+  height: var(--control-h-sm);
+  border-radius: var(--radius-sm);
+  background: var(--color-background-secondary);
+  color: var(--color-text-secondary);
+
+  .is-open & {
+    background: var(--color-primary-container);
+    color: var(--color-primary);
+  }
+}
+
+.pe-block__icon {
+  font-size: var(--icon-sm);
+  width: var(--icon-sm);
+  height: var(--icon-sm);
+}
+
+.pe-block__label {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: baseline;
+  gap: var(--spacing-sm);
+  min-width: 0;
+  border: none;
+  background: none;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+  border-radius: var(--radius-xs);
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+  }
+}
+
+.pe-block__type {
+  flex: 0 0 auto;
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-bold);
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+// What the block actually says outranks what kind of block it is, so it takes
+// the body size and the type recedes to a label.
+.pe-block__summary {
+  font-size: var(--text-md);
+  color: var(--color-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pe-block__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  flex: 0 0 auto;
+  opacity: .55;
+  transition: opacity .12s ease;
+
+  .pe-block:hover &,
+  .pe-block.is-open &,
+  &:focus-within { opacity: 1; }
+}
+
+// Reordering is one job, so its two buttons read as one control.
+.pe-block__order {
+  display: inline-flex;
+
+  .adm-icon-btn:first-child {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+  }
+
+  .adm-icon-btn:last-child {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    margin-left: -1px;
+  }
+}
+
+.pe-block__editor {
+  padding: var(--spacing-md-sm) var(--spacing-md) var(--spacing-md);
+  border-top: 1px solid var(--color-border-subtle);
+}
+
+.pe-block__note {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+// --- block inputs that show their own effect --------------------------------
+
+.pe-heading-input {
+  height: auto;
+  padding-top: var(--spacing-xs);
+  padding-bottom: var(--spacing-xs);
+  font-family: var(--font-heading);
+  font-size: var(--text-xl);
+  font-weight: var(--font-weight-semibold);
+
+  &.is-h3 {
+    font-size: var(--text-lg);
+  }
+}
+
+.pe-callout-input {
+  font-size: var(--text-prose);
+  line-height: var(--leading-prose);
+  border-left-width: 3px;
+
+  &[data-tone="info"]    { border-left-color: var(--color-info); }
+  &[data-tone="warn"]    { border-left-color: var(--color-warning); }
+  &[data-tone="success"] { border-left-color: var(--color-success); }
+  &[data-tone="danger"]  { border-left-color: var(--color-danger); }
+}
+
+// --- repeating items (files, link cards) ------------------------------------
+
+.pe-items {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.pe-items__head {
+  display: flex;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-xs);
+}
+
+.pe-groupby {
+  max-width: 220px;
+}
+
+.pe-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+// Column headings once, not a placeholder repeated down every row — with four
+// fields per row the placeholders were the loudest thing in the block.
+.pe-item--head {
+  padding-bottom: 2px;
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--color-text-muted);
+}
+
+.pe-item__file,
+.pe-item__label {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+// Language and market are two-letter codes; a full-width field would imply
+// more input than they take.
+// Wide enough for the column heading above it, not so wide that it implies
+// more than a two-letter code.
+.pe-item__small {
+  flex: 0 0 84px;
+  text-transform: uppercase;
+}
+
+// Reserves the width of the row's delete button so the headings line up.
+.pe-item__gap {
+  flex: 0 0 var(--control-h-md);
+}
+
+// A link card has more than a row's worth of fields once it carries a picture,
+// so it gets its own bordered block with a header naming which card it is —
+// otherwise a list of six identical field grids has nothing to navigate by.
+.pe-card {
+  padding: var(--spacing-sm) var(--spacing-md) var(--spacing-md);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-variant);
+}
+
+.pe-card__bar {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  margin-bottom: var(--spacing-sm);
+}
+
+.pe-card__n {
+  flex: none;
+  min-width: 20px;
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-muted);
+}
+
+.pe-card__name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: var(--font-weight-medium);
+}
+
+// Sized to the same 16:10 the published card uses, so the crop shown here is
+// the crop that ships.
+.pe-card__thumb {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 200px;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-control);
+  background: var(--card-bg);
+  color: var(--color-text-muted);
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.pe-item-add {
+  align-self: flex-start;
+  margin-top: var(--spacing-xs);
+  border-style: dashed;
+}
+
+// --- block palette ----------------------------------------------------------
+//
+// Adding a block is the primary act in this section. It used to be a row of
+// dashed pills below the fold; it now sits where the next block would go.
+
+.pe-palette {
+  margin-top: var(--spacing-md-sm);
+}
+
+.pe-palette__head {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-sm);
+}
+
+.pe-palette__label {
+  flex: 1 1 auto;
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-bold);
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  color: var(--color-text-muted);
+}
+
+.pe-palette__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(112px, 1fr));
+  gap: var(--spacing-xs);
+}
+
+.pe-palette__btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: var(--control-h-lg);
+  min-height: var(--touch-target-min);
+  padding: 0 var(--spacing-sm-md);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-control);
+  background: transparent;
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: border-color .15s ease, color .15s ease, background-color .15s ease;
+
+  app-icon {
+    font-size: var(--icon-sm);
+    width: var(--icon-sm);
+    height: var(--icon-sm);
+    color: var(--color-text-muted);
+    transition: color .15s ease;
+  }
+
+  &:hover {
+    border-style: solid;
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+    background: var(--color-primary-container);
+
+    app-icon { color: var(--color-primary); }
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+  }
+}
+
+// Import produces blocks the same way the palette does, but a machine wrote
+// them — so it carries the assist colour and sits apart from the typed set.
+.pe-import-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: var(--control-h-sm);
+  min-height: var(--touch-target-min);
+  padding: 0 var(--spacing-sm-md);
+  border: 1px solid color-mix(in srgb, var(--assist) 45%, var(--color-border));
+  border-radius: var(--radius-control);
+  background: transparent;
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--assist);
+  cursor: pointer;
+  transition: background-color .15s ease, border-color .15s ease;
+
+  app-icon { font-size: var(--icon-sm); }
+
+  &:hover {
+    border-color: var(--assist);
+    background: var(--assist-soft);
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 var(--focus-ring-width) color-mix(in srgb, var(--assist) 25%, transparent);
+  }
+}
+
+@media (max-width: 768px) {
+  .pe-item {
+    flex-wrap: wrap;
+  }
+
+  .pe-item--head { display: none; }
+
+  // `flex: 1 1 0` never wraps — it shrinks instead, and on a phone that left
+  // the file picker and its label as two 40px stubs reading "1_SD…" and
+  // "Gel p". A full-width basis is what makes the row actually break: file and
+  // label take a line each, the two codes and the delete share the third.
+  .pe-item__file,
+  .pe-item__label {
+    flex: 1 1 100%;
+  }
+
+  .pe-item__small {
+    flex: 1 1 60px;
+  }
+
+  // Once an item spans three lines, a 4px gap no longer says where one file
+  // ends and the next begins.
+  .pe-item + .pe-item {
+    margin-top: var(--spacing-xs);
+    padding-top: var(--spacing-sm);
+    border-top: 1px dashed var(--color-border-subtle);
+  }
+}
+
+// --- modals: shared shell ---------------------------------------------------
+
+.pe-review,
+.pe-working,
+.pe-import,
+.pe-preview {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-md);
+  background: var(--overlay-bg-light);
+  backdrop-filter: blur(2px);
+}
+
+.pe-review__panel,
+.pe-import__panel {
+  display: flex;
+  flex-direction: column;
+  max-height: 90vh;
+  background: var(--color-surface);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xl);
+  overflow: hidden;
+}
+
+.pe-review__panel { width: min(1100px, 100%); }
+.pe-import__panel { width: min(820px, 100%); }
+
+.pe-review__head,
+.pe-import__head {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md-sm) var(--spacing-md-lg);
+  border-bottom: 1px solid var(--color-border);
+}
+
+// Purple at the top of both panels: everything below was produced by the
+// assistant and is waiting to be checked.
+.pe-review__mark,
+.pe-import__mark {
+  flex: 0 0 auto;
+  font-size: var(--icon-lg);
+  color: var(--assist);
+}
+
+.pe-review__title,
+.pe-import__title {
+  flex: 1 1 auto;
+  margin: 0;
+  font-family: var(--font-heading);
+  font-size: var(--text-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.pe-review__foot,
+.pe-import__foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md-sm) var(--spacing-md-lg);
+  border-top: 1px solid var(--color-border);
+  background: var(--color-background-secondary);
+}
+
+// --- translation review -----------------------------------------------------
+
+.pe-review__note,
+.pe-review__refused {
+  margin: 0;
+  padding: var(--spacing-sm-md) var(--spacing-md-lg);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  color: var(--color-text-secondary);
+  background: var(--assist-soft);
+  color: var(--assist-ink);
+}
+
+.pe-review__refused {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  background: var(--status-warning-bg);
+  color: var(--color-warning);
+
+  app-icon { font-size: var(--icon-md); }
+}
+
+.pe-review__body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 var(--spacing-md-lg) var(--spacing-md);
+}
+
+// Three columns: the tick, the source, the proposal. The tick leads because
+// per-block accept is the point — an editor takes twelve blocks and rewrites
+// the thirteenth themselves.
+.pe-review__row {
+  display: grid;
+  grid-template-columns: 40px 1fr 1fr;
+  gap: var(--spacing-md);
+  padding: var(--spacing-sm-md) 0;
+  border-bottom: 1px solid var(--color-border-subtle);
+
+  &.is-warned {
+    background: color-mix(in srgb, var(--color-warning) 8%, transparent);
+  }
+}
+
+.pe-review__row--head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding-top: var(--spacing-sm);
+  background: var(--color-surface);
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-bold);
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--color-text-muted);
+}
+
+.pe-review__pick {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 2px;
+  min-height: var(--touch-target-min);
+}
+
+.pe-review__col {
+  min-width: 0;
+}
+
+// The proposed column is the one being decided on, so it is the one marked.
+.pe-review__col--proposed {
+  padding-left: var(--spacing-md-sm);
+  border-left: 2px solid color-mix(in srgb, var(--assist) 30%, transparent);
+
+  .pe-review__row--head & { border-left-color: transparent; color: var(--assist); }
+}
+
+.pe-review__kind {
+  display: block;
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-muted);
+  margin-bottom: 2px;
+}
+
+.pe-review__text {
+  margin: 0 0 var(--spacing-xs);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  color: var(--color-text-primary);
+  overflow-wrap: anywhere;
+
+  &--muted { color: var(--color-text-secondary); }
+
+  &.is-empty {
+    color: var(--color-text-muted);
+    font-style: italic;
+  }
+}
+
+.pe-review__warning {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0;
+  font-size: var(--text-xs);
+  color: var(--color-warning);
+
+  app-icon { font-size: 14px; }
+}
+
+.pe-review__empty {
+  padding: var(--spacing-lg);
+  text-align: center;
+  color: var(--color-text-muted);
+}
+
+@media (max-width: 768px) {
+  // Stacked, source above proposal, so neither column is squeezed to a word
+  // per line on a phone.
+  .pe-review__row {
+    grid-template-columns: 32px 1fr;
+    gap: var(--spacing-sm);
+  }
+
+  .pe-review__row--head .pe-review__col:last-child { display: none; }
+
+  .pe-review__row .pe-review__col--proposed {
+    grid-column: 2;
+    margin-top: var(--spacing-xs);
+    border-left-color: var(--assist);
+  }
+}
+
+// --- translation in flight --------------------------------------------------
+
+// Blocks the editor deliberately: the request runs against the saved page, so
+// letting someone keep typing during it would invite them to wonder why their
+// last paragraph came back untranslated.
+.pe-working__panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-sm);
+  width: min(380px, 100%);
+  padding: var(--spacing-lg);
+  text-align: center;
+  background: var(--color-surface);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xl);
+}
+
+.pe-working__icon {
+  font-size: 32px;
+  color: var(--assist);
+}
+
+.pe-working__title {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-size: var(--text-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.pe-working__sub {
+  margin: 0;
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  color: var(--color-text-secondary);
+}
+
+.pe-working__bar {
+  width: 100%;
+  height: 4px;
+  margin-top: var(--spacing-xs);
+  border-radius: var(--radius-pill);
+  background: var(--color-border);
+  overflow: hidden;
+}
+
+// Indeterminate on purpose. A bar that creeps to 90% and waits there is a
+// guess dressed as information; this one only claims that work is happening.
+.pe-working__fill {
+  display: block;
+  width: 40%;
+  height: 100%;
+  border-radius: var(--radius-pill);
+  background: var(--assist);
+  animation: pe-working-slide 1.4s ease-in-out infinite;
+}
+
+@keyframes pe-working-slide {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(250%); }
+}
+
+// The elapsed counter is the honest signal, so it is the one that reads as
+// data: tabular figures, no jitter as the digits change.
+.pe-working__elapsed {
+  margin: 0;
+  font-size: var(--text-lg);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-primary);
+}
+
+.pe-working__slow {
+  margin: 0;
+  font-size: var(--text-xs);
+  line-height: 1.5;
+  color: var(--color-text-muted);
+  max-width: 30ch;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pe-working__fill {
+    width: 100%;
+    animation: none;
+  }
+}
+
+// --- import -----------------------------------------------------------------
+
+.pe-import__body {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--spacing-md) var(--spacing-md-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm-md);
+}
+
+.pe-import__hint {
+  margin: 0;
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  color: var(--color-text-secondary);
+}
+
+.pe-import__source {
+  width: 100%;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.pe-import__file {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  align-self: flex-start;
+  min-height: var(--touch-target-min);
+  font-size: var(--text-sm);
+  color: var(--color-primary);
+  cursor: pointer;
+
+  input { display: none; }
+  app-icon { font-size: var(--icon-md); }
+
+  &:hover { text-decoration: underline; }
+}
+
+.pe-import__summary {
+  display: flex;
+  align-items: baseline;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+  margin: 0;
+  font-size: var(--text-md);
+  color: var(--color-text-primary);
+}
+
+// The matched/missing count is the number that decides whether the import is
+// usable, so it reads as a verdict rather than as more prose.
+.pe-import__files {
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-success-dark);
+
+  &.is-warned { color: var(--color-warning); }
+}
+
+.pe-import__option {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  min-height: var(--touch-target-min);
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+
+.pe-import__blocks {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm-md);
+  background: var(--content-canvas);
+  overflow: hidden;
+}
+
+.pe-import__block {
+  display: grid;
+  grid-template-columns: 24px 96px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-xs) var(--spacing-sm-md);
+  font-size: var(--text-sm);
+
+  & + & { border-top: 1px solid var(--color-border-subtle); }
+}
+
+.pe-import__block-icon {
+  font-size: var(--icon-md);
+  color: var(--color-text-muted);
+}
+
+.pe-import__block-kind {
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+
+.pe-import__block-text {
+  color: var(--color-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pe-import__block-warn {
+  font-size: var(--text-xs);
+  color: var(--color-warning);
+  white-space: nowrap;
+}
+
+.pe-import__warning {
+  padding: var(--spacing-sm) var(--spacing-sm-md);
+  border-radius: var(--radius-sm-md);
+  border-left: 3px solid var(--color-warning);
+  background: color-mix(in srgb, var(--color-warning) 8%, transparent);
+}
+
+.pe-import__warning-title {
+  margin: 0 0 var(--spacing-xs);
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.pe-import__warning-list {
+  margin: 0;
+  padding-left: var(--spacing-md);
+  font-size: var(--text-xs);
+  line-height: 1.6;
+  color: var(--color-text-secondary);
+  max-height: 160px;
+  overflow-y: auto;
+
+  li { overflow-wrap: anywhere; }
+}
+
+@media (max-width: 768px) {
+  .pe-import__block {
+    grid-template-columns: 24px minmax(0, 1fr);
+
+    .pe-import__block-kind,
+    .pe-import__block-warn { grid-column: 2; }
+  }
+}
+
+// --- preview ----------------------------------------------------------------
+//
+// The page as a partner sees it, rendered by the partner's own component. It
+// takes nearly the whole viewport because judging a document at thumbnail size
+// is not judging it — and it sits on the partner background, not the admin
+// card, so the thing being judged is not wearing the admin's chrome.
+
+.pe-preview__panel {
+  display: flex;
+  flex-direction: column;
+  width: min(1180px, 100%);
+  height: min(92vh, 100%);
+  background: var(--color-surface);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xl);
+  overflow: hidden;
+}
+
+.pe-preview__head {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.pe-preview__mark {
+  flex: 0 0 auto;
+  font-size: var(--icon-lg);
+  color: var(--color-primary);
+}
+
+.pe-preview__title {
+  flex: 1 1 auto;
+  margin: 0;
+  font-family: var(--font-heading);
+  font-size: var(--text-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+}
+
+// Two states, so a segmented control rather than two buttons that happen to
+// sit next to each other.
+.pe-preview__widths {
+  display: inline-flex;
+  flex: 0 0 auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  overflow: hidden;
+}
+
+.pe-preview__width {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: var(--control-h-md);
+  min-height: var(--touch-target-min);
+  padding: 0 var(--spacing-md-sm);
+  border: none;
+  background: transparent;
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: background-color .15s ease, color .15s ease;
+
+  app-icon { font-size: var(--icon-sm); }
+
+  & + & { border-left: 1px solid var(--color-border); }
+
+  &:hover { color: var(--color-text-primary); }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: inset var(--focus-ring);
+  }
+
+  &.is-active {
+    background: var(--color-primary-container);
+    color: var(--color-primary);
+  }
+}
+
+// Everything a partner's view of this page depends on, before the page itself:
+// whether it is live, which language this is, who it reaches, and that what
+// follows has not been saved.
+.pe-preview__strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-sm) var(--spacing-md);
+  padding: var(--spacing-xs) var(--spacing-md);
+  border-bottom: 1px solid var(--color-border);
+  background: color-mix(in srgb, var(--color-success) 10%, transparent);
+  font-size: var(--text-xs);
+
+  &.is-draft {
+    background: var(--color-alert-warning-bg);
+  }
+}
+
+.pe-preview__state {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: var(--font-weight-bold);
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--color-success-dark);
+
+  .is-draft & { color: var(--color-alert-warning-text); }
+}
+
+.pe-preview__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--color-success);
+
+  .is-draft & { background: var(--color-alert-warning-text); }
+}
+
+.pe-preview__lang {
+  padding: 1px 7px;
+  border-radius: var(--radius-sm);
+  background: var(--card-bg);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: .06em;
+  color: var(--color-text-secondary);
+}
+
+.pe-preview__audience {
+  flex: 1 1 auto;
+  min-width: 0;
+  color: var(--color-text-secondary);
+}
+
+.pe-preview__unsaved {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex: 0 0 auto;
+  color: var(--color-text-secondary);
+
+  app-icon { font-size: var(--icon-sm); }
+}
+
+// The partner background, not the admin's. A page judged against the wrong
+// surface is judged against the wrong contrast.
+.pe-preview__body {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: var(--spacing-md-lg) var(--spacing-md);
+  // A shade deeper than the canvas so the page reads as a sheet on a desk,
+  // in both themes.
+  background: color-mix(in srgb, var(--color-text-muted) 18%, var(--color-background));
+}
+
+.pe-preview__canvas {
+  margin: 0 auto;
+  padding: var(--spacing-md-lg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  // The partner background, not --card-bg. Link cards are white cards with a
+  // transparent border in the light theme: on a white canvas they disappear,
+  // and a preview that hides a block is worse than no preview.
+  background: var(--color-background);
+  box-shadow: var(--shadow-md);
+  transition: max-width .2s ease;
+
+  &[data-width='page']  { max-width: 820px; }
+
+  // A real phone viewport, so a wide table falls off the edge here exactly as
+  // it would on the partner's device.
+  &[data-width='phone'] {
+    max-width: 390px;
+    padding: var(--spacing-md);
+  }
+}
+
+.pe-preview__empty {
+  margin: 0;
+  padding: var(--spacing-2xl) var(--spacing-md);
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+@media (max-width: 768px) {
+  .pe-preview__head {
+    flex-wrap: wrap;
+  }
+
+  .pe-preview__title { flex: 1 1 100%; order: -1; }
+
+  .pe-preview__canvas[data-width='page'] { max-width: none; }
+}

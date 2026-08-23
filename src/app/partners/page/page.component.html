@@ -1,0 +1,138 @@
+<div class="pp-shell">
+
+  <!-- Sidebar tree, desktop. Collapses into a bottom sheet on mobile. -->
+  @if (sectionRoot) {
+    <nav class="pp-side pp-desktop-only" [attr.aria-label]="'partners.contents' | translate">
+      <a class="pp-side__root" [routerLink]="linkFor(sectionRoot)">
+        <app-icon [name]="sectionRoot.icon || 'description'"></app-icon>
+        {{ sectionRoot.title }}
+      </a>
+      <ul class="pp-side__list">
+        @for (child of sectionRoot.children; track trackByUid($index, child)) {
+          <li>
+            <a
+              [routerLink]="linkFor(child)"
+              class="pp-side__link"
+              [class.is-current]="isCurrent(child)"
+            >
+              {{ child.title }}
+              @if (isDraft(child)) {
+                <span class="pp-draft-chip">{{ 'partners.draft' | translate }}</span>
+              }
+            </a>
+            @if (child.children?.length) {
+              <ul class="pp-side__sublist">
+                @for (grandchild of child.children; track trackByUid($index, grandchild)) {
+                  <li>
+                    <a
+                      [routerLink]="linkFor(grandchild)"
+                      class="pp-side__link pp-side__link--nested"
+                      [class.is-current]="isCurrent(grandchild)"
+                    >
+                      {{ grandchild.title }}
+                    </a>
+                  </li>
+                }
+              </ul>
+            }
+          </li>
+        }
+      </ul>
+    </nav>
+  }
+
+  <main class="pp-main">
+
+    @if (loading) {
+      <div class="pp-loading">{{ 'partners.loading' | translate }}</div>
+    } @else if (notFound) {
+      <div class="pp-empty">
+        <app-icon name="search_off" class="pp-empty__icon"></app-icon>
+        <p class="pp-empty__title">{{ 'partners.notFoundTitle' | translate }}</p>
+        <p class="pp-empty__hint">{{ 'partners.notFoundHint' | translate }}</p>
+        <a class="pp-btn" routerLink="/partners">{{ 'partners.backToHub' | translate }}</a>
+      </div>
+    } @else if (error) {
+      <div class="pp-error" role="alert">{{ error }}</div>
+    } @else if (page) {
+
+      <!-- Staff bar: the hub is its own preview, so publication happens here
+           rather than on a separate screen. -->
+      @if (canEdit) {
+        <div class="pp-staffbar" [class.is-draft]="isDraft(page)">
+          <span class="pp-staffbar__dot" aria-hidden="true"></span>
+          <span class="pp-staffbar__text">
+            @if (isDraft(page)) {
+              {{ 'partners.draftNotice' | translate }}
+            } @else {
+              {{ 'partners.publishedNotice' | translate }}
+              @if (page.published_at) {
+                <span class="pp-staffbar__date">{{ page.published_at | dateFormat }}</span>
+              }
+            }
+            @if (audienceOf(page)) {
+              <span class="pp-staffbar__audience">{{ audienceOf(page) }}</span>
+            }
+          </span>
+          <div class="pp-staffbar__actions">
+            <button type="button" class="pp-btn pp-btn--ghost" (click)="togglePublish()">
+              {{ (isDraft(page) ? 'partners.publish' : 'partners.unpublish') | translate }}
+            </button>
+            <button type="button" class="pp-btn pp-btn--ghost" (click)="editInAdmin()">
+              <app-icon name="edit"></app-icon>
+              {{ 'common.edit' | translate }}
+            </button>
+          </div>
+        </div>
+      }
+
+      <nav class="pp-crumbs" [attr.aria-label]="'partners.breadcrumb' | translate">
+        <a routerLink="/partners" class="pp-crumb">{{ 'partners.title' | translate }}</a>
+        @for (crumb of breadcrumbs; track trackByUid($index, crumb)) {
+          <app-icon name="chevron_right" class="pp-crumb__sep"></app-icon>
+          <a [routerLink]="linkFor(crumb)" class="pp-crumb" [class.is-current]="isCurrent(crumb)">
+            {{ crumb.title }}
+          </a>
+        }
+      </nav>
+
+      <button type="button" class="pp-contents-toggle pp-mobile-only" (click)="toggleContents()">
+        <app-icon name="list"></app-icon>
+        {{ 'partners.contents' | translate }}
+      </button>
+
+      <app-content-article
+        [title]="page.title || ''"
+        [summary]="page.summary || ''"
+        [blocks]="blocks"
+        [files]="page.files || []"
+        [children]="page.children || []"
+      ></app-content-article>
+
+    }
+  </main>
+</div>
+
+<!-- Mobile contents sheet -->
+@if (showContents && sectionRoot) {
+  <div class="pp-sheet-backdrop" (click)="toggleContents()"></div>
+  <nav class="pp-sheet" [attr.aria-label]="'partners.contents' | translate">
+    <div class="pp-sheet__head">
+      <span>{{ 'partners.contents' | translate }}</span>
+      <button type="button" class="pp-sheet__close" (click)="toggleContents()"
+              [attr.aria-label]="'common.close' | translate">
+        <app-icon name="close"></app-icon>
+      </button>
+    </div>
+    <ul class="pp-side__list">
+      @for (child of sectionRoot.children; track trackByUid($index, child)) {
+        <li>
+          <a [routerLink]="linkFor(child)" class="pp-side__link"
+             [class.is-current]="isCurrent(child)" (click)="toggleContents()">
+            {{ child.title }}
+          </a>
+        </li>
+      }
+    </ul>
+  </nav>
+}

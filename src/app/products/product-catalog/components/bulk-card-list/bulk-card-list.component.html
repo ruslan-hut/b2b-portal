@@ -1,11 +1,11 @@
-@if (products.length === 0) {
+@if (products().length === 0) {
   <div class="empty-state">
-    <span class="material-icons empty-icon">search</span>
+    <app-icon name="search" class="empty-icon"></app-icon>
     <h2>{{ 'products.noProducts' | translate }}</h2>
     <p>{{ 'common.search' | translate }}</p>
   </div>
 } @else {
-  @for (product of products; track product.id) {
+  @for (product of products(); track product.id) {
     <app-bulk-product-card
       [product]="product"
       [bulkQuantity]="getBulkQuantity(product.id)"
@@ -15,7 +15,8 @@
       [originalPrice]="getOriginalPriceWithVat(product)"
       [hasDiscount]="hasDiscount()"
       [subtotalWithVat]="getItemSubtotalWithVat(product, getBulkQuantity(product.id))"
-      [currency]="currency"
+      [currency]="currency()"
+      [previewMode]="previewMode()"
       (cardToggle)="onCardToggle(product.id)"
       (productSelect)="onProductSelect(product)"
       (quantityIncrement)="onQuantityIncrement(product)"

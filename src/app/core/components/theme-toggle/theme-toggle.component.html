@@ -4,8 +4,8 @@
     (click)="toggleDropdown()"
     [attr.aria-label]="'theme.toggle' | translate"
     [attr.aria-expanded]="isDropdownOpen">
-    <span class="material-icons theme-icon">{{ getThemeIcon() }}</span>
-    <span class="material-icons arrow" [class.open]="isDropdownOpen">keyboard_arrow_down</span>
+    <app-icon [name]="getThemeIcon()" class="theme-icon"></app-icon>
+    <app-icon name="keyboard_arrow_down" class="arrow" [class.open]="isDropdownOpen"></app-icon>
   </button>
 
   <div class="theme-dropdown" [class.open]="isDropdownOpen">
@@ -15,10 +15,10 @@
         [class.active]="(theme$ | async) === theme.value"
         (click)="selectTheme(theme.value)"
         [attr.aria-label]="theme.labelKey | translate">
-        <span class="material-icons option-icon">{{ theme.icon }}</span>
+        <app-icon [name]="theme.icon" class="option-icon"></app-icon>
         <span class="option-label">{{ theme.labelKey | translate }}</span>
         @if ((theme$ | async) === theme.value) {
-          <span class="material-icons check-icon">check</span>
+          <app-icon name="check" class="check-icon"></app-icon>
         }
       </button>
     }

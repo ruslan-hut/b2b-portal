@@ -1,8 +1,18 @@
 import { Component, OnInit, OnDestroy, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Subscription } from 'rxjs';
+import { Router } from '@angular/router';
+import { forkJoin, Subscription } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { PageTitleService } from '../../core/services/page-title.service';
+import { TranslationService } from '../../core/services/translation.service';
+import { StoreService } from '../../core/services/store.service';
+import { PriceTypeService } from '../../core/services/price-type.service';
+import { Store } from '../../core/models/store.model';
+import { PriceType } from '../../core/models/price-type.model';
+import { formatDateTime } from '../../core/utils/date-format';
+import { ApiResponse } from '../../core/models/api.model';
+import { ToggleState, ExpandState } from '../../core/utils/ui-state';
+import { KNOWN_ROLES } from '../../core/models/user.model';
 
 export interface AdminUser {
   uid: string;
@@ -11,21 +21,17 @@ export interface AdminUser {
   first_name: string;
   last_name: string;
   role: string;
+  /**
+   * Login gate. Absent on rows written before the column existed, which the
+   * backend defaults to active — so treat undefined as active everywhere.
+   */
+  active?: boolean;
   store_uid?: string;
   price_type_uid?: string;
+  receive_email_notifications?: boolean;
+  all_orders?: boolean;
   last_login?: string;
   last_update: string;
-}
-
-interface ApiResponse<T> {
-  success: boolean;
-  data: T;
-  metadata?: {
-    page: number;
-    count: number;
-    total: number;
-    total_pages: number;
-  };
 }
 
 @Component({
@@ -42,44 +48,66 @@ export class UsersComponent implements OnInit, OnDestroy {
   filteredUsers: AdminUser[] = [];
   loading = false;
   error: string | null = null;
-  
+
+  // Resolved lookups
+  storesByUid: Record<string, Store> = {};
+  priceTypesByUid: Record<string, PriceType> = {};
+
   // Pagination
   currentPage = 1;
   pageSize = 20;
   total = 0;
   totalPages = 1;
-  
+
   // Filters
   roleFilter: string = '';
+  statusFilter: '' | 'active' | 'blocked' = '';
   searchTerm = '';
-  
-  // Role options
+
+  // Role options (labels resolved via translate pipe in template).
+  // Mirrors entity.StaffRoles on the backend. The legacy "user" and "client"
+  // values are gone — no authorization gate ever read them — but a row can
+  // still hold one, so `legacy` is offered as a catch-all filter.
   roleOptions = [
-    { value: '', label: 'All Roles' },
-    { value: 'admin', label: 'Admin' },
-    { value: 'manager', label: 'Manager' },
-    { value: 'user', label: 'User' },
-    { value: 'client', label: 'Client' }
+    { value: '', labelKey: 'admin.users.allRoles' },
+    { value: 'admin', labelKey: 'admin.users.roleAdmin' },
+    { value: 'manager', labelKey: 'admin.users.roleManager' },
+    { value: 'content_editor', labelKey: 'admin.users.roleContentEditor' },
+    { value: 'legacy', labelKey: 'admin.users.roleLegacy' }
+  ];
+
+  statusOptions = [
+    { value: '', labelKey: 'admin.users.allStatuses' },
+    { value: 'active', labelKey: 'admin.users.statusActive' },
+    { value: 'blocked', labelKey: 'admin.users.statusBlocked' }
   ];
 
   // Mobile UI state
-  isFiltersExpanded = false;
-  expandedCardIds: Set<string> = new Set();
-
-  // Edit/Create
-  editingUser: AdminUser | null = null;
-  showEditModal = false;
-  editForm: Partial<AdminUser & { password: string; confirmPassword: string }> = {};
-  isCreating = false;
+  filters = new ToggleState();
+  cards = new ExpandState();
 
   constructor(
     private http: HttpClient,
+    private router: Router,
     private cdr: ChangeDetectorRef,
-    private pageTitleService: PageTitleService
+    private pageTitleService: PageTitleService,
+    private translation: TranslationService,
+    private storeService: StoreService,
+    private priceTypeService: PriceTypeService
   ) {}
 
   ngOnInit(): void {
-    this.pageTitleService.setTitle('Users');
+    this.pageTitleService.setTitle(this.translation.instant('admin.users.title'));
+    this.subscriptions.add(
+      forkJoin({
+        stores: this.storeService.getStores(),
+        priceTypes: this.priceTypeService.getPriceTypes(),
+      }).subscribe(({ stores, priceTypes }) => {
+        this.storesByUid = stores;
+        this.priceTypesByUid = priceTypes;
+        this.cdr.detectChanges();
+      })
+    );
     this.loadUsers();
   }
 
@@ -106,7 +134,7 @@ export class UsersComponent implements OnInit, OnDestroy {
         },
         error: (err) => {
           console.error('Failed to load users:', err);
-          this.error = 'Failed to load users';
+          this.error = this.translation.instant('admin.users.errLoadUsers');
           this.loading = false;
           this.cdr.detectChanges();
         }
@@ -117,12 +145,17 @@ export class UsersComponent implements OnInit, OnDestroy {
   applyFilters(): void {
     let filtered = [...this.users];
 
-    // Apply role filter
-    if (this.roleFilter) {
+    if (this.roleFilter === 'legacy') {
+      filtered = filtered.filter(u => !this.isKnownRole(u.role));
+    } else if (this.roleFilter) {
       filtered = filtered.filter(u => u.role === this.roleFilter);
     }
 
-    // Apply search filter
+    if (this.statusFilter) {
+      const wantActive = this.statusFilter === 'active';
+      filtered = filtered.filter(u => this.isActive(u) === wantActive);
+    }
+
     if (this.searchTerm.trim()) {
       const search = this.searchTerm.toLowerCase();
       filtered = filtered.filter(u =>
@@ -140,140 +173,46 @@ export class UsersComponent implements OnInit, OnDestroy {
     this.applyFilters();
   }
 
+  onStatusFilterChange(): void {
+    this.currentPage = 1;
+    this.applyFilters();
+  }
+
+  /** A row without the flag predates the column, and the backend defaults it to active. */
+  isActive(user: AdminUser): boolean {
+    return user.active !== false;
+  }
+
+  /**
+   * Roles the backend still accepts on write. A row outside this set holds a
+   * retired value ("user"/"client") and grants no access at all — flag it so
+   * an admin can spot the ones that need re-roling.
+   */
+  isKnownRole(role: string): boolean {
+    return (KNOWN_ROLES as readonly string[]).includes(role);
+  }
+
   onSearchChange(): void {
     this.currentPage = 1;
     this.applyFilters();
   }
 
   editUser(user: AdminUser): void {
-    this.editingUser = user;
-    this.isCreating = false;
-    this.editForm = {
-      ...user,
-      password: '',
-      confirmPassword: ''
-    };
-    this.showEditModal = true;
+    this.router.navigate(['/admin/users', user.uid], { state: { user } });
   }
 
   createUser(): void {
-    this.editingUser = null;
-    this.isCreating = true;
-    this.editForm = {
-      username: '',
-      email: '',
-      password: '',
-      confirmPassword: '',
-      first_name: '',
-      last_name: '',
-      role: 'user',
-      store_uid: '',
-      price_type_uid: ''
-    };
-    this.showEditModal = true;
+    this.router.navigate(['/admin/users', 'new']);
   }
 
-  saveUser(): void {
-    // Validation
-    if (!this.editForm.username || !this.editForm.role) {
-      alert('Username and role are required');
-      return;
-    }
-
-    if (this.isCreating && !this.editForm.password) {
-      alert('Password is required for new users');
-      return;
-    }
-
-    if (this.editForm.password && this.editForm.password !== this.editForm.confirmPassword) {
-      alert('Passwords do not match');
-      return;
-    }
-
-    // Build user data
-    const userData: any = {
-      uid: this.editingUser?.uid || '',
-      username: this.editForm.username,
-      email: this.editForm.email || '',
-      first_name: this.editForm.first_name || '',
-      last_name: this.editForm.last_name || '',
-      role: this.editForm.role, // Fixed: was user_role
-    };
-
-    // Only include store_uid and price_type_uid if they have values
-    // Empty strings are allowed and will be stored as empty
-    if (this.editForm.store_uid !== undefined && this.editForm.store_uid !== null) {
-      userData.store_uid = this.editForm.store_uid;
-    }
-    if (this.editForm.price_type_uid !== undefined && this.editForm.price_type_uid !== null) {
-      userData.price_type_uid = this.editForm.price_type_uid;
-    }
-
-    // Only include password if it's provided (for new users or password changes)
-    // Empty password means don't change it for existing users
-    if (this.editForm.password && this.editForm.password.trim() !== '') {
-      userData.password = this.editForm.password;
-    } else if (this.isCreating) {
-      // For new users, password is required (handled by validation above)
-      // If we reach here without password, validation should have caught it
-      userData.password = '';
-    }
-    // For updates without password, don't include password field at all
-
-    this.subscriptions.add(
-      this.http.post<ApiResponse<string[]>>(`${environment.apiUrl}/admin/user`, {
-        data: [userData]
-      }).subscribe({
-        next: () => {
-          this.showEditModal = false;
-          this.loadUsers();
-        },
-        error: (err) => {
-          console.error('Failed to save user:', err);
-          alert('Failed to save user: ' + (err.error?.message || err.message || 'Unknown error'));
-        }
-      })
-    );
+  storeName(uid?: string): string {
+    if (!uid) return '';
+    return this.storesByUid[uid]?.name || uid;
   }
 
-  deleteUser(user: AdminUser): void {
-    if (!confirm(`Are you sure you want to delete user "${user.username}"?`)) {
-      return;
-    }
-
-    this.subscriptions.add(
-      this.http.post(`${environment.apiUrl}/admin/user/delete`, {
-        data: [user.uid]
-      }).subscribe({
-        next: () => {
-          this.loadUsers();
-        },
-        error: (err) => {
-          console.error('Failed to delete user:', err);
-          alert('Failed to delete user');
-        }
-      })
-    );
-  }
-
-  generatePassword(): void {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    let password = '';
-    const array = new Uint32Array(16);
-    crypto.getRandomValues(array);
-    for (let i = 0; i < 16; i++) {
-      password += chars[array[i] % chars.length];
-    }
-    this.editForm.password = password;
-    this.editForm.confirmPassword = password;
-    this.cdr.detectChanges();
-  }
-
-  cancelEdit(): void {
-    this.showEditModal = false;
-    this.editingUser = null;
-    this.editForm = {};
-    this.isCreating = false;
+  priceTypeName(uid?: string): string {
+    if (!uid) return '';
+    return this.priceTypesByUid[uid]?.name || uid;
   }
 
   getRoleClass(role: string): string {
@@ -281,9 +220,7 @@ export class UsersComponent implements OnInit, OnDestroy {
   }
 
   formatDate(dateString?: string): string {
-    if (!dateString) return '-';
-    const date = new Date(dateString);
-    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+    return formatDateTime(dateString);
   }
 
   goToPage(page: number): void {
@@ -292,23 +229,4 @@ export class UsersComponent implements OnInit, OnDestroy {
       this.loadUsers();
     }
   }
-
-  // Mobile UI methods
-  toggleFilters(): void {
-    this.isFiltersExpanded = !this.isFiltersExpanded;
-    this.cdr.detectChanges();
-  }
-
-  toggleCardExpanded(uid: string): void {
-    if (this.expandedCardIds.has(uid)) {
-      this.expandedCardIds.delete(uid);
-    } else {
-      this.expandedCardIds.add(uid);
-    }
-  }
-
-  isCardExpanded(uid: string): boolean {
-    return this.expandedCardIds.has(uid);
-  }
 }
-

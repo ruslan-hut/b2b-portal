@@ -1,0 +1,140 @@
+<section class="pak">
+  <div class="pak__head">
+    <div>
+      <h2 class="pak__title">{{ 'profile.apiKeys.title' | translate }}</h2>
+      <p class="pak__sub">{{ 'profile.apiKeys.subtitle' | translate }}</p>
+    </div>
+    <div class="pak__head-actions">
+      <a class="pak__docs" routerLink="/api-guide">
+        <app-icon name="menu_book"></app-icon>{{ 'profile.apiKeys.guide' | translate }}
+      </a>
+      <a class="pak__docs" routerLink="/api-docs">
+        <app-icon name="code"></app-icon>{{ 'profile.apiKeys.docs' | translate }}
+      </a>
+      @if (access && data) {
+        <button type="button" class="pak-btn pak-btn--primary" (click)="openCreate()" [disabled]="!canCreate">
+          <app-icon name="add"></app-icon>{{ 'profile.apiKeys.newKey' | translate }}
+        </button>
+      }
+    </div>
+  </div>
+
+  @if (!access) {
+    <!-- No access yet: say what the feature does and where to read about it,
+         rather than hiding the section and leaving the client to guess. -->
+    <div class="pak-locked">
+      <app-icon name="vpn_key" class="pak-locked__icon"></app-icon>
+      <div class="pak-locked__text">
+        <p class="pak-locked__lead">{{ 'profile.apiKeys.lockedLead' | translate }}</p>
+        <ul class="pak-locked__list">
+          <li>{{ 'profile.apiKeys.lockedUse1' | translate }}</li>
+          <li>{{ 'profile.apiKeys.lockedUse2' | translate }}</li>
+          <li>{{ 'profile.apiKeys.lockedUse3' | translate }}</li>
+        </ul>
+        <p class="pak-locked__hint">{{ 'profile.apiKeys.lockedHint' | translate }}</p>
+      </div>
+      <a class="pak-btn pak-btn--primary pak-locked__cta" routerLink="/api-guide">
+        <app-icon name="menu_book"></app-icon>{{ 'profile.apiKeys.readGuide' | translate }}
+      </a>
+    </div>
+  }
+  @else if (loading) { <div class="pak__loading">{{ 'common.loading' | translate }}</div> }
+  @else if (error) { <div class="pak__error">{{ error }}</div> }
+  @else if (data) {
+    <p class="pak__quota">
+      {{ 'profile.apiKeys.quota' | translate: { active: data.active_keys, max: data.max_keys } }}
+    </p>
+    @if (data.keys.length === 0) {
+      <div class="pak__empty">{{ 'profile.apiKeys.empty' | translate }}</div>
+    } @else {
+      <ul class="pak-list">
+        @for (k of data.keys; track k.uid) {
+          <li class="pak-key" [class.is-inactive]="!isActive(k)">
+            <div class="pak-key__main">
+              @if (renamingUid === k.uid) {
+                <form class="pak-rename" (ngSubmit)="saveRename(k)">
+                  <input class="pak-input" [(ngModel)]="renameValue" name="rename" maxlength="100" autofocus />
+                  <button type="submit" class="pak-btn pak-btn--small">{{ 'common.save' | translate }}</button>
+                  <button type="button" class="pak-btn pak-btn--small pak-btn--ghost" (click)="cancelRename()">{{ 'common.cancel' | translate }}</button>
+                </form>
+              } @else {
+                <span class="pak-key__name">{{ k.name }}</span>
+              }
+              <span class="pak-key__prefix">{{ displayPrefix(k) }}</span>
+              <span class="pak-key__scopes">@for (s of k.scopes; track s) { <span class="pak-scope">{{ s }}</span> }</span>
+            </div>
+            <div class="pak-key__meta">
+              <span class="pak-status" [class.is-active]="isActive(k)">
+                {{ (k.status === 'revoked' ? 'profile.apiKeys.revokedState' : (isActive(k) ? 'profile.apiKeys.active' : 'profile.apiKeys.expired')) | translate }}
+              </span>
+              @if (k.is_test) { <span class="pak-tag">{{ 'profile.apiKeys.test' | translate }}</span> }
+              <span class="pak-key__date">{{ 'profile.apiKeys.expires' | translate }} {{ formatDate(k.expires_at) }}</span>
+              <span class="pak-key__date">{{ 'profile.apiKeys.lastUsed' | translate }} {{ formatDate(k.last_used_at) }}</span>
+            </div>
+            @if (isActive(k)) {
+              <div class="pak-key__actions">
+                <button type="button" class="pak-icon" (click)="startRename(k)" [title]="'common.edit' | translate"><app-icon name="edit"></app-icon></button>
+                <button type="button" class="pak-icon" (click)="rotate(k)" [title]="'profile.apiKeys.rotate' | translate"><app-icon name="sync"></app-icon></button>
+                <button type="button" class="pak-icon pak-icon--danger" (click)="revoke(k)" [title]="'profile.apiKeys.revoke' | translate"><app-icon name="block"></app-icon></button>
+              </div>
+            }
+          </li>
+        }
+      </ul>
+    }
+  }
+
+  <!-- Create dialog -->
+  @if (showCreate && data) {
+    <div class="pak-overlay" (click)="closeCreate()">
+      <div class="pak-modal" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+        <header class="pak-modal__head"><h3>{{ 'profile.apiKeys.newKey' | translate }}</h3></header>
+        <form class="pak-modal__body" (ngSubmit)="create()">
+          <label class="pak-field">
+            <span>{{ 'profile.apiKeys.name' | translate }}</span>
+            <input class="pak-input" [(ngModel)]="newName" name="name" maxlength="100" required [placeholder]="'profile.apiKeys.namePlaceholder' | translate" />
+          </label>
+          <div class="pak-field">
+            <span>{{ 'profile.apiKeys.scopes' | translate }}</span>
+            <div class="pak-chips">
+              @for (s of data.available_scopes; track s) {
+                <button type="button" class="pak-chip" [class.is-active]="hasScope(s)" (click)="toggleScope(s)">{{ s }}</button>
+              }
+            </div>
+          </div>
+          <label class="pak-check">
+            <input type="checkbox" [(ngModel)]="newIsTest" name="is_test" />
+            <span>{{ 'profile.apiKeys.testMode' | translate }} — <em>{{ 'profile.apiKeys.testModeHint' | translate }}</em></span>
+          </label>
+          <p class="pak__sub">{{ 'profile.apiKeys.ttlHint' | translate: { days: data.default_ttl_days } }}</p>
+          <div class="pak-modal__foot">
+            <button type="button" class="pak-btn pak-btn--ghost" (click)="closeCreate()">{{ 'common.cancel' | translate }}</button>
+            <button type="submit" class="pak-btn pak-btn--primary" [disabled]="creating || !newName.trim() || newScopes.length === 0">{{ 'profile.apiKeys.create' | translate }}</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+
+  <!-- Show-once dialog -->
+  @if (created) {
+    <div class="pak-overlay">
+      <div class="pak-modal" role="dialog" aria-modal="true">
+        <header class="pak-modal__head"><h3>{{ 'profile.apiKeys.createdTitle' | translate }}</h3></header>
+        <div class="pak-modal__body">
+          <p class="pak__warn">{{ 'profile.apiKeys.createdWarning' | translate }}</p>
+          <div class="pak-secret">
+            <code>{{ created.plaintext_key }}</code>
+            <button type="button" class="pak-btn pak-btn--small" (click)="copyCreated()">
+              <app-icon [name]="copied ? 'check' : 'content_copy'"></app-icon>{{ (copied ? 'profile.apiKeys.copied' : 'common.copy') | translate }}
+            </button>
+          </div>
+          <p class="pak__sub">{{ 'profile.apiKeys.usage' | translate }} <code>Authorization: Bearer &lt;key&gt;</code></p>
+          <div class="pak-modal__foot">
+            <button type="button" class="pak-btn pak-btn--primary" (click)="closeCreated()">{{ 'profile.apiKeys.saved' | translate }}</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+</section>

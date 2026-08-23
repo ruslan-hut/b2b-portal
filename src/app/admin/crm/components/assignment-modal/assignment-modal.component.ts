@@ -1,63 +1,56 @@
-import { Component, Input, Output, EventEmitter, OnInit, OnDestroy, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
-import { Subscription } from 'rxjs';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, OnInit, inject, input, output } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CrmBoardOrder } from '../../models/crm-board.model';
 import { CrmService, CrmAssignableUser } from '../../services/crm.service';
 
 @Component({
-    selector: 'app-assignment-modal',
-    templateUrl: './assignment-modal.component.html',
-    styleUrls: ['./assignment-modal.component.scss'],
-    standalone: false,
-    changeDetection: ChangeDetectionStrategy.OnPush
+  selector: 'app-assignment-modal',
+  templateUrl: './assignment-modal.component.html',
+  styleUrls: ['./assignment-modal.component.scss'],
+  standalone: false,
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class AssignmentModalComponent implements OnInit, OnDestroy {
-  @Input() order!: CrmBoardOrder;
+export class AssignmentModalComponent implements OnInit {
+  private readonly crmService = inject(CrmService);
+  private readonly cdr = inject(ChangeDetectorRef);
+  private readonly destroyRef = inject(DestroyRef);
 
-  @Output() complete = new EventEmitter<void>();
-  @Output() cancel = new EventEmitter<void>();
+  readonly order = input.required<CrmBoardOrder>();
 
-  private subscriptions = new Subscription();
+  readonly complete = output<void>();
+  readonly cancel = output<void>();
 
   users: CrmAssignableUser[] = [];
-  selectedUserUid: string = '';
+  selectedUserUid = '';
   loading = false;
   saving = false;
   error: string | null = null;
 
-  constructor(
-    private crmService: CrmService,
-    private cdr: ChangeDetectorRef
-  ) {}
-
   ngOnInit(): void {
     this.loadUsers();
-    if (this.order.assigned_user_uid) {
-      this.selectedUserUid = this.order.assigned_user_uid;
+    const order = this.order();
+    if (order.assigned_user_uid) {
+      this.selectedUserUid = order.assigned_user_uid;
     }
-  }
-
-  ngOnDestroy(): void {
-    this.subscriptions.unsubscribe();
   }
 
   loadUsers(): void {
     this.loading = true;
-    this.subscriptions.add(
-      this.crmService.getAssignableUsers(this.order.store_uid).subscribe({
-        next: (users) => {
-          // Backend already filters to appropriate users based on role and store
+    this.crmService.getAssignableUsers(this.order().store_uid)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: users => {
           this.users = users;
           this.loading = false;
-          this.cdr.detectChanges();
+          this.cdr.markForCheck();
         },
-        error: (err) => {
+        error: err => {
           console.error('Failed to load users:', err);
           this.error = 'Failed to load users';
           this.loading = false;
-          this.cdr.detectChanges();
+          this.cdr.markForCheck();
         }
-      })
-    );
+      });
   }
 
   onAssign(): void {
@@ -69,45 +62,45 @@ export class AssignmentModalComponent implements OnInit, OnDestroy {
     this.saving = true;
     this.error = null;
 
-    this.subscriptions.add(
-      this.crmService.assignOrders({
-        user_uid: this.selectedUserUid,
-        order_uids: [this.order.uid]
-      }).subscribe({
+    this.crmService.assignOrders({
+      user_uid: this.selectedUserUid,
+      order_uids: [this.order().uid]
+    })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
         next: () => {
           this.complete.emit();
         },
-        error: (err) => {
+        error: err => {
           console.error('Failed to assign order:', err);
           this.error = 'Failed to assign order';
           this.saving = false;
-          this.cdr.detectChanges();
+          this.cdr.markForCheck();
         }
-      })
-    );
+      });
   }
 
   onUnassign(): void {
-    if (!this.order.assigned_user_uid) {
+    if (!this.order().assigned_user_uid) {
       return;
     }
 
     this.saving = true;
     this.error = null;
 
-    this.subscriptions.add(
-      this.crmService.unassignOrders([this.order.uid]).subscribe({
+    this.crmService.unassignOrders([this.order().uid])
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
         next: () => {
           this.complete.emit();
         },
-        error: (err) => {
+        error: err => {
           console.error('Failed to unassign order:', err);
           this.error = 'Failed to unassign order';
           this.saving = false;
-          this.cdr.detectChanges();
+          this.cdr.markForCheck();
         }
-      })
-    );
+      });
   }
 
   onCancel(): void {

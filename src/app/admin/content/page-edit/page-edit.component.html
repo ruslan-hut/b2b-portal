@@ -1,0 +1,1075 @@
+<div class="adm-page">
+
+  <header class="adm-bar">
+    <div class="adm-bar__crumbs">
+      <a class="adm-crumb" routerLink="/admin/content">{{ 'admin.content.title' | translate }}</a>
+      <app-icon name="chevron_right" class="adm-crumb-sep"></app-icon>
+      <span class="adm-crumb adm-crumb--active">
+        {{ isCreating ? ('admin.content.newPage' | translate) : (titleForActive() || page.slug) }}
+      </span>
+    </div>
+    <div class="adm-bar__actions">
+      <!-- Whether this page holds work the server has not got. It is the state
+           an editor is in for the whole session, so it is on screen for the
+           whole session rather than only in the moment a button is pressed. -->
+      <span class="pe-savestate" [class.is-dirty]="dirty" aria-live="polite">
+        <span class="pe-savestate__dot" aria-hidden="true"></span>
+        <span class="pe-savestate__text">
+          @if (dirty) {
+            {{ 'admin.content.unsaved' | translate }}
+          } @else if (lastSavedAt) {
+            {{ 'admin.content.savedAt' | translate:{ time: savedAtLabel } }}
+          } @else {
+            {{ 'admin.content.noChanges' | translate }}
+          }
+        </span>
+      </span>
+
+      <button type="button" class="adm-btn adm-btn--ghost" (click)="cancel()">
+        <app-icon name="arrow_back"></app-icon>
+        {{ 'common.back' | translate }}
+      </button>
+      <button type="button" class="adm-btn adm-btn--ghost" (click)="openPreview()">
+        <app-icon name="visibility"></app-icon>
+        {{ 'admin.content.preview.action' | translate }}
+      </button>
+
+      <!-- Save writes the page and nothing else. Publication is its own pair of
+           actions below, because a button labelled "save" must never be the one
+           that takes a live document off the partner hub. -->
+      <button
+        type="button"
+        class="adm-btn adm-btn--ghost"
+        [disabled]="saving || !dirty"
+        (click)="save()"
+        [title]="'admin.content.saveHint' | translate"
+      >
+        <app-icon name="save"></app-icon>
+        {{ (saving ? 'common.saving' : 'common.save') | translate }}
+      </button>
+
+      <!-- One publication action, and it always names the state it moves the
+           page to. A live page offers only the way off; Save keeps it live. -->
+      @if (isPublished) {
+        <button type="button" class="adm-btn adm-btn--danger" [disabled]="saving" (click)="unpublish()">
+          <app-icon name="visibility_off"></app-icon>
+          {{ 'admin.content.unpublish' | translate }}
+        </button>
+      } @else {
+        <button type="button" class="adm-btn adm-btn--primary" [disabled]="saving" (click)="publish()">
+          <app-icon name="publish"></app-icon>
+          {{ 'admin.content.publish' | translate }}
+        </button>
+      }
+    </div>
+  </header>
+
+  @if (loading) {
+    <div class="adm-loading">{{ 'admin.content.loading' | translate }}</div>
+  } @else {
+    <div class="adm-grid">
+
+      <!-- ── The page's spine: what state it is in, what languages it exists
+           in, and what is on it. Read-only except the language switch. ── -->
+      <aside class="adm-side pe-side">
+
+        <div class="pe-state" [class.is-published]="isPublished">
+          <span class="pe-state__dot" aria-hidden="true"></span>
+          <span class="pe-state__text">
+            {{ (isPublished ? 'admin.content.published' : 'admin.content.draft') | translate }}
+          </span>
+          <code class="pe-state__slug">{{ partnerPath }}</code>
+        </div>
+
+        <!-- Translation rail. Each language shows how much of the page exists
+             in it, because "which market is this page missing in" is the
+             question this section is here to answer. -->
+        <div class="pe-rail">
+          <div class="pe-rail__title">{{ 'admin.content.languages' | translate }}</div>
+
+          <!-- Two controls, so two buttons. Remove used to be a click handler on
+               an <app-icon> inside the select button: not reachable from the
+               keyboard, and nested interactive content besides. -->
+          @for (code of railCodes; track code) {
+            <div class="pe-lang" [class.is-active]="activeLanguage === code">
+              <button
+                type="button"
+                class="pe-lang__pick"
+                (click)="selectLanguage(code)"
+                [attr.aria-current]="activeLanguage === code ? 'true' : null"
+              >
+                <span class="pe-lang__code">{{ code | uppercase }}</span>
+                <span class="pe-lang__name">{{ languageName(code) }}</span>
+                <span class="pe-lang__count">
+                  {{ languageProgress(code).filled }}/{{ languageProgress(code).total }}
+                </span>
+                <span
+                  class="pe-lang__meter"
+                  role="img"
+                  [attr.aria-label]="'admin.content.rail.complete' | translate:{
+                    percent: languageProgress(code).percent
+                  }"
+                >
+                  <span class="pe-lang__fill" [style.width.%]="languageProgress(code).percent"></span>
+                </span>
+              </button>
+
+              @if (railCodes.length > 1) {
+                <button
+                  type="button"
+                  class="pe-lang__remove"
+                  (click)="removeLanguage(code)"
+                  [title]="'admin.content.removeLanguage' | translate:{ code: code | uppercase }"
+                  [attr.aria-label]="'admin.content.removeLanguage' | translate:{ code: code | uppercase }"
+                >
+                  <app-icon name="close"></app-icon>
+                </button>
+              }
+            </div>
+          }
+
+          @if (untranslatedLanguages.length) {
+            <label class="pe-select pe-select--add">
+              <app-icon name="add"></app-icon>
+              <select
+                class="adm-input"
+                [ngModel]="''"
+                (ngModelChange)="addLanguage($event)"
+                name="addLanguage"
+                [attr.aria-label]="'admin.content.addLanguage' | translate"
+              >
+                <option value="">{{ 'admin.content.addLanguage' | translate }}</option>
+                @for (language of untranslatedLanguages; track language.code) {
+                  <option [value]="language.code">{{ language.name }}</option>
+                }
+              </select>
+            </label>
+          }
+
+          <!-- Both answer the same question — how does this language get its
+               text — so they sit together, under the language they fill. -->
+          @if (translatedCodes.length > 1) {
+            <div class="pe-rail__fill">
+              <span class="pe-rail__fill-label">
+                {{ 'admin.content.fillFrom' | translate:{ code: activeLanguage | uppercase } }}
+              </span>
+
+              <label class="pe-select">
+                <app-icon name="content_copy"></app-icon>
+                <select
+                  class="adm-input"
+                  [ngModel]="''"
+                  (ngModelChange)="copyFromLanguage($event)"
+                  name="copyFrom"
+                  [attr.aria-label]="'admin.content.copyFrom' | translate"
+                >
+                  <option value="">{{ 'admin.content.copyFrom' | translate }}</option>
+                  @for (code of translatedCodes; track code) {
+                    @if (code !== activeLanguage) {
+                      <option [value]="code">{{ code | uppercase }}</option>
+                    }
+                  }
+                </select>
+              </label>
+
+              @if (canTranslate) {
+                <label class="pe-select pe-select--assist">
+                  <app-icon name="auto_awesome"></app-icon>
+                  <select
+                    class="adm-input"
+                    [ngModel]="''"
+                    (ngModelChange)="translateFromLanguage($event)"
+                    name="translateFrom"
+                    [disabled]="translating"
+                    [attr.aria-label]="'admin.content.ai.translateFrom' | translate"
+                  >
+                    <option value="">
+                      {{ (translating ? 'admin.content.ai.translating' : 'admin.content.ai.translateFrom') | translate }}
+                    </option>
+                    @for (code of translatedCodes; track code) {
+                      @if (code !== activeLanguage) {
+                        <option [value]="code">{{ code | uppercase }}</option>
+                      }
+                    }
+                  </select>
+                </label>
+              }
+            </div>
+          }
+        </div>
+
+        <!-- Outline. The blocks again, but as the shape of the page rather
+             than as things to edit — click jumps to one. -->
+        @if ((page.blocks || []).length) {
+          <nav class="pe-outline" [attr.aria-label]="'admin.content.outline' | translate">
+            <div class="pe-outline__title">{{ 'admin.content.outline' | translate }}</div>
+            @for (block of page.blocks; track block.uid; let i = $index) {
+              <button
+                type="button"
+                class="pe-outline__row"
+                [class.is-active]="openBlockIndex === i"
+                [class.is-heading]="block.block_type === 'heading'"
+                (click)="focusBlock(i)"
+              >
+                <span class="pe-outline__kind">{{ outlineKind(block) }}</span>
+                <span class="pe-outline__text">{{ blockSummary(block) || '—' }}</span>
+              </button>
+            }
+          </nav>
+        }
+      </aside>
+
+      <div class="adm-main">
+
+        @if (error) {
+          <div class="adm-error" role="alert">{{ error }}</div>
+        }
+
+        <!-- 01 — Identity -->
+        <section class="adm-section">
+          <header class="adm-section__head">
+            <div>
+              <h2 class="adm-section__title">{{ 'admin.content.sectionIdentity' | translate }}</h2>
+              <p class="adm-section__sub">{{ 'admin.content.sectionIdentitySub' | translate }}</p>
+            </div>
+            <span class="pe-lang-badge">{{ activeLanguage | uppercase }}</span>
+          </header>
+
+          <div class="adm-fields">
+            <label class="adm-field adm-field--span2">
+              <span class="adm-field__label">{{ 'admin.content.pageTitle' | translate }} <em>*</em></span>
+              <input
+                type="text"
+                class="adm-input pe-title-input"
+                [(ngModel)]="activeTranslation.title"
+                (input)="onTitleInput()"
+                name="title"
+                autocomplete="off"
+              />
+            </label>
+
+            <label class="adm-field adm-field--span2">
+              <span class="adm-field__label">{{ 'admin.content.summary' | translate }}</span>
+              <textarea
+                class="adm-input"
+                rows="2"
+                [(ngModel)]="activeTranslation.summary"
+                name="summary"
+              ></textarea>
+            </label>
+
+            <label class="adm-field">
+              <span class="adm-field__label">{{ 'admin.content.slug' | translate }}</span>
+              <input type="text" class="adm-input adm-input--mono" [(ngModel)]="page.slug" name="slug" autocomplete="off" />
+              <span class="adm-field__hint">{{ partnerPath }}</span>
+            </label>
+
+            <div class="adm-field">
+              <span class="adm-field__label">{{ 'admin.content.icon' | translate }}</span>
+              <button
+                type="button"
+                class="adm-input pe-icon-button"
+                (click)="toggleIconPicker()"
+                [attr.aria-expanded]="showIconPicker"
+              >
+                <app-icon [name]="page.icon || 'description'"></app-icon>
+                <span class="pe-icon-button__name">{{ page.icon || ('admin.content.chooseIcon' | translate) }}</span>
+                <app-icon [name]="showIconPicker ? 'expand_less' : 'expand_more'" class="pe-icon-button__chevron"></app-icon>
+              </button>
+              @if (showIconPicker) {
+                <div class="pe-icon-grid" role="group" [attr.aria-label]="'admin.content.icon' | translate">
+                  @for (icon of iconChoices; track icon) {
+                    <button
+                      type="button"
+                      class="pe-icon-option"
+                      [class.is-active]="page.icon === icon"
+                      [attr.aria-pressed]="page.icon === icon"
+                      (click)="chooseIcon(icon)"
+                      [title]="icon"
+                      [attr.aria-label]="icon"
+                    >
+                      <app-icon [name]="icon"></app-icon>
+                    </button>
+                  }
+                </div>
+              }
+            </div>
+
+            <div class="adm-field adm-field--span2">
+              <span class="adm-field__label">{{ 'admin.content.layout' | translate }}</span>
+              <div class="pe-layouts">
+                @for (option of layouts; track option.value) {
+                  <label class="pe-layout" [class.is-active]="page.layout === option.value">
+                    <input type="radio" name="layout" [value]="option.value" [(ngModel)]="page.layout" />
+                    <span class="pe-layout__mark" aria-hidden="true"></span>
+                    <span class="pe-layout__text">
+                      <span class="pe-layout__name">{{ option.labelKey | translate }}</span>
+                      <span class="pe-layout__hint">{{ option.hintKey | translate }}</span>
+                    </span>
+                  </label>
+                }
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 02 — Audience: one control, several axes -->
+        <section class="adm-section" id="pe-audience">
+          <header class="adm-section__head">
+            <div>
+              <h2 class="adm-section__title">{{ 'admin.content.sectionAudience' | translate }}</h2>
+              <p class="adm-section__sub">{{ audienceSummary() }}</p>
+            </div>
+            <button type="button" class="adm-btn adm-btn--ghost" (click)="toggleAudience()">
+              <app-icon [name]="showAudience ? 'expand_less' : 'expand_more'"></app-icon>
+              {{ (showAudience ? 'common.close' : 'common.edit') | translate }}
+            </button>
+          </header>
+
+          @if (showAudience) {
+            <div class="adm-fields">
+              <label class="adm-field">
+                <span class="adm-field__label">{{ 'admin.content.store' | translate }}</span>
+                <select class="adm-input" [(ngModel)]="page.store_uid" name="store_uid">
+                  <option value="">{{ 'admin.content.allStores' | translate }}</option>
+                  @for (store of stores; track store.uid) {
+                    <option [value]="store.uid">{{ store.name }}</option>
+                  }
+                </select>
+              </label>
+
+              <label class="adm-field">
+                <span class="adm-field__label">{{ 'admin.content.countries' | translate }}</span>
+                <input
+                  type="text"
+                  class="adm-input adm-input--mono"
+                  [(ngModel)]="countriesText"
+                  name="countries"
+                  placeholder="PL, DE"
+                  autocomplete="off"
+                />
+                <span class="adm-field__hint">{{ 'admin.content.countriesHint' | translate }}</span>
+              </label>
+
+              <div class="adm-field adm-field--span2">
+                <span class="adm-field__label">{{ 'admin.content.showOnlyIn' | translate }}</span>
+                <div class="adm-chips">
+                  @for (language of languages; track language.code) {
+                    <button
+                      type="button"
+                      class="adm-chip"
+                      [class.is-active]="isScopedTo(language.code)"
+                      [attr.aria-pressed]="isScopedTo(language.code)"
+                      (click)="toggleScopeLanguage(language.code)"
+                    >
+                      {{ language.code | uppercase }}
+                    </button>
+                  }
+                </div>
+                <span class="adm-field__hint">{{ 'admin.content.showOnlyInHint' | translate }}</span>
+              </div>
+
+              <label class="adm-toggle adm-field--span2">
+                <input type="checkbox" [(ngModel)]="page.staff_only" name="staff_only" />
+                <span class="adm-toggle__track"><span class="adm-toggle__dot"></span></span>
+                <span class="adm-toggle__text">
+                  {{ 'admin.content.staffOnlyLabel' | translate }}
+                  <span class="adm-toggle__hint">{{ 'admin.content.staffOnlyHint' | translate }}</span>
+                </span>
+              </label>
+
+              @if (reachSummary) {
+                <p class="pe-reach adm-field--span2">
+                  <app-icon name="groups"></app-icon>
+                  {{ reachSummary }}
+                </p>
+              }
+            </div>
+          }
+        </section>
+
+        <!-- 03 — Blocks -->
+        <section class="adm-section adm-section--doc">
+          <header class="adm-section__head">
+            <div>
+              <h2 class="adm-section__title">{{ 'admin.content.sectionBlocks' | translate }}</h2>
+              <p class="adm-section__sub">{{ 'admin.content.sectionBlocksSub' | translate }}</p>
+            </div>
+            <span class="pe-lang-badge">{{ activeLanguage | uppercase }}</span>
+          </header>
+
+          <div class="pe-blocks">
+            @for (block of page.blocks; track block.uid; let i = $index) {
+              <div class="pe-block" [class.is-open]="openBlockIndex === i" [id]="'pe-block-' + i">
+                <div class="pe-block__row">
+                  <span class="pe-block__grip" aria-hidden="true">
+                    <app-icon [name]="blockIcons[block.block_type]" class="pe-block__icon"></app-icon>
+                  </span>
+                  <button type="button" class="pe-block__label" (click)="toggleBlock(i)">
+                    <span class="pe-block__type">{{ blockLabelKey(block.block_type) | translate }}</span>
+                    <span class="pe-block__summary">{{ blockSummary(block) }}</span>
+                  </button>
+                  <div class="pe-block__actions">
+                    <span class="pe-block__order">
+                      <button type="button" class="adm-icon-btn" (click)="moveBlock(i, -1)" [disabled]="i === 0"
+                              [attr.aria-label]="'admin.content.moveUp' | translate">
+                        <app-icon name="arrow_upward"></app-icon>
+                      </button>
+                      <button type="button" class="adm-icon-btn" (click)="moveBlock(i, 1)"
+                              [disabled]="i === (page.blocks || []).length - 1"
+                              [attr.aria-label]="'admin.content.moveDown' | translate">
+                        <app-icon name="arrow_downward"></app-icon>
+                      </button>
+                    </span>
+                    <button type="button" class="adm-icon-btn" (click)="toggleBlock(i)"
+                            [attr.aria-expanded]="openBlockIndex === i"
+                            [attr.aria-label]="'common.edit' | translate">
+                      <app-icon [name]="openBlockIndex === i ? 'expand_less' : 'edit'"></app-icon>
+                    </button>
+                    <button type="button" class="adm-icon-btn adm-icon-btn--danger" (click)="removeBlock(i)"
+                            [attr.aria-label]="'common.delete' | translate">
+                      <app-icon name="delete"></app-icon>
+                    </button>
+                  </div>
+                </div>
+
+                @if (openBlockIndex === i) {
+                  <div class="pe-block__editor">
+                    @switch (block.block_type) {
+
+                      @case ('heading') {
+                        <div class="adm-fields">
+                          <label class="adm-field">
+                            <span class="adm-field__label">{{ 'admin.content.headingLevel' | translate }}</span>
+                            <select class="adm-input" [(ngModel)]="activePayload(block)['level']" [name]="'level' + i">
+                              <option [ngValue]="2">H2</option>
+                              <option [ngValue]="3">H3</option>
+                            </select>
+                          </label>
+                          <label class="adm-field adm-field--span2">
+                            <span class="adm-field__label">{{ 'admin.content.text' | translate }}</span>
+                            <!-- Set at the size it will publish at, so the level
+                                 control shows its own effect. -->
+                            <input
+                              type="text"
+                              class="adm-input pe-heading-input"
+                              [class.is-h3]="activePayload(block)['level'] === 3"
+                              [(ngModel)]="activePayload(block)['text']"
+                              [name]="'htext' + i"
+                            />
+                          </label>
+                        </div>
+                      }
+
+                      @case ('text') {
+                        <!-- Not a <label>: the editor holds its own buttons and
+                             URL field, and a label would forward every click in
+                             the toolbar to the first control inside it. -->
+                        <div class="adm-field adm-field--span2">
+                          <span class="adm-field__label">{{ 'admin.content.text' | translate }}</span>
+                          <app-rich-text
+                            [rows]="8"
+                            [(ngModel)]="activePayload(block)['html']"
+                            [name]="'html' + i"
+                          ></app-rich-text>
+                          <span class="adm-field__hint">{{ 'admin.content.textHint' | translate }}</span>
+                        </div>
+                      }
+
+                      @case ('callout') {
+                        <div class="adm-fields">
+                          <label class="adm-field">
+                            <span class="adm-field__label">{{ 'admin.content.calloutTone' | translate }}</span>
+                            <select class="adm-input" [(ngModel)]="activePayload(block)['tone']" [name]="'tone' + i">
+                              @for (tone of calloutTones; track tone.value) {
+                                <option [value]="tone.value">{{ tone.labelKey | translate }}</option>
+                              }
+                            </select>
+                          </label>
+                          <label class="adm-field adm-field--span2">
+                            <span class="adm-field__label">{{ 'admin.content.text' | translate }}</span>
+                            <!-- Tinted to the tone it will publish with. -->
+                            <textarea
+                              class="adm-input pe-callout-input"
+                              [attr.data-tone]="activePayload(block)['tone'] || 'info'"
+                              rows="3"
+                              [(ngModel)]="activePayload(block)['text']"
+                              [name]="'ctext' + i"
+                            ></textarea>
+                          </label>
+                        </div>
+                      }
+
+                      @case ('image') {
+                        <div class="adm-fields">
+                          <label class="adm-field adm-field--span2">
+                            <span class="adm-field__label">{{ 'admin.content.file' | translate }}</span>
+                            <select class="adm-input" [(ngModel)]="block.settings!['file_uid']" [name]="'img' + i">
+                              <option value="">—</option>
+                              @for (file of mediaFiles; track file.uid) {
+                                <option [value]="file.uid">{{ file.filename }}</option>
+                              }
+                            </select>
+                          </label>
+                          <label class="adm-field adm-field--span2">
+                            <span class="adm-field__label">{{ 'admin.content.caption' | translate }}</span>
+                            <input type="text" class="adm-input" [(ngModel)]="activePayload(block)['caption']" [name]="'cap' + i" />
+                          </label>
+                        </div>
+                      }
+
+                      @case ('files') {
+                        <div class="pe-items">
+                          <div class="pe-items__head">
+                            <label class="adm-field pe-groupby">
+                              <span class="adm-field__label">{{ 'admin.content.groupBy' | translate }}</span>
+                              <select class="adm-input" [(ngModel)]="block.settings!['group_by']" [name]="'gb' + i">
+                                <option value="none">{{ 'admin.content.groupNone' | translate }}</option>
+                                <option value="market">{{ 'admin.content.groupMarket' | translate }}</option>
+                                <option value="language">{{ 'admin.content.groupLanguage' | translate }}</option>
+                              </select>
+                            </label>
+                          </div>
+
+                          @if (itemsOf(block).length) {
+                            <!-- Column headings once, rather than a placeholder
+                                 repeated down every row. -->
+                            <div class="pe-item pe-item--head" aria-hidden="true">
+                              <span class="pe-item__file">{{ 'admin.content.file' | translate }}</span>
+                              <span class="pe-item__label">{{ 'admin.content.label' | translate }}</span>
+                              <span class="pe-item__small">{{ 'admin.content.groupLanguage' | translate }}</span>
+                              <span class="pe-item__small">{{ 'admin.content.groupMarket' | translate }}</span>
+                              <span class="pe-item__gap"></span>
+                            </div>
+                          }
+
+                          @for (item of itemsOf(block); track trackByIndex($index); let j = $index) {
+                            <div class="pe-item">
+                              <select
+                                class="adm-input pe-item__file"
+                                [(ngModel)]="item['file_uid']"
+                                (ngModelChange)="onItemFileChange(item)"
+                                [name]="'f' + i + '_' + j"
+                                [attr.aria-label]="'admin.content.file' | translate"
+                              >
+                                <option value="">{{ 'admin.content.chooseFile' | translate }}</option>
+                                @for (file of mediaFiles; track file.uid) {
+                                  <option [value]="file.uid">{{ file.filename }}</option>
+                                }
+                              </select>
+                              <input type="text" class="adm-input pe-item__label" [(ngModel)]="item['label']"
+                                     [name]="'l' + i + '_' + j" [attr.aria-label]="'admin.content.label' | translate" />
+                              <input type="text" class="adm-input pe-item__small" [(ngModel)]="item['language']"
+                                     [name]="'il' + i + '_' + j" placeholder="EN"
+                                     [attr.aria-label]="'admin.content.groupLanguage' | translate" />
+                              <input type="text" class="adm-input pe-item__small" [(ngModel)]="item['market']"
+                                     [name]="'m' + i + '_' + j" placeholder="EU"
+                                     [attr.aria-label]="'admin.content.groupMarket' | translate" />
+                              <button type="button" class="adm-icon-btn adm-icon-btn--danger" (click)="removeItem(block, j)"
+                                      [attr.aria-label]="'common.delete' | translate">
+                                <app-icon name="close"></app-icon>
+                              </button>
+                            </div>
+                          }
+
+                          <button type="button" class="adm-btn adm-btn--ghost pe-item-add" (click)="addItem(block)">
+                            <app-icon name="add"></app-icon>
+                            {{ 'admin.content.addFile' | translate }}
+                          </button>
+                        </div>
+                      }
+
+                      @case ('link_cards') {
+                        <div class="pe-items">
+                          <div class="pe-items__head">
+                            <label class="adm-field pe-groupby">
+                              <span class="adm-field__label">{{ 'admin.content.cardDisplay' | translate }}</span>
+                              <select class="adm-input" [(ngModel)]="block.settings!['display']" [name]="'cds' + i">
+                                <option value="list">{{ 'admin.content.cardDisplayList' | translate }}</option>
+                                <option value="cover">{{ 'admin.content.cardDisplayCover' | translate }}</option>
+                              </select>
+                            </label>
+                            <!-- Columns only mean anything to a picture grid; the
+                                 list form is a single reflowing run. -->
+                            @if (isCoverCards(block)) {
+                              <label class="adm-field pe-groupby">
+                                <span class="adm-field__label">{{ 'admin.content.cardColumns' | translate }}</span>
+                                <select class="adm-input" [(ngModel)]="block.settings!['columns']" [name]="'ccl' + i">
+                                  <option [ngValue]="0">{{ 'admin.content.cardColumnsAuto' | translate }}</option>
+                                  <option [ngValue]="2">2</option>
+                                  <option [ngValue]="3">3</option>
+                                  <option [ngValue]="4">4</option>
+                                </select>
+                              </label>
+                            }
+                          </div>
+
+                          <!-- A card carries more than a row's worth of fields
+                               once it has a picture, so each one is its own
+                               labelled block rather than a wider row. -->
+                          @for (item of itemsOf(block); track trackByIndex($index); let j = $index) {
+                            <div class="pe-card">
+                              <div class="pe-card__bar">
+                                <span class="pe-card__n">{{ j + 1 }}</span>
+                                <span class="pe-card__name">{{ item['title'] || ('admin.content.cardUntitled' | translate) }}</span>
+                                <button type="button" class="adm-icon-btn adm-icon-btn--danger" (click)="removeItem(block, j)"
+                                        [attr.aria-label]="'common.delete' | translate">
+                                  <app-icon name="close"></app-icon>
+                                </button>
+                              </div>
+
+                              <div class="adm-fields">
+                                @if (isCoverCards(block)) {
+                                  <label class="adm-field">
+                                    <span class="adm-field__label">{{ 'admin.content.cardImage' | translate }}</span>
+                                    <select class="adm-input" [(ngModel)]="item['file_uid']" [name]="'cim' + i + '_' + j">
+                                      <option value="">{{ 'admin.content.chooseFile' | translate }}</option>
+                                      @for (file of imageFiles; track file.uid) {
+                                        <option [value]="file.uid">{{ file.filename }}</option>
+                                      }
+                                    </select>
+                                    <span class="adm-field__hint">{{ 'admin.content.cardImageHint' | translate }}</span>
+                                  </label>
+
+                                  <!-- The picture is the card, so it is shown, not
+                                       named. A filename is not something an editor
+                                       can check the crop of. -->
+                                  <div class="adm-field">
+                                    <span class="adm-field__label">{{ 'admin.content.preview.title' | translate }}</span>
+                                    <span class="pe-card__thumb">
+                                      @if (item['file_uid'] | contentFileUrl | async; as url) {
+                                        <img [src]="url" alt="" />
+                                      } @else {
+                                        <app-icon name="image"></app-icon>
+                                      }
+                                    </span>
+                                  </div>
+                                }
+
+                                <label class="adm-field">
+                                  <span class="adm-field__label">{{ 'admin.content.cardTarget' | translate }}</span>
+                                  <select class="adm-input" [(ngModel)]="item['page_uid']"
+                                          (ngModelChange)="onCardPageChange(item)" [name]="'cpg' + i + '_' + j">
+                                    <option value="">{{ 'admin.content.cardTargetExternal' | translate }}</option>
+                                    @for (option of pageOptions; track option.uid) {
+                                      <option [value]="option.uid">{{ option.title }}</option>
+                                    }
+                                  </select>
+                                </label>
+
+                                <label class="adm-field">
+                                  <span class="adm-field__label">{{ 'admin.content.slug' | translate }}</span>
+                                  <input type="text" class="adm-input adm-input--mono" [(ngModel)]="item['url']"
+                                         [name]="'cu' + i + '_' + j" placeholder="/partners/legal" />
+                                </label>
+
+                                <label class="adm-field">
+                                  <span class="adm-field__label">{{ 'admin.content.cardTitle' | translate }}</span>
+                                  <input type="text" class="adm-input" [(ngModel)]="item['title']"
+                                         [name]="'ct' + i + '_' + j" />
+                                </label>
+
+                                <label class="adm-field">
+                                  <span class="adm-field__label">{{ 'admin.content.icon' | translate }}</span>
+                                  <input type="text" class="adm-input" [(ngModel)]="item['icon']"
+                                         [name]="'ci' + i + '_' + j" placeholder="star" />
+                                </label>
+
+                                <label class="adm-field adm-field--span2">
+                                  <span class="adm-field__label">{{ 'admin.content.cardDescription' | translate }}</span>
+                                  <input type="text" class="adm-input" [(ngModel)]="item['description']"
+                                         [name]="'cd' + i + '_' + j" />
+                                </label>
+                              </div>
+                            </div>
+                          }
+                          <button type="button" class="adm-btn adm-btn--ghost pe-item-add" (click)="addItem(block)">
+                            <app-icon name="add"></app-icon>
+                            {{ 'admin.content.addCard' | translate }}
+                          </button>
+                        </div>
+                      }
+
+                      @default {
+                        <p class="pe-block__note">{{ 'admin.content.blockNoSettings' | translate }}</p>
+                      }
+                    }
+                  </div>
+                }
+              </div>
+            } @empty {
+              <p class="pe-blocks__empty">{{ 'admin.content.noBlocks' | translate }}</p>
+            }
+          </div>
+
+          <!-- Adding a block is the primary act in this section, so the tray
+               sits where the next block would go and names each type. -->
+          <div class="pe-palette">
+            <div class="pe-palette__head">
+              <span class="pe-palette__label">{{ 'admin.content.addBlock' | translate }}</span>
+              <button type="button" class="pe-import-btn" (click)="openImport()">
+                <app-icon name="content_paste_go"></app-icon>
+                {{ 'admin.content.import.action' | translate }}
+              </button>
+            </div>
+            <div class="pe-palette__grid">
+              @for (option of blockPalette; track option.type) {
+                <button type="button" class="pe-palette__btn" (click)="addBlock(option.type)">
+                  <app-icon [name]="blockIcons[option.type]"></app-icon>
+                  {{ option.labelKey | translate }}
+                </button>
+              }
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  }
+</div>
+
+<!-- Preview: the page as a partner would see it, rendered through the same
+     component the partner route uses so the two cannot drift. In-memory, so it
+     includes edits that have not been saved — which the strip says, because an
+     editor who assumed otherwise would publish on the strength of it. -->
+@if (showPreview) {
+  <div class="pe-preview" role="dialog" aria-modal="true"
+       [attr.aria-label]="'admin.content.preview.title' | translate">
+    <div class="pe-preview__panel">
+
+      <header class="pe-preview__head">
+        <app-icon name="visibility" class="pe-preview__mark"></app-icon>
+        <h2 class="pe-preview__title">{{ 'admin.content.preview.title' | translate }}</h2>
+
+        <div class="pe-preview__widths" role="group"
+             [attr.aria-label]="'admin.content.preview.width' | translate">
+          <button type="button" class="pe-preview__width" [class.is-active]="previewWidth === 'page'"
+                  (click)="setPreviewWidth('page')">
+            <app-icon name="desktop_windows"></app-icon>
+            {{ 'admin.content.preview.widthPage' | translate }}
+          </button>
+          <button type="button" class="pe-preview__width" [class.is-active]="previewWidth === 'phone'"
+                  (click)="setPreviewWidth('phone')">
+            <app-icon name="smartphone"></app-icon>
+            {{ 'admin.content.preview.widthPhone' | translate }}
+          </button>
+        </div>
+
+        @if (partnerUrl) {
+          <a class="adm-btn adm-btn--ghost" [href]="partnerUrl" target="_blank" rel="noopener">
+            <app-icon name="open_in_new"></app-icon>
+            {{ 'admin.content.preview.openLive' | translate }}
+          </a>
+        }
+
+        <button type="button" class="adm-icon-btn" (click)="closePreview()"
+                [attr.aria-label]="'common.close' | translate">
+          <app-icon name="close"></app-icon>
+        </button>
+      </header>
+
+      <!-- What a partner would and would not see, stated before the content. -->
+      <div class="pe-preview__strip" [class.is-draft]="!isPublished">
+        <span class="pe-preview__state">
+          <span class="pe-preview__dot" aria-hidden="true"></span>
+          {{ (isPublished ? 'admin.content.published' : 'admin.content.draft') | translate }}
+        </span>
+        <span class="pe-preview__lang">{{ activeLanguage | uppercase }}</span>
+        <span class="pe-preview__audience">{{ audienceSummary() }}</span>
+        <span class="pe-preview__unsaved">
+          <app-icon name="edit_note"></app-icon>
+          {{ 'admin.content.preview.unsaved' | translate }}
+        </span>
+      </div>
+
+      <div class="pe-preview__body">
+        <div class="pe-preview__canvas" [attr.data-width]="previewWidth">
+          @if (previewHasContent) {
+            <app-content-article
+              [title]="activeTranslation.title"
+              [summary]="activeTranslation.summary || ''"
+              [blocks]="page.blocks || []"
+              [files]="mediaFiles"
+              [language]="activeLanguage"
+              [linksActive]="false"
+            ></app-content-article>
+          } @else {
+            <p class="pe-preview__empty">{{ 'admin.content.preview.empty' | translate }}</p>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Translation in flight. The model translates the whole page in one call
+     and reports nothing until it is done, so this shows elapsed time and an
+     escape hatch rather than a percentage it would have to invent. -->
+@if (translating) {
+  <div class="pe-working" role="status" aria-live="polite">
+    <div class="pe-working__panel">
+      <app-icon name="auto_awesome" class="pe-working__icon"></app-icon>
+
+      <h2 class="pe-working__title">
+        {{ 'admin.content.ai.workingTitle' | translate:{ from: translateSource | uppercase, to: activeLanguage | uppercase } }}
+      </h2>
+
+      <p class="pe-working__sub">
+        {{ 'admin.content.ai.workingBlocks' | translate:{ count: translateBlockCount } }}
+      </p>
+
+      <div class="pe-working__bar" aria-hidden="true"><span class="pe-working__fill"></span></div>
+
+      <p class="pe-working__elapsed">{{ translateElapsedLabel }}</p>
+
+      @if (translateIsSlow) {
+        <p class="pe-working__slow">{{ 'admin.content.ai.workingSlow' | translate }}</p>
+      }
+
+      <button type="button" class="adm-btn adm-btn--ghost" (click)="cancelTranslate()">
+        {{ 'admin.content.ai.cancelTranslation' | translate }}
+      </button>
+    </div>
+  </div>
+}
+
+<!-- Translation review. Nothing has been written: the proposal is applied to
+     the active language only on accept, and the page is saved afterwards by
+     the ordinary Save. -->
+@if (proposal) {
+  <div class="pe-review" role="dialog" aria-modal="true" [attr.aria-label]="'admin.content.ai.reviewTitle' | translate">
+    <div class="pe-review__panel">
+
+      <header class="pe-review__head">
+        <app-icon name="auto_awesome" class="pe-review__mark"></app-icon>
+        <h2 class="pe-review__title">
+          {{ 'admin.content.ai.reviewTitle' | translate:{ from: proposal.from | uppercase, to: proposal.to | uppercase } }}
+        </h2>
+        <button type="button" class="adm-icon-btn" (click)="discardProposal()"
+                [attr.aria-label]="'common.close' | translate">
+          <app-icon name="close"></app-icon>
+        </button>
+      </header>
+
+      @if (proposal.refused) {
+        <p class="pe-review__refused" role="alert">
+          <app-icon name="info"></app-icon>
+          {{ proposal.message }}
+        </p>
+      } @else {
+        <p class="pe-review__note">{{ 'admin.content.ai.reviewNote' | translate }}</p>
+
+        <div class="pe-review__body">
+          <div class="pe-review__row pe-review__row--head">
+            <label class="pe-review__pick">
+              <input type="checkbox" [checked]="allBlocksAccepted" (change)="toggleAcceptAll()"
+                     [attr.aria-label]="'admin.content.ai.acceptAll' | translate" />
+            </label>
+            <span class="pe-review__col">{{ proposal.from | uppercase }} · {{ 'admin.content.ai.source' | translate }}</span>
+            <span class="pe-review__col pe-review__col--proposed">
+              {{ proposal.to | uppercase }} · {{ 'admin.content.ai.proposed' | translate }}
+            </span>
+          </div>
+
+          <div class="pe-review__row">
+            <label class="pe-review__pick">
+              <input type="checkbox" [(ngModel)]="acceptTitle" name="acceptTitle"
+                     [attr.aria-label]="'admin.content.ai.acceptTitle' | translate" />
+            </label>
+            <div class="pe-review__col">
+              <span class="pe-review__kind">{{ 'admin.content.pageTitle' | translate }}</span>
+              <p class="pe-review__text">{{ proposal.title.source }}</p>
+              @if (proposal.summary.source) {
+                <p class="pe-review__text pe-review__text--muted">{{ proposal.summary.source }}</p>
+              }
+            </div>
+            <div class="pe-review__col pe-review__col--proposed">
+              <span class="pe-review__kind">&nbsp;</span>
+              <p class="pe-review__text">{{ proposal.title.proposed }}</p>
+              @if (proposal.summary.proposed) {
+                <p class="pe-review__text pe-review__text--muted">{{ proposal.summary.proposed }}</p>
+              }
+            </div>
+          </div>
+
+          @for (block of proposal.blocks; track trackProposedBlock($index, block)) {
+            <div class="pe-review__row" [class.is-warned]="block.warning">
+              <label class="pe-review__pick">
+                <input type="checkbox" [checked]="isAccepted(block.uid)"
+                       (change)="toggleAcceptBlock(block.uid)"
+                       [disabled]="block.warning === 'missing_from_response'"
+                       [attr.aria-label]="proposedBlockLabel(block)" />
+              </label>
+
+              <div class="pe-review__col">
+                <span class="pe-review__kind">{{ proposedBlockLabel(block) }}</span>
+                @for (field of block.fields; track field.key) {
+                  <p class="pe-review__text">{{ field.source }}</p>
+                }
+              </div>
+
+              <div class="pe-review__col pe-review__col--proposed">
+                <span class="pe-review__kind">&nbsp;</span>
+                @for (field of block.fields; track field.key) {
+                  <p class="pe-review__text" [class.is-empty]="!field.proposed">
+                    {{ field.proposed || ('admin.content.ai.noProposal' | translate) }}
+                  </p>
+                }
+                @if (block.warning) {
+                  <p class="pe-review__warning">
+                    <app-icon name="warning"></app-icon>
+                    {{ 'admin.content.ai.warn_' + block.warning | translate }}
+                  </p>
+                }
+              </div>
+            </div>
+          } @empty {
+            <p class="pe-review__empty">{{ 'admin.content.ai.noBlocks' | translate }}</p>
+          }
+        </div>
+      }
+
+      <footer class="pe-review__foot">
+        <button type="button" class="adm-btn adm-btn--ghost" (click)="discardProposal()">
+          {{ 'admin.content.ai.discard' | translate }}
+        </button>
+        @if (!proposal.refused) {
+          <button type="button" class="adm-btn adm-btn--primary" [disabled]="!acceptedCount"
+                  (click)="applyProposal()">
+            {{ 'admin.content.ai.accept' | translate:{ count: acceptedCount } }}
+          </button>
+        }
+      </footer>
+    </div>
+  </div>
+}
+
+<!-- Import: the migration path off the public Notion page. Paste the export,
+     check what matched, then insert. Nothing is written until the page is
+     saved, so a bad paste costs a discard. -->
+@if (showImport) {
+  <div class="pe-import" role="dialog" aria-modal="true" [attr.aria-label]="'admin.content.import.title' | translate">
+    <div class="pe-import__panel">
+
+      <header class="pe-import__head">
+        <app-icon name="content_paste_go" class="pe-import__mark"></app-icon>
+        <h2 class="pe-import__title">{{ 'admin.content.import.title' | translate }}</h2>
+        <button type="button" class="adm-icon-btn" (click)="closeImport()"
+                [attr.aria-label]="'common.close' | translate">
+          <app-icon name="close"></app-icon>
+        </button>
+      </header>
+
+      <div class="pe-import__body">
+        @if (importError) {
+          <div class="adm-error" role="alert">{{ importError }}</div>
+        }
+
+        @if (!importResult) {
+          <p class="pe-import__hint">{{ 'admin.content.import.hint' | translate }}</p>
+
+          <textarea
+            class="adm-input pe-import__source"
+            rows="12"
+            [(ngModel)]="importSource"
+            name="importSource"
+            [placeholder]="'admin.content.import.placeholder' | translate"
+          ></textarea>
+
+          <label class="pe-import__file">
+            <app-icon name="attach_file"></app-icon>
+            <span>{{ 'admin.content.import.chooseFile' | translate }}</span>
+            <input type="file" accept=".md,.markdown,.html,.htm,.txt" (change)="onImportFile($event)" />
+          </label>
+        } @else {
+          <p class="pe-import__summary">
+            {{ 'admin.content.import.blocksSummary' | translate:{ count: importResult.blocks.length } }}
+            @if (importResult.files_matched || importResult.files_missing) {
+              <span class="pe-import__files"
+                    [class.is-warned]="importResult.files_missing > 0">{{ importMatchedLabel }}</span>
+            }
+          </p>
+
+          @if (importResult.title) {
+            <label class="pe-import__option">
+              <input type="checkbox" [(ngModel)]="importUseTitle" name="importUseTitle" />
+              <span>{{ 'admin.content.import.useTitle' | translate:{ title: importResult.title } }}</span>
+            </label>
+          }
+
+          <ul class="pe-import__blocks">
+            @for (block of importResult.blocks; track $index) {
+              <li class="pe-import__block">
+                <app-icon [name]="blockIcons[block.block_type]" class="pe-import__block-icon"></app-icon>
+                <span class="pe-import__block-kind">{{ blockLabelKey(block.block_type) | translate }}</span>
+                <span class="pe-import__block-text">{{ importPreview(block) }}</span>
+                @if (importUnresolvedCount(block)) {
+                  <span class="pe-import__block-warn">
+                    {{ 'admin.content.import.unresolved' | translate:{ count: importUnresolvedCount(block) } }}
+                  </span>
+                }
+              </li>
+            }
+          </ul>
+
+          @if (importWarningsOf('file_not_in_library').length) {
+            <div class="pe-import__warning">
+              <p class="pe-import__warning-title">{{ 'admin.content.import.missingFiles' | translate }}</p>
+              <ul class="pe-import__warning-list">
+                @for (name of importWarningsOf('file_not_in_library'); track $index) {
+                  <li>{{ name }}</li>
+                }
+              </ul>
+            </div>
+          }
+
+          @if (importWarningsOf('page_link_needs_target').length) {
+            <div class="pe-import__warning">
+              <p class="pe-import__warning-title">{{ 'admin.content.import.pageLinks' | translate }}</p>
+              <ul class="pe-import__warning-list">
+                @for (name of importWarningsOf('page_link_needs_target'); track $index) {
+                  <li>{{ name }}</li>
+                }
+              </ul>
+            </div>
+          }
+
+          @if (importWarningsOf('image_needs_upload').length) {
+            <div class="pe-import__warning">
+              <p class="pe-import__warning-title">{{ 'admin.content.import.images' | translate }}</p>
+              <ul class="pe-import__warning-list">
+                @for (name of importWarningsOf('image_needs_upload'); track $index) {
+                  <li>{{ name }}</li>
+                }
+              </ul>
+            </div>
+          }
+
+          <label class="pe-import__option">
+            <input type="checkbox" [(ngModel)]="importReplace" name="importReplace" />
+            <span>{{ 'admin.content.import.replace' | translate }}</span>
+          </label>
+        }
+      </div>
+
+      <footer class="pe-import__foot">
+        <button type="button" class="adm-btn adm-btn--ghost" (click)="closeImport()">
+          {{ 'common.cancel' | translate }}
+        </button>
+
+        @if (!importResult) {
+          <button type="button" class="adm-btn adm-btn--primary"
+                  [disabled]="importing || !importSource.trim()" (click)="convertImport()">
+            {{ (importing ? 'admin.content.import.converting' : 'admin.content.import.convert') | translate }}
+          </button>
+        } @else {
+          <button type="button" class="adm-btn adm-btn--ghost" (click)="importResult = null">
+            {{ 'admin.content.import.back' | translate }}
+          </button>
+          <button type="button" class="adm-btn adm-btn--primary" (click)="applyImport()">
+            {{ 'admin.content.import.insert' | translate:{ count: importResult.blocks.length } }}
+          </button>
+        }
+      </footer>
+    </div>
+  </div>
+}

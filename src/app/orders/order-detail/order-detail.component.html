@@ -4,7 +4,7 @@
       <button class="btn-back" (click)="goBack()">&larr; {{ 'orders.backToOrders' | translate }}</button>
       @if (!loading && !error && order) {
         <button class="btn-export" (click)="exportToExcel()">
-          <span class="material-icons">download</span>
+          <app-icon name="download"></app-icon>
           <span class="btn-export-text">Excel</span>
         </button>
       }
@@ -27,11 +27,13 @@
           <h3>{{ 'orders.orderInformation' | translate }}</h3>
           <div class="info-grid">
             <div><strong>{{ 'orders.orderNumber' | translate }}:</strong> {{ order.number || order.id }}</div>
-            <div><strong>{{ 'orders.status' | translate }}:</strong>
-            <span class="status-badge" [ngClass]="getStatusClass(order.status)">
-              {{ getTranslatedStatus(order.status) }}
-            </span>
-          </div>
+            @if (order.clientPhase) {
+              <div><strong>{{ 'orders.status' | translate }}:</strong>
+                <span class="status-badge" [ngClass]="'phase-' + order.clientPhase">
+                  {{ phaseLabel(order.clientPhase) }}
+                </span>
+              </div>
+            }
           <div>
             <strong>{{ 'orders.created' | translate }}:</strong> {{ formatDate(order.createdAt) }}
           </div>
@@ -45,6 +47,37 @@
           }
         </div>
       </div>
+
+      <!-- Who the order is invoiced to. A snapshot taken at confirm time, so it
+           shows the details that actually reached the document. Hidden entirely
+           for accounts that have no branches — there is nothing to disambiguate
+           then, and "billed to your account" would be noise on every order. -->
+      @if (showBilledTo()) {
+        <div class="billing-info-subsection">
+          <h3>{{ 'orders.billedTo' | translate }}</h3>
+          @if (order.branchUid) {
+            <div class="info-grid">
+              <div>
+                <strong>{{ 'common.name' | translate }}:</strong> {{ order.branchName }}
+              </div>
+              <div>
+                <strong>{{ 'orders.vatNumber' | translate }}:</strong>
+                <span [class.value-missing]="!order.branchVatNumber">
+                  {{ order.branchVatNumber || ('orders.noVatNumber' | translate) }}
+                </span>
+              </div>
+              @if (order.branchBusinessRegistrationNumber) {
+                <div>
+                  <strong>{{ 'orders.registrationNumber' | translate }}:</strong>
+                  {{ order.branchBusinessRegistrationNumber }}
+                </div>
+              }
+            </div>
+          } @else {
+            <p class="no-data">{{ 'orders.billedToAccount' | translate }}</p>
+          }
+        </div>
+      }
 
       <!-- Delivery Address -->
       <div class="delivery-info-subsection">
@@ -84,32 +117,34 @@
         <table class="items-table items-table-desktop">
           <thead>
             <tr>
+              <th>#</th>
               <th>{{ 'orders.sku' | translate }}</th>
               <th>{{ 'orders.productName' | translate }}</th>
-              <th>{{ 'products.quantity' | translate }}</th>
-              <th>{{ 'orders.basePrice' | translate }}</th>
-              <th>{{ 'orders.priceWithVat' | translate }}</th>
-              <th>{{ 'orders.discount' | translate }} (%)</th>
-              <th>{{ 'orders.priceAfterDiscount' | translate }}</th>
-              <th>{{ 'orders.total' | translate }}</th>
+              <th class="num">{{ 'products.quantity' | translate }}</th>
+              <th class="num">{{ 'orders.basePrice' | translate }}</th>
+              <th class="num">{{ 'orders.priceWithVat' | translate }}</th>
+              <th class="num">{{ 'orders.discount' | translate }} (%)</th>
+              <th class="num">{{ 'orders.priceAfterDiscount' | translate }}</th>
+              <th class="num">{{ 'orders.total' | translate }}</th>
             </tr>
           </thead>
           <tbody>
             @for (item of order.items; track item) {
               <tr>
+                <td>{{ item.lineNumber || '' }}</td>
                 <td>{{ item.sku || '-' }}</td>
                 <td>{{ item.productName }}</td>
-                <td>{{ item.quantity }}</td>
-                <td>{{ item.price.toFixed(2) }}</td>
-                <td>{{ (item.priceWithVat || 0).toFixed(2) }}</td>
-                <td>{{ item.discount !== undefined ? item.discount + '%' : '-' }}</td>
-                <td>{{ (item.priceAfterDiscountWithVat || 0).toFixed(2) }}</td>
-                <td>{{ item.subtotal.toFixed(2) }}</td>
+                <td class="num">{{ item.quantity }}</td>
+                <td class="num">{{ money(item.price) }}</td>
+                <td class="num">{{ money(item.priceWithVat || 0) }}</td>
+                <td class="num">{{ item.discount !== undefined ? item.discount + '%' : '-' }}</td>
+                <td class="num">{{ money(item.priceAfterDiscountWithVat || 0) }}</td>
+                <td class="num">{{ money(item.subtotal) }}</td>
               </tr>
             }
             @if (order.items.length === 0) {
               <tr>
-                <td colspan="8" class="no-data">{{ 'orders.noItems' | translate }}</td>
+                <td colspan="9" class="no-data">{{ 'orders.noItems' | translate }}</td>
               </tr>
             }
           </tbody>
@@ -129,20 +164,20 @@
                 </div>
                 <div class="collapsed-right">
                   <span class="collapsed-qty">{{ item.quantity }}</span>
-                  <span class="collapsed-total">{{ item.subtotal.toFixed(2) }}</span>
+                  <span class="collapsed-total">{{ money(item.subtotal) }}</span>
                 </div>
-                <span class="expand-icon material-icons">{{ isItemExpanded(i) ? 'expand_less' : 'expand_more' }}</span>
+                <app-icon [name]="isItemExpanded(i) ? 'expand_less' : 'expand_more'" class="expand-icon"></app-icon>
               </div>
               <!-- Expanded details -->
               @if (isItemExpanded(i)) {
                 <div class="item-card-expanded">
                   <div class="detail-row">
                     <span class="detail-label">{{ 'orders.basePrice' | translate }}</span>
-                    <span class="detail-value">{{ item.price.toFixed(2) }}{{ currencyName ? ' ' + currencyName : '' }}</span>
+                    <span class="detail-value">{{ moneyWithCurrency(item.price) }}</span>
                   </div>
                   <div class="detail-row">
                     <span class="detail-label">{{ 'orders.priceWithVat' | translate }}</span>
-                    <span class="detail-value">{{ (item.priceWithVat || 0).toFixed(2) }}{{ currencyName ? ' ' + currencyName : '' }}</span>
+                    <span class="detail-value">{{ moneyWithCurrency(item.priceWithVat || 0) }}</span>
                   </div>
                   @if (item.discount !== undefined && item.discount > 0) {
                     <div class="detail-row discount-row">
@@ -152,11 +187,11 @@
                   }
                   <div class="detail-row">
                     <span class="detail-label">{{ 'orders.priceAfterDiscount' | translate }}</span>
-                    <span class="detail-value">{{ (item.priceAfterDiscountWithVat || 0).toFixed(2) }}{{ currencyName ? ' ' + currencyName : '' }}</span>
+                    <span class="detail-value">{{ moneyWithCurrency(item.priceAfterDiscountWithVat || 0) }}</span>
                   </div>
                   <div class="detail-row total-row">
                     <span class="detail-label">{{ 'orders.total' | translate }}</span>
-                    <span class="detail-value total-value">{{ item.subtotal.toFixed(2) }}{{ currencyName ? ' ' + currencyName : '' }}</span>
+                    <span class="detail-value total-value">{{ moneyWithCurrency(item.subtotal) }}</span>
                   </div>
                 </div>
               }
@@ -165,10 +200,10 @@
           @if (hasMoreItems()) {
             <button class="btn-show-more" (click)="toggleShowAllItems()">
               @if (showAllItems) {
-                <span class="material-icons">expand_less</span>
+                <app-icon name="expand_less"></app-icon>
                 {{ 'orders.showLess' | translate }}
               } @else {
-                <span class="material-icons">expand_more</span>
+                <app-icon name="expand_more"></app-icon>
                 {{ 'orders.showMore' | translate }} ({{ getRemainingItemsCount() }})
               }
             </button>
@@ -183,95 +218,71 @@
           @if (hasDiscount()) {
             <div class="total-row">
               <span class="total-label">{{ 'products.originalPrice' | translate }}:</span>
-              <span class="total-value">{{ getOriginalTotal().toFixed(2) }}{{ currencyName ? ' ' + currencyName : '' }}</span>
+              <span class="total-value">{{ moneyWithCurrency(getOriginalTotal()) }}</span>
             </div>
           }
           @if (hasDiscount()) {
             <div class="total-row discount-row">
               <span class="total-label">{{ 'products.discount' | translate }} ({{ order.discountPercent }}%):</span>
-              <span class="total-value discount-value">-{{ getDiscountAmount().toFixed(2) }}{{ currencyName ? ' ' + currencyName : '' }}</span>
+              <span class="total-value discount-value">-{{ moneyWithCurrency(getDiscountAmount()) }}</span>
             </div>
           }
           <div class="total-row subtotal-row" [class.first-row]="!hasDiscount()">
             <span class="total-label">{{ 'products.subtotal' | translate }}:</span>
-            <span class="total-value">{{ getSubtotal().toFixed(2) }}{{ currencyName ? ' ' + currencyName : '' }}</span>
+            <span class="total-value">{{ moneyWithCurrency(getSubtotal()) }}</span>
           </div>
           @if (getVatAmount() > 0) {
             <div class="total-row vat-row">
               <span class="total-label">{{ 'products.vat' | translate }}@if (order.vatRate) {
                 <span> ({{ order.vatRate }}%)</span>
               }:</span>
-              <span class="total-value">{{ getVatAmount().toFixed(2) }}{{ currencyName ? ' ' + currencyName : '' }}</span>
+              <span class="total-value">{{ moneyWithCurrency(getVatAmount()) }}</span>
+            </div>
+          }
+          @if (getDeliveryCost() > 0) {
+            <div class="total-row delivery-cost-row">
+              <span class="total-label">{{ 'orders.deliveryCost' | translate }}:</span>
+              <span class="total-value">{{ moneyWithCurrency(getDeliveryCost()) }}</span>
             </div>
           }
           <div class="total-row final-total-row">
             <span class="total-label">{{ 'products.total' | translate }}:</span>
-            <span class="total-value final-total">{{ getFinalTotal().toFixed(2) }}{{ currencyName ? ' ' + currencyName : '' }}</span>
+            <span class="total-value final-total">{{ moneyWithCurrency(getFinalTotal()) }}</span>
           </div>
         </div>
       </div>
     </div>
-    <!-- Status history section -->
-    <div class="section items-section history-section">
-      <h3>{{ 'orders.statusHistory' | translate }}</h3>
-      @if (historyLoading) {
+    <!-- Progress track. Phases only: who moved the order and why is internal. -->
+    <div class="section progress-section">
+      <h3>{{ 'orders.progress' | translate }}</h3>
+      @if (timelineLoading) {
         <div class="loading">{{ 'common.loading' | translate }}</div>
-      }
-      @if (!historyLoading) {
-        <!-- Desktop table view -->
-        <table class="items-table history-table history-table-desktop">
-          <thead>
-            <tr>
-              <th>{{ 'orders.date' | translate }}</th>
-              <th>{{ 'orders.user' | translate }}</th>
-              <th>{{ 'orders.status' | translate }}</th>
-              <th>{{ 'orders.comment' | translate }}</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (h of history; track h) {
-              <tr>
-                <td>{{ formatDate(h.created_at) }}</td>
-                <td>{{ (h.user_firstname || '') + ' ' + (h.user_lastname || '') || '-' }}</td>
-                <td>
-                  <span class="status-badge" [ngClass]="getStatusClass(h.status)">
-                    {{ getTranslatedStatus(h.status) }}
-                  </span>
-                </td>
-                <td>{{ h.comment || '-' }}</td>
-              </tr>
-            }
-            @if (history.length === 0) {
-              <tr>
-                <td colspan="4" class="no-data">{{ 'orders.noHistory' | translate }}</td>
-              </tr>
-            }
-          </tbody>
-        </table>
-        <!-- Mobile card view -->
-        <div class="history-cards-mobile">
-          @if (history.length === 0) {
-            <div class="no-data-card">{{ 'orders.noHistory' | translate }}</div>
-          }
-          @for (h of history; track h) {
-            <div class="history-card">
-              <div class="history-card-header">
-                <span class="history-date">{{ formatDate(h.created_at) }}</span>
-                <span class="status-badge" [ngClass]="getStatusClass(h.status)">
-                  {{ getTranslatedStatus(h.status) }}
-                </span>
-              </div>
-              @if ((h.user_firstname || h.user_lastname)) {
-                <div class="history-user">
-                  {{ (h.user_firstname || '') + ' ' + (h.user_lastname || '') }}
-                </div>
-              }
-              @if (h.comment) {
-                <div class="history-comment">{{ h.comment }}</div>
-              }
-            </div>
+      } @else if (timeline?.cancelled) {
+        <div class="progress-cancelled">
+          <span class="progress-cancelled__label">{{ 'orders.orderCancelled' | translate }}</span>
+          @if (timeline?.cancelled_at) {
+            <span class="progress-cancelled__date">{{ formatDate(timeline!.cancelled_at!) }}</span>
           }
         </div>
+      } @else if (hasProgress()) {
+        <ol class="progress-track">
+          @for (step of timeline!.steps; track step.phase) {
+            <li class="progress-step"
+                [class.is-reached]="step.reached"
+                [class.is-current]="step.phase === timeline!.current">
+              <span class="progress-step__dot" aria-hidden="true"></span>
+              <span class="progress-step__label">{{ phaseLabel(step.phase) }}</span>
+              <!-- Only the current phase is dated. A column of five timestamps
+                   answers a question nobody asked ("when did it enter Preparing")
+                   at the cost of the one that matters — where it is now. -->
+              @if (step.reached_at && step.phase === timeline!.current) {
+                <span class="progress-step__date">{{ formatDate(step.reached_at) }}</span>
+              }
+            </li>
+          }
+        </ol>
+      } @else {
+        <div class="no-data-card">{{ 'orders.noProgress' | translate }}</div>
       }
     </div>
   </div>

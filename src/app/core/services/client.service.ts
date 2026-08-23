@@ -5,13 +5,7 @@ import { map, catchError, tap } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 import { AppSettings, ClientAddress } from '../models/app-settings.model';
 import { AppSettingsService } from './app-settings.service';
-
-// API Response interface matching backend response structure
-interface ApiResponse<T> {
-  success: boolean;
-  data: T;
-  status_message?: string;
-}
+import { ApiResponse } from '../models/api.model';
 
 // Client profile update request (only editable fields)
 export interface ClientProfileUpdate {
@@ -19,7 +13,6 @@ export interface ClientProfileUpdate {
   email?: string;
   phone?: string;
   vat_number?: string;
-  language?: string;
 }
 
 // Country entity
@@ -40,6 +33,9 @@ export interface AddressUpsertRequest {
   city?: string;
   address_text?: string;
   is_default?: boolean;
+  is_official?: boolean;
+  /** Branch to bill orders to; '' bills the account itself. */
+  branch_uid?: string;
 }
 
 @Injectable({
@@ -160,6 +156,31 @@ export class ClientService {
       }),
       catchError(error => {
         console.error('Set default address error:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  /**
+   * Set an address as the client's official (invoicing) address.
+   * Backend returns updated AppSettings with the updated official flag.
+   */
+  setOfficialAddress(uid: string): Observable<AppSettings> {
+    return this.http.put<ApiResponse<AppSettings>>(`${this.apiUrl}/frontend/profile/addresses/${uid}/official`, {}).pipe(
+      map(response => {
+        if (!response.success) {
+          throw new Error(response.status_message || 'Failed to set official address');
+        }
+        return response.data;
+      }),
+      tap(appSettings => {
+        // Update AppSettings with updated official address
+        if (appSettings) {
+          this.appSettingsService.updateSettings(appSettings);
+        }
+      }),
+      catchError(error => {
+        console.error('Set official address error:', error);
         return throwError(() => error);
       })
     );

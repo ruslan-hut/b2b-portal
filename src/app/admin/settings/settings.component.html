@@ -1,0 +1,21 @@
+<div class="adm-page">
+
+  <header class="adm-bar">
+    <div class="adm-bar__crumbs">
+      <span class="adm-crumb adm-crumb--active">{{ 'admin.settings.title' | translate }}</span>
+    </div>
+  </header>
+
+  <div class="adm-grid adm-grid--full">
+    <div class="set-grid">
+      @for (card of cards; track card.route) {
+        <button type="button" class="set-card" (click)="navigate(card.route)">
+          <app-icon [name]="card.icon" class="set-card__icon"></app-icon>
+          <span class="set-card__title">{{ card.title | translate }}</span>
+          <span class="set-card__desc">{{ card.description | translate }}</span>
+          <app-icon name="chevron_right" class="set-card__arrow"></app-icon>
+        </button>
+      }
+    </div>
+  </div>
+</div>

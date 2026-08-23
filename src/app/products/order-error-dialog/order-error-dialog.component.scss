@@ -1,0 +1,185 @@
+.dialog-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--overlay-bg-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: var(--spacing-md, 16px);
+}
+
+.dialog-content {
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  border-radius: var(--radius-lg, 12px);
+  box-shadow: var(--shadow-lg);
+  width: 100%;
+  max-width: 480px;
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.dialog-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm, 8px);
+  padding: var(--spacing-md, 16px);
+  border-bottom: 1px solid var(--color-border);
+
+  .header-icon {
+    color: var(--color-alert-error-text, var(--color-error));
+    font-size: var(--icon-xl, 24px);
+  }
+
+  h2 {
+    flex: 1;
+    margin: 0;
+    font-size: var(--text-lg, 16px);
+    font-weight: 600;
+  }
+
+  .close-btn {
+    height: var(--control-h-md, 32px);
+    width: var(--control-h-md, 32px);
+    border: none;
+    background: transparent;
+    color: var(--color-text-secondary);
+    border-radius: var(--radius-control, 6px);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    &:hover {
+      background: var(--color-background-hover);
+    }
+  }
+}
+
+.dialog-body {
+  padding: var(--spacing-md, 16px);
+  overflow-y: auto;
+}
+
+.dialog-message {
+  margin: 0 0 var(--spacing-md, 16px);
+  font-size: var(--text-md, 14px);
+  line-height: 1.5;
+  color: var(--color-text-primary);
+}
+
+.problems-block {
+  background: var(--color-alert-error-bg);
+  border: 1px solid var(--color-alert-error-border);
+  border-radius: var(--radius-md, 8px);
+  padding: var(--spacing-sm, 8px) var(--spacing-md, 16px);
+}
+
+.problems-heading {
+  font-size: var(--text-sm, 12px);
+  font-weight: 600;
+  color: var(--color-alert-error-text, var(--color-error));
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: var(--spacing-xs, 4px) 0;
+}
+
+.problems-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.problem-row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-sm, 8px);
+  padding: var(--spacing-xs, 4px) 0;
+
+  .row-icon {
+    font-size: var(--icon-md, 18px);
+    color: var(--color-warning);
+    flex-shrink: 0;
+    margin-top: 1px;
+
+    &.icon-inactive {
+      color: var(--color-text-secondary);
+    }
+  }
+
+  .problem-text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  .problem-name {
+    font-size: var(--text-md, 14px);
+    font-weight: 500;
+    color: var(--color-text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .problem-reason {
+    font-size: var(--text-sm, 12px);
+    color: var(--color-text-secondary);
+  }
+}
+
+.more-row {
+  margin-top: var(--spacing-xs, 4px);
+  padding-top: var(--spacing-xs, 4px);
+  border-top: 1px dashed var(--color-alert-error-border);
+  font-size: var(--text-sm, 12px);
+  color: var(--color-text-secondary);
+  font-style: italic;
+}
+
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--spacing-sm, 8px);
+  padding: var(--spacing-md, 16px);
+  border-top: 1px solid var(--color-border);
+
+  .btn {
+    height: var(--control-h-lg, 36px);
+    padding: 0 var(--spacing-md, 16px);
+    border-radius: var(--radius-control, 6px);
+    font-size: var(--text-md, 14px);
+    font-weight: 500;
+    cursor: pointer;
+    border: 1px solid transparent;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-xs, 4px);
+
+    app-icon {
+      font-size: var(--icon-sm, 16px);
+    }
+  }
+
+  .btn-primary {
+    background: var(--color-primary);
+    color: var(--color-on-primary);
+
+    &:hover {
+      background: var(--color-primary-dark);
+    }
+  }
+
+  .btn-secondary {
+    background: var(--color-surface);
+    color: var(--color-text-primary);
+    border-color: var(--color-border);
+
+    &:hover {
+      background: var(--color-background-hover);
+    }
+  }
+}

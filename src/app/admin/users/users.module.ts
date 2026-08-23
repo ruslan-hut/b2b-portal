@@ -3,11 +3,13 @@ import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { UsersRoutingModule } from './users-routing.module';
 import { UsersComponent } from './users.component';
+import { UserEditComponent } from './user-edit/user-edit.component';
 import { SharedModule } from '../../shared/shared.module';
 
 @NgModule({
   declarations: [
-    UsersComponent
+    UsersComponent,
+    UserEditComponent
   ],
   imports: [
     CommonModule,
@@ -18,4 +20,3 @@ import { SharedModule } from '../../shared/shared.module';
   ]
 })
 export class UsersModule { }
-

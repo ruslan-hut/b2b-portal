@@ -1,0 +1,16 @@
+<div class="toast-region" aria-live="polite" aria-atomic="false">
+  @for (n of (notifications.notifications$ | async) ?? []; track trackById($index, n)) {
+    <div class="toast toast--{{ n.type }}" role="status">
+      <app-icon [name]="iconFor(n.type)" class="toast__icon"></app-icon>
+      <span class="toast__message">{{ n.message }}</span>
+      <button
+        type="button"
+        class="toast__close"
+        (click)="notifications.dismiss(n.id)"
+        [attr.aria-label]="'common.close' | translate"
+      >
+        <app-icon name="close"></app-icon>
+      </button>
+    </div>
+  }
+</div>

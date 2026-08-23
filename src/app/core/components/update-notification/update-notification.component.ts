@@ -1,7 +1,6 @@
-import { Component, OnInit, OnDestroy, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
-import { SwUpdate, VersionReadyEvent } from '@angular/service-worker';
-import { filter, map } from 'rxjs/operators';
-import { Subscription } from 'rxjs';
+import { Component, OnInit, ChangeDetectorRef, ChangeDetectionStrategy, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { AppUpdateService } from '../../services/app-update.service';
 
 @Component({
     selector: 'app-update-notification',
@@ -10,59 +9,33 @@ import { Subscription } from 'rxjs';
     standalone: false,
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class UpdateNotificationComponent implements OnInit, OnDestroy {
+export class UpdateNotificationComponent implements OnInit {
   updateAvailable = false;
-  private subscriptions = new Subscription();
 
-  constructor(private swUpdate: SwUpdate, private cdr: ChangeDetectorRef) {}
+  constructor(
+    private appUpdate: AppUpdateService,
+    private cdr: ChangeDetectorRef,
+    private destroyRef: DestroyRef
+  ) {}
 
-  /**
-   * Initialize component and check for service worker updates
-   */
   ngOnInit(): void {
-    if (!this.swUpdate.isEnabled) {
-      return;
-    }
+    this.appUpdate.start();
 
-    // Check for updates
-    this.swUpdate.checkForUpdate();
-
-    // Listen for version ready event
-    const versionReady$ = this.swUpdate.versionUpdates.pipe(
-      filter((evt): evt is VersionReadyEvent => evt.type === 'VERSION_READY'),
-      map(() => true)
-    );
-
-    this.subscriptions.add(
-      versionReady$.subscribe(() => {
-        this.updateAvailable = true;
+    this.appUpdate.updateAvailable$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(available => {
+        this.updateAvailable = available;
         this.cdr.markForCheck();
-      })
-    );
-  }
-
-  ngOnDestroy(): void {
-    this.subscriptions.unsubscribe();
-  }
-
-  /**
-   * Reload the application with the new version
-   */
-  reloadApp(): void {
-    if (this.swUpdate.isEnabled) {
-      this.swUpdate.activateUpdate().then(() => {
-        window.location.reload();
       });
-    } else {
-      window.location.reload();
-    }
   }
 
-  /**
-   * Dismiss the update notification
-   */
+  /** Reload the application with the new version */
+  reloadApp(): void {
+    this.appUpdate.reload();
+  }
+
+  /** Hide the banner; the service will offer the update again later. */
   dismiss(): void {
-    this.updateAvailable = false;
+    this.appUpdate.dismiss();
   }
 }
-

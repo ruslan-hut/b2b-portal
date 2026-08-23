@@ -2,6 +2,9 @@ import { Component, OnInit, OnDestroy, ChangeDetectorRef, ChangeDetectionStrateg
 import { HttpClient } from '@angular/common/http';
 import { Subscription } from 'rxjs';
 import { environment } from '../../../../environments/environment';
+import { formatDateTime } from '../../../core/utils/date-format';
+import { ConfirmDialogService } from '../../../core/services/confirm-dialog.service';
+import { ApiResponse } from '../../../core/models/api.model';
 
 // Subscription type bitflags
 const SUB_TYPE_LOGS = 1;           // 0b00001 - Log notifications
@@ -38,12 +41,6 @@ interface InternalUser {
   first_name: string;
   last_name: string;
   user_role: string;
-}
-
-interface ApiResponse<T> {
-  data: T;
-  status: string;
-  message?: string;
 }
 
 @Component({
@@ -102,6 +99,7 @@ export class SubscriptionsComponent implements OnInit, OnDestroy {
 
   constructor(
     private http: HttpClient,
+    private confirmDialog: ConfirmDialogService,
     private cdr: ChangeDetectorRef
   ) {}
 
@@ -216,9 +214,9 @@ export class SubscriptionsComponent implements OnInit, OnDestroy {
     );
   }
 
-  deleteSubscription(item: TelegramSubscription): void {
+  async deleteSubscription(item: TelegramSubscription): Promise<void> {
     const displayName = item.username || `${item.first_name} ${item.last_name}`.trim() || `User ${item.user_id}`;
-    if (!confirm(`Are you sure you want to delete subscription for "${displayName}"?`)) {
+    if (!await this.confirmDialog.ask({ message: `Are you sure you want to delete subscription for "${displayName}"?`, danger: true })) {
       return;
     }
 
@@ -258,22 +256,6 @@ export class SubscriptionsComponent implements OnInit, OnDestroy {
     this.loadSubscriptions();
   }
 
-  getPageNumbers(): number[] {
-    const pages: number[] = [];
-    const maxVisible = 5;
-    let start = Math.max(1, this.currentPage - Math.floor(maxVisible / 2));
-    const end = Math.min(this.totalPages, start + maxVisible - 1);
-
-    if (end - start + 1 < maxVisible) {
-      start = Math.max(1, end - maxVisible + 1);
-    }
-
-    for (let i = start; i <= end; i++) {
-      pages.push(i);
-    }
-    return pages;
-  }
-
   // Helpers
   getDisplayName(item: TelegramSubscription): string {
     if (item.first_name || item.last_name) {
@@ -283,7 +265,7 @@ export class SubscriptionsComponent implements OnInit, OnDestroy {
   }
 
   formatDate(dateString: string): string {
-    return new Date(dateString).toLocaleString();
+    return formatDateTime(dateString);
   }
 
   loadUsers(): void {

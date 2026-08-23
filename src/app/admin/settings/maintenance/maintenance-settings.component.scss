@@ -1,0 +1,35 @@
+:host {
+  display: block;
+}
+
+/* Constrain the single-column settings form to a comfortable reading width */
+.mnt-main {
+  max-width: 720px;
+}
+
+.mnt-hint {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  line-height: 1.4;
+}
+
+/* Separator between the maintenance switch and the per-audience access gates */
+.mnt-subsection {
+  margin-top: var(--spacing-sm);
+  padding-top: var(--spacing-md-sm);
+  border-top: 1px solid var(--color-border-light);
+}
+
+.mnt-subsection__title {
+  margin: 0;
+  font-size: var(--text-md);
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.mnt-subsection__sub {
+  margin: 2px 0 0;
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  line-height: 1.4;
+}

@@ -1,0 +1,37 @@
+<div class="guide">
+  <header class="guide__bar">
+    <a class="guide__home" routerLink="/">← {{ siteName$ | async }}</a>
+    <span class="guide__title">{{ lang === 'uk' ? 'Посібник Client API' : 'Client API guide' }}</span>
+    <div class="guide__actions">
+      <div class="guide__lang" role="group" [attr.aria-label]="lang === 'uk' ? 'Мова посібника' : 'Guide language'">
+        <button type="button" [class.is-active]="lang === 'uk'" (click)="read('uk')">UA</button>
+        <button type="button" [class.is-active]="lang === 'en'" (click)="read('en')">EN</button>
+      </div>
+      <a class="guide__ref" routerLink="/api-docs">
+        <app-icon name="code"></app-icon>{{ lang === 'uk' ? 'Довідник API' : 'API reference' }}
+      </a>
+    </div>
+  </header>
+
+  <div class="guide__hero">
+    <span class="guide__eyebrow">Client API v1</span>
+    <h1 class="guide__h1">
+      {{ lang === 'uk' ? 'Підключення до API за 15 хвилин' : 'Connect to the API in 15 minutes' }}
+    </h1>
+    <p class="guide__lede">
+      {{ lang === 'uk'
+        ? 'Ваша ERP або бек-офіс може працювати з порталом напряму: читати каталог із вашими цінами, рахувати замовлення й створювати їх без ручного вводу. Цей посібник проводить шлях від кнопки «Новий ключ» у профілі до першого збереженого замовлення.'
+        : 'Your ERP or back office can work with the portal directly: read the catalog at your own prices, price orders and place them without anyone retyping anything. This guide runs from the “New key” button in your profile to your first saved order.' }}
+    </p>
+    <div class="guide__facts">
+      <span>{{ lang === 'uk' ? 'База' : 'Base URL' }}: <b>{{ base }}</b></span>
+      <span>{{ lang === 'uk' ? 'Формат' : 'Format' }}: <b>JSON</b></span>
+      <span>{{ lang === 'uk' ? 'Авторизація' : 'Auth' }}: <b>{{ lang === 'uk' ? 'API-ключ' : 'API key' }}</b></span>
+    </div>
+  </div>
+
+  <div class="guide__body">
+    @if (lang === 'uk') { <app-api-guide-uk></app-api-guide-uk> }
+    @else { <app-api-guide-en></app-api-guide-en> }
+  </div>
+</div>

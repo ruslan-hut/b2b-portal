@@ -3,11 +3,13 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
+import { ProductTag } from '../models/product-tag.model';
 
 export interface DashboardStats {
   orders_by_status: { [status: string]: number };
   total_clients: number;
   total_products: number;
+  products_by_status: { [status: string]: number };
 }
 
 export interface TableInfo {
@@ -43,6 +45,21 @@ export interface AdminProductWithDetails {
   category_description?: string;
   price?: number;
   quantity?: number;
+  tags?: ProductTag[];
+  country_availability?: ProductCountryAvailability[];
+}
+
+/**
+ * ERP-owned certification data: whether a product may be sold into a country and
+ * whether it holds a certificate there. An empty country_code means any country.
+ * Read-only in the admin zone — only the ERP writes it.
+ */
+export interface ProductCountryAvailability {
+  product_uid: string;
+  country_code: string;
+  is_available: boolean;
+  is_certified: boolean;
+  last_update?: string;
 }
 
 export interface AdminProductsResponse {
@@ -72,6 +89,7 @@ export interface AdminClientFull {
   pin_code: string;
   address: string;
   discount: number;
+  additional_discount?: number; // Bonus discount in percentage points, added after any product discount limit
   vat_rate?: number;
   vat_number?: string;
   business_registration_number?: string;
@@ -81,6 +99,7 @@ export interface AdminClientFull {
   cumulative_discount: boolean;
   price_type_uid: string;
   store_uid: string;
+  language?: string;
   active: boolean;
   last_update: string;
 }
@@ -154,6 +173,7 @@ export class AdminService {
     store?: string;
     price_type?: string;
     category?: string;
+    search?: string;
   }): Observable<AdminProductsResponse> {
     let httpParams = new HttpParams();
     
@@ -174,6 +194,9 @@ export class AdminService {
     }
     if (params.category) {
       httpParams = httpParams.set('category', params.category);
+    }
+    if (params.search) {
+      httpParams = httpParams.set('search', params.search);
     }
 
     return this.http.get<AdminProductsResponse>(`${this.apiUrl}/admin/products/details`, { params: httpParams });

@@ -1,12 +1,16 @@
 import { Component, OnInit, OnDestroy, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
 import { Router } from '@angular/router';
 import { Subscription, forkJoin } from 'rxjs';
+import { CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 import { CrmService } from '../../services/crm.service';
-import { CrmStage, CrmTransition } from '../../models/crm-stage.model';
+import { CLIENT_PHASE_OPTIONS, CrmStage, CrmStageTranslation, CrmTransition } from '../../models/crm-stage.model';
 import { StoreService } from '../../../../core/services/store.service';
 import { Store } from '../../../../core/models/store.model';
 import { PageTitleService } from '../../../../core/services/page-title.service';
 import { AuthService } from '../../../../core/services/auth.service';
+import { AdminService } from '../../../../core/services/admin.service';
+import { TranslationService } from '../../../../core/services/translation.service';
+import { ConfirmDialogService } from '../../../../core/services/confirm-dialog.service';
 
 @Component({
     selector: 'app-crm-settings',
@@ -33,6 +37,14 @@ export class CrmSettingsComponent implements OnInit, OnDestroy {
   editingStage: CrmStage | null = null;
   stageForm: Partial<CrmStage> = {};
 
+  // Localized stage names edited in the modal, keyed by language code
+  availableLanguages: string[] = [];
+  stageTranslations: { [lang: string]: string } = {};
+
+  idCopied = false;
+
+  readonly clientPhaseOptions = CLIENT_PHASE_OPTIONS;
+
   // Default colors
   defaultColors = [
     '#6366f1', '#8b5cf6', '#ec4899', '#ef4444',
@@ -44,14 +56,37 @@ export class CrmSettingsComponent implements OnInit, OnDestroy {
     private crmService: CrmService,
     private storeService: StoreService,
     private authService: AuthService,
+    private adminService: AdminService,
+    private translationService: TranslationService,
     public router: Router,
     private cdr: ChangeDetectorRef,
-    private pageTitleService: PageTitleService
+    private pageTitleService: PageTitleService,
+    private confirmDialog: ConfirmDialogService
   ) {}
 
   ngOnInit(): void {
     this.pageTitleService.setTitle('CRM Pipeline Settings');
+    this.loadLanguages();
     this.loadData();
+  }
+
+  private loadLanguages(): void {
+    this.subscriptions.add(
+      this.adminService.getAvailableLanguages().subscribe({
+        next: (langs) => {
+          // Always allow configuring the app UI locales, plus any languages already in use.
+          const set = new Set<string>(['en', 'uk']);
+          (langs || []).forEach(l => l && set.add(l));
+          set.add(this.translationService.getCurrentLanguage());
+          this.availableLanguages = Array.from(set);
+          this.cdr.detectChanges();
+        },
+        error: () => {
+          this.availableLanguages = ['en', 'uk'];
+          this.cdr.detectChanges();
+        }
+      })
+    );
   }
 
   ngOnDestroy(): void {
@@ -111,11 +146,15 @@ export class CrmSettingsComponent implements OnInit, OnDestroy {
       is_final: false,
       allow_edit: true,
       allow_create_shipment: false,
+      allow_split: false,
       creates_allocation: this.stages.length === 0, // Default: initial stage creates allocations
       deletes_allocation: false,
+      // Internal-only by default: a new stage must be opted in before clients see it
+      client_phase: '',
       store_uid: '',
       active: true
     };
+    this.stageTranslations = {};
     this.showStageModal = true;
     this.cdr.detectChanges();
   }
@@ -124,7 +163,12 @@ export class CrmSettingsComponent implements OnInit, OnDestroy {
     this.editingStage = stage;
     this.saving = false;
     this.error = null;
+    this.idCopied = false;
     this.stageForm = { ...stage };
+    this.stageTranslations = {};
+    (stage.translations || []).forEach(t => {
+      this.stageTranslations[t.language] = t.name;
+    });
     this.showStageModal = true;
     this.cdr.detectChanges();
   }
@@ -147,10 +191,13 @@ export class CrmSettingsComponent implements OnInit, OnDestroy {
       is_final: this.stageForm.is_final || false,
       allow_edit: this.stageForm.allow_edit !== false,
       allow_create_shipment: this.stageForm.allow_create_shipment || false,
+      allow_split: this.stageForm.allow_split || false,
       creates_allocation: this.stageForm.creates_allocation || false,
       deletes_allocation: this.stageForm.deletes_allocation || false,
+      client_phase: this.stageForm.client_phase || '',
       store_uid: this.stageForm.store_uid || undefined,
-      active: this.stageForm.active !== false
+      active: this.stageForm.active !== false,
+      translations: this.buildTranslations()
     };
 
     this.subscriptions.add(
@@ -176,8 +223,8 @@ export class CrmSettingsComponent implements OnInit, OnDestroy {
     );
   }
 
-  deleteStage(stage: CrmStage): void {
-    if (!confirm(`Are you sure you want to delete stage "${stage.name}"?`)) {
+  async deleteStage(stage: CrmStage): Promise<void> {
+    if (!await this.confirmDialog.ask({ message: `Are you sure you want to delete stage "${stage.name}"?`, danger: true })) {
       return;
     }
 
@@ -204,13 +251,66 @@ export class CrmSettingsComponent implements OnInit, OnDestroy {
     this.showStageModal = false;
     this.editingStage = null;
     this.stageForm = {};
+    this.stageTranslations = {};
     this.error = null;
     this.cdr.detectChanges();
+  }
+
+  /** Converts the per-language name inputs into the translations payload, dropping empties. */
+  private buildTranslations(): CrmStageTranslation[] {
+    return this.availableLanguages
+      .map(lang => ({ language: lang, name: (this.stageTranslations[lang] || '').trim() }))
+      .filter(t => t.name.length > 0);
+  }
+
+  /** Localized stage name for the current UI language, falling back to the base name. */
+  localizedName(stage: CrmStage): string {
+    const lang = this.translationService.getCurrentLanguage();
+    const match = (stage.translations || []).find(t => t.language === lang && !!t.name);
+    return match?.name || stage.name;
+  }
+
+  copyStageId(): void {
+    if (!this.editingStage?.uid) return;
+    navigator.clipboard.writeText(this.editingStage.uid).then(() => {
+      this.idCopied = true;
+      this.cdr.detectChanges();
+      setTimeout(() => {
+        this.idCopied = false;
+        this.cdr.detectChanges();
+      }, 2000);
+    });
   }
 
   selectColor(color: string): void {
     this.stageForm.color = color;
     this.cdr.detectChanges();
+  }
+
+  // Stage reorder
+  dropStage(event: CdkDragDrop<CrmStage[]>): void {
+    if (event.previousIndex === event.currentIndex) return;
+
+    moveItemInArray(this.stages, event.previousIndex, event.currentIndex);
+
+    const reorderRequests = this.stages.map((stage, index) => ({
+      uid: stage.uid,
+      sort_order: index
+    }));
+
+    this.subscriptions.add(
+      this.crmService.reorderStages(reorderRequests).subscribe({
+        next: () => {
+          this.stages.forEach((stage, index) => stage.sort_order = index);
+          this.cdr.detectChanges();
+        },
+        error: (err) => {
+          console.error('Failed to reorder stages:', err);
+          this.error = 'Failed to reorder stages';
+          this.loadData();
+        }
+      })
+    );
   }
 
   // Transition management

@@ -1,6 +1,7 @@
 import { Injectable, Inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { BehaviorSubject, fromEvent } from 'rxjs';
+import { readToken } from '../utils/theme-token';
 
 export type Theme = 'light' | 'dark' | 'system';
 export type ResolvedTheme = 'light' | 'dark';
@@ -165,8 +166,13 @@ export class ThemeService {
    * Update mobile browser theme color
    */
   private updateMetaThemeColor(): void {
+    // The mobile browser chrome should match the app header, so read the token
+    // rather than restating its two values here — a themed installation
+    // (docs/development/theming-contract.md) changes --header-bg and this
+    // follows. Called after the data-theme attribute is set, so the computed
+    // value already reflects the new palette.
     const resolved = this.resolvedThemeSubject.value;
-    const color = resolved === 'dark' ? '#161b22' : '#ffffff';
+    const color = readToken('--header-bg', resolved === 'dark' ? '#161b22' : '#ffffff');
 
     let meta = document.querySelector('meta[name="theme-color"]');
     if (!meta) {

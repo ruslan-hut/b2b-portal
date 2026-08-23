@@ -1,6 +1,6 @@
 import {Injectable} from '@angular/core';
 import {HttpClient, HttpParams} from '@angular/common/http';
-import {BehaviorSubject, Observable, of} from 'rxjs';
+import {BehaviorSubject, Observable, of, throwError} from 'rxjs';
 import {catchError, map, switchMap} from 'rxjs/operators';
 import {BackendProduct, FrontendProduct, Product, ProductCategory} from '../models/product.model';
 import {ProductMapper} from '../mappers/product.mapper';
@@ -8,20 +8,7 @@ import {environment} from '../../../environments/environment';
 // Mock data imports removed - using real API in production
 import {TranslationService} from './translation.service';
 import {AppSettingsService} from './app-settings.service';
-
-interface ApiPagination {
-  page: number;
-  count: number;
-  total: number;
-  total_pages: number;
-}
-
-interface ApiResponse<T> {
-  success: boolean;
-  message?: string;
-  data: T;
-  pagination?: ApiPagination;
-}
+import {ApiResponse, ApiPagination} from '../models/api.model';
 
 // Response type for paginated products
 export interface PaginatedProductsResponse {
@@ -144,6 +131,7 @@ export class ProductService {
             imageUrl: fp.image,
             inStock: fp.available_quantity > 0,
             sku: fp.sku,
+            barcode: fp.barcode,
             availableQuantity: fp.available_quantity,
             active: true,
             isNew: fp.is_new,
@@ -155,6 +143,9 @@ export class ProductService {
             priceFinal: fp.price_final / 100,
             vatRate: fp.vat_rate,
             discountPercent: fp.discount_percent,
+            tags: fp.tags,
+            certifiedCountries: fp.certified_countries,
+            certifiedAnyCountry: fp.certified_any_country,
           } as Product & {
             categoryUid: string;
             basePrice: number;
@@ -186,23 +177,21 @@ export class ProductService {
       }),
       catchError(error => {
         console.error('Error fetching frontend products (paginated):', error);
-        return of({
-          products: [],
-          pagination: {
-            page: 1,
-            pageSize: limit,
-            total: 0,
-            totalPages: 0,
-            hasMore: false
-          }
-        });
+        // Propagate the failure so the catalog can show an error state. Swallowing
+        // it into an empty result made a broken backend look like "no products".
+        return throwError(() => error);
       })
     );
   }
 
   /**
    * Get all categories for filter dropdown
-   * Returns categories with translated names
+   * Returns categories with translated names, sorted by name.
+   *
+   * The sort lives here rather than in each caller so every category list in
+   * the client UI — the catalog filter, the export picker — is ordered the same
+   * way. The backend returns them in insertion order, which is meaningless to a
+   * reader.
    */
   getFrontendCategories(): Observable<FrontendCategory[]> {
     const currentLanguage = this.translationService.getCurrentLanguage();
@@ -213,7 +202,7 @@ export class ProductService {
         if (!response.success || !response.data || !Array.isArray(response.data)) {
           return [];
         }
-        return response.data;
+        return [...response.data].sort((a, b) => a.name.localeCompare(b.name, currentLanguage));
       }),
       catchError(error => {
         console.error('Error fetching frontend categories:', error);

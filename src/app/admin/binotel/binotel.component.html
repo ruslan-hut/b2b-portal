@@ -1,0 +1,365 @@
+<div class="adm-page">
+
+  <header class="adm-bar">
+    <div class="adm-bar__crumbs">
+      <button
+        type="button"
+        class="adm-crumb-back"
+        routerLink="/admin/settings"
+        [attr.aria-label]="'common.back' | translate"
+      >
+        <app-icon name="arrow_back"></app-icon>
+      </button>
+      <a class="adm-crumb" routerLink="/admin/settings">{{ 'admin.settings.title' | translate }}</a>
+      <span class="adm-crumb-sep">/</span>
+      <span class="adm-crumb adm-crumb--active">{{ 'admin.settings.binotel' | translate }}</span>
+    </div>
+    <div class="adm-bar__actions">
+      <button
+        type="button"
+        class="adm-icon-btn"
+        (click)="refresh()"
+        [disabled]="loading"
+        [title]="'common.refresh' | translate"
+        [attr.aria-label]="'common.refresh' | translate"
+      >
+        <app-icon name="refresh"></app-icon>
+      </button>
+      @if (settings) {
+        <button
+          type="button"
+          class="adm-btn adm-btn--primary"
+          (click)="saveSettings()"
+          [disabled]="saving"
+        >
+          <app-icon [name]="saving ? 'sync' : 'check'"></app-icon>
+          {{ (saving ? 'common.saving' : 'common.save') | translate }}
+        </button>
+      }
+    </div>
+  </header>
+
+  @if (loading) {
+    <div class="adm-loading">{{ 'common.loading' | translate }}</div>
+  }
+
+  @if (!loading && settings) {
+    <div class="adm-grid adm-grid--full">
+      <div class="adm-main bin-main">
+
+        @if (error) {
+          <div class="adm-error" role="alert">{{ error }}</div>
+        }
+        @if (successMessage) {
+          <div class="adm-success">{{ successMessage }}</div>
+        }
+
+        <!-- Connection -->
+        <section class="adm-section">
+          <header class="adm-section__head bin-status-head">
+            <div>
+              <h2 class="adm-section__title">{{ 'admin.binotel.connection' | translate }}</h2>
+              <p class="adm-section__sub">{{ 'admin.binotel.connectionHint' | translate }}</p>
+            </div>
+            <span class="bin-status" [class.is-connected]="isConfigured && enabled">
+              <app-icon [name]="isConfigured && enabled ? 'check_circle' : 'cancel'"></app-icon>
+              {{ (isConfigured && enabled ? 'admin.binotel.active' : 'admin.binotel.inactive') | translate }}
+            </span>
+          </header>
+
+          <div class="adm-fields">
+            <label class="adm-field">
+              <span class="adm-field__label">{{ 'admin.binotel.apiKey' | translate }}</span>
+              <input
+                type="text"
+                class="adm-input adm-input--mono"
+                [(ngModel)]="apiKey"
+                name="apiKey"
+                placeholder="6po1f4-7oPzCo1"
+                autocomplete="off"
+              />
+            </label>
+
+            <div class="adm-field">
+              <span class="adm-field__label">{{ 'admin.binotel.apiSecret' | translate }}</span>
+              @if (!showSecretInput) {
+                <div class="adm-pwd">
+                  <input
+                    type="text"
+                    class="adm-input adm-input--mono"
+                    [value]="settings.has_api_secret ? settings.api_secret_masked : ('admin.binotel.notConfigured' | translate)"
+                    readonly
+                  />
+                  <button type="button" class="adm-btn adm-btn--mini" (click)="toggleSecretInput()">
+                    <app-icon name="edit"></app-icon>
+                    {{ (settings.has_api_secret ? 'admin.binotel.changeSecret' : 'admin.binotel.setSecret') | translate }}
+                  </button>
+                </div>
+              } @else {
+                <div class="adm-pwd">
+                  <input
+                    type="password"
+                    class="adm-input adm-input--mono"
+                    [(ngModel)]="apiSecret"
+                    name="apiSecret"
+                    [placeholder]="'admin.binotel.apiSecretPlaceholder' | translate"
+                    autocomplete="new-password"
+                  />
+                  <button type="button" class="adm-btn adm-btn--mini" (click)="toggleSecretInput()">
+                    {{ 'common.cancel' | translate }}
+                  </button>
+                </div>
+              }
+            </div>
+
+            <label class="adm-field">
+              <span class="adm-field__label">{{ 'admin.binotel.companyId' | translate }}</span>
+              <input type="text" class="adm-input" [(ngModel)]="companyId" name="companyId" placeholder="26912" />
+              <span class="bin-hint">{{ 'admin.binotel.companyIdHint' | translate }}</span>
+            </label>
+
+            <label class="adm-field">
+              <span class="adm-field__label">{{ 'admin.binotel.defaultPbxNumber' | translate }}</span>
+              <input type="text" class="adm-input" [(ngModel)]="defaultPbxNumber" name="defaultPbxNumber" placeholder="0443339292" />
+              <span class="bin-hint">{{ 'admin.binotel.defaultPbxNumberHint' | translate }}</span>
+            </label>
+
+            <label class="adm-field">
+              <span class="adm-field__label">{{ 'admin.binotel.defaultCountry' | translate }}</span>
+              <select class="adm-input" [(ngModel)]="defaultCountry" name="defaultCountry">
+                @for (c of countries; track c.value) {
+                  <option [value]="c.value">{{ c.label }}</option>
+                }
+              </select>
+              <span class="bin-hint">{{ 'admin.binotel.defaultCountryHint' | translate }}</span>
+            </label>
+
+            <label class="adm-toggle adm-field--span2">
+              <input type="checkbox" [(ngModel)]="enabled" name="enabled" />
+              <span class="adm-toggle__track"><span class="adm-toggle__dot"></span></span>
+              <span class="adm-toggle__text">
+                {{ 'admin.binotel.integrationEnabled' | translate }}:
+                <strong>{{ (enabled ? 'common.enabled' : 'common.disabled') | translate }}</strong>
+              </span>
+            </label>
+          </div>
+
+          <div class="bin-actions">
+            <button
+              type="button"
+              class="adm-btn adm-btn--ghost"
+              (click)="testConnection()"
+              [disabled]="testing || !settings.has_api_secret"
+              [title]="'admin.binotel.testHint' | translate"
+            >
+              <app-icon [name]="testing ? 'sync' : 'wifi_tethering'" [class.bin-spin]="testing"></app-icon>
+              {{ (testing ? 'admin.binotel.testing' : 'admin.binotel.testConnection') | translate }}
+            </button>
+
+            @if (testResult) {
+              <span class="bin-test" [class.is-ok]="testResult.success">
+                <app-icon [name]="testResult.success ? 'check_circle' : 'error'"></app-icon>
+                {{ testResult.message }}
+              </span>
+            }
+          </div>
+        </section>
+
+        <!-- Feature toggles -->
+        <section class="adm-section">
+          <header class="adm-section__head">
+            <div>
+              <h2 class="adm-section__title">{{ 'admin.binotel.features' | translate }}</h2>
+              <p class="adm-section__sub">{{ 'admin.binotel.featuresHint' | translate }}</p>
+            </div>
+          </header>
+
+          <div class="adm-fields">
+            <label class="adm-toggle adm-field--span2">
+              <input type="checkbox" [(ngModel)]="callerIdEnabled" name="callerIdEnabled" />
+              <span class="adm-toggle__track"><span class="adm-toggle__dot"></span></span>
+              <span class="adm-toggle__text">
+                <strong>{{ 'admin.binotel.callerId' | translate }}</strong>
+                <span class="bin-hint">{{ 'admin.binotel.callerIdHint' | translate }}</span>
+              </span>
+            </label>
+
+            <label class="adm-toggle adm-field--span2">
+              <input type="checkbox" [(ngModel)]="stickyRoutingEnabled" name="stickyRoutingEnabled" />
+              <span class="adm-toggle__track"><span class="adm-toggle__dot"></span></span>
+              <span class="adm-toggle__text">
+                <strong>{{ 'admin.binotel.stickyRouting' | translate }}</strong>
+                <span class="bin-hint">{{ 'admin.binotel.stickyRoutingHint' | translate }}</span>
+              </span>
+            </label>
+
+            <label class="adm-toggle adm-field--span2">
+              <input type="checkbox" [(ngModel)]="callLogEnabled" name="callLogEnabled" />
+              <span class="adm-toggle__track"><span class="adm-toggle__dot"></span></span>
+              <span class="adm-toggle__text">
+                <strong>{{ 'admin.binotel.callLog' | translate }}</strong>
+                <span class="bin-hint">{{ 'admin.binotel.callLogHint' | translate }}</span>
+              </span>
+            </label>
+
+            <label class="adm-toggle adm-field--span2">
+              <input type="checkbox" [(ngModel)]="clickToCallEnabled" name="clickToCallEnabled" />
+              <span class="adm-toggle__track"><span class="adm-toggle__dot"></span></span>
+              <span class="adm-toggle__text">
+                <strong>{{ 'admin.binotel.clickToCall' | translate }}</strong>
+                <span class="bin-hint">{{ 'admin.binotel.clickToCallHint' | translate }}</span>
+              </span>
+            </label>
+
+            <label class="adm-toggle adm-field--span2">
+              <input type="checkbox" [(ngModel)]="missedCallAlertsEnabled" name="missedCallAlertsEnabled" />
+              <span class="adm-toggle__track"><span class="adm-toggle__dot"></span></span>
+              <span class="adm-toggle__text">
+                <strong>{{ 'admin.binotel.missedCallAlerts' | translate }}</strong>
+                <span class="bin-hint">{{ 'admin.binotel.missedCallAlertsHint' | translate }}</span>
+              </span>
+            </label>
+          </div>
+        </section>
+
+        <!-- Staff to extension mapping -->
+        <section class="adm-section">
+          <header class="adm-section__head bin-status-head">
+            <div>
+              <h2 class="adm-section__title">{{ 'admin.binotel.extensions' | translate }}</h2>
+              <p class="adm-section__sub">{{ 'admin.binotel.extensionsHint' | translate }}</p>
+            </div>
+            @if (isConfigured) {
+              <button
+                type="button"
+                class="adm-btn adm-btn--mini"
+                (click)="loadEmployees()"
+                [disabled]="loadingEmployees"
+              >
+                <app-icon name="sync" [class.bin-spin]="loadingEmployees"></app-icon>
+                {{ 'admin.binotel.syncEmployees' | translate }}
+              </button>
+            }
+          </header>
+
+          @if (!isConfigured) {
+            <p class="bin-empty">{{ 'admin.binotel.configureFirst' | translate }}</p>
+          } @else if (loadingEmployees) {
+            <div class="adm-loading">{{ 'common.loading' | translate }}</div>
+          } @else {
+            @if (employeesError) {
+              <div class="adm-error" role="alert">{{ employeesError }}</div>
+            }
+
+            @if (employeesWithoutExtension > 0) {
+              <div class="bin-warning">
+                <app-icon name="info"></app-icon>
+                {{ 'admin.binotel.noExtensionWarning' | translate: { count: employeesWithoutExtension } }}
+              </div>
+            }
+
+            @if (employees.length) {
+              <div class="bin-table-wrap">
+                <table class="bin-table">
+                  <thead>
+                    <tr>
+                      <th>{{ 'admin.binotel.pbxEmployee' | translate }}</th>
+                      <th>{{ 'admin.binotel.extension' | translate }}</th>
+                      <th>{{ 'admin.binotel.lineStatus' | translate }}</th>
+                      <th>{{ 'admin.binotel.mappedUser' | translate }}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (employee of employees; track employee.employee_id) {
+                      <tr [class.is-unmappable]="!employee.internal_number">
+                        <td>
+                          <span class="bin-emp-name">{{ employee.name }}</span>
+                          <span class="bin-emp-mail">{{ employee.email }}</span>
+                        </td>
+                        <td>
+                          @if (employee.internal_number) {
+                            <span class="bin-ext">{{ employee.internal_number }}</span>
+                          } @else {
+                            <span class="bin-ext bin-ext--none">{{ 'admin.binotel.noExtension' | translate }}</span>
+                          }
+                        </td>
+                        <td>
+                          <span class="bin-line" [class.is-online]="employee.status === 'online'">
+                            <app-icon [name]="statusIcon(employee.status)"></app-icon>
+                            {{ employee.status || '—' }}
+                          </span>
+                        </td>
+                        <td>
+                          @if (employee.internal_number) {
+                            <div class="bin-map">
+                              <select
+                                class="adm-input"
+                                [(ngModel)]="mappingSelection[employee.internal_number]"
+                                [name]="'map-' + employee.internal_number"
+                                [disabled]="savingMapping === employee.internal_number"
+                                (change)="saveMapping(employee)"
+                              >
+                                <option value="">{{ 'admin.binotel.notMapped' | translate }}</option>
+                                @for (user of staff; track user.uid) {
+                                  <option [value]="user.uid">{{ staffLabel(user) }}</option>
+                                }
+                              </select>
+                              @if (savingMapping === employee.internal_number) {
+                                <app-icon name="sync" class="bin-spin"></app-icon>
+                              }
+                            </div>
+                          } @else {
+                            <span class="bin-hint">{{ 'admin.binotel.assignExtensionFirst' | translate }}</span>
+                          }
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            } @else if (!employeesError) {
+              <p class="bin-empty">{{ 'admin.binotel.noEmployees' | translate }}</p>
+            }
+          }
+        </section>
+
+        <!-- Webhook allowlist -->
+        <section class="adm-section">
+          <header class="adm-section__head bin-status-head">
+            <div>
+              <h2 class="adm-section__title">{{ 'admin.binotel.webhookSecurity' | translate }}</h2>
+              <p class="adm-section__sub">{{ 'admin.binotel.webhookSecurityHint' | translate }}</p>
+            </div>
+            <button type="button" class="adm-btn adm-btn--mini" (click)="toggleAllowlist()">
+              <app-icon [name]="showAllowlist ? 'expand_less' : 'expand_more'"></app-icon>
+              {{ (showAllowlist ? 'common.hide' : 'common.show') | translate }}
+            </button>
+          </header>
+
+          @if (showAllowlist) {
+            <div class="adm-fields">
+              <label class="adm-field adm-field--span2">
+                <span class="adm-field__label">{{ 'admin.binotel.ipAllowlist' | translate }}</span>
+                <textarea
+                  class="adm-input adm-input--mono bin-allowlist"
+                  rows="6"
+                  [(ngModel)]="webhookIpAllowlist"
+                  name="webhookIpAllowlist"
+                ></textarea>
+                <span class="bin-hint">{{ 'admin.binotel.ipAllowlistHint' | translate }}</span>
+              </label>
+            </div>
+          }
+        </section>
+
+        <div class="adm-meta">
+          <div class="adm-meta__row">
+            <span class="adm-meta__label">{{ 'common.lastUpdate' | translate }}</span>
+            <span class="adm-meta__value">{{ formatDate(settings.last_update) }}</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  }
+</div>

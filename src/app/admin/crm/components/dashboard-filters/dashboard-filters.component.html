@@ -1,58 +1,88 @@
-<div class="filters-container">
+<div class="filters-shell">
   <div class="filters-row">
+    @if (!storeLocked) {
     <div class="filter-group">
-      <label for="store-filter">Store</label>
+      <label for="store-filter">{{ 'common.store' | translate }}</label>
       <select
         id="store-filter"
-        [(ngModel)]="selectedStoreUid"
-        (ngModelChange)="onFilterChange()"
+        [(ngModel)]="state.storeUid"
+        (ngModelChange)="onStoreChange()"
       >
-        <option value="">All Stores</option>
-        <option *ngFor="let store of stores" [value]="store.uid">{{ store.name }}</option>
+        <option value="">{{ 'admin.crm.allStores' | translate }}</option>
+        @for (store of stores; track store.uid) {
+          <option [value]="store.uid">{{ store.name }}</option>
+        }
       </select>
     </div>
+    }
 
     <div class="filter-group">
-      <label for="assignee-filter">Assignee</label>
+      <label for="assignee-filter">{{ 'admin.crm.manager' | translate }}</label>
       <select
         id="assignee-filter"
-        [(ngModel)]="selectedAssigneeUid"
-        (ngModelChange)="onFilterChange()"
+        [(ngModel)]="state.assigneeUid"
+        (ngModelChange)="onAssigneeChange()"
       >
-        <option value="">All Team Members</option>
-        <option *ngFor="let user of assignableUsers" [value]="user.uid">
-          {{ getUserDisplayName(user) }}
-        </option>
+        <option value="">{{ 'admin.crm.allTeamMembers' | translate }}</option>
+        @for (user of assignableUsers; track user.uid) {
+          <option [value]="user.uid">{{ getUserDisplayName(user) }}</option>
+        }
       </select>
     </div>
 
-    <div class="filter-group date-group">
-      <label>Date Range</label>
-      <div class="date-inputs">
-        <input
-          type="date"
-          [(ngModel)]="dateFrom"
-          (ngModelChange)="onFilterChange()"
-          placeholder="From"
-        >
-        <span class="date-separator">to</span>
-        <input
-          type="date"
-          [(ngModel)]="dateTo"
-          (ngModelChange)="onFilterChange()"
-          placeholder="To"
-        >
+    <div class="filter-group period-group">
+      <label>{{ 'admin.crm.period' | translate }}</label>
+      <div class="period-chips" role="tablist">
+        @for (opt of periodOptions; track opt.key) {
+          <button
+            type="button"
+            class="chip"
+            [class.active]="state.period === opt.key"
+            (click)="selectPeriod(opt.key)"
+          >{{ opt.labelKey | translate }}</button>
+        }
       </div>
+      @if (state.period === 'custom') {
+        <div class="date-inputs">
+          <input
+            type="date"
+            [(ngModel)]="state.dateFrom"
+            (ngModelChange)="onCustomDateChange()"
+          >
+          <span class="date-separator">{{ 'admin.crm.to' | translate }}</span>
+          <input
+            type="date"
+            [(ngModel)]="state.dateTo"
+            (ngModelChange)="onCustomDateChange()"
+          >
+        </div>
+      }
     </div>
 
+    @if (showCurrency()) {
+      <div class="filter-group currency-group">
+        <label for="currency-filter">{{ 'common.currency' | translate }}</label>
+        <select
+          id="currency-filter"
+          [(ngModel)]="state.currencyCode"
+          (ngModelChange)="onCurrencyChange()"
+        >
+          @for (c of currencies; track c.code) {
+            <option [value]="c.code">{{ c.code }} — {{ c.sign || c.name }}</option>
+          }
+        </select>
+      </div>
+    }
+
     <button
+      type="button"
       class="btn-clear"
-      (click)="clearFilters()"
+      (click)="clearAll()"
       [class.visible]="hasActiveFilters"
-      title="Clear all filters"
+      [title]="'admin.crm.clearAllFilters' | translate"
     >
-      <span class="icon">&#10005;</span>
-      Clear
+      <app-icon name="close" size="sm"></app-icon>
+      {{ 'admin.crm.clear' | translate }}
     </button>
   </div>
 </div>

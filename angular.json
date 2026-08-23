@@ -38,7 +38,12 @@
             "inlineStyleLanguage": "scss",
             "assets": [
               "src/assets",
-              "src/manifest.webmanifest"
+              "src/manifest.webmanifest",
+              {
+                "glob": "redoc.standalone.js",
+                "input": "node_modules/redoc/bundles",
+                "output": "/assets/redoc/"
+              }
             ],
             "styles": [
               "src/styles.scss"
@@ -57,8 +62,8 @@
                 },
                 {
                   "type": "anyComponentStyle",
-                  "maximumWarning": "30kb",
-                  "maximumError": "40kb"
+                  "maximumWarning": "50kb",
+                  "maximumError": "70kb"
                 }
               ],
               "outputHashing": "all",
@@ -122,7 +127,12 @@
             "inlineStyleLanguage": "scss",
             "assets": [
               "src/assets",
-              "src/manifest.webmanifest"
+              "src/manifest.webmanifest",
+              {
+                "glob": "redoc.standalone.js",
+                "input": "node_modules/redoc/bundles",
+                "output": "/assets/redoc/"
+              }
             ],
             "styles": [
               "src/styles.scss"

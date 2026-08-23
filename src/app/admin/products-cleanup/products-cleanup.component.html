@@ -1,0 +1,166 @@
+<div class="adm-page">
+  <!-- Header -->
+  <header class="adm-bar">
+    <div class="adm-bar__crumbs">
+      <button
+        type="button"
+        class="adm-crumb-back"
+        routerLink="/admin/settings"
+        [attr.aria-label]="'common.back' | translate"
+      >
+        <app-icon name="arrow_back"></app-icon>
+      </button>
+      <a class="adm-crumb" routerLink="/admin/settings">{{ 'admin.settings.title' | translate }}</a>
+      <span class="adm-crumb-sep">/</span>
+      <span class="adm-crumb adm-crumb--active">{{ 'admin.settings.productsCleanup' | translate }}</span>
+    </div>
+    <div class="adm-bar__actions">
+      @if (phase === 'idle' || phase === 'analyzed') {
+        <button type="button" class="adm-btn adm-btn--ghost" [disabled]="isBusy" (click)="analyze()">
+          <app-icon name="search"></app-icon>
+          {{ (phase === 'analyzed' ? 'admin.productsCleanup.reanalyze' : 'admin.productsCleanup.analyze') | translate }}
+        </button>
+      }
+      @if (phase === 'done') {
+        <button type="button" class="adm-btn adm-btn--ghost" (click)="reset()">
+          <app-icon name="refresh"></app-icon>
+          {{ 'admin.productsCleanup.startOver' | translate }}
+        </button>
+      }
+    </div>
+  </header>
+
+  <div class="adm-grid adm-grid--full">
+    <!-- Intro / description -->
+    <section class="adm-section pcl-intro">
+      <app-icon name="cleaning_services" class="pcl-intro__icon"></app-icon>
+      <div>
+        <h2 class="pcl-intro__title">{{ 'admin.productsCleanup.heading' | translate }}</h2>
+        <p class="pcl-intro__text">{{ 'admin.productsCleanup.description' | translate }}</p>
+      </div>
+    </section>
+
+    @if (error) {
+      <div class="adm-error" role="alert">{{ error }}</div>
+    }
+
+    <!-- Busy states -->
+    @if (phase === 'analyzing') {
+      <div class="adm-loading">{{ 'admin.productsCleanup.analyzing' | translate }}</div>
+    }
+    @if (phase === 'executing') {
+      <div class="adm-loading">{{ 'admin.productsCleanup.executing' | translate }}</div>
+    }
+
+    <!-- Analysis results (phase 1 outcome) and execution results (phase 2 outcome) -->
+    @if ((phase === 'analyzed' || phase === 'done') && report) {
+      @if (phase === 'done') {
+        <div class="adm-success pcl-result-banner">
+          <app-icon name="check_circle"></app-icon>
+          {{ 'admin.productsCleanup.doneMessage' | translate }}
+        </div>
+      }
+
+      @if (report.counts.products === 0 && phase === 'analyzed') {
+        <section class="adm-section">
+          <div class="pcl-empty">
+            <app-icon name="task_alt"></app-icon>
+            <p>{{ 'admin.productsCleanup.nothingToClean' | translate }}</p>
+          </div>
+        </section>
+      } @else {
+        <!-- Summary: products + linked data counts -->
+        <section class="adm-section">
+          <h3 class="pcl-section-title">
+            {{ (phase === 'done' ? 'admin.productsCleanup.removedSummary' : 'admin.productsCleanup.willRemoveSummary') | translate }}
+          </h3>
+
+          <div class="pcl-headline">
+            <span class="pcl-headline__num">{{ report.counts.products }}</span>
+            <span class="pcl-headline__label">{{ 'admin.productsCleanup.tables.products' | translate }}</span>
+          </div>
+
+          <table class="data-table pcl-counts">
+            <thead>
+              <tr>
+                <th>{{ 'admin.productsCleanup.linkedData' | translate }}</th>
+                <th class="pcl-counts__num">{{ 'admin.productsCleanup.rows' | translate }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of linkedCounts; track row.labelKey) {
+                <tr>
+                  <td>{{ row.labelKey | translate }}</td>
+                  <td class="pcl-counts__num">{{ row.value }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </section>
+
+        <!-- Sample of affected products (analysis phase only) -->
+        @if (phase === 'analyzed' && report.sample.length > 0) {
+          <section class="adm-section">
+            <h3 class="pcl-section-title">{{ 'admin.productsCleanup.affectedProducts' | translate }}</h3>
+            <p class="pcl-hint">{{ 'admin.productsCleanup.sampleHint' | translate }}</p>
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>{{ 'admin.productsCleanup.sku' | translate }}</th>
+                  <th>{{ 'admin.productsCleanup.uid' | translate }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (item of report.sample; track item.uid) {
+                  <tr>
+                    <td>{{ item.sku }}</td>
+                    <td class="pcl-uid">{{ item.uid }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </section>
+        }
+
+        <!-- Confirm action (phase 1 -> phase 2 trigger) -->
+        @if (phase === 'analyzed') {
+          <section class="adm-section pcl-action">
+            <button type="button" class="adm-btn adm-btn--danger" (click)="openConfirm()">
+              <app-icon name="delete_forever"></app-icon>
+              {{ 'admin.productsCleanup.executeBtn' | translate }}
+            </button>
+            <span class="pcl-action__warn">{{ 'admin.productsCleanup.irreversible' | translate }}</span>
+          </section>
+        }
+      }
+    }
+  </div>
+</div>
+
+<!-- Confirmation dialog (phase 2 gate) -->
+@if (showConfirm && report) {
+  <div class="dialog-overlay" (click)="cancelConfirm()">
+    <div class="dialog-content" (click)="$event.stopPropagation()">
+      <div class="dialog-header">
+        <h2>{{ 'admin.productsCleanup.confirmTitle' | translate }}</h2>
+        <button type="button" class="close-btn" (click)="cancelConfirm()" aria-label="close">
+          <app-icon name="close"></app-icon>
+        </button>
+      </div>
+      <div class="dialog-body">
+        <app-icon name="warning" class="pcl-warn-icon"></app-icon>
+        <p>{{ 'admin.productsCleanup.confirmMessage' | translate: { count: report.counts.products } }}</p>
+        <p class="pcl-confirm-note">{{ 'admin.productsCleanup.irreversible' | translate }}</p>
+      </div>
+      <div class="dialog-footer">
+        <button type="button" class="adm-btn adm-btn--ghost" (click)="cancelConfirm()">
+          {{ 'common.cancel' | translate }}
+        </button>
+        <button type="button" class="adm-btn adm-btn--danger" (click)="execute()">
+          <app-icon name="delete_forever"></app-icon>
+          {{ 'admin.productsCleanup.confirmBtn' | translate }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

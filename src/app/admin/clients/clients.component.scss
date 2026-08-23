@@ -31,7 +31,7 @@
     padding: var(--spacing-sm);
     border: 2px solid var(--color-border);
     border-radius: var(--radius-md);
-    font-size: 15px;
+    font-size: var(--text-md);
     background: var(--input-bg);
     color: var(--input-text);
     transition: border-color 0.3s ease, box-shadow 0.3s ease;
@@ -58,13 +58,13 @@
     }
 
     .search-icon-btn {
-      @include icon-button(40px);
+      @include icon-button(var(--control-h-md));
       position: absolute;
       right: var(--spacing-xs);
       top: 50%;
       transform: translateY(-50%);
       border: none;
-      border-radius: var(--radius-md);
+      border-radius: var(--radius-control);
       background: transparent;
       color: var(--color-info);
 
@@ -80,6 +80,29 @@
   }
 }
 
+.filter-checkboxes {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--color-text-primary);
+  white-space: nowrap;
+
+  input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--color-primary);
+    cursor: pointer;
+  }
+}
+
 .clients-table {
   background-color: var(--card-bg);
   border-radius: var(--radius-md);
@@ -87,6 +110,7 @@
   overflow-x: auto;
   position: relative;
   -webkit-overflow-scrolling: touch; // Smooth scroll on iOS
+  animation: fadeIn 0.3s ease;
 
   // Custom scrollbar styling
   &::-webkit-scrollbar {
@@ -262,99 +286,16 @@ table {
   border-radius: var(--radius-lg);
 }
 
+// Bonus discount that rides on top of the client's own discount
+.discount-bonus {
+  color: var(--color-success);
+  font-weight: var(--font-weight-semibold);
+}
+
 .no-data {
   text-align: center;
   padding: var(--spacing-2xl);
   color: var(--color-text-muted);
-}
-
-.pagination {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: var(--spacing-md);
-  border-top: 1px solid var(--color-border-light);
-  flex-wrap: wrap;
-  gap: var(--spacing-sm-md);
-  background-color: var(--color-background-secondary);
-
-  @media (max-width: 768px) {
-    flex-direction: column;
-    align-items: stretch;
-    gap: var(--spacing-sm-md);
-  }
-
-  .pagination-info {
-    font-size: 0.9rem;
-    color: var(--color-text-primary);
-    font-weight: var(--font-weight-medium);
-
-    @media (max-width: 768px) {
-      text-align: center;
-      order: 1;
-    }
-  }
-
-  .pagination-controls {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-xs);
-    flex-wrap: wrap;
-    justify-content: center;
-
-    @media (max-width: 768px) {
-      order: 2;
-      width: 100%;
-      justify-content: center;
-    }
-  }
-
-  .pagination-page-info {
-    font-size: 0.9rem;
-    color: var(--color-text-primary);
-    font-weight: var(--font-weight-medium);
-
-    @media (max-width: 768px) {
-      text-align: center;
-      order: 3;
-    }
-  }
-
-  .pagination-btn {
-    @include pagination-button;
-
-    &:hover:not(:disabled) {
-      background-color: var(--color-info);
-      color: var(--color-text-inverse);
-      border-color: var(--color-info);
-    }
-
-    &:disabled {
-      background-color: var(--color-disabled);
-      color: var(--color-text-muted);
-      border-color: var(--color-disabled);
-    }
-
-    &.active {
-      background-color: var(--color-info);
-      color: var(--color-text-inverse);
-      border-color: var(--color-info);
-      font-weight: var(--font-weight-semibold);
-    }
-
-    &.first,
-    &.last {
-      font-weight: var(--font-weight-semibold);
-    }
-
-    &.prev,
-    &.next {
-      font-size: 1.2rem;
-      line-height: 1;
-      padding-top: var(--spacing-sm-md);
-      padding-bottom: var(--spacing-sm-md);
-    }
-  }
 }
 
 .loading, .error {
@@ -369,16 +310,8 @@ table {
   color: var(--color-danger);
 }
 
-// Desktop/Mobile visibility
-.desktop-only {
-  display: block;
-}
-
-.mobile-only {
-  display: none;
-}
-
 // Mobile Card Layout
+// .desktop-only / .mobile-only are switched by styles/admin/_tables.scss.
 .clients-cards {
   flex-direction: column;
   gap: var(--spacing-sm-md);
@@ -392,6 +325,7 @@ table {
   overflow: hidden;
   cursor: pointer;
   transition: box-shadow 0.2s, border-color 0.2s;
+  @include entrance-animation(20);
 
   &:hover {
     border-color: var(--color-primary);
@@ -510,7 +444,7 @@ table {
       cursor: pointer;
       transition: background-color 0.2s;
 
-      .material-icons {
+      app-icon {
         font-size: 18px;
       }
 
@@ -554,9 +488,9 @@ table {
     }
 
     select, input {
-      padding: 12px;
+      padding: var(--spacing-md-sm);
       font-size: 16px; // Prevents iOS zoom
-      min-height: 44px;
+      min-height: 48px;
     }
 
     .search-input-wrapper {
@@ -569,20 +503,12 @@ table {
       }
 
       .search-icon-btn {
-        width: 40px;
-        height: 40px;
+        width: 36px;
+        height: 36px;
+        padding: 6px;
         right: 2px;
       }
     }
-  }
-
-  // Hide table, show cards
-  .desktop-only {
-    display: none !important;
-  }
-
-  .mobile-only {
-    display: flex !important;
   }
 
   .actions {
@@ -590,17 +516,10 @@ table {
 
     button {
       width: 100%;
-      min-height: 44px;
+      min-height: 48px;
     }
   }
 
-  // Pagination adjustments
-  .pagination {
-    padding: 12px;
-    background: var(--card-bg);
-    border-radius: 8px;
-    margin-top: 12px;
-  }
 }
 
 @media (max-width: 480px) {

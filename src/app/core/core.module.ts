@@ -1,13 +1,24 @@
-import { NgModule, APP_INITIALIZER, Optional, SkipSelf } from '@angular/core';
-import { provideHttpClient, withInterceptorsFromDi, HTTP_INTERCEPTORS } from '@angular/common/http';
+import { NgModule, APP_INITIALIZER, ErrorHandler, Optional, SkipSelf } from '@angular/core';
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { TranslationService } from './services/translation.service';
-import { AuthInterceptor } from './interceptors/auth.interceptor';
+import { Maintenance } from './services/maintenance';
+import { GlobalErrorHandler } from './services/global-error-handler';
+import { authInterceptor } from './interceptors/auth.interceptor';
 
 /**
  * Factory function to initialize translations before app starts
  */
 export function initializeTranslations(translationService: TranslationService) {
   return () => translationService.initTranslations();
+}
+
+/**
+ * Start maintenance-status polling once the app boots.
+ */
+export function initializeMaintenance(maintenance: Maintenance) {
+  return () => {
+    maintenance.start();
+  };
 }
 
 /**
@@ -18,7 +29,8 @@ export function initializeTranslations(translationService: TranslationService) {
  */
 @NgModule({
   providers: [
-    provideHttpClient(withInterceptorsFromDi()),
+    provideHttpClient(withInterceptors([authInterceptor])),
+    { provide: ErrorHandler, useClass: GlobalErrorHandler },
     {
       provide: APP_INITIALIZER,
       useFactory: initializeTranslations,
@@ -26,8 +38,9 @@ export function initializeTranslations(translationService: TranslationService) {
       multi: true
     },
     {
-      provide: HTTP_INTERCEPTORS,
-      useClass: AuthInterceptor,
+      provide: APP_INITIALIZER,
+      useFactory: initializeMaintenance,
+      deps: [Maintenance],
       multi: true
     }
   ]

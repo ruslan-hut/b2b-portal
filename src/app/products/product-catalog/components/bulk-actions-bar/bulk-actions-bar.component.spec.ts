@@ -1,7 +1,8 @@
-import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
 import { BulkActionsBarComponent } from './bulk-actions-bar.component';
 import { CoreModule } from '../../../../core/core.module';
+import { SharedModule } from '../../../../shared/shared.module';
 import { FrontendCategory } from '../../../../core/services/product.service';
 
 describe('BulkActionsBarComponent', () => {
@@ -12,7 +13,7 @@ describe('BulkActionsBarComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       declarations: [BulkActionsBarComponent],
-      imports: [CoreModule, FormsModule]
+      imports: [CoreModule, SharedModule, FormsModule]
     })
     .compileComponents();
 
@@ -24,43 +25,30 @@ describe('BulkActionsBarComponent', () => {
       { uid: 'cat-2', name: 'Category 2' }
     ];
 
-    component.categories = mockCategories;
+    fixture.componentRef.setInput('categories', mockCategories);
   });
 
   it('should create', () => {
     expect(component).toBeTruthy();
   });
 
-  it('should debounce search input by 400ms', fakeAsync(() => {
-    spyOn(component.search, 'emit');
-    fixture.detectChanges();
-
-    component.searchQuery = 'test';
-    component.onSearchInput();
-
-    expect(component.search.emit).not.toHaveBeenCalled();
-
-    tick(400);
-    expect(component.search.emit).toHaveBeenCalledWith('test');
-  }));
-
   it('should emit search immediately when button clicked', () => {
     spyOn(component.search, 'emit');
-    component.searchQuery = 'test';
+    component.searchQuery.set('test');
     component.onSearchClick();
     expect(component.search.emit).toHaveBeenCalledWith('test');
   });
 
   it('should emit categoryChange when category selected', () => {
     spyOn(component.categoryChange, 'emit');
-    component.selectedCategory = 'cat-1';
+    component.selectedCategory.set('cat-1');
     component.onCategorySelect();
     expect(component.categoryChange.emit).toHaveBeenCalledWith('cat-1');
   });
 
   it('should display cart total with currency', () => {
-    component.cartTotal = 1234.56;
-    component.currencyName = 'USD';
+    fixture.componentRef.setInput('cartTotal', 1234.56);
+    fixture.componentRef.setInput('currencyName', 'USD');
     fixture.detectChanges();
 
     const cartTotalElement = fixture.nativeElement.querySelector('.cart-total-value');

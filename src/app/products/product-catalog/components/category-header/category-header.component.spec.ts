@@ -20,7 +20,7 @@ describe('CategoryHeaderComponent', () => {
   });
 
   it('should display category name', () => {
-    component.categoryName = 'Test Category';
+    fixture.componentRef.setInput('categoryName', 'Test Category');
     fixture.detectChanges();
 
     const titleElement = fixture.nativeElement.querySelector('.category-title');
@@ -29,7 +29,7 @@ describe('CategoryHeaderComponent', () => {
   });
 
   it('should render gradient divider', () => {
-    component.categoryName = 'Test Category';
+    fixture.componentRef.setInput('categoryName', 'Test Category');
     fixture.detectChanges();
 
     const dividerElement = fixture.nativeElement.querySelector('.category-divider');
@@ -37,7 +37,7 @@ describe('CategoryHeaderComponent', () => {
   });
 
   it('should have category-header container', () => {
-    component.categoryName = 'Test Category';
+    fixture.componentRef.setInput('categoryName', 'Test Category');
     fixture.detectChanges();
 
     const headerElement = fixture.nativeElement.querySelector('.category-header');

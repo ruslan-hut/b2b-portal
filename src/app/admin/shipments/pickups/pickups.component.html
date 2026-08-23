@@ -1,0 +1,130 @@
+<div class="adm-page">
+
+  <header class="adm-bar">
+    <div class="adm-bar__crumbs">
+      <span class="adm-crumb adm-crumb--active">{{ 'admin.shipments.pickups' | translate }}</span>
+    </div>
+    <div class="adm-bar__actions">
+      <button type="button" class="adm-btn adm-btn--ghost" (click)="loadPickups()" [title]="'common.refresh' | translate">
+        <app-icon name="refresh"></app-icon>
+        {{ 'common.refresh' | translate }}
+      </button>
+    </div>
+  </header>
+
+  <div class="adm-grid adm-grid--full">
+
+    @if (carriers.length > 0) {
+      <section class="adm-section pck-call">
+        <div class="pck-call__text">
+          <h2 class="pck-call__title">{{ 'admin.shipments.callCourier' | translate }}</h2>
+          <p class="pck-call__hint">{{ 'admin.shipments.callCourierHint' | translate }}</p>
+        </div>
+        <div class="pck-call__controls">
+          <label class="adm-field pck-call__carrier">
+            <span class="adm-field__label">{{ 'admin.shipments.driver' | translate }}</span>
+            <select class="adm-input" [(ngModel)]="selectedCarrier">
+              <option value="">{{ 'admin.shipments.selectCarrier' | translate }}</option>
+              @for (carrier of carriers; track carrier.uid) {
+                <option [value]="carrier.uid">{{ carrier.name }}</option>
+              }
+            </select>
+          </label>
+
+          <label class="adm-field pck-call__when">
+            <span class="adm-field__label">{{ 'admin.shipments.pickupDate' | translate }}</span>
+            <input type="date" class="adm-input" [(ngModel)]="pickupDate" />
+          </label>
+
+          <label class="adm-field pck-call__when">
+            <span class="adm-field__label">{{ 'admin.shipments.pickupReadyTime' | translate }}</span>
+            <input type="time" class="adm-input" [(ngModel)]="readyTime" />
+          </label>
+
+          <label class="adm-field pck-call__when">
+            <span class="adm-field__label">{{ 'admin.shipments.pickupCloseTime' | translate }}</span>
+            <input type="time" class="adm-input" [(ngModel)]="closeTime" />
+          </label>
+
+          <label class="adm-field pck-call__note">
+            <span class="adm-field__label">{{ 'admin.shipments.pickupInstructions' | translate }}</span>
+            <input
+              type="text"
+              class="adm-input"
+              maxlength="200"
+              [(ngModel)]="instructions"
+              [placeholder]="'admin.shipments.pickupInstructionsPlaceholder' | translate"
+            />
+          </label>
+
+          <button
+            type="button"
+            class="adm-btn adm-btn--primary pck-call__submit"
+            (click)="bookPickup()"
+            [disabled]="!selectedCarrier || booking"
+          >
+            <app-icon name="local_shipping"></app-icon>
+            {{ (booking ? 'admin.shipments.callingCourier' : 'admin.shipments.callCourierAction') | translate }}
+          </button>
+        </div>
+      </section>
+    }
+
+    @if (loading) {
+      <div class="adm-loading">{{ 'common.loading' | translate }}</div>
+    } @else if (error) {
+      <div class="adm-error" role="alert">{{ error }}</div>
+    } @else if (pickups.length === 0) {
+      <div class="adm-section pck-empty">{{ 'admin.shipments.noPickups' | translate }}</div>
+    } @else {
+
+      <div class="pck-table-wrap">
+        <table class="data-table" [attr.aria-label]="'admin.shipments.pickups' | translate">
+          <thead>
+            <tr>
+              <th>{{ 'admin.shipments.pickupBookedAt' | translate }}</th>
+              <th>{{ 'admin.shipments.driver' | translate }}</th>
+              <th>{{ 'admin.shipments.pickupReference' | translate }}</th>
+              <th>{{ 'admin.shipments.pickupShipments' | translate }}</th>
+              <th>{{ 'common.status' | translate }}</th>
+              <th class="pck-actions-col"></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (p of pickups; track p.dispatch_order_id) {
+              <tr>
+                <td>{{ formatDate(p.booked_at) }}</td>
+                <td>{{ carrierName(p) }}</td>
+                <td class="mono">{{ p.dispatch_order_id }}</td>
+                <td>
+                  {{ p.shipment_count }}
+                  @if (p.delivered > 0) {
+                    <span class="pck-delivered">{{ 'admin.shipments.pickupDelivered' | translate: { count: p.delivered } }}</span>
+                  }
+                </td>
+                <td>
+                  <span class="pck-state" [class.is-complete]="isComplete(p)">
+                    {{ (isComplete(p) ? 'admin.shipments.pickupComplete' : 'admin.shipments.pickupActive') | translate }}
+                  </span>
+                </td>
+                <td class="pck-actions-col">
+                  @if (!isComplete(p)) {
+                    <button
+                      type="button"
+                      class="adm-btn adm-btn--ghost adm-btn--sm"
+                      (click)="cancelPickup(p)"
+                      [title]="'admin.shipments.pickupCancelAction' | translate"
+                    >
+                      <app-icon name="close"></app-icon>
+                      {{ 'admin.shipments.pickupCancelAction' | translate }}
+                    </button>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+</div>

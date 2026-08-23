@@ -1,0 +1,543 @@
+<div class="g-layout">
+
+  <nav class="g-toc" aria-label="Зміст">
+    <p class="g-toc__label">Зміст</p>
+    <ol>
+      <li><a href="#access">Увімкнути доступ</a></li>
+      <li><a href="#create">Створити ключ</a></li>
+      <li><a href="#first">Перший запит</a></li>
+      <li><a href="#catalog">Каталог і ціни</a></li>
+      <li><a href="#order">Замовлення</a></li>
+      <li><a href="#code">Код: Python і Node</a></li>
+      <li><a href="#errors">Помилки й ліміти</a></li>
+      <li><a href="#safety">Безпека ключів</a></li>
+      <li><a href="#reference">Усі ендпоінти</a></li>
+    </ol>
+  </nav>
+
+  <main class="g-main">
+
+    <section class="g-section" id="access">
+      <h2 class="g-h2"><span class="g-num">01</span>Увімкнути доступ</h2>
+      <p>
+        Доступ до API вмикає ваш менеджер — за замовчуванням він вимкнений. Напишіть менеджеру,
+        що плануєте інтеграцію, і він відкриє API для вашого облікового запису.
+      </p>
+      <p>
+        Після цього увійдіть у портал під своїм звичайним логіном і відкрийте
+        <a routerLink="/profile">Профіль</a>. Унизу сторінки є розділ <strong>«Доступ до API»</strong>:
+        коли доступ увімкнено, у ньому з’являється кнопка <strong>«Новий ключ»</strong>.
+      </p>
+      <div class="g-note">
+        <p><b>Хто що робить.</b> Менеджер відкриває доступ один раз. Ключі ви створюєте, замінюєте
+          й відкликаєте самостійно — звертатися до нас за цим не потрібно.</p>
+      </div>
+    </section>
+
+    <section class="g-section" id="create">
+      <h2 class="g-h2"><span class="g-num">02</span>Створити ключ</h2>
+
+      <figure class="g-figure">
+        <div class="g-ui">
+          <div class="g-ui__bar"><span class="g-ui__dot"></span> Профіль → Доступ до API</div>
+          <div class="g-ui__body">
+            <div class="g-ui__head">
+              <div>
+                <p class="g-ui__title">Доступ до API</p>
+                <p class="g-ui__sub">API-ключі дозволяють вашим системам (ERP, бек-офіс) читати каталог
+                  і створювати замовлення від вашого імені.</p>
+              </div>
+              <div class="g-btn-row">
+                <span class="g-btn"><app-icon name="menu_book"></app-icon>Документація API</span>
+                <span class="g-btn g-btn--primary"><app-icon name="add"></app-icon>Новий ключ</span>
+              </div>
+            </div>
+            <p class="g-ui__hint">1 з 5 активних ключів</p>
+            <div class="g-keyrow">
+              <span class="g-keyrow__name">Наша ERP</span>
+              <span class="g-keyrow__prefix">cmx_live_Ab3dEf9h_…</span>
+              <span class="g-pill g-pill--scope">catalog:read</span>
+              <span class="g-pill g-pill--scope">orders:read</span>
+              <span class="g-pill g-pill--ok">Активний</span>
+              <span class="g-keyrow__meta">
+                <span>спливає 17.08.2027</span>
+                <span>останнє використання 19.08.2026</span>
+                <span>дії: перейменувати · замінити · відкликати</span>
+              </span>
+            </div>
+          </div>
+        </div>
+        <figcaption class="g-caption">Профіль → розділ «Доступ до API»</figcaption>
+      </figure>
+
+      <p>Натисніть <strong>«Новий ключ»</strong> і заповніть форму:</p>
+
+      <figure class="g-figure">
+        <div class="g-ui">
+          <div class="g-ui__bar"><span class="g-ui__dot"></span> Новий ключ</div>
+          <div class="g-ui__body">
+            <div class="g-field">
+              <span>Назва ключа</span>
+              <div class="g-input">напр. Наша ERP</div>
+            </div>
+            <div class="g-field">
+              <span>Дозволи</span>
+              <div class="g-chips">
+                <span class="g-chip is-on">catalog:read</span>
+                <span class="g-chip is-on">orders:read</span>
+                <span class="g-chip">orders:write</span>
+                <span class="g-chip">profile:read</span>
+                <span class="g-chip">profile:write</span>
+              </div>
+            </div>
+            <div class="g-check">
+              <span class="g-check__box"></span>
+              <span>Тестовий режим — <em>замовлення перевіряються й розраховуються, але не зберігаються</em></span>
+            </div>
+            <p class="g-ui__hint">Ключ дійсний 365 днів.</p>
+            <div class="g-ui__foot">
+              <span class="g-btn g-btn--ghost">Скасувати</span>
+              <span class="g-btn g-btn--primary">Створити ключ</span>
+            </div>
+          </div>
+        </div>
+        <figcaption class="g-caption">Діалог створення ключа</figcaption>
+      </figure>
+
+      <h3 class="g-h3">Дозволи (scopes)</h3>
+      <p>Давайте ключу лише те, що потрібно саме цій інтеграції.</p>
+      <div class="g-tablewrap">
+        <table class="g-table">
+          <thead><tr><th>Дозвіл</th><th>Що відкриває</th></tr></thead>
+          <tbody>
+            <tr><td><code>catalog:read</code></td><td>каталог, картка товару, розрахунок замовлення (quote)</td></tr>
+            <tr><td><code>orders:read</code></td><td>список і картка замовлень, статуси, накладні, трекінг</td></tr>
+            <tr><td><code>orders:write</code></td><td>створення замовлень</td></tr>
+            <tr><td><code>profile:read</code></td><td>профіль і адреси доставки</td></tr>
+            <tr><td><code>profile:write</code></td><td>редагування профілю та адрес</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 class="g-h3">Ключ показується один раз</h3>
+      <figure class="g-figure">
+        <div class="g-ui">
+          <div class="g-ui__bar"><span class="g-ui__dot"></span> Ваш новий API-ключ</div>
+          <div class="g-ui__body">
+            <p class="g-ui__hint">Скопіюйте ключ зараз — з міркувань безпеки його не можна показати
+              повторно. Якщо загубите, створіть новий.</p>
+            <div class="g-secret">
+              <code>cmx_live_Ab3dEf9h_7pQ2mVx4LkT9dS1cH8bN3rY6uZ0wJ5eG</code>
+              <span class="g-btn"><app-icon name="content_copy"></app-icon>Копіювати</span>
+            </div>
+            <p class="g-ui__hint">Надсилайте його з кожним запитом як
+              <code>Authorization: Bearer &lt;key&gt;</code></p>
+            <div class="g-ui__foot"><span class="g-btn g-btn--primary">Я зберіг ключ</span></div>
+          </div>
+        </div>
+        <figcaption class="g-caption">Показ ключа — єдиний раз</figcaption>
+      </figure>
+
+      <p>
+        Ключ має вигляд <code>cmx_&lt;режим&gt;_&lt;префікс&gt;_&lt;секрет&gt;</code>. Режим —
+        <code>live</code> або <code>test</code>. Префікс із 8 символів публічний: за ним ключ видно
+        у списку й у логах, і саме його називайте в листі до підтримки. Секрет ми не зберігаємо
+        у відкритому вигляді й відновити не можемо.
+      </p>
+      <div class="g-note g-note--warn">
+        <p><b>Почніть із тестового ключа.</b> Поставте позначку «Тестовий режим» — такий ключ читає
+          дані як звичайний, а <code>POST /orders</code> проходить усю перевірку й розрахунок, але
+          нічого не зберігає. Коли інтеграція готова, створіть окремий бойовий ключ.</p>
+      </div>
+    </section>
+
+    <section class="g-section" id="first">
+      <h2 class="g-h2"><span class="g-num">03</span>Перший запит</h2>
+      <p>
+        Найпростіша перевірка — <code>GET /me</code>. Вона не потребує жодного дозволу й одразу
+        показує, чи ключ живий і що саме йому дозволено.
+      </p>
+
+      <div class="g-snippet">
+        <div class="g-snippet__bar"><span class="g-snippet__verb">GET</span><span>/me · curl</span></div>
+        <pre><code>curl -s {{ base }}/me \
+  -H <span class="s">"Authorization: Bearer cmx_test_Ab3dEf9h_…"</span></code></pre>
+      </div>
+
+      <p>Ключ можна передавати і заголовком <code>X-API-Key</code> — це рівноцінно.</p>
+
+      <div class="g-snippet">
+        <div class="g-snippet__bar"><span class="g-snippet__verb">200 OK</span><span>відповідь (скорочено)</span></div>
+        <pre><code>&#123;
+  <span class="k">"success"</span>: <span class="n">true</span>,
+  <span class="k">"data"</span>: &#123;
+    <span class="k">"client"</span>: &#123; <span class="k">"uid"</span>: <span class="s">"c-1f4a…"</span>, <span class="k">"name"</span>: <span class="s">"Студія «Ажур»"</span> &#125;,
+    <span class="k">"currency"</span>: &#123; <span class="k">"code"</span>: <span class="s">"UAH"</span> &#125;,
+    <span class="k">"vat_rate"</span>: <span class="n">20</span>,
+    <span class="k">"addresses"</span>: [ &#123; <span class="k">"uid"</span>: <span class="s">"a-88c1…"</span>, <span class="k">"is_default"</span>: <span class="n">true</span>, <span class="k">"city"</span>: <span class="s">"Київ"</span> &#125; ],
+    <span class="k">"api_key"</span>: &#123;
+      <span class="k">"name"</span>: <span class="s">"Наша ERP"</span>,
+      <span class="k">"scopes"</span>: [<span class="s">"catalog:read"</span>, <span class="s">"orders:read"</span>],
+      <span class="k">"is_test"</span>: <span class="n">true</span>,
+      <span class="k">"expires_at"</span>: <span class="s">"2027-08-17T10:00:00Z"</span>,
+      <span class="k">"rate_limit_read_per_minute"</span>: <span class="n">600</span>,
+      <span class="k">"rate_limit_write_per_minute"</span>: <span class="n">60</span>
+    &#125;
+  &#125;,
+  <span class="k">"request_id"</span>: <span class="s">"req_9f2c…"</span>
+&#125;</code></pre>
+      </div>
+
+      <p>
+        Кожна відповідь має однакову оболонку: <code>success</code>, далі <code>data</code> або
+        <code>error</code>, і <code>request_id</code>. Той самий ідентифікатор повертається
+        в заголовку <code>X-Request-ID</code> — логуйте його у себе, з ним ми знайдемо будь-який
+        ваш запит за секунди.
+      </p>
+      <div class="g-note g-note--stop">
+        <p><b>Отримали 401?</b> Це єдина відповідь на всі причини — невідомий ключ, відкликаний,
+          прострочений або вимкнений доступ. Перевірте, що скопіювали ключ повністю, що він не
+          відкликаний у профілі, і що менеджер увімкнув доступ. Після кількох невдалих спроб поспіль
+          (20 за 10 хвилин) ваша IP-адреса тимчасово блокується — зачекайте час із заголовка
+          <code>Retry-After</code>.</p>
+      </div>
+    </section>
+
+    <section class="g-section" id="catalog">
+      <h2 class="g-h2"><span class="g-num">04</span>Каталог і ціни</h2>
+      <p>
+        Каталог уже приведений під вас: у ньому лише товари з ціною для вашого прайсу, дозволені
+        до продажу у вашій країні. Ціни — у копійках/центах, цілим числом.
+      </p>
+
+      <div class="g-snippet">
+        <div class="g-snippet__bar"><span class="g-snippet__verb">GET</span><span>/catalog/products</span></div>
+        <pre><code>curl -s <span class="s">"{{ base }}/catalog/products?limit=2&amp;search=gel"</span> \
+  -H <span class="s">"Authorization: Bearer $COMEX_KEY"</span></code></pre>
+      </div>
+
+      <div class="g-snippet">
+        <div class="g-snippet__bar"><span class="g-snippet__verb">200 OK</span><span>масив товарів</span></div>
+        <pre><code>&#123;
+  <span class="k">"success"</span>: <span class="n">true</span>,
+  <span class="k">"data"</span>: [
+    &#123;
+      <span class="k">"uid"</span>: <span class="s">"p-7b21…"</span>,
+      <span class="k">"sku"</span>: <span class="s">"DBR-1042"</span>,
+      <span class="k">"barcode"</span>: <span class="s">"4820001234567"</span>,
+      <span class="k">"name"</span>: <span class="s">"Gel Polish 8 ml, відтінок 042"</span>,
+      <span class="k">"base_price"</span>: <span class="n">18000</span>,          <span class="c">// 180.00 без знижки і ПДВ</span>
+      <span class="k">"price_with_discount"</span>: <span class="n">16200</span>,
+      <span class="k">"price_final"</span>: <span class="n">19440</span>,         <span class="c">// зі знижкою і ПДВ</span>
+      <span class="k">"vat_rate"</span>: <span class="n">20</span>,
+      <span class="k">"discount_percent"</span>: <span class="n">10</span>,
+      <span class="k">"available"</span>: <span class="n">true</span>
+    &#125;
+  ]
+&#125;</code></pre>
+      </div>
+
+      <div class="g-tablewrap">
+        <table class="g-table">
+          <thead><tr><th>Поле</th><th>Значення</th></tr></thead>
+          <tbody>
+            <tr><td><code>base_price</code></td><td>ціна до знижки й без ПДВ</td></tr>
+            <tr><td><code>price_with_discount</code></td><td>зі знижкою, без ПДВ</td></tr>
+            <tr><td><code>price_final</code></td><td>зі знижкою і з ПДВ — сума до сплати за одиницю</td></tr>
+            <tr><td><code>available</code></td><td><code>true</code>, якщо товар є на складі для вас</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>
+        Залишків API не показує — лише ознаку <code>available</code>. Якщо потрібної кількості
+        не вистачає, ви дізнаєтесь про це під час розрахунку замовлення.
+      </p>
+
+      <h3 class="g-h3">Зіставлення за вашими артикулами</h3>
+      <p>
+        Щоб не тягнути весь каталог, надішліть свої SKU або штрихкоди — у відповідь отримаєте
+        товари з цінами й окремий список <code>not_found</code>.
+      </p>
+      <div class="g-snippet">
+        <div class="g-snippet__bar"><span class="g-snippet__verb">POST</span><span>/catalog/products/lookup</span></div>
+        <pre><code>curl -s {{ base }}/catalog/products/lookup \
+  -H <span class="s">"Authorization: Bearer $COMEX_KEY"</span> \
+  -H <span class="s">"Content-Type: application/json"</span> \
+  -d <span class="s">'&#123;"skus":["DBR-1042","DBR-9999"],"language":"uk"&#125;'</span></code></pre>
+      </div>
+      <p>Також доступні <code>/catalog/categories</code>, <code>/catalog/languages</code>,
+        картка товару за <code>uid</code> або за артикулом
+        (<code>/catalog/products/by-sku/&#123;sku&#125;</code>) та її зображення.</p>
+    </section>
+
+    <section class="g-section" id="order">
+      <h2 class="g-h2"><span class="g-num">05</span>Замовлення</h2>
+      <p>
+        Спершу <strong>розрахунок</strong>, потім <strong>створення</strong>. Тіло запиту в обох
+        випадках однакове, тому перехід від перевірки до бойового замовлення — це зміна одного
+        рядка URL.
+      </p>
+
+      <div class="g-snippet">
+        <div class="g-snippet__bar"><span class="g-snippet__verb">POST</span><span>/orders/quote · нічого не зберігає</span></div>
+        <pre><code>curl -s {{ base }}/orders/quote \
+  -H <span class="s">"Authorization: Bearer $COMEX_KEY"</span> \
+  -H <span class="s">"Content-Type: application/json"</span> \
+  -d <span class="s">'&#123;
+        "items": [
+          &#123;"product_uid": "p-7b21…", "quantity": 6&#125;,
+          &#123;"product_uid": "p-3c08…", "quantity": 2&#125;
+        ],
+        "client_reference": "PO-2026-118",
+        "comment": "Відвантажити разом із попереднім"
+      &#125;'</span></code></pre>
+      </div>
+
+      <div class="g-snippet">
+        <div class="g-snippet__bar"><span class="g-snippet__verb">200 OK</span><span>розрахунок</span></div>
+        <pre><code>&#123;
+  <span class="k">"success"</span>: <span class="n">true</span>,
+  <span class="k">"data"</span>: &#123;
+    <span class="k">"quote"</span>: <span class="n">true</span>,
+    <span class="k">"items"</span>: [ &#123; <span class="k">"product_sku"</span>: <span class="s">"DBR-1042"</span>, <span class="k">"quantity"</span>: <span class="n">6</span>, <span class="k">"total"</span>: <span class="n">116640</span> &#125; ],
+    <span class="k">"subtotal"</span>: <span class="n">129600</span>,
+    <span class="k">"total_vat"</span>: <span class="n">25920</span>,
+    <span class="k">"delivery_cost"</span>: <span class="n">0</span>,
+    <span class="k">"total"</span>: <span class="n">155520</span>,
+    <span class="k">"currency_code"</span>: <span class="s">"UAH"</span>
+  &#125;
+&#125;</code></pre>
+      </div>
+      <p>Суми сходяться так: <code>total = subtotal + total_vat + delivery_cost</code>
+        (доставка не входить ані в <code>subtotal</code>, ані в <code>total_vat</code>).</p>
+
+      <h3 class="g-h3">Створення замовлення</h3>
+      <p>
+        Той самий запит на <code>POST /orders</code> створює <strong>підтверджене</strong>
+        замовлення: воно одразу з’являється в роботі у менеджера. Обов’язково додайте заголовок
+        <code>Idempotency-Key</code> — з ним повторна спроба після обриву мережі не створить
+        друге замовлення.
+      </p>
+      <div class="g-snippet">
+        <div class="g-snippet__bar"><span class="g-snippet__verb">POST</span><span>/orders · потрібен orders:write</span></div>
+        <pre><code>curl -s {{ base }}/orders \
+  -H <span class="s">"Authorization: Bearer $COMEX_KEY"</span> \
+  -H <span class="s">"Content-Type: application/json"</span> \
+  -H <span class="s">"Idempotency-Key: PO-2026-118"</span> \
+  -d <span class="s">'&#123;"items":[&#123;"product_uid":"p-7b21…","quantity":6&#125;],
+       "client_reference":"PO-2026-118"&#125;'</span></code></pre>
+      </div>
+      <ul class="g-checklist">
+        <li><strong>201</strong> — замовлення створено, у відповіді <code>uid</code> і <code>number</code>.</li>
+        <li><strong>200</strong> з <code>"test": true</code> — тестовий ключ: усе перевірено й пораховано, нічого не збережено.</li>
+        <li><strong>409</strong> — той самий <code>Idempotency-Key</code> надіслано з <em>іншим</em> тілом.</li>
+        <li>Повтор із тим самим ключем і тим самим тілом протягом 24 годин поверне ту саму відповідь
+          із заголовком <code>Idempotent-Replayed: true</code>.</li>
+      </ul>
+      <p>
+        Адреса доставки береться з вашої основної, якщо не передати
+        <code>shipping_address_uid</code>. Поле <code>client_reference</code> — ваш власний номер
+        (PO): він зберігається, показується менеджеру й за ним можна шукати замовлення.
+      </p>
+
+      <h3 class="g-h3">Якщо замовлення відхилено</h3>
+      <div class="g-snippet">
+        <div class="g-snippet__bar"><span class="g-snippet__verb">400</span><span>відхилення</span></div>
+        <pre><code>&#123;
+  <span class="k">"success"</span>: <span class="n">false</span>,
+  <span class="k">"error"</span>: &#123;
+    <span class="k">"code"</span>: <span class="s">"VALIDATION_ERROR"</span>,
+    <span class="k">"message"</span>: <span class="s">"Order rejected"</span>,
+    <span class="k">"details"</span>: &#123; <span class="k">"reason"</span>: <span class="s">"insufficient_stock"</span> &#125;,
+    <span class="k">"extra"</span>: &#123; <span class="k">"problems"</span>: [ &#123; <span class="k">"product_uid"</span>: <span class="s">"p-3c08…"</span>, <span class="k">"reason"</span>: <span class="s">"insufficient_stock"</span> &#125; ] &#125;
+  &#125;
+&#125;</code></pre>
+      </div>
+      <p>
+        Типові причини у <code>details.reason</code>: <code>validation</code> (проблеми по рядках —
+        у <code>extra.problems</code>), <code>insufficient_stock</code>,
+        <code>address_invalid</code>, <code>business_registration_required</code>.
+      </p>
+
+      <h3 class="g-h3">Стеження за замовленням</h3>
+      <div class="g-tablewrap">
+        <table class="g-table">
+          <thead><tr><th>Запит</th><th>Що повертає</th></tr></thead>
+          <tbody>
+            <tr><td><code>GET /orders?updated_since=…</code></td><td>усе, що змінилося з минулої синхронізації</td></tr>
+            <tr><td><code>GET /orders?client_reference=PO-2026-118</code></td><td>пошук за вашим номером</td></tr>
+            <tr><td><code>GET /orders/&#123;uid&#125;</code></td><td>замовлення, рядки, накладні, відправлення</td></tr>
+            <tr><td><code>GET /orders/&#123;uid&#125;/timeline</code></td><td>історія стадій</td></tr>
+            <tr><td><code>GET /orders/&#123;uid&#125;/shipments/&#123;uid&#125;/tracking</code></td><td>перевізник, номер накладної, події</td></tr>
+            <tr><td><code>GET /orders/&#123;uid&#125;/invoices/&#123;uid&#125;/file</code></td><td>файл документа</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        Стадії у полі <code>phase</code>: <code>placed</code>, <code>confirmed</code>,
+        <code>processing</code>, <code>shipped</code>, <code>delivered</code>,
+        <code>cancelled</code>. Для регулярної синхронізації використовуйте
+        <code>updated_since</code> — це дешевше, ніж перечитувати весь список.
+      </p>
+    </section>
+
+    <section class="g-section" id="code">
+      <h2 class="g-h2"><span class="g-num">06</span>Код: Python і Node</h2>
+
+      <div class="g-snippet">
+        <div class="g-snippet__bar"><span class="g-snippet__verb">Python</span><span>requests</span></div>
+        <pre><code><span class="k">import</span> os, requests
+
+BASE = <span class="s">"{{ base }}"</span>
+S = requests.Session()
+S.headers.update(&#123;<span class="s">"Authorization"</span>: <span class="s">f"Bearer &#123;os.environ['COMEX_KEY']&#125;"</span>&#125;)
+
+<span class="c"># 1. перевірка ключа</span>
+me = S.get(<span class="s">f"&#123;BASE&#125;/me"</span>, timeout=<span class="n">15</span>).json()[<span class="s">"data"</span>]
+<span class="k">print</span>(me[<span class="s">"client"</span>][<span class="s">"name"</span>], me[<span class="s">"api_key"</span>][<span class="s">"scopes"</span>])
+
+<span class="c"># 2. знайти товар за своїм артикулом</span>
+found = S.post(<span class="s">f"&#123;BASE&#125;/catalog/products/lookup"</span>,
+               json=&#123;<span class="s">"skus"</span>: [<span class="s">"DBR-1042"</span>]&#125;, timeout=<span class="n">15</span>).json()[<span class="s">"data"</span>]
+product = found[<span class="s">"products"</span>][<span class="n">0</span>]
+
+<span class="c"># 3. створити замовлення (повтор безпечний завдяки Idempotency-Key)</span>
+r = S.post(<span class="s">f"&#123;BASE&#125;/orders"</span>,
+           headers=&#123;<span class="s">"Idempotency-Key"</span>: <span class="s">"PO-2026-118"</span>&#125;,
+           json=&#123;<span class="s">"items"</span>: [&#123;<span class="s">"product_uid"</span>: product[<span class="s">"uid"</span>], <span class="s">"quantity"</span>: <span class="n">6</span>&#125;],
+                 <span class="s">"client_reference"</span>: <span class="s">"PO-2026-118"</span>&#125;, timeout=<span class="n">30</span>)
+
+body = r.json()
+<span class="k">if not</span> body[<span class="s">"success"</span>]:
+    <span class="k">raise</span> RuntimeError(body[<span class="s">"error"</span>][<span class="s">"message"</span>], r.headers.get(<span class="s">"X-Request-ID"</span>))
+<span class="k">print</span>(<span class="s">"замовлення"</span>, body[<span class="s">"data"</span>][<span class="s">"number"</span>], body[<span class="s">"data"</span>][<span class="s">"total"</span>] / <span class="n">100</span>)</code></pre>
+      </div>
+
+      <div class="g-snippet">
+        <div class="g-snippet__bar"><span class="g-snippet__verb">Node.js</span><span>fetch (18+)</span></div>
+        <pre><code><span class="k">const</span> BASE = <span class="s">"{{ base }}"</span>;
+
+<span class="k">async function</span> call(path, init = &#123;&#125;) &#123;
+  <span class="k">const</span> res = <span class="k">await</span> fetch(BASE + path, &#123;
+    ...init,
+    headers: &#123;
+      Authorization: <span class="s">`Bearer $&#123;process.env.COMEX_KEY&#125;`</span>,
+      <span class="s">"Content-Type"</span>: <span class="s">"application/json"</span>,
+      ...init.headers,
+    &#125;,
+  &#125;);
+  <span class="k">const</span> body = <span class="k">await</span> res.json();
+  <span class="k">if</span> (!body.success) &#123;
+    <span class="c">// request_id варто записати в лог — з ним ми знайдемо запит</span>
+    <span class="k">throw new</span> Error(<span class="s">`$&#123;body.error.code&#125;: $&#123;body.error.message&#125;`</span>);
+  &#125;
+  <span class="k">return</span> body.data;
+&#125;
+
+<span class="k">const</span> quote = <span class="k">await</span> call(<span class="s">"/orders/quote"</span>, &#123;
+  method: <span class="s">"POST"</span>,
+  body: JSON.stringify(&#123; items: [&#123; product_uid: <span class="s">"p-7b21…"</span>, quantity: <span class="n">6</span> &#125;] &#125;),
+&#125;);
+console.log(<span class="s">"до сплати:"</span>, quote.total / <span class="n">100</span>, quote.currency_code);</code></pre>
+      </div>
+    </section>
+
+    <section class="g-section" id="errors">
+      <h2 class="g-h2"><span class="g-num">07</span>Помилки й ліміти</h2>
+      <div class="g-tablewrap">
+        <table class="g-table">
+          <thead><tr><th class="g-code-col">Код</th><th><code>error.code</code></th><th>Що робити</th></tr></thead>
+          <tbody>
+            <tr><td class="g-code-col">400</td><td><code>VALIDATION_ERROR</code></td><td>виправити тіло запиту; деталі — у <code>error.fields</code> або <code>extra.problems</code></td></tr>
+            <tr><td class="g-code-col">401</td><td><code>UNAUTHORIZED</code></td><td>ключ невірний, відкликаний, прострочений або доступ вимкнено</td></tr>
+            <tr><td class="g-code-col">403</td><td><code>FORBIDDEN</code></td><td>ключу бракує дозволу (див. <code>details.required_scope</code>) або це запис тестовим ключем</td></tr>
+            <tr><td class="g-code-col">404</td><td><code>NOT_FOUND</code></td><td>об’єкта немає — або він не ваш</td></tr>
+            <tr><td class="g-code-col">409</td><td><code>CONFLICT</code></td><td>той самий <code>Idempotency-Key</code> з іншим тілом</td></tr>
+            <tr><td class="g-code-col">429</td><td><code>RATE_LIMIT_EXCEEDED</code></td><td>зачекати <code>Retry-After</code> секунд і повторити</td></tr>
+            <tr><td class="g-code-col">503</td><td><code>MAINTENANCE</code></td><td>планові роботи — повторити пізніше</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 class="g-h3">Обмеження частоти</h3>
+      <p>
+        На ключ діють два ліміти: <strong>600 читань</strong> і <strong>60 записів</strong> за
+        хвилину. Кожна відповідь несе <code>X-RateLimit-Limit</code> і
+        <code>X-RateLimit-Remaining</code>; відмова — <code>Retry-After</code> і
+        <code>X-RateLimit-Reset</code>.
+      </p>
+      <ul class="g-checklist">
+        <li>Тіло запиту — до 1 МіБ, таймаут — 10 секунд.</li>
+        <li>Списки посторінково: <code>offset</code> і <code>limit</code> (максимум 100).</li>
+        <li>На <code>429</code> і <code>5xx</code> робіть повтор із витримкою; на <code>4xx</code> повтор не допоможе.</li>
+      </ul>
+    </section>
+
+    <section class="g-section" id="safety">
+      <h2 class="g-h2"><span class="g-num">08</span>Безпека ключів</h2>
+      <ul class="g-checklist">
+        <li>Ключ = доступ до ваших цін і замовлень. Тримайте його в змінних оточення або сховищі
+          секретів, не в коді й не в репозиторії.</li>
+        <li>Ніколи не використовуйте ключ у браузері чи мобільному застосунку — лише на вашому сервері.</li>
+        <li>Окремий ключ на кожну систему: тоді відкликання одного не зупиняє решту.</li>
+        <li>Ключ дійсний 365 днів. Стежте за датою в профілі.</li>
+      </ul>
+      <p>
+        <strong>Замінити ключ</strong> (кнопка «Замінити новим ключем») видає новий і залишає
+        старий робочим ще на короткий пільговий період — 24 години. Це штатний спосіб оновлення
+        без простою: створіть новий, оновіть налаштування у себе, дочекайтесь, поки трафік перейде.
+      </p>
+      <p>
+        <strong>Відкликати</strong> — миттєво й безповоротно: усе, що використовує цей ключ,
+        одразу перестає працювати. Так і треба робити, якщо є підозра, що ключ витік.
+      </p>
+    </section>
+
+    <section class="g-section" id="reference">
+      <h2 class="g-h2"><span class="g-num">09</span>Усі ендпоінти</h2>
+      <p>
+        Повний інтерактивний довідник із усіма полями — на сторінці
+        <a routerLink="/api-docs">Client API reference</a>. Машинна специфікація OpenAPI:
+        <code>GET /api/client/v1/openapi.yaml</code> — її можна імпортувати в Postman чи
+        згенерувати з неї клієнт.
+      </p>
+      <div class="g-tablewrap">
+        <table class="g-table">
+          <thead><tr><th>Метод і шлях</th><th>Дозвіл</th><th>Призначення</th></tr></thead>
+          <tbody>
+            <tr><td><code>GET /me</code></td><td>—</td><td>клієнт, валюта, ПДВ, адреси, права ключа</td></tr>
+            <tr><td><code>GET /catalog/products</code></td><td><code>catalog:read</code></td><td>каталог із вашими цінами</td></tr>
+            <tr><td><code>POST /catalog/products/lookup</code></td><td><code>catalog:read</code></td><td>SKU / штрихкоди → товари</td></tr>
+            <tr><td><code>GET /catalog/products/&#123;uid&#125;</code></td><td><code>catalog:read</code></td><td>картка товару</td></tr>
+            <tr><td><code>GET /catalog/products/by-sku/&#123;sku&#125;</code></td><td><code>catalog:read</code></td><td>картка за артикулом</td></tr>
+            <tr><td><code>GET /catalog/products/&#123;uid&#125;/images</code></td><td><code>catalog:read</code></td><td>зображення</td></tr>
+            <tr><td><code>GET /catalog/categories</code></td><td><code>catalog:read</code></td><td>категорії</td></tr>
+            <tr><td><code>GET /catalog/languages</code></td><td><code>catalog:read</code></td><td>мови описів</td></tr>
+            <tr><td><code>POST /catalog/export</code></td><td><code>catalog:read</code></td><td>бланк замовлення .xlsx</td></tr>
+            <tr><td><code>POST /orders/quote</code></td><td><code>catalog:read</code></td><td>розрахунок без збереження</td></tr>
+            <tr><td><code>POST /orders</code></td><td><code>orders:write</code></td><td>створити замовлення</td></tr>
+            <tr><td><code>GET /orders</code></td><td><code>orders:read</code></td><td>список із фільтрами</td></tr>
+            <tr><td><code>GET /orders/&#123;uid&#125;</code></td><td><code>orders:read</code></td><td>замовлення повністю</td></tr>
+            <tr><td><code>GET /orders/&#123;uid&#125;/timeline</code></td><td><code>orders:read</code></td><td>історія стадій</td></tr>
+            <tr><td><code>GET /orders/&#123;uid&#125;/invoices</code></td><td><code>orders:read</code></td><td>документи</td></tr>
+            <tr><td><code>GET /orders/&#123;uid&#125;/shipments</code></td><td><code>orders:read</code></td><td>відправлення</td></tr>
+            <tr><td><code>GET /orders/&#123;uid&#125;/shipments/&#123;uid&#125;/tracking</code></td><td><code>orders:read</code></td><td>події доставки</td></tr>
+            <tr><td><code>GET /addresses</code></td><td><code>profile:read</code></td><td>адреси доставки</td></tr>
+            <tr><td><code>POST /addresses</code></td><td><code>profile:write</code></td><td>створити або змінити адресу</td></tr>
+            <tr><td><code>PUT /addresses/&#123;uid&#125;/default</code></td><td><code>profile:write</code></td><td>зробити основною</td></tr>
+            <tr><td><code>PUT /addresses/&#123;uid&#125;/official</code></td><td><code>profile:write</code></td><td>адреса для документів</td></tr>
+            <tr><td><code>DELETE /addresses/&#123;uid&#125;</code></td><td><code>profile:write</code></td><td>видалити адресу</td></tr>
+            <tr><td><code>PATCH /me</code></td><td><code>profile:write</code></td><td>назва, e-mail, податковий номер</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="g-note">
+        <p><b>Потрібна допомога?</b> Напишіть менеджеру й додайте <code>request_id</code>
+          (або <code>X-Request-ID</code>) проблемного запиту та публічний префікс ключа —
+          наприклад <code>cmx_live_Ab3dEf9h</code>. Секрет ключа не надсилайте нікому, зокрема нам.</p>
+      </div>
+    </section>
+
+  </main>
+</div>

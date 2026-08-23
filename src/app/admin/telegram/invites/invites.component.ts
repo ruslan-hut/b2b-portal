@@ -3,6 +3,8 @@ import { HttpClient } from '@angular/common/http';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { environment } from '../../../../environments/environment';
+import { formatDateTime } from '../../../core/utils/date-format';
+import { ConfirmDialogService } from '../../../core/services/confirm-dialog.service';
 
 interface TelegramInvite {
   uid: string;
@@ -60,6 +62,7 @@ export class InvitesComponent implements OnInit, OnDestroy {
   constructor(
     private http: HttpClient,
     private fb: FormBuilder,
+    private confirmDialog: ConfirmDialogService,
     private cdr: ChangeDetectorRef
   ) {
     this.generateForm = this.fb.group({
@@ -145,8 +148,8 @@ export class InvitesComponent implements OnInit, OnDestroy {
   }
 
   // Revoke
-  revokeInvite(item: TelegramInvite): void {
-    if (!confirm(`Are you sure you want to revoke invite code "${item.code}"?`)) {
+  async revokeInvite(item: TelegramInvite): Promise<void> {
+    if (!await this.confirmDialog.ask({ message: `Are you sure you want to revoke invite code "${item.code}"?`, danger: true })) {
       return;
     }
 
@@ -204,23 +207,22 @@ export class InvitesComponent implements OnInit, OnDestroy {
     this.loadInvites();
   }
 
-  getPageNumbers(): number[] {
-    const pages: number[] = [];
-    const maxVisible = 5;
-    let start = Math.max(1, this.currentPage - Math.floor(maxVisible / 2));
-    const end = Math.min(this.totalPages, start + maxVisible - 1);
-
-    if (end - start + 1 < maxVisible) {
-      start = Math.max(1, end - maxVisible + 1);
+  // Helpers
+  getStatusLabelKey(status: string): string {
+    switch (status) {
+      case 'available':
+        return 'telegram.statusAvailable';
+      case 'used':
+        return 'telegram.statusUsed';
+      case 'expired':
+        return 'telegram.statusExpired';
+      case 'revoked':
+        return 'telegram.statusRevoked';
+      default:
+        return 'telegram.statusUnknown';
     }
-
-    for (let i = start; i <= end; i++) {
-      pages.push(i);
-    }
-    return pages;
   }
 
-  // Helpers
   getStatusClass(status: string): string {
     switch (status) {
       case 'available':
@@ -237,8 +239,7 @@ export class InvitesComponent implements OnInit, OnDestroy {
   }
 
   formatDate(dateString: string | undefined): string {
-    if (!dateString) return '-';
-    return new Date(dateString).toLocaleString();
+    return formatDateTime(dateString);
   }
 
   getUsedBy(item: TelegramInvite): string {

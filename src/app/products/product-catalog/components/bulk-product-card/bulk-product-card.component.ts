@@ -1,11 +1,11 @@
-import { Component, Input, Output, EventEmitter, ChangeDetectionStrategy } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input, output } from '@angular/core';
 import { Product } from '../../../../core/models/product.model';
 import { Currency } from '../../../../core/models/currency.model';
 import { ProductImageCacheService } from '../../../../core/services/product-image-cache.service';
 
 /**
- * Presentational component for individual product cards in bulk mobile view
- * Displays product info, pricing, and expandable quantity controls
+ * Presentational component for individual product cards in bulk mobile view.
+ * Displays product info, pricing, and expandable quantity controls.
  */
 @Component({
   selector: 'app-bulk-product-card',
@@ -15,150 +15,69 @@ import { ProductImageCacheService } from '../../../../core/services/product-imag
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class BulkProductCardComponent {
-  /**
-   * Product to display
-   */
-  @Input({ required: true }) product!: Product;
+  readonly imageCacheService = inject(ProductImageCacheService);
 
-  /**
-   * Current bulk quantity for this product
-   */
-  @Input() bulkQuantity: number = 0;
+  readonly product = input.required<Product>();
+  readonly bulkQuantity = input<number>(0);
+  readonly isExpanded = input<boolean>(false);
+  readonly isInCart = input<boolean>(false);
+  readonly priceWithVat = input.required<number>();
+  readonly originalPrice = input.required<number>();
+  readonly hasDiscount = input<boolean>(false);
+  readonly subtotalWithVat = input<number>(0);
+  readonly currency = input<Currency | null>(null);
+  /** Read-only catalog preview for staff: hides all cart controls. */
+  readonly previewMode = input<boolean>(false);
 
-  /**
-   * Whether this card is expanded
-   */
-  @Input() isExpanded: boolean = false;
+  readonly cardToggle = output<void>();
+  readonly productSelect = output<void>();
+  readonly quantityIncrement = output<void>();
+  readonly quantityDecrement = output<void>();
+  readonly quantityChange = output<number>();
+  readonly imageClick = output<void>();
 
-  /**
-   * Whether this product is in cart
-   */
-  @Input() isInCart: boolean = false;
-
-  /**
-   * Final price with VAT (and discount if applicable)
-   */
-  @Input({ required: true }) priceWithVat!: number;
-
-  /**
-   * Original price with VAT (before discount)
-   */
-  @Input({ required: true }) originalPrice!: number;
-
-  /**
-   * Whether discount is applied
-   */
-  @Input() hasDiscount: boolean = false;
-
-  /**
-   * Item subtotal with VAT
-   */
-  @Input() subtotalWithVat: number = 0;
-
-  /**
-   * Currency for display
-   */
-  @Input() currency: Currency | null = null;
-
-  /**
-   * Emitted when card header is clicked (to toggle expansion)
-   */
-  @Output() cardToggle = new EventEmitter<void>();
-
-  /**
-   * Emitted when product should be selected
-   */
-  @Output() productSelect = new EventEmitter<void>();
-
-  /**
-   * Emitted when quantity should be incremented
-   */
-  @Output() quantityIncrement = new EventEmitter<void>();
-
-  /**
-   * Emitted when quantity should be decremented
-   */
-  @Output() quantityDecrement = new EventEmitter<void>();
-
-  /**
-   * Emitted when quantity input changes
-   */
-  @Output() quantityChange = new EventEmitter<number>();
-
-  /**
-   * Emitted when product image is clicked
-   */
-  @Output() imageClick = new EventEmitter<void>();
-
-  constructor(
-    public imageCacheService: ProductImageCacheService
-  ) {}
-
-  /**
-   * Get product image URL (from cache or placeholder)
-   */
   getProductImageUrl(): string {
-    if (this.imageCacheService.hasImageUrl(this.product.id)) {
-      return this.imageCacheService.getImageUrl(this.product.id);
+    const product = this.product();
+    if (this.imageCacheService.hasImageUrl(product.id)) {
+      return this.imageCacheService.getImageUrl(product.id);
     }
-    if (this.product.imageUrl) {
-      return this.product.imageUrl;
+    if (product.imageUrl) {
+      return product.imageUrl;
     }
     return this.imageCacheService.getPlaceholderUrl();
   }
 
-  /**
-   * Handle image load errors by setting a placeholder image
-   */
   onImageError(event: Event): void {
     const imgElement = event.target as HTMLImageElement;
     imgElement.src = 'assets/images/product-placeholder.svg';
   }
 
-  /**
-   * Handle card click - toggle and select
-   */
   onCardClick(): void {
     this.cardToggle.emit();
     this.productSelect.emit();
   }
 
-  /**
-   * Handle increment button click
-   */
   onIncrement(event: Event): void {
     event.stopPropagation();
     this.quantityIncrement.emit();
   }
 
-  /**
-   * Handle decrement button click
-   */
   onDecrement(event: Event): void {
     event.stopPropagation();
     this.quantityDecrement.emit();
   }
 
-  /**
-   * Handle quantity input change
-   */
   onQuantityInput(event: Event): void {
     event.stopPropagation();
     const value = +(event.target as HTMLInputElement).value;
     this.quantityChange.emit(value);
   }
 
-  /**
-   * Handle image click
-   */
   onImageClick(event: Event): void {
     event.stopPropagation();
     this.imageClick.emit();
   }
 
-  /**
-   * Stop propagation on click
-   */
   stopPropagation(event: Event): void {
     event.stopPropagation();
   }

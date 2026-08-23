@@ -1,6 +1,6 @@
-@if (products.length === 0) {
+@if (products().length === 0) {
   <div class="empty-state">
-    <span class="material-icons empty-icon">search</span>
+    <app-icon name="search" class="empty-icon"></app-icon>
     <h2>{{ 'products.noProducts' | translate }}</h2>
     <p>{{ 'common.search' | translate }}</p>
   </div>
@@ -15,16 +15,20 @@
         @if (hasDiscount()) {
           <th class="discount-header">%</th>
         }
-        <th class="stock-header">{{ 'products.stock' | translate }}</th>
-        <th>{{ 'products.quantity' | translate }}</th>
-        <th>{{ 'products.total' | translate }}</th>
+        @if (showQuantity()) {
+          <th class="stock-header">{{ 'products.stock' | translate }}</th>
+        }
+        @if (!previewMode()) {
+          <th>{{ 'products.quantity' | translate }}</th>
+          <th>{{ 'products.total' | translate }}</th>
+        }
       </tr>
     </thead>
     <tbody>
-      @for (product of products; track product.id) {
+      @for (product of products(); track product.id) {
         <tr
           class="bulk-row"
-          [class.selected]="selectedProduct?.id === product.id"
+          [class.selected]="selectedProduct()?.id === product.id"
           [class.out-of-stock]="!product.inStock"
           [class.in-cart]="isInCart(product.id)"
           (mouseenter)="onProductSelect(product)"
@@ -33,13 +37,16 @@
           <td class="sku-cell">{{ product.sku }}</td>
           <td class="name-cell">
             <div class="product-name-cell">{{ product.name }}</div>
-            @if (product.isNew || product.isHotSale) {
+            @if (product.barcode) {
+              <div class="product-barcode-cell">{{ product.barcode }}</div>
+            }
+            @if (product.isHotSale || (product.tags?.length ?? 0) > 0) {
               <div class="product-badges">
-                @if (product.isNew) {
-                  <span class="badge badge-new">{{ 'products.new' | translate }}</span>
-                }
                 @if (product.isHotSale) {
                   <span class="badge badge-hot-sale">{{ 'products.hotSale' | translate }}</span>
+                }
+                @for (tag of product.tags; track tag.uid) {
+                  <span class="badge badge-custom" [style.background-color]="tag.color">{{ tag.name }}</span>
                 }
               </div>
             }
@@ -64,41 +71,43 @@
               }
             </td>
           }
-          <td class="stock-cell">
-            <span class="stock-qty" [class.out-of-stock]="!product.inStock">
-              {{ product.availableQuantity ?? 0 }}
-            </span>
-          </td>
-          <td class="quantity-cell">
-            <div class="quantity-cell-wrapper">
-              <input
-                type="number"
-                class="quantity-input"
-                [value]="getBulkQuantity(product.id)"
-                (input)="onQuantityChange(product, +$any($event.target).value)"
-                (focus)="onProductSelect(product)"
-                min="0"
-                [max]="product.availableQuantity ?? 0"
-                [disabled]="!product.inStock"
-                placeholder="0"
-                />
-              @if (isInCart(product.id)) {
-                <span class="material-icons cart-badge">
-                  shopping_cart
+          @if (showQuantity()) {
+            <td class="stock-cell">
+              <span class="stock-qty" [class.out-of-stock]="!product.inStock">
+                {{ product.availableQuantity ?? 0 }}
+              </span>
+            </td>
+          }
+          @if (!previewMode()) {
+            <td class="quantity-cell">
+              <div class="quantity-cell-wrapper">
+                <input
+                  type="number"
+                  class="quantity-input"
+                  [value]="getBulkQuantity(product.id)"
+                  (input)="onQuantityChange(product, +$any($event.target).value)"
+                  (focus)="onProductSelect(product)"
+                  min="0"
+                  [max]="product.availableQuantity ?? 0"
+                  [disabled]="!product.inStock"
+                  placeholder="0"
+                  />
+                @if (isInCart(product.id)) {
+                  <app-icon name="shopping_cart" class="cart-badge"></app-icon>
+                }
+              </div>
+            </td>
+            <td class="subtotal-cell">
+              @if (getBulkQuantity(product.id) > 0) {
+                <span>
+                  {{ getItemSubtotalWithVat(product, getBulkQuantity(product.id)).toFixed(2) }}
                 </span>
               }
-            </div>
-          </td>
-          <td class="subtotal-cell">
-            @if (getBulkQuantity(product.id) > 0) {
-              <span>
-                {{ getItemSubtotalWithVat(product, getBulkQuantity(product.id)).toFixed(2) }}
-              </span>
-            }
-            @if (getBulkQuantity(product.id) === 0) {
-              <span>-</span>
-            }
-          </td>
+              @if (getBulkQuantity(product.id) === 0) {
+                <span>-</span>
+              }
+            </td>
+          }
         </tr>
       }
     </tbody>

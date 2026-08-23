@@ -1,4 +1,4 @@
-import { Order, OrderStatus } from '../models/order.model';
+import { Order } from '../models/order.model';
 
 export const MOCK_ORDERS: Order[] = [
   {
@@ -22,7 +22,7 @@ export const MOCK_ORDERS: Order[] = [
       }
     ],
     totalAmount: 1149.85,
-    status: OrderStatus.CONFIRMED,
+    clientPhase: 'delivered',
     draft: false,
     createdAt: new Date('2024-09-15T10:30:00'),
     updatedAt: new Date('2024-09-20T14:45:00'),
@@ -55,7 +55,7 @@ export const MOCK_ORDERS: Order[] = [
       }
     ],
     totalAmount: 11999.75,
-    status: OrderStatus.PROCESSING,
+    clientPhase: 'processing',
     draft: false,
     createdAt: new Date('2024-10-01T09:15:00'),
     updatedAt: new Date('2024-10-05T11:20:00'),
@@ -88,7 +88,7 @@ export const MOCK_ORDERS: Order[] = [
       }
     ],
     totalAmount: 3499.25,
-    status: OrderStatus.PROCESSING,
+    clientPhase: 'processing',
     draft: false,
     createdAt: new Date('2024-10-10T14:22:00'),
     updatedAt: new Date('2024-10-12T08:30:00'),
@@ -121,7 +121,7 @@ export const MOCK_ORDERS: Order[] = [
       }
     ],
     totalAmount: 3999.68,
-    status: OrderStatus.CONFIRMED,
+    clientPhase: 'delivered',
     draft: false,
     createdAt: new Date('2024-10-14T16:45:00'),
     updatedAt: new Date('2024-10-14T17:00:00'),
@@ -147,7 +147,7 @@ export const MOCK_ORDERS: Order[] = [
       }
     ],
     totalAmount: 1999.92,
-    status: OrderStatus.PROCESSING,
+    clientPhase: 'processing',
     draft: false,
     createdAt: new Date('2024-10-16T11:30:00'),
     updatedAt: new Date('2024-10-16T11:30:00'),
@@ -180,7 +180,7 @@ export const MOCK_ORDERS: Order[] = [
       }
     ],
     totalAmount: 1649.65,
-    status: OrderStatus.CONFIRMED,
+    clientPhase: 'delivered',
     draft: false,
     createdAt: new Date('2024-09-20T13:15:00'),
     updatedAt: new Date('2024-09-27T16:45:00'),

@@ -9,21 +9,19 @@
 // =============================================================================
 // 1. BUTTON TYPOGRAPHY
 // =============================================================================
-// Enforces Commissioner font, 500 weight, 14px (Label Large)
-// Policy Reference: DESIGN_POLICY.md L87-91, L170-172
+// Compact B2B: 13px body weight 500. Desktop density over consumer-mobile.
 @mixin button-typography {
   font-family: var(--font-body);
   font-weight: var(--font-weight-medium);
-  font-size: 14px;
-  line-height: 20px;
+  font-size: var(--text-base);
+  line-height: 18px;
 }
 
 // =============================================================================
 // 2. TOUCH TARGET
 // =============================================================================
-// Ensures WCAG 2.1 AA compliance (48px minimum)
-// Policy Reference: DESIGN_POLICY.md L206-210
-@mixin touch-target($size: 48px) {
+// Desktop default 32px (--control-h-md); mobile bumps via media query.
+@mixin touch-target($size: var(--control-h-md)) {
   min-width: $size;
   min-height: $size;
   display: inline-flex;
@@ -34,22 +32,21 @@
 // =============================================================================
 // 3. TABLE CELL PADDING
 // =============================================================================
-// Enforces 8px grid compliance (12px vertical, 8px horizontal)
-// Policy Reference: DESIGN_POLICY.md L108-125
+// Compact B2B rows: ~30px tall with 13px body text.
 @mixin table-cell-padding {
-  padding: 12px 8px;
+  padding: 6px 10px;
 }
 
 // =============================================================================
 // 4. PAGINATION BUTTON
 // =============================================================================
-// Complete pagination button styling with WCAG focus states
-// Policy Reference: DESIGN_POLICY.md L1698-1703
+// Compact pagination: 32px square with 13px label.
 @mixin pagination-button {
   @include button-typography;
-  @include touch-target(48px);
-  border: 2px solid var(--color-border);
-  border-radius: var(--radius-md);
+  @include touch-target(var(--control-h-md));
+  padding: 0 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
   background: var(--card-bg);
   color: var(--color-text-primary);
   cursor: pointer;
@@ -75,20 +72,22 @@
 // =============================================================================
 // 5. ICON BUTTON
 // =============================================================================
-// Ensures 48x48px touch target with centered 24px icon
-// Policy Reference: DESIGN_POLICY.md L206-210
-@mixin icon-button($size: 48px) {
+// Compact desktop: 32x32px square with centered 18px icon.
+// Callers can pass 28px/36px/40px for dense/prominent use.
+@mixin icon-button($size: 32px) {
   @include touch-target($size);
-  padding: calc(($size - 24px) / 2);
+  width: $size;
+  height: $size;
+  padding: 0;
   border: none;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-control);
   background: transparent;
   color: var(--color-text-secondary);
   cursor: pointer;
   transition: all 0.2s ease;
 
-  .material-icons {
-    font-size: 24px;
+  app-icon {
+    font-size: var(--icon-md);
   }
 
   &:hover:not(:disabled) {
@@ -110,14 +109,13 @@
 // =============================================================================
 // 6. ACTION BAR BUTTON
 // =============================================================================
-// Flat outlined button style used in action bars
-// Policy Reference: DESIGN_POLICY.md L87-91
+// Compact B2B action-bar button (32px desktop / 44px mobile via token).
 @mixin action-button {
   @include button-typography;
-  min-height: 40px;
-  padding: 10px 16px;
-  border: 2px solid var(--color-border);
-  border-radius: var(--radius-md);
+  min-height: var(--control-h-md);
+  padding: 6px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
   background: transparent;
   color: var(--color-text-primary);
   cursor: pointer;
@@ -156,15 +154,15 @@
   margin: 0;
 
   @if $level == 1 {
-    font-size: 22px;
-    line-height: 28px;
+    font-size: var(--text-2xl);
+    line-height: 26px;
     font-weight: var(--font-weight-bold);
   } @else if $level == 2 {
-    font-size: 16px;
+    font-size: var(--text-xl);
     line-height: 24px;
-    font-weight: var(--font-weight-bold);
+    font-weight: var(--font-weight-semibold);
   } @else if $level == 3 {
-    font-size: 15px;
+    font-size: var(--text-lg);
     line-height: 22px;
     font-weight: var(--font-weight-semibold);
   }
@@ -255,5 +253,183 @@
     opacity: 0.38;
     cursor: not-allowed;
     pointer-events: none;
+  }
+}
+
+// =============================================================================
+// 14. ENTRANCE ANIMATION
+// =============================================================================
+// Staggered fade-in + slide-up for list items (cards, rows, columns)
+// Usage: @include entrance-animation(12) on the parent, children get staggered delay
+@mixin entrance-animation($max-items: 12, $base-delay: 0ms, $step: 50ms) {
+  animation: slideUp 0.4s ease-out both;
+
+  @for $i from 1 through $max-items {
+    &:nth-child(#{$i}) {
+      animation-delay: #{$base-delay + ($i - 1) * $step};
+    }
+  }
+}
+
+// =============================================================================
+// 15. SKELETON LOADER
+// =============================================================================
+// Shimmer effect for loading placeholders
+@mixin skeleton-loader {
+  background: linear-gradient(
+    90deg,
+    var(--color-background-secondary) 25%,
+    var(--color-background-hover) 50%,
+    var(--color-background-secondary) 75%
+  );
+  background-size: 1000px 100%;
+  animation: shimmer 2s infinite linear;
+  border-radius: var(--radius-sm);
+}
+
+// =============================================================================
+// 16. GLOW EFFECT
+// =============================================================================
+// Subtle glow on focus or hover for primary interactive elements
+@mixin glow-effect($color: var(--color-primary), $intensity: 40%) {
+  transition: box-shadow 0.3s ease;
+
+  &:focus-visible {
+    box-shadow:
+      0 0 0 3px color-mix(in srgb, #{$color} 25%, transparent),
+      0 0 20px color-mix(in srgb, #{$color} #{$intensity}, transparent);
+  }
+}
+
+// =============================================================================
+// 17. MODAL ANIMATION
+// =============================================================================
+// Backdrop fade + content scale-in for modal overlays
+@mixin modal-backdrop {
+  animation: fadeIn 0.25s ease-out;
+}
+
+@mixin modal-content {
+  animation: scaleIn 0.25s ease-out;
+}
+
+// =============================================================================
+// 18. COMPACT INPUT
+// =============================================================================
+// 32px height input/select for toolbars and filter bars.
+// Policy Reference: DESIGN_POLICY.md - Compact Controls Standard
+@mixin compact-input {
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  font-weight: var(--font-weight-medium);
+  line-height: 18px;
+  padding: 4px 10px;
+  height: var(--control-h-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  background: var(--card-bg);
+  color: var(--color-text-primary);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  box-sizing: border-box;
+
+  &:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: var(--focus-ring);
+  }
+
+  &:hover:not(:disabled):not(:focus) {
+    border-color: var(--color-text-muted);
+  }
+}
+
+// =============================================================================
+// 19. COMPACT BUTTON
+// =============================================================================
+// 32px height button for toolbars and filter bars.
+// Policy Reference: DESIGN_POLICY.md - Compact Controls Standard
+@mixin compact-button {
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  font-weight: var(--font-weight-medium);
+  line-height: 18px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  height: var(--control-h-md);
+  background: var(--card-bg);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  box-sizing: border-box;
+
+  app-icon {
+    font-size: var(--icon-sm);
+    line-height: 1;
+  }
+
+  &:hover:not(:disabled) {
+    color: var(--color-primary);
+    border-color: var(--color-primary);
+  }
+
+  &.active {
+    color: var(--color-primary);
+    border-color: var(--color-primary);
+    background: var(--color-primary-overlay-light);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+// =============================================================================
+// 20. MENU BAR ITEM
+// GitHub-style horizontal navigation item with icon + text.
+// Active state uses bottom-border indicator. Mobile hides labels.
+// Policy Reference: DESIGN_POLICY.md - Menu Bar Standard
+@mixin menu-bar-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  font-weight: var(--font-weight-medium);
+  line-height: 18px;
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  white-space: nowrap;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease;
+  min-height: var(--control-h-md);
+  box-sizing: border-box;
+
+  app-icon {
+    font-size: var(--icon-md);
+    line-height: 1;
+    flex-shrink: 0;
+  }
+
+  &:hover:not(.active) {
+    color: var(--color-text-primary);
+  }
+
+  &.active {
+    color: var(--color-primary);
+    border-bottom-color: var(--color-primary);
+    font-weight: var(--font-weight-semibold);
+
+    app-icon {
+      color: var(--color-primary);
+    }
   }
 }

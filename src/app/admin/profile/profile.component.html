@@ -1,0 +1,219 @@
+<div class="adm-page">
+
+  <header class="adm-bar">
+    <div class="adm-bar__crumbs">
+      <span class="adm-crumb adm-crumb--active">
+        {{ 'admin.profile.title' | translate }}
+      </span>
+    </div>
+  </header>
+
+  <div class="adm-grid">
+
+    <!-- Sidebar -->
+    <aside class="adm-side">
+      <div class="adm-id-card">
+        <div class="adm-avatar" [attr.data-role]="user?.role">{{ initials() }}</div>
+        <div class="adm-id-name">
+          {{ getDisplayName() || user?.username || '—' }}
+        </div>
+        <div class="adm-id-username">&#64;{{ user?.username || '—' }}</div>
+        @if (user?.role) {
+          <div class="adm-id-role">
+            <span class="adm-role-chip" [attr.data-role]="user?.role">{{ user?.role }}</span>
+          </div>
+        }
+      </div>
+
+      @if (user) {
+        <div class="adm-meta">
+          <div class="adm-meta__title">{{ 'admin.profile.userInfo' | translate }}</div>
+          <div class="adm-meta__row">
+            <span class="adm-meta__label">{{ 'admin.profile.email' | translate }}</span>
+            <span class="adm-meta__value">{{ user.email || '—' }}</span>
+          </div>
+          <div class="adm-meta__row adm-meta__row--mono">
+            <span class="adm-meta__label">{{ 'admin.users.uid' | translate }}</span>
+            <span class="adm-meta__value adm-uid" [copyOnClick]="user.uid">
+              <span class="adm-uid__text">{{ user.uid }}</span>
+            </span>
+          </div>
+        </div>
+      }
+    </aside>
+
+    <!-- Main -->
+    <div class="adm-main">
+
+      <!-- 01 — Preferences -->
+      <section class="adm-section">
+        <header class="adm-section__head">
+          <div>
+            <h2 class="adm-section__title">{{ 'admin.profile.preferences' | translate }}</h2>
+            <p class="adm-section__sub">{{ 'admin.profile.language' | translate }} · {{ 'admin.profile.theme' | translate }}</p>
+          </div>
+        </header>
+
+        <div class="adm-fields">
+          <div class="adm-field">
+            <span class="adm-field__label">{{ 'admin.profile.language' | translate }}</span>
+            <app-language-switcher></app-language-switcher>
+          </div>
+          <div class="adm-field">
+            <span class="adm-field__label">{{ 'admin.profile.theme' | translate }}</span>
+            <app-theme-toggle></app-theme-toggle>
+          </div>
+        </div>
+      </section>
+
+      <!-- 02 — Email notifications -->
+      @if (user) {
+        <section class="adm-section">
+          <header class="adm-section__head">
+            <div>
+              <h2 class="adm-section__title">{{ 'admin.profile.emailPreferences' | translate }}</h2>
+              <p class="adm-section__sub">{{ 'admin.profile.receiveEmailNotifications' | translate }}</p>
+            </div>
+          </header>
+
+          <div class="adm-fields">
+            <label class="adm-toggle adm-field--span2">
+              <input
+                type="checkbox"
+                name="receive_email_notifications"
+                [(ngModel)]="receiveEmailNotifications"
+              />
+              <span class="adm-toggle__track"><span class="adm-toggle__dot"></span></span>
+              <span class="adm-toggle__text">
+                {{ 'admin.profile.receiveEmailNotifications' | translate }}
+              </span>
+            </label>
+
+            @if (user.role === 'manager') {
+              <label class="adm-toggle adm-field--span2" [class.is-disabled]="!receiveEmailNotifications">
+                <input
+                  type="checkbox"
+                  name="all_orders"
+                  [(ngModel)]="allOrders"
+                  [disabled]="!receiveEmailNotifications"
+                />
+                <span class="adm-toggle__track"><span class="adm-toggle__dot"></span></span>
+                <span class="adm-toggle__text">
+                  {{ 'admin.profile.allOrders' | translate }}
+                  <span class="adm-toggle__hint">{{ 'admin.profile.allOrdersHint' | translate }}</span>
+                </span>
+              </label>
+            }
+
+            @if (notificationsErrorMessage) {
+              <div class="adm-error adm-field--span2" role="alert">{{ notificationsErrorMessage }}</div>
+            }
+            @if (notificationsSaved && !notificationsErrorMessage) {
+              <div class="adm-success adm-field--span2">{{ 'admin.profile.notificationsSaved' | translate }}</div>
+            }
+
+            <div class="adm-actions adm-field--span2">
+              <button
+                type="button"
+                class="adm-btn adm-btn--primary"
+                [disabled]="notificationsSaving"
+                (click)="saveNotificationPreferences()"
+              >
+                <app-icon [name]="notificationsSaving ? 'sync' : 'check'"></app-icon>
+                {{ 'common.save' | translate }}
+              </button>
+            </div>
+          </div>
+        </section>
+      }
+
+      <!-- 03 — Password -->
+      <section class="adm-section">
+        <header class="adm-section__head">
+          <div>
+            <h2 class="adm-section__title">{{ 'admin.profile.changePassword' | translate }}</h2>
+            <p class="adm-section__sub">{{ 'admin.profile.generateHint' | translate }}</p>
+          </div>
+        </header>
+
+        <div class="adm-fields">
+          @if (generatedPassword) {
+            <div class="adm-field adm-field--span2">
+              <span class="adm-field__label">{{ 'common.password' | translate }}</span>
+              <div class="adm-pwd">
+                <input
+                  type="text"
+                  class="adm-input adm-input--mono"
+                  [value]="generatedPassword"
+                  readonly
+                  spellcheck="false"
+                />
+                <button
+                  type="button"
+                  class="adm-icon-btn"
+                  (click)="copyGeneratedPassword()"
+                  [title]="'admin.profile.copy' | translate"
+                  [attr.aria-label]="'admin.profile.copy' | translate"
+                >
+                  <app-icon [name]="copied ? 'check' : 'content_copy'"></app-icon>
+                </button>
+              </div>
+              <span class="adm-field__warning">
+                <app-icon name="warning_amber"></app-icon>
+                {{ 'admin.profile.passwordOnceWarning' | translate }}
+              </span>
+            </div>
+          }
+
+          <div class="adm-field adm-field--span2">
+            <label class="adm-field__label" for="currentPassword">{{ 'admin.profile.currentPassword' | translate }}</label>
+            <input
+              id="currentPassword"
+              #currentPasswordInput
+              type="password"
+              class="adm-input"
+              autocomplete="current-password"
+              spellcheck="false"
+            />
+          </div>
+
+          @if (passwordErrorMessage) {
+            <div class="adm-error adm-field--span2" role="alert">{{ passwordErrorMessage }}</div>
+          }
+
+          <div class="adm-actions adm-field--span2">
+            <button
+              type="button"
+              class="adm-btn adm-btn--primary"
+              [disabled]="passwordLoading"
+              (click)="onGeneratePassword(currentPasswordInput.value); currentPasswordInput.value = ''"
+            >
+              <app-icon [name]="passwordLoading ? 'sync' : 'vpn_key'"></app-icon>
+              {{ 'admin.profile.generateNewPassword' | translate }}
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- 04 — Session -->
+      <section class="adm-section adm-section--danger">
+        <header class="adm-section__head">
+          <div>
+            <h2 class="adm-section__title">{{ 'admin.profile.session' | translate }}</h2>
+            <p class="adm-section__sub">{{ 'admin.profile.logout' | translate }}</p>
+          </div>
+        </header>
+
+        <div class="adm-fields">
+          <div class="adm-actions adm-field--span2">
+            <button type="button" class="adm-btn adm-btn--danger" (click)="logout()">
+              <app-icon name="logout"></app-icon>
+              {{ 'admin.profile.logout' | translate }}
+            </button>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</div>

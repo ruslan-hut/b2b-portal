@@ -6,23 +6,25 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: var(--overlay-bg-light);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
+  animation: fadeIn 0.25s ease-out;
 }
 
 .modal-content {
   background: var(--color-background);
   border-radius: var(--radius-lg);
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--shadow-xl);
   width: 100%;
   max-width: 400px;
   max-height: calc(100vh - 2 * var(--spacing-md));
   margin: var(--spacing-md);
   display: flex;
   flex-direction: column;
+  animation: scaleIn 0.25s ease-out;
 }
 
 .modal-header {
@@ -154,7 +156,7 @@
 .current-assignment {
   margin-top: var(--spacing-md);
   padding: var(--spacing-sm);
-  background: rgba(var(--color-primary-rgb), 0.1);
+  background: color-mix(in srgb, var(--color-primary) 10%, transparent);
   border-radius: var(--radius-md);
   font-size: 13px;
   color: var(--color-text-muted);
@@ -171,7 +173,7 @@
 .error-message {
   margin-top: var(--spacing-md);
   padding: var(--spacing-sm);
-  background: rgba(var(--color-danger-rgb), 0.1);
+  background: color-mix(in srgb, var(--color-danger) 10%, transparent);
   border-radius: var(--radius-md);
   font-size: 13px;
   color: var(--color-danger);
@@ -208,14 +210,14 @@
   color: var(--color-text-primary);
 
   &:hover:not(:disabled) {
-    background: var(--color-surface-hover);
+    background: var(--color-background-hover);
   }
 }
 
 .btn-assign {
   background: var(--color-primary);
   border: none;
-  color: white;
+  color: var(--color-on-primary);
 
   &:hover:not(:disabled) {
     opacity: 0.9;
@@ -229,6 +231,6 @@
   margin-right: auto;
 
   &:hover:not(:disabled) {
-    background: rgba(var(--color-danger-rgb), 0.1);
+    background: color-mix(in srgb, var(--color-danger) 10%, transparent);
   }
 }

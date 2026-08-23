@@ -6,18 +6,24 @@ import { OrdersComponent } from './orders.component';
 import { SharedModule } from '../../shared/shared.module';
 import { OrderDetailComponent } from './order-detail/order-detail.component';
 import { OrderEditComponent } from './order-edit/order-edit.component';
+import { OrderCreateComponent } from './order-create/order-create.component';
+import { OrderAnalysisComponent } from './order-analysis/order-analysis.component';
+import { OrderSplitDialog } from './order-split/order-split-dialog';
 
 @NgModule({
   declarations: [
     OrdersComponent,
     OrderDetailComponent,
-    OrderEditComponent
+    OrderEditComponent,
+    OrderCreateComponent,
+    OrderAnalysisComponent
   ],
   imports: [
     CommonModule,
     FormsModule,
     OrdersRoutingModule,
-    SharedModule
+    SharedModule,
+    OrderSplitDialog
   ]
 })
 export class OrdersModule { }

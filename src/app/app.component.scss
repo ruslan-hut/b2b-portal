@@ -24,7 +24,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 12px;
+    gap: var(--spacing-md-sm);
 
     .offline-icon {
       font-size: 20px;
@@ -59,11 +59,9 @@
   top: 0;
   z-index: 1100;
 
-  // Hide on mobile when in admin zone (admin has its own header)
+  // Hide when in admin zone (admin has its own navigation)
   &.hide-on-mobile-admin {
-    @media (max-width: 768px) {
-      display: none;
-    }
+    display: none;
   }
 
   .header-content {
@@ -79,7 +77,7 @@
   .logo {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: var(--spacing-md-sm);
     cursor: pointer;
     transition: opacity 0.2s ease;
 
@@ -87,10 +85,14 @@
       opacity: 0.8;
     }
 
+    /* Inline SVG on currentColor, so the mark takes the installation's brand
+       instead of being a raster that only matches one of them. The lighter
+       relative rather than --color-primary itself: primary is the flat black
+       the buttons and the active nav item use, and at logo weight it sat
+       heavier than the header wants. */
     .logo-icon {
-      width: 28px;
-      height: 28px;
-      object-fit: contain;
+      font-size: 28px;
+      color: var(--color-primary-light);
     }
 
     .logo-text {
@@ -106,12 +108,12 @@
   .header-actions {
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: var(--spacing-md);
 
     .btn-cart {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: var(--spacing-sm);
       padding: 8px 20px;
       font-size: 14px;
       font-weight: 600;
@@ -136,7 +138,7 @@
 
       &:hover {
         transform: translateY(-2px);
-        box-shadow: 0 5px 20px rgba(var(--color-warning-rgb), 0.5);
+        box-shadow: 0 5px 20px color-mix(in srgb, var(--color-warning) 50%, transparent);
       }
     }
 
@@ -146,8 +148,8 @@
       .btn-user-menu {
         display: flex;
         align-items: center;
-        gap: 12px;
-        padding: 8px 16px;
+        gap: var(--spacing-md-sm);
+        padding: var(--spacing-sm) var(--spacing-md);
         font-size: 14px;
         font-weight: 600;
         border: 2px solid transparent;
@@ -232,14 +234,14 @@
 
           &:not(:first-child) {
             border-top: 1px solid var(--color-border);
-            margin-top: 4px;
-            padding-top: 4px;
+            margin-top: var(--spacing-xs);
+            padding-top: var(--spacing-xs);
           }
 
           .menu-item {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: var(--spacing-md-sm);
             width: 100%;
             padding: 12px 20px;
             font-size: 14px;
@@ -304,12 +306,12 @@
             display: none;
             flex-direction: column;
             align-items: flex-start;
-            gap: 4px;
+            gap: var(--spacing-xs);
             padding: 12px 20px;
             cursor: default;
             background: var(--color-background-secondary);
             border-bottom: 1px solid var(--color-border);
-            margin-bottom: 4px;
+            margin-bottom: var(--spacing-xs);
 
             .user-name-display {
               font-size: 15px;
@@ -328,7 +330,7 @@
           .theme-menu-item {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: var(--spacing-md-sm);
             padding: 12px 20px;
             cursor: default;
 
@@ -394,7 +396,7 @@
       flex-wrap: nowrap;
       height: 48px;
       padding: 6px 12px;
-      gap: 8px;
+      gap: var(--spacing-sm);
     }
 
     .logo {
@@ -402,8 +404,7 @@
       min-width: 0;
 
       .logo-icon {
-        width: 24px;
-        height: 24px;
+        font-size: 24px;
       }
 
       .logo-text {
@@ -416,12 +417,12 @@
 
     .header-actions {
       flex-shrink: 0;
-      gap: 8px;
+      gap: var(--spacing-sm);
 
       .btn-cart {
-        padding: 8px 12px;
-        min-width: 44px;
-        min-height: 44px;
+        padding: var(--spacing-sm) var(--spacing-md-sm);
+        min-width: 48px;
+        min-height: 48px;
         justify-content: center;
 
         .cart-text {
@@ -438,9 +439,9 @@
 
       .user-menu-wrapper {
         .btn-user-menu {
-          padding: 8px 12px;
-          min-width: 44px;
-          min-height: 44px;
+          padding: var(--spacing-sm) var(--spacing-md-sm);
+          min-width: 48px;
+          min-height: 48px;
           justify-content: center;
           gap: 0;
 

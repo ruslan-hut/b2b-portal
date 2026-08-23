@@ -27,14 +27,14 @@
   @include button-typography;
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--spacing-xs);
   padding: 6px 12px;
   min-height: var(--touch-target-min);
   background: var(--color-primary);
   border: none;
   border-radius: var(--radius-sm);
   font-size: 13px;
-  color: white;
+  color: var(--color-on-primary);
   cursor: pointer;
   transition: opacity 0.2s ease;
 
@@ -98,7 +98,7 @@
 .internal-checkbox {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--spacing-sm);
   font-size: 13px;
   color: var(--color-text-muted);
   cursor: pointer;
@@ -112,13 +112,13 @@
 
 .btn-save {
   @include button-typography;
-  padding: 8px 16px;
+  padding: var(--spacing-sm) var(--spacing-md);
   min-height: var(--touch-target-min);
   background: var(--color-primary);
   border: none;
   border-radius: var(--radius-sm);
   font-size: 13px;
-  color: white;
+  color: var(--color-on-primary);
   cursor: pointer;
   transition: opacity 0.2s ease;
 
@@ -133,7 +133,7 @@
 }
 
 .error-message {
-  background: rgba(var(--color-danger-rgb), 0.1);
+  background: color-mix(in srgb, var(--color-danger) 10%, transparent);
   border: 1px solid var(--color-danger);
   color: var(--color-danger);
   padding: var(--spacing-sm);
@@ -215,7 +215,7 @@
 
   .material-icon {
     font-size: 16px;
-    color: white;
+    color: var(--color-on-primary);
   }
 }
 
@@ -232,7 +232,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 4px;
+  margin-bottom: var(--spacing-xs);
 }
 
 .activity-type {
@@ -249,7 +249,7 @@
   @include badge-typography;
   margin-left: 8px;
   padding: 2px 6px;
-  background: rgba(var(--color-warning-rgb), 0.1);
+  background: color-mix(in srgb, var(--color-warning) 10%, transparent);
   color: var(--color-warning);
   font-size: 10px;
 }
@@ -262,26 +262,26 @@
 .activity-user {
   font-size: 12px;
   color: var(--color-text-muted);
-  margin-bottom: 4px;
+  margin-bottom: var(--spacing-xs);
 }
 
 .activity-details {
   font-size: 13px;
   color: var(--color-text-secondary);
-  margin-top: 4px;
+  margin-top: var(--spacing-xs);
 
   &.stage-change {
     display: inline-flex;
     align-items: center;
-    padding: 4px 8px;
-    background: rgba(var(--color-primary-rgb), 0.1);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    background: color-mix(in srgb, var(--color-primary) 10%, transparent);
     border-radius: var(--radius-sm);
     font-weight: 500;
   }
 
   &.assignment {
-    padding: 4px 8px;
-    background: rgba(var(--color-success-rgb), 0.1);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    background: color-mix(in srgb, var(--color-success) 10%, transparent);
     border-radius: var(--radius-sm);
   }
 }
@@ -310,7 +310,7 @@
   }
 
   &:hover:not(:disabled) {
-    background: rgba(var(--color-danger-rgb), 0.1);
+    background: color-mix(in srgb, var(--color-danger) 10%, transparent);
 
     .material-icon {
       color: var(--color-danger);
@@ -330,7 +330,7 @@
 
   button {
     @include button-typography;
-    padding: 8px 16px;
+    padding: var(--spacing-sm) var(--spacing-md);
     min-height: var(--touch-target-min);
     background: var(--color-surface);
     border: 1px solid var(--color-border);
@@ -341,7 +341,7 @@
     transition: all 0.2s ease;
 
     &:hover:not(:disabled) {
-      background: var(--color-surface-hover);
+      background: var(--color-background-hover);
       border-color: var(--color-primary);
       color: var(--color-primary);
     }
@@ -359,18 +359,7 @@
   }
 }
 
-// Material icons fallback (using font)
+// Sizing for the timeline's icons; geometry comes from <app-icon>.
 .material-icon {
-  font-family: 'Material Icons', sans-serif;
-  font-weight: normal;
-  font-style: normal;
   font-size: 18px;
-  line-height: 1;
-  letter-spacing: normal;
-  text-transform: none;
-  display: inline-block;
-  white-space: nowrap;
-  word-wrap: normal;
-  direction: ltr;
-  -webkit-font-smoothing: antialiased;
 }

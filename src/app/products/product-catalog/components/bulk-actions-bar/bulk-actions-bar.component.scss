@@ -1,3 +1,14 @@
+// Keep the cart-total + category/search bar pinned while the product list
+// scrolls. top: 50px sits it just below the sticky app header (also 50px);
+// z-index lifts it above the table wrapper, which is a later DOM sibling and
+// would otherwise paint over it.
+:host {
+  position: sticky;
+  top: 50px;
+  z-index: 20;
+  display: block;
+}
+
 .bulk-actions-bar {
   display: flex;
   justify-content: space-between;
@@ -49,7 +60,7 @@
         width: var(--spacing-xl);
         height: var(--spacing-xl);
         border: none;
-        border-radius: 6px;
+        border-radius: var(--radius-sm-md);
         background: transparent;
         color: var(--color-primary);
         cursor: pointer;
@@ -58,7 +69,7 @@
         justify-content: center;
         transition: all 0.3s ease;
 
-        .material-icons {
+        app-icon {
           font-size: 20px;
         }
 

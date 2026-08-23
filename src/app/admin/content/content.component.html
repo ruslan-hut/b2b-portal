@@ -1,0 +1,388 @@
+<div class="adm-page">
+
+  <header class="adm-bar">
+    <div class="adm-bar__crumbs">
+      <span class="adm-crumb adm-crumb--active">{{ 'admin.content.title' | translate }}</span>
+
+      <!-- The three views of this module, side by side. They used to be ghost
+           buttons in the actions slot, which put navigation among the verbs and
+           left the media library with no route to the language registry. -->
+      <nav class="adm-bar__tabs" [attr.aria-label]="'admin.content.title' | translate">
+        <a
+          class="adm-bar__tab"
+          routerLink="/admin/content"
+          routerLinkActive="is-active"
+          [routerLinkActiveOptions]="{ exact: true }"
+        >{{ 'admin.content.tabPages' | translate }}</a>
+        <a
+          class="adm-bar__tab"
+          routerLink="/admin/content/files"
+          routerLinkActive="is-active"
+        >{{ 'admin.contentFiles.title' | translate }}</a>
+        @if (isAdmin) {
+          <a
+            class="adm-bar__tab"
+            routerLink="/admin/content/languages"
+            routerLinkActive="is-active"
+          >{{ 'admin.contentLanguages.title' | translate }}</a>
+        }
+      </nav>
+    </div>
+    <div class="adm-bar__actions">
+      <input
+        type="search"
+        class="adm-input cp-search"
+        [(ngModel)]="search"
+        (input)="onSearchChange()"
+        [placeholder]="'admin.content.searchPlaceholder' | translate"
+        [attr.aria-label]="'admin.content.searchPlaceholder' | translate"
+      />
+      @if (languages.length > 1) {
+        <select
+          class="adm-input cp-lang-select"
+          [(ngModel)]="displayLanguage"
+          (change)="onLanguageChange()"
+          [attr.aria-label]="'admin.content.displayLanguage' | translate"
+        >
+          @for (language of languages; track language.code) {
+            <option [value]="language.code">{{ language.name }}</option>
+          }
+        </select>
+      }
+      <button type="button" class="adm-btn adm-btn--primary" (click)="createPage()">
+        <app-icon name="add"></app-icon>
+        {{ 'admin.content.newPage' | translate }}
+      </button>
+    </div>
+  </header>
+
+  <div class="adm-grid adm-grid--full">
+
+    @if (!loading && !error && totalCount) {
+      <div class="cp-toolbar">
+        <div class="adm-chips" role="group" [attr.aria-label]="'common.filter' | translate">
+          @for (option of stateFilters; track option.value) {
+            <button
+              type="button"
+              class="adm-chip"
+              [class.is-active]="stateFilter === option.value"
+              [attr.aria-pressed]="stateFilter === option.value"
+              (click)="setStateFilter(option.value)"
+            >
+              {{ option.labelKey | translate }}
+            </button>
+          }
+        </div>
+
+        <span class="cp-count">
+          @if (filtersActive) {
+            {{ 'admin.content.pageCountFiltered' | translate:{ count: nodes.length, total: totalCount } }}
+          } @else {
+            {{ 'admin.content.pageCount' | translate:{ count: totalCount } }}
+          }
+        </span>
+      </div>
+    }
+
+    @if (loading) {
+      <div class="adm-loading">{{ 'admin.content.loading' | translate }}</div>
+    } @else if (error) {
+      <div class="adm-error" role="alert">{{ error }}</div>
+    } @else if (totalCount === 0) {
+      <div class="adm-section">
+        <div class="cp-empty">
+          <app-icon name="menu_book" class="cp-empty__icon"></app-icon>
+          <p class="cp-empty__title">{{ 'admin.content.emptyTitle' | translate }}</p>
+          <p class="cp-empty__hint">{{ 'admin.content.emptyHint' | translate }}</p>
+          <button type="button" class="adm-btn adm-btn--primary" (click)="createPage()">
+            <app-icon name="add"></app-icon>
+            {{ 'admin.content.newPage' | translate }}
+          </button>
+        </div>
+      </div>
+    } @else if (nodes.length === 0) {
+      <!-- A filter matched nothing. Distinct from the empty library above:
+           there are pages, they are just not these ones — so the way out is to
+           widen the filter, not to create a page. -->
+      <div class="adm-section">
+        <div class="cp-empty">
+          <app-icon name="search_off" class="cp-empty__icon"></app-icon>
+          <p class="cp-empty__title">{{ 'admin.content.noMatchesTitle' | translate }}</p>
+          <p class="cp-empty__hint">{{ 'admin.content.noMatchesHint' | translate }}</p>
+          <button type="button" class="adm-btn adm-btn--ghost" (click)="clearFilters()">
+            <app-icon name="close"></app-icon>
+            {{ 'admin.content.clearFilters' | translate }}
+          </button>
+        </div>
+      </div>
+    } @else {
+
+      <!-- Desktop tree table -->
+      <div class="adm-section adm-section--table cp-table-wrap desktop-only">
+        <table class="data-table cp-table">
+          <thead>
+            <tr>
+              <th scope="col" class="cp-drag-col">
+                <span class="sr-only">{{ 'admin.content.reorder' | translate }}</span>
+              </th>
+              <th scope="col">{{ 'admin.content.colPage' | translate }}</th>
+              <th scope="col">{{ 'admin.content.colStatus' | translate }}</th>
+              <th scope="col">{{ 'admin.content.colLanguages' | translate }}</th>
+              <th scope="col">{{ 'admin.content.colAudience' | translate }}</th>
+              <th scope="col" class="actions-col">{{ 'common.actions' | translate }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (node of nodes; track trackByUid($index, node)) {
+              <tr
+                [class.is-draft]="!isPublished(node)"
+                [class.is-child]="node.depth > 0"
+                [class.is-dragging]="dragging?.page?.uid === node.page.uid"
+                [class.is-drop-before]="dropTarget?.page?.uid === node.page.uid && !dropAfter"
+                [class.is-drop-after]="dropTarget?.page?.uid === node.page.uid && dropAfter"
+                [attr.draggable]="reorderEnabled"
+                (dragstart)="onDragStart(node, $event)"
+                (dragover)="onDragOver(node, $event)"
+                (dragleave)="onDragLeave(node)"
+                (drop)="onDrop(node, $event)"
+                (dragend)="onDragEnd()"
+              >
+                <td class="cp-drag-cell">
+                  <button
+                    type="button"
+                    class="cp-drag"
+                    [disabled]="!reorderEnabled"
+                    (keydown)="onHandleKeydown(node, $event)"
+                    [title]="'admin.content.reorderHint' | translate"
+                    [attr.aria-label]="'admin.content.reorderRow' | translate: { name: titleOf(node) }"
+                  >
+                    <app-icon name="drag_indicator"></app-icon>
+                  </button>
+                </td>
+                <td>
+                  <div class="cp-title">
+                    <!-- Guide rail: one hairline per ancestor level, so a
+                         sub-page reads as attached to its parent rather than
+                         merely indented. -->
+                    @if (node.depth > 0) {
+                      <span
+                        class="cp-rail"
+                        aria-hidden="true"
+                        [style.width]="indentOf(node)"
+                      ></span>
+                    }
+                    <app-icon [name]="node.page.icon || 'description'" class="cp-title__icon"></app-icon>
+                    <span class="cp-title__text">
+                      <button type="button" class="cp-title__link" (click)="editPage(node)">
+                        {{ titleOf(node) }}
+                      </button>
+                      <code class="cp-slug">/partners/{{ node.page.path || node.page.slug }}</code>
+                    </span>
+                  </div>
+                </td>
+                <td>
+                  <button
+                    type="button"
+                    class="cp-status"
+                    [class.is-published]="isPublished(node)"
+                    (click)="togglePublish(node)"
+                    [title]="(isPublished(node) ? 'admin.content.unpublish' : 'admin.content.publish') | translate"
+                  >
+                    <span class="cp-status__dot" aria-hidden="true"></span>
+                    {{ (isPublished(node) ? 'admin.content.published' : 'admin.content.draft') | translate }}
+                  </button>
+                </td>
+                <td>
+                  <div
+                    class="cp-langs"
+                    [title]="missingCount(node)
+                      ? ('admin.content.missingLanguages' | translate:{ count: missingCount(node) })
+                      : ('admin.content.allLanguages' | translate)"
+                  >
+                    @for (state of languageStates(node); track state.code) {
+                      <span class="cp-lang" [class.is-missing]="!state.has">{{ state.code }}</span>
+                    } @empty {
+                      <span class="cp-muted">—</span>
+                    }
+                  </div>
+                </td>
+                <td class="cp-audience">{{ audienceOf(node) }}</td>
+                <td class="actions-col">
+                  <button
+                    type="button"
+                    class="adm-icon-btn"
+                    (click)="createChild(node)"
+                    [title]="'admin.content.addChild' | translate"
+                    [attr.aria-label]="'admin.content.addChild' | translate"
+                  >
+                    <app-icon name="subdirectory_arrow_right"></app-icon>
+                  </button>
+                  <button
+                    type="button"
+                    class="adm-icon-btn"
+                    (click)="openMove(node)"
+                    [title]="'admin.content.move' | translate"
+                    [attr.aria-label]="'admin.content.move' | translate"
+                  >
+                    <app-icon name="drive_file_move"></app-icon>
+                  </button>
+                  <button
+                    type="button"
+                    class="adm-icon-btn"
+                    (click)="editPage(node)"
+                    [title]="'common.edit' | translate"
+                    [attr.aria-label]="'common.edit' | translate"
+                  >
+                    <app-icon name="edit"></app-icon>
+                  </button>
+                  <button
+                    type="button"
+                    class="adm-icon-btn adm-icon-btn--danger"
+                    (click)="deletePage(node)"
+                    [title]="'common.delete' | translate"
+                    [attr.aria-label]="'common.delete' | translate"
+                  >
+                    <app-icon name="delete"></app-icon>
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Mobile cards -->
+      <div class="cp-cards mobile-only">
+        @for (node of nodes; track trackByUid($index, node)) {
+          <div class="cp-card" [class.is-draft]="!isPublished(node)" [style.margin-left]="indentOf(node)">
+            <div class="cp-card__head" (click)="editPage(node)">
+              <app-icon [name]="node.page.icon || 'description'" class="cp-title__icon"></app-icon>
+              <span class="cp-card__text">
+                <span class="cp-card__title">{{ titleOf(node) }}</span>
+                <code class="cp-slug">/partners/{{ node.page.path || node.page.slug }}</code>
+              </span>
+            </div>
+            <div class="cp-card__meta">
+              <button
+                type="button"
+                class="cp-status"
+                [class.is-published]="isPublished(node)"
+                (click)="togglePublish(node)"
+              >
+                <span class="cp-status__dot" aria-hidden="true"></span>
+                {{ (isPublished(node) ? 'admin.content.published' : 'admin.content.draft') | translate }}
+              </button>
+              <div class="cp-langs">
+                @for (state of languageStates(node); track state.code) {
+                  <span class="cp-lang" [class.is-missing]="!state.has">{{ state.code }}</span>
+                }
+              </div>
+            </div>
+            <div class="cp-card__actions">
+              <button type="button" class="adm-btn adm-btn--ghost" (click)="createChild(node)">
+                <app-icon name="subdirectory_arrow_right"></app-icon>
+                {{ 'admin.content.addChild' | translate }}
+              </button>
+              <button type="button" class="adm-btn adm-btn--ghost" (click)="openMove(node)">
+                <app-icon name="drive_file_move"></app-icon>
+                {{ 'admin.content.move' | translate }}
+              </button>
+              <button
+                type="button"
+                class="adm-icon-btn"
+                [disabled]="!canMoveUp(node)"
+                (click)="moveUp(node)"
+                [attr.aria-label]="'admin.content.moveUp' | translate"
+              >
+                <app-icon name="arrow_upward"></app-icon>
+              </button>
+              <button
+                type="button"
+                class="adm-icon-btn"
+                [disabled]="!canMoveDown(node)"
+                (click)="moveDown(node)"
+                [attr.aria-label]="'admin.content.moveDown' | translate"
+              >
+                <app-icon name="arrow_downward"></app-icon>
+              </button>
+              <button type="button" class="adm-icon-btn adm-icon-btn--danger" (click)="deletePage(node)">
+                <app-icon name="delete"></app-icon>
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </div>
+</div>
+
+@if (movingNode) {
+  <div class="cp-move" (click)="closeMove()">
+    <div class="cp-move__panel" (click)="$event.stopPropagation()">
+      <div class="cp-move__head">
+        <app-icon name="drive_file_move" class="cp-move__mark"></app-icon>
+        <h2 class="cp-move__title">{{ 'admin.content.moveTitle' | translate: { name: titleOf(movingNode) } }}</h2>
+        <button
+          type="button"
+          class="adm-icon-btn"
+          (click)="closeMove()"
+          [attr.aria-label]="'common.close' | translate"
+        >
+          <app-icon name="close"></app-icon>
+        </button>
+      </div>
+
+      <div class="cp-move__body">
+        <label class="adm-field">
+          <span class="adm-field__label">{{ 'admin.content.moveDestination' | translate }}</span>
+          <select
+            class="adm-input"
+            [(ngModel)]="moveTarget"
+            (ngModelChange)="onMoveTargetChange()"
+            name="moveTarget"
+          >
+            <option value="">{{ 'admin.content.moveRoot' | translate }}</option>
+            @for (option of moveOptions; track option.uid) {
+              <option [value]="option.uid">{{ option.label }}</option>
+            }
+          </select>
+        </label>
+
+        <div class="cp-move__paths">
+          <div class="cp-move__path">
+            <span class="cp-move__pathlabel">{{ 'admin.content.moveFrom' | translate }}</span>
+            <code>{{ moveCurrentPath }}</code>
+          </div>
+          <div class="cp-move__path">
+            <span class="cp-move__pathlabel">{{ 'admin.content.moveTo' | translate }}</span>
+            <code class="cp-move__pathnew">{{ movePreviewPath }}</code>
+          </div>
+        </div>
+
+        @if (moveCollides) {
+          <p class="adm-error">{{ 'admin.content.moveCollision' | translate }}</p>
+        } @else if (!moveChangesNothing) {
+          <p class="adm-warning">{{ 'admin.content.moveUrlWarning' | translate }}</p>
+        }
+
+        @if (moveError) {
+          <p class="adm-error">{{ moveError }}</p>
+        }
+      </div>
+
+      <div class="cp-move__foot">
+        <button type="button" class="adm-btn adm-btn--ghost" (click)="closeMove()">
+          {{ 'common.cancel' | translate }}
+        </button>
+        <button
+          type="button"
+          class="adm-btn adm-btn--primary"
+          (click)="confirmMove()"
+          [disabled]="moving || moveChangesNothing || moveCollides"
+        >
+          {{ 'admin.content.move' | translate }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

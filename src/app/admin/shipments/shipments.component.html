@@ -1,0 +1,15 @@
+<nav class="shp-tabs">
+  <a routerLink="list" routerLinkActive="is-active" class="shp-tab">
+    <app-icon name="local_shipping"></app-icon>
+    {{ 'admin.shipments.tabList' | translate }}
+  </a>
+  <a routerLink="pickups" routerLinkActive="is-active" class="shp-tab">
+    <app-icon name="schedule"></app-icon>
+    {{ 'admin.shipments.tabPickups' | translate }}
+  </a>
+  <a routerLink="events" routerLinkActive="is-active" class="shp-tab">
+    <app-icon name="history"></app-icon>
+    {{ 'admin.shipments.tabEvents' | translate }}
+  </a>
+</nav>
+<router-outlet></router-outlet>

@@ -1,6 +1,8 @@
-import { Component, Input, Output, EventEmitter, ViewChild, ElementRef, OnChanges, SimpleChanges, AfterViewChecked } from '@angular/core';
-import { ChatMessage, Platform } from '../../models/chat.model';
+import { Component, Input, Output, EventEmitter, ViewChild, ElementRef, OnChanges, SimpleChanges, AfterViewChecked, OnDestroy, NgZone } from '@angular/core';
+import { ChatMessage, Platform, Attachment } from '../../models/chat.model';
 import { TranslationService } from '../../../../core/services/translation.service';
+import { ChatSettingsService } from '../../services/chat-settings.service';
+import { formatDate, formatTimeShort } from '../../../../core/utils/date-format';
 
 interface DateGroup {
   label: string;
@@ -13,15 +15,18 @@ interface DateGroup {
   styleUrl: './chat-window.component.scss',
   standalone: false
 })
-export class ChatWindowComponent implements OnChanges, AfterViewChecked {
+export class ChatWindowComponent implements OnChanges, AfterViewChecked, OnDestroy {
   @Input() messages: ChatMessage[] = [];
-  @Input() activeChat: { platform: Platform; userId: string; userName?: string } | null = null;
+  @Input() activeChat: { platform: Platform; userId: string; userName?: string; messengerName?: string } | null = null;
   @Input() loading = false;
   @Input() typingIndicator = false;
   @Input() wsConnected = true;
+  @Input() errorMessage = '';
 
   @Output() loadMore = new EventEmitter<void>();
+  @Output() dismissError = new EventEmitter<void>();
   @Output() sendMessage = new EventEmitter<string>();
+  @Output() sendFiles = new EventEmitter<{ files: File[]; caption: string }>();
   @Output() goBack = new EventEmitter<void>();
 
   @ViewChild('messagesContainer') messagesContainer!: ElementRef<HTMLDivElement>;
@@ -30,7 +35,13 @@ export class ChatWindowComponent implements OnChanges, AfterViewChecked {
   private shouldScrollToBottom = false;
   private prevMessageCount = 0;
 
-  constructor(private translationService: TranslationService) {}
+  private imageLoadListener = this.onImageLoad.bind(this);
+
+  constructor(
+    private translationService: TranslationService,
+    private chatSettingsService: ChatSettingsService,
+    private ngZone: NgZone
+  ) {}
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['messages']) {
@@ -58,8 +69,13 @@ export class ChatWindowComponent implements OnChanges, AfterViewChecked {
   ngAfterViewChecked(): void {
     if (this.shouldScrollToBottom) {
       this.scrollToBottom();
+      this.observeImages();
       this.shouldScrollToBottom = false;
     }
+  }
+
+  ngOnDestroy(): void {
+    this.removeImageListeners();
   }
 
   onScroll(): void {
@@ -75,16 +91,40 @@ export class ChatWindowComponent implements OnChanges, AfterViewChecked {
     this.shouldScrollToBottom = true;
   }
 
+  onSendFiles(event: { files: File[]; caption: string }): void {
+    this.sendFiles.emit(event);
+    this.shouldScrollToBottom = true;
+  }
+
   onBack(): void {
     this.goBack.emit();
   }
 
+  isImage(att: Attachment): boolean {
+    return att.mimeType.startsWith('image/');
+  }
+
+  getFileUrl(att: Attachment): string {
+    const config = this.chatSettingsService.getConfig();
+    return `${config?.base_url || ''}${att.url}`;
+  }
+
+  getFileIcon(att: Attachment): string {
+    if (att.mimeType.startsWith('image/')) return 'image';
+    if (att.mimeType === 'application/pdf') return 'picture_as_pdf';
+    if (att.mimeType.startsWith('audio/')) return 'audiotrack';
+    if (att.mimeType.startsWith('video/')) return 'videocam';
+    return 'insert_drive_file';
+  }
+
+  formatFileSize(bytes: number): string {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+  }
+
   getPlatformIcon(platform: Platform): string {
-    switch (platform) {
-      case 'telegram': return 'send';
-      case 'instagram': return 'camera_alt';
-      case 'whatsapp': return 'phone';
-    }
+    return this.chatSettingsService.getPlatformIcon(platform);
   }
 
   getPlatformClass(platform: Platform): string {
@@ -92,8 +132,7 @@ export class ChatWindowComponent implements OnChanges, AfterViewChecked {
   }
 
   formatTime(iso: string): string {
-    const date = new Date(iso);
-    return date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+    return formatTimeShort(iso);
   }
 
   private scrollToBottom(): void {
@@ -101,6 +140,31 @@ export class ChatWindowComponent implements OnChanges, AfterViewChecked {
     if (el) {
       el.scrollTop = el.scrollHeight;
     }
+  }
+
+  // Re-scroll when lazily loaded images expand the container height.
+  private observeImages(): void {
+    this.removeImageListeners();
+    const el = this.messagesContainer?.nativeElement;
+    if (!el) return;
+    const images = el.querySelectorAll<HTMLImageElement>('img:not([data-scroll-bound])');
+    images.forEach(img => {
+      img.setAttribute('data-scroll-bound', '1');
+      img.addEventListener('load', this.imageLoadListener);
+    });
+  }
+
+  private removeImageListeners(): void {
+    const el = this.messagesContainer?.nativeElement;
+    if (!el) return;
+    const images = el.querySelectorAll<HTMLImageElement>('img[data-scroll-bound]');
+    images.forEach(img => {
+      img.removeEventListener('load', this.imageLoadListener);
+    });
+  }
+
+  private onImageLoad(): void {
+    this.ngZone.run(() => this.scrollToBottom());
   }
 
   private groupByDate(messages: ChatMessage[]): DateGroup[] {
@@ -126,8 +190,7 @@ export class ChatWindowComponent implements OnChanges, AfterViewChecked {
       } else if (key === yesterday.toDateString()) {
         label = this.translationService.instant('chat.yesterday');
       } else {
-        const d = new Date(key);
-        label = d.toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' });
+        label = formatDate(key);
       }
       result.push({ label, messages: msgs });
     }

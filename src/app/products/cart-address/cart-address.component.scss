@@ -1,13 +1,13 @@
 .cart-address {
   background: var(--card-bg);
   border: 1px solid var(--color-border);
-  border-radius: 8px;
-  padding: 12px 16px;
-  margin-bottom: 16px;
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md-sm) var(--spacing-md);
+  margin-bottom: var(--spacing-md);
 }
 
 .address-header {
-  margin-bottom: 8px;
+  margin-bottom: var(--spacing-sm);
 }
 
 .address-label {
@@ -18,15 +18,17 @@
 
 .address-content {
   display: flex;
-  align-items: center;
+  // Top-aligned, not centred: the details column runs to two or three lines
+  // once a branch is named, and a centred button drifts to the middle of it.
+  align-items: flex-start;
   justify-content: space-between;
-  gap: 12px;
+  gap: var(--spacing-md-sm);
 }
 
 .address-preview {
   display: flex;
   align-items: flex-start;
-  gap: 8px;
+  gap: var(--spacing-sm);
   flex: 1;
   min-width: 0;
 }
@@ -40,6 +42,8 @@
 .address-details {
   display: flex;
   flex-direction: column;
+  gap: 2px;
+  flex: 1;
   min-width: 0;
 }
 
@@ -60,21 +64,73 @@
   text-overflow: ellipsis;
 }
 
+// The legal entity the order is invoiced to, under the delivery address.
+// Wraps rather than truncates: a company name is the one thing here that has to
+// be read in full to be recognised, and the badge drops to its own line before
+// the name gives up any width.
+.address-branch {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 2px 4px;
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+  min-width: 0;
+
+  .branch-icon {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+  }
+
+  .branch-name {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  &.inactive {
+    color: var(--color-danger);
+  }
+}
+
+// A footer strip on the card, not a box floating under it: the problem is with
+// the address above, so it bleeds to the card's edges and hangs off a hairline.
+.branch-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-xs);
+  margin: var(--spacing-md-sm) calc(var(--spacing-md) * -1) calc(var(--spacing-md-sm) * -1);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-top: 1px solid color-mix(in srgb, var(--color-danger) 25%, transparent);
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
+  background: color-mix(in srgb, var(--color-danger) 8%, transparent);
+  color: var(--color-danger);
+  font-size: 0.8125rem;
+  line-height: 1.4;
+
+  .warning-icon {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+}
+
 .btn-change {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--spacing-xs);
   padding: 6px 12px;
   font-size: 0.8125rem;
   background: transparent;
   border: 1px solid var(--color-primary);
   color: var(--color-primary);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   transition: all 0.2s ease;
   flex-shrink: 0;
 
-  .material-icons {
+  app-icon {
     font-size: 16px;
   }
 
@@ -92,7 +148,7 @@
 .no-address {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--spacing-md-sm);
   padding: 8px 0;
 }
 
@@ -108,12 +164,12 @@
 }
 
 .btn-select {
-  padding: 8px 16px;
+  padding: var(--spacing-sm) var(--spacing-md);
   font-size: 0.875rem;
   background: var(--color-primary);
   color: var(--color-text-inverse);
   border: none;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   transition: background 0.2s ease;
 
@@ -142,30 +198,32 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: var(--overlay-bg-light);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  padding: 20px;
+  padding: var(--spacing-md-lg);
+  animation: fadeIn 0.25s ease-out;
 }
 
 .address-dialog {
   background: var(--card-bg);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   width: 100%;
   max-width: 480px;
   max-height: 80vh;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--shadow-xl);
+  animation: scaleIn 0.25s ease-out;
 }
 
 .dialog-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 20px;
+  padding: var(--spacing-md) var(--spacing-md-lg);
   border-bottom: 1px solid var(--color-border);
 
   h3 {
@@ -180,16 +238,16 @@
   background: none;
   border: none;
   cursor: pointer;
-  padding: 4px;
+  padding: var(--spacing-xs);
   color: var(--color-text-secondary);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   transition: background 0.2s ease;
 
   &:hover {
     background: var(--color-background-secondary);
   }
 
-  .material-icons {
+  app-icon {
     font-size: 24px;
   }
 }
@@ -197,15 +255,15 @@
 .dialog-content {
   flex: 1;
   overflow-y: auto;
-  padding: 16px;
+  padding: var(--spacing-md);
 }
 
 .loading {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
-  padding: 32px;
+  gap: var(--spacing-md-sm);
+  padding: var(--spacing-xl);
   color: var(--color-text-secondary);
 }
 
@@ -228,11 +286,11 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
-  padding: 32px;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-xl);
   color: var(--color-text-secondary);
 
-  .material-icons {
+  app-icon {
     font-size: 48px;
     opacity: 0.5;
   }
@@ -246,16 +304,16 @@
 .address-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--spacing-sm);
 }
 
 .address-item {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px 16px;
+  gap: var(--spacing-md-sm);
+  padding: var(--spacing-md-sm) var(--spacing-md);
   border: 1px solid var(--color-border);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   cursor: pointer;
   transition: all 0.2s ease;
 
@@ -266,11 +324,23 @@
 
   &.selected {
     border-color: var(--color-primary);
-    background: rgba(var(--color-primary-rgb), 0.05);
+    background: color-mix(in srgb, var(--color-primary) 5%, transparent);
   }
 
   &.default {
     border-color: var(--color-success);
+  }
+
+  // Billed to a deactivated branch: still listed, so the client can see the
+  // address exists and why it cannot be used, but not selectable.
+  &.blocked {
+    cursor: not-allowed;
+    opacity: 0.6;
+
+    &:hover {
+      border-color: var(--color-border);
+      background: none;
+    }
   }
 }
 
@@ -282,8 +352,8 @@
 .address-item-header {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 4px;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-xs);
 }
 
 .address-city {
@@ -296,14 +366,39 @@
   padding: 2px 6px;
   background: var(--color-success);
   color: var(--color-text-inverse);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   text-transform: uppercase;
+}
+
+// Name of the branch (legal entity) an address is billed to.
+.branch-badge {
+  font-size: 0.6875rem;
+  padding: 2px 6px;
+  background: var(--color-background-secondary);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+
+  &.inactive {
+    text-decoration: line-through;
+  }
+}
+
+.inactive-badge {
+  font-size: 0.6875rem;
+  padding: 2px 6px;
+  background: var(--color-danger);
+  color: var(--color-text-inverse);
+  border-radius: var(--radius-sm);
+  text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .address-item-text {
   font-size: 0.875rem;
   color: var(--color-text-primary);
-  margin-bottom: 4px;
+  margin-bottom: var(--spacing-xs);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -329,8 +424,8 @@
 @media (max-width: 768px) {
   .cart-address {
     padding: 0;
-    margin-bottom: 8px;
-    border-radius: 8px;
+    margin-bottom: var(--spacing-sm);
+    border-radius: var(--radius-md);
   }
 
   .address-header {
@@ -344,9 +439,9 @@
   .address-content {
     flex-direction: row;
     align-items: center;
-    gap: 8px;
-    padding: 8px 12px;
-    min-height: 44px;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm) var(--spacing-md-sm);
+    min-height: 48px;
 
     &.clickable {
       cursor: pointer;
@@ -358,7 +453,7 @@
   }
 
   .address-preview {
-    gap: 8px;
+    gap: var(--spacing-sm);
     flex: 1;
   }
 
@@ -395,10 +490,10 @@
   .no-address {
     flex-direction: row;
     align-items: center;
-    gap: 8px;
+    gap: var(--spacing-sm);
     text-align: left;
-    padding: 8px 12px;
-    min-height: 44px;
+    padding: var(--spacing-sm) var(--spacing-md-sm);
+    min-height: 48px;
 
     &.clickable {
       cursor: pointer;
@@ -433,7 +528,7 @@
   .address-dialog {
     max-width: 100%;
     max-height: 80vh;
-    border-radius: 12px 12px 0 0;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
     margin-bottom: env(safe-area-inset-bottom, 0);
   }
 
@@ -446,28 +541,28 @@
   }
 
   .btn-close {
-    min-width: 44px;
-    min-height: 44px;
-    padding: 8px;
+    min-width: 48px;
+    min-height: 48px;
+    padding: var(--spacing-sm);
 
-    .material-icons {
+    app-icon {
       font-size: 24px;
     }
   }
 
   .dialog-content {
-    padding: 8px;
+    padding: var(--spacing-sm);
   }
 
   .loading {
-    padding: 20px;
-    gap: 8px;
+    padding: var(--spacing-md-lg);
+    gap: var(--spacing-sm);
   }
 
   .no-addresses {
-    padding: 20px;
+    padding: var(--spacing-md-lg);
 
-    .material-icons {
+    app-icon {
       font-size: 36px;
     }
 
@@ -477,14 +572,14 @@
   }
 
   .address-list {
-    gap: 6px;
+    gap: var(--spacing-xs);
   }
 
   .address-item {
-    padding: 8px 12px;
+    padding: var(--spacing-sm) var(--spacing-md-sm);
     min-height: 52px;
-    border-radius: 8px;
-    gap: 8px;
+    border-radius: var(--radius-md);
+    gap: var(--spacing-sm);
 
     &:active {
       background: var(--color-background-secondary);
@@ -493,7 +588,7 @@
 
   .address-item-header {
     flex-wrap: wrap;
-    gap: 4px;
+    gap: var(--spacing-xs);
     margin-bottom: 2px;
   }
 
@@ -525,7 +620,7 @@
 // Extra small screens
 @media (max-width: 480px) {
   .cart-address {
-    padding: 8px;
+    padding: var(--spacing-sm);
   }
 
   .address-dialog {
@@ -533,7 +628,7 @@
   }
 
   .dialog-content {
-    padding: 8px;
+    padding: var(--spacing-sm);
   }
 
   .address-item {

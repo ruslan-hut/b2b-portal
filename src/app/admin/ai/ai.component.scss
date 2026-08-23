@@ -1,0 +1,287 @@
+.ai-intro,
+.ai-hint {
+  margin: 0;
+  font-size: var(--text-md);
+  color: var(--color-text-secondary);
+  max-width: 72ch;
+}
+
+.ai-hint {
+  margin-bottom: var(--spacing-md);
+  font-size: var(--text-sm);
+}
+
+// --- connection status ------------------------------------------------------
+
+.ai-status {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+  margin-bottom: var(--spacing-md);
+}
+
+.ai-status__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex: none;
+
+  &.is-ready { background: var(--color-success); }
+  &.is-off { background: var(--color-text-muted); }
+  &.is-missing { background: var(--color-warning); }
+}
+
+.ai-status__label {
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.ai-status__model {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+.ai-status__test {
+  margin-left: auto;
+}
+
+.ai-test {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  margin: 0 0 var(--spacing-md);
+  font-size: var(--text-sm);
+  color: var(--color-danger);
+
+  &.is-ok { color: var(--color-success); }
+
+  app-icon { font-size: 18px; }
+}
+
+.ai-test__latency {
+  color: var(--color-text-muted);
+}
+
+// --- api key ----------------------------------------------------------------
+
+.ai-key {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  flex-wrap: wrap;
+
+  .adm-input { flex: 1 1 240px; }
+}
+
+.ai-key__masked {
+  flex: 1 1 240px;
+  padding: 0 var(--spacing-sm);
+  height: var(--control-h-sm);
+  display: flex;
+  align-items: center;
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// --- enable switch ----------------------------------------------------------
+
+.ai-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+  margin-top: var(--spacing-md);
+}
+
+.ai-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  min-height: var(--touch-target-min);
+  padding: 0;
+  border: 0;
+  background: none;
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  cursor: pointer;
+
+  &:disabled { opacity: 0.6; cursor: default; }
+}
+
+.ai-switch__track {
+  position: relative;
+  width: 40px;
+  height: 22px;
+  border-radius: var(--radius-pill);
+  background: var(--color-border);
+  transition: background var(--transition-fast);
+}
+
+.ai-switch__knob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--color-surface);
+  transition: transform var(--transition-fast);
+}
+
+.ai-switch.is-on {
+  .ai-switch__track { background: var(--color-primary); }
+  .ai-switch__knob { transform: translateX(18px); }
+}
+
+// --- budget -----------------------------------------------------------------
+
+.ai-budget {
+  margin-top: var(--spacing-md);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+}
+
+.ai-budget__bar {
+  flex: 1 1 200px;
+  height: 6px;
+  border-radius: var(--radius-pill);
+  background: var(--color-border);
+  overflow: hidden;
+}
+
+.ai-budget__fill {
+  display: block;
+  height: 100%;
+  background: var(--color-primary);
+}
+
+.ai-budget__text {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
+
+// --- glossary ---------------------------------------------------------------
+
+.ai-term { min-width: 160px; }
+.ai-lang { max-width: 90px; }
+
+// The rule is the glossary's whole point, so it reads as a state rather than a
+// checkbox: "never" is a hard rule, "pinned" is a specific rendering.
+.ai-rule {
+  height: var(--control-h-xs);
+  min-height: var(--touch-target-min);
+  padding: 0 var(--spacing-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+  cursor: pointer;
+
+  &.is-never {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+  }
+}
+
+.ai-add {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  flex-wrap: wrap;
+  margin-top: var(--spacing-md);
+}
+
+.ai-add__term { flex: 1 1 180px; }
+.ai-add__lang { flex: 0 0 80px; }
+.ai-add__translation { flex: 1 1 180px; }
+
+.ai-empty {
+  text-align: center;
+  padding: var(--spacing-lg);
+  color: var(--color-text-muted);
+}
+
+.ai-total {
+  font-weight: var(--font-weight-semibold);
+}
+
+@media (max-width: 768px) {
+  .ai-status__test { margin-left: 0; }
+
+  .ai-add > * { flex: 1 1 100%; }
+}
+
+// --- bulk paste -------------------------------------------------------------
+
+.ai-paste {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-md);
+  align-items: flex-start;
+}
+
+.ai-paste__source {
+  width: 100%;
+  font-family: var(--font-mono, monospace);
+  font-size: var(--text-sm);
+  resize: vertical;
+}
+
+.ai-paste__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+}
+
+.ai-paste__count {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
+
+// Every row is shown before anything is written: the paste comes from a
+// document, and a mis-parsed column is far easier to see here than to find
+// again once it is fifty rows in the table above.
+.ai-paste__preview {
+  width: 100%;
+  max-height: 260px;
+  overflow-y: auto;
+  margin: 0;
+  padding: var(--spacing-xs);
+  list-style: none;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: 2px 0;
+    font-size: var(--text-sm);
+    flex-wrap: wrap;
+  }
+}
+
+.ai-paste__arrow,
+.ai-paste__note {
+  color: var(--color-text-secondary);
+}
+
+.ai-paste__note {
+  font-style: italic;
+}

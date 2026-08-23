@@ -6,13 +6,7 @@ import { environment } from '../../../environments/environment';
 import { AppSettings } from '../models/app-settings.model';
 import { User, Client, AuthMeResponse } from '../models/user.model';
 import { TranslationService } from './translation.service';
-
-interface ApiResponse<T> {
-  status: string;
-  success?: boolean;
-  data: T;
-  message?: string;
-}
+import { ApiResponse } from '../models/api.model';
 
 @Injectable({
   providedIn: 'root'
@@ -194,6 +188,19 @@ export class AppSettingsService {
   getEffectiveVatRate(): number {
     const settings = this.getSettingsValue();
     return settings?.effective_vat_rate || 0;
+  }
+
+  /**
+   * Whether the logged-in entity may use cart/order actions. Reads the
+   * backend-provided capabilities; when they are absent (stale localStorage
+   * or legacy backend) falls back to the entity type: clients only.
+   */
+  isCartEnabled(): boolean {
+    const settings = this.getSettingsValue();
+    if (settings?.capabilities) {
+      return settings.capabilities.cart_enabled;
+    }
+    return settings?.entity_type !== 'user';
   }
 
   /**

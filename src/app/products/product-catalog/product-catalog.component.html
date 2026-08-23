@@ -1,4 +1,18 @@
 <div class="catalog-container">
+  <!-- Staff read-only preview notice -->
+  @if (isPreviewMode) {
+    <div class="preview-mode-banner">
+      <app-icon name="visibility" class="preview-icon"></app-icon>
+      <span class="preview-text">
+        @if (previewConfigMissing) {
+          {{ 'products.previewConfigMissing' | translate }}
+        } @else {
+          {{ 'products.previewModeBanner' | translate }}
+        }
+      </span>
+    </div>
+  }
+
   @if (viewMode === 'grid') {
     <app-search-bar
       [viewMode]="viewMode"
@@ -7,6 +21,7 @@
       [searchQuery]="searchQuery"
       [cartTotal]="getCartTotal()"
       [currencyName]="currencyName"
+      [previewMode]="isPreviewMode"
       (search)="onSearchChange($event)"
       (categoryChange)="onCategoryChange($event)"
     />
@@ -19,14 +34,28 @@
     </div>
   }
 
+  <!-- Load error state.
+       Suppressed when the preview banner already explains the failure: an
+       unconfigured staff account cannot be fixed by retrying, and "check your
+       connection" sends the reader after the wrong problem. -->
+  @if (!loading && loadError && !previewConfigMissing) {
+    <div class="loading-container" role="alert">
+      <p>{{ 'common.loadError' | translate }}</p>
+      <button type="button" class="btn btn-primary" (click)="loadProducts()">
+        {{ 'common.retry' | translate }}
+      </button>
+    </div>
+  }
+
   <!-- Grid View -->
-  @if (!loading && viewMode === 'grid') {
+  @if (!loading && !loadError && viewMode === 'grid') {
     <app-product-grid
       [products]="filteredProducts"
       [cartItems]="cartItems"
       [currency]="currency"
       [discount]="currentDiscount"
       [vatRate]="currentVatRate"
+      [previewMode]="isPreviewMode"
       (addToCart)="addToCart($event)"
       (imagePreview)="handleImagePreview($event)"
       (productDetails)="openProductDetails($event)"
@@ -34,7 +63,7 @@
   }
 
   <!-- Bulk Order View -->
-  @if (!loading && viewMode === 'bulk') {
+  @if (!loading && !loadError && viewMode === 'bulk') {
     <div class="bulk-view-container">
       <div class="bulk-table-section">
         <!-- Actions Bar -->
@@ -44,6 +73,7 @@
           [searchQuery]="searchQuery"
           [cartTotal]="getCartTotal()"
           [currencyName]="currencyName"
+          [previewMode]="isPreviewMode"
           (search)="onSearchChange($event)"
           (categoryChange)="onCategoryChange($event)"
         />
@@ -57,6 +87,8 @@
             [vatRate]="currentVatRate"
             [bulkQuantities]="bulkQuantities"
             [selectedProduct]="selectedProduct"
+            [showQuantity]="showQuantity"
+            [previewMode]="isPreviewMode"
             (productSelect)="selectProduct($event)"
             (quantityChange)="setBulkQuantity($event.product, $event.quantity)"
           />
@@ -71,6 +103,7 @@
             [discount]="currentDiscount"
             [vatRate]="currentVatRate"
             [bulkQuantities]="bulkQuantities"
+            [previewMode]="isPreviewMode"
             (productSelect)="selectProduct($event)"
             (quantityIncrement)="incrementQuantity($event.productId, $event.product)"
             (quantityDecrement)="decrementQuantity($event.productId, $event.product)"
@@ -85,6 +118,7 @@
         [product]="selectedProduct"
         [priceWithVat]="selectedProduct ? getPriceWithVat(selectedProduct) : 0"
         [originalPrice]="selectedProduct ? getOriginalPriceWithVat(selectedProduct) : 0"
+        [vatRate]="selectedProduct ? getVatRate(selectedProduct) : 0"
         [hasDiscount]="hasDiscount()"
         [currencyName]="currencyName"
         (cardClick)="handleDetailCardClick()"
@@ -109,13 +143,21 @@
     ></app-product-details-overlay>
   }
 
-  <!-- Pagination Controls -->
+  <!-- Page navigation (server-side pagination — one page in the DOM at a time) -->
+  @if (!loading && !loadError && totalProducts > 0 && totalPages > 1) {
+    <app-pagination
+      [currentPage]="currentPage"
+      [totalPages]="totalPages"
+      [total]="totalProducts"
+      [pageSize]="pageSize"
+      [itemLabel]="'navigation.products' | translate"
+      (pageChange)="goToPage($event)"
+    ></app-pagination>
+  }
+
+  <!-- Scroll to top button -->
   <app-pagination-controls
-    [hasMore]="hasMoreProducts"
-    [loading]="loadingMore"
     [showScrollToTop]="showScrollToTop"
-    [showFloating]="showFloatingShowMore"
-    (loadMore)="loadMoreProducts()"
     (scrollToTop)="scrollToTop()"
   />
 </div>

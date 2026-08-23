@@ -6,8 +6,9 @@ import { AuthService } from '../core/services/auth.service';
 import { ClientService, ClientAddress, ClientProfileUpdate, AddressUpsertRequest, Country } from '../core/services/client.service';
 import { TranslationService } from '../core/services/translation.service';
 import { AppSettingsService } from '../core/services/app-settings.service';
+import { ConfirmDialogService } from '../core/services/confirm-dialog.service';
 import { Client } from '../core/models/user.model';
-import { DiscountInfo } from '../core/models/app-settings.model';
+import { DiscountInfo, ClientBranch } from '../core/models/app-settings.model';
 
 @Component({
     selector: 'app-profile',
@@ -17,6 +18,8 @@ import { DiscountInfo } from '../core/models/app-settings.model';
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ProfileComponent implements OnInit, OnDestroy {
+  /** Client API self-service section visibility (capabilities.api_access). */
+  apiAccess = false;
   // Profile form
   profileForm: FormGroup;
   profileLoading = false;
@@ -26,6 +29,9 @@ export class ProfileComponent implements OnInit, OnDestroy {
 
   // Address management
   addresses: ClientAddress[] = [];
+  // Branches of the client, read-only. Used only to name the branch an address
+  // belongs to — a client can neither create nor edit one.
+  branches: ClientBranch[] = [];
   addressesLoading = false;
   addressError = '';
 
@@ -41,11 +47,6 @@ export class ProfileComponent implements OnInit, OnDestroy {
   priceTypeName = '';
   discountInfo: DiscountInfo | null = null;
   currencySymbol = '';
-
-  // Language preference
-  availableLanguages: string[] = [];
-  selectedLanguage = 'en';
-  languageLoading = false;
 
   // Countries for autocomplete
   countries: Country[] = [];
@@ -66,6 +67,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
     private clientService: ClientService,
     public translationService: TranslationService,
     private appSettingsService: AppSettingsService,
+    private confirmDialog: ConfirmDialogService,
     private cdr: ChangeDetectorRef
   ) {
     this.profileForm = this.fb.group({
@@ -81,7 +83,9 @@ export class ProfileComponent implements OnInit, OnDestroy {
       city: [''],
       zipcode: [''],
       address_text: [''],
-      is_default: [false]
+      branch_uid: [''],
+      is_default: [false],
+      is_official: [false]
     });
   }
 
@@ -89,7 +93,22 @@ export class ProfileComponent implements OnInit, OnDestroy {
     this.loadClientData();
     this.loadAddresses();
     this.loadCountries();
-    this.loadAvailableLanguages();
+    // App settings are cached in localStorage and refreshed only at login, so
+    // a capability switched on mid-session (e.g. Client API access enabled by
+    // staff) would stay hidden until re-login. Refresh them when the profile
+    // opens; the cached copy already rendered, so a failure changes nothing.
+    this.subscriptions.add(
+      this.appSettingsService.loadSettings().subscribe({
+        next: (settings) => {
+          const apiAccess = !!settings?.capabilities?.api_access;
+          if (apiAccess !== this.apiAccess) {
+            this.apiAccess = apiAccess;
+            this.cdr.markForCheck();
+          }
+        },
+        error: () => { /* keep the cached view */ }
+      })
+    );
   }
 
   ngOnDestroy(): void {
@@ -102,7 +121,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
 
     if (settings && settings.entity_type === 'client') {
       this.client = settings.entity as Client;
-      this.selectedLanguage = this.client.language || 'en';
+      this.apiAccess = !!settings.capabilities?.api_access;
       this.populateProfileForm();
 
       // Get store and price type names
@@ -160,6 +179,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
           } else {
             this.addresses = [];
           }
+          this.branches = settings?.branches || [];
           this.addressesLoading = false;
           this.cdr.detectChanges();
         },
@@ -329,7 +349,9 @@ export class ProfileComponent implements OnInit, OnDestroy {
       city: '',
       zipcode: '',
       address_text: '',
-      is_default: false
+      branch_uid: '',
+      is_default: false,
+      is_official: false
     });
     // Reset country autocomplete
     this.selectedCountry = null;
@@ -347,7 +369,9 @@ export class ProfileComponent implements OnInit, OnDestroy {
       city: address.city || '',
       zipcode: address.zipcode || '',
       address_text: address.address_text || '',
-      is_default: address.is_default || false
+      branch_uid: address.branch_uid || '',
+      is_default: address.is_default || false,
+      is_official: address.is_official || false
     });
     // Set country autocomplete
     const country = this.countries.find(c => c.country_code === address.country_code);
@@ -387,7 +411,9 @@ export class ProfileComponent implements OnInit, OnDestroy {
       city: formValue.city,
       zipcode: formValue.zipcode,
       address_text: formValue.address_text,
-      is_default: formValue.is_default
+      is_default: formValue.is_default,
+      is_official: formValue.is_official,
+      branch_uid: formValue.branch_uid || ''
     };
 
     this.clientService.upsertAddress(request).subscribe({
@@ -406,11 +432,16 @@ export class ProfileComponent implements OnInit, OnDestroy {
     });
   }
 
-  deleteAddress(address: ClientAddress): void {
+  async deleteAddress(address: ClientAddress): Promise<void> {
     if (!address.uid) return;
 
     const confirmMessage = this.translationService.instant('profile.confirmDeleteAddress') || 'Are you sure you want to delete this address?';
-    if (!confirm(confirmMessage)) {
+    const confirmed = await this.confirmDialog.ask({
+      message: confirmMessage,
+      confirmLabel: this.translationService.instant('common.delete'),
+      danger: true
+    });
+    if (!confirmed) {
       return;
     }
 
@@ -443,9 +474,72 @@ export class ProfileComponent implements OnInit, OnDestroy {
     });
   }
 
+  setOfficialAddress(address: ClientAddress): void {
+    if (!address.uid || address.is_official) return;
+
+    this.clientService.setOfficialAddress(address.uid).subscribe({
+      next: () => {
+        // AppSettings is automatically updated by ClientService, UI will update via subscription
+      },
+      error: (error) => {
+        console.error('Error setting official address:', error);
+        this.addressError = this.translationService.instant('profile.setOfficialError') || 'Failed to set official address';
+        setTimeout(() => this.addressError = '', 5000);
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
   getCountryName(code: string): string {
     const country = this.countries.find(c => c.country_code === code);
     return country ? country.name : code;
+  }
+
+  /**
+   * Name of the branch an address belongs to, or '' when it belongs to the
+   * account directly.
+   *
+   * Display only. The link is set by staff and by the ERP, never here — a client
+   * may pick which address to deliver to, not which legal entity is invoiced.
+   */
+  getBranchName(address: ClientAddress): string {
+    if (!address.branch_uid) return '';
+    const branch = this.branches.find(b => b.uid === address.branch_uid);
+    return branch ? branch.name : '';
+  }
+
+  /**
+   * True when the address is linked to a branch the ERP has deactivated. Such an
+   * address is still deliverable in principle, but no order can be confirmed to
+   * it, so it is marked here rather than leaving the client to discover it at
+   * checkout.
+   */
+  isBranchInactive(address: ClientAddress): boolean {
+    if (!address.branch_uid) return false;
+    const branch = this.branches.find(b => b.uid === address.branch_uid);
+    return !!branch && !branch.active;
+  }
+
+  /**
+   * Branches offerable in the address form: the active ones, plus the branch
+   * already stored on the address being edited even when it has since gone
+   * inactive.
+   *
+   * Without that exception the stored branch would be missing from the list, the
+   * select would fall back to "billed to the account", and editing the street of
+   * an address would quietly re-bill it to a different legal entity.
+   */
+  get selectableBranches(): ClientBranch[] {
+    const current = this.editingAddress?.branch_uid;
+    return this.branches.filter(b => b.active || (!!current && b.uid === current));
+  }
+
+  /** True when the branch chosen in the form is one the ERP has deactivated. */
+  get selectedFormBranchInactive(): boolean {
+    const uid = this.addressForm.get('branch_uid')?.value;
+    if (!uid) return false;
+    const branch = this.branches.find(b => b.uid === uid);
+    return !!branch && !branch.active;
   }
 
   formatAddress(address: ClientAddress): string {
@@ -460,49 +554,6 @@ export class ProfileComponent implements OnInit, OnDestroy {
   formatBalance(cents: number): string {
     const amount = (cents / 100).toFixed(2);
     return `${this.currencySymbol} ${amount}`;
-  }
-
-  loadAvailableLanguages(): void {
-    this.languageLoading = true;
-    this.clientService.getAvailableLanguages().subscribe({
-      next: (languages) => {
-        this.availableLanguages = languages;
-        this.languageLoading = false;
-        this.cdr.detectChanges();
-      },
-      error: (error) => {
-        console.error('Error loading languages:', error);
-        this.availableLanguages = ['en'];
-        this.languageLoading = false;
-        this.cdr.detectChanges();
-      }
-    });
-  }
-
-  changeLanguage(event: Event): void {
-    const select = event.target as HTMLSelectElement;
-    const newLang = select.value;
-    if (newLang === this.selectedLanguage) return;
-
-    this.selectedLanguage = newLang;
-    this.clientService.updateMyProfile({ language: newLang }).subscribe({
-      next: () => {
-        this.translationService.setLanguage(newLang);
-        // Refresh auth data to get updated client info
-        this.authService.getCurrentEntity().subscribe({
-          next: () => {
-            this.loadClientData();
-          }
-        });
-        this.cdr.detectChanges();
-      },
-      error: (error) => {
-        console.error('Error changing language:', error);
-        // Revert selection
-        this.selectedLanguage = this.client?.language || 'en';
-        this.cdr.detectChanges();
-      }
-    });
   }
 
   navigateBack(): void {

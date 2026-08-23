@@ -1,0 +1,409 @@
+<div class="adm-page">
+
+  <header class="adm-bar">
+    <div class="adm-bar__crumbs">
+      <button
+        type="button"
+        class="adm-crumb-back"
+        (click)="back()"
+        [attr.aria-label]="'admin.users.backToUsers' | translate"
+      >
+        <app-icon name="arrow_back"></app-icon>
+      </button>
+      <a class="adm-crumb" (click)="back()" (keydown.enter)="back()" tabindex="0">
+        {{ 'admin.users.title' | translate }}
+      </a>
+      <span class="adm-crumb-sep">/</span>
+      <span class="adm-crumb adm-crumb--active">
+        {{ isCreating
+          ? ('admin.users.newUser' | translate)
+          : (user?.username || ('common.edit' | translate)) }}
+      </span>
+    </div>
+    <div class="adm-bar__actions">
+      <button type="button" class="adm-btn adm-btn--ghost" (click)="back()" [disabled]="saving">
+        <app-icon name="close"></app-icon>
+        {{ 'admin.users.discard' | translate }}
+      </button>
+      <button
+        type="button"
+        class="adm-btn adm-btn--primary"
+        (click)="save()"
+        [disabled]="saving || loading"
+      >
+        <app-icon [name]="saving ? 'sync' : 'check'"></app-icon>
+        {{ isCreating
+          ? ('admin.users.createUser' | translate)
+          : ('admin.users.saveChanges' | translate) }}
+      </button>
+    </div>
+  </header>
+
+  @if (loading) {
+    <div class="adm-loading">{{ 'common.loading' | translate }}</div>
+  }
+
+  @if (!loading) {
+    <div class="adm-grid">
+
+      <!-- Sidebar -->
+      <aside class="adm-side">
+        <div class="adm-id-card">
+          <div class="adm-avatar" [attr.data-role]="form.role">{{ initials() }}</div>
+          <div class="adm-id-name">
+            {{ form.first_name || form.last_name
+              ? (form.first_name + ' ' + (form.last_name || '')).trim()
+              : (form.username
+                  || (isCreating
+                    ? ('admin.users.newUser' | translate)
+                    : ('admin.users.unnamed' | translate))) }}
+          </div>
+          <div class="adm-id-username">&#64;{{ form.username || '—' }}</div>
+          <div class="adm-id-role">
+            <span class="adm-role-chip" [attr.data-role]="form.role">{{ form.role }}</span>
+            @if (form.active === false) {
+              <span class="adm-role-chip ue-blocked-chip">
+                {{ 'admin.users.statusBlocked' | translate }}
+              </span>
+            }
+          </div>
+        </div>
+
+        @if (!isCreating && user) {
+          <div class="adm-meta">
+            <div class="adm-meta__title">{{ 'admin.users.activity' | translate }}</div>
+            <div class="adm-meta__row">
+              <span class="adm-meta__label">{{ 'admin.users.lastLogin' | translate }}</span>
+              <span class="adm-meta__value">{{ formatDate(user.last_login) }}</span>
+            </div>
+            <div class="adm-meta__row">
+              <span class="adm-meta__label">{{ 'common.lastUpdate' | translate }}</span>
+              <span class="adm-meta__value">{{ formatDate(user.last_update) }}</span>
+            </div>
+            <div class="adm-meta__row adm-meta__row--mono">
+              <span class="adm-meta__label">{{ 'admin.users.uid' | translate }}</span>
+              <span class="adm-meta__value adm-uid" [copyOnClick]="user.uid">
+                <span class="adm-uid__text">{{ user.uid }}</span>
+              </span>
+            </div>
+          </div>
+
+          <div class="adm-danger">
+            <div class="adm-danger__title">{{ 'admin.users.dangerZone' | translate }}</div>
+            <p class="adm-danger__hint">{{ 'admin.users.dangerZoneHint' | translate }}</p>
+            <button type="button" class="adm-btn adm-btn--danger" (click)="remove()">
+              <app-icon name="delete_outline"></app-icon>
+              {{ 'admin.users.deleteUser' | translate }}
+            </button>
+          </div>
+        }
+      </aside>
+
+      <!-- Main form -->
+      <form class="adm-main" (ngSubmit)="save()" autocomplete="off">
+
+        @if (error) {
+          <div class="adm-error" role="alert">{{ error }}</div>
+        }
+
+        <!-- 01 — Identity -->
+        <section class="adm-section">
+          <header class="adm-section__head">
+            <div>
+              <h2 class="adm-section__title">{{ 'admin.users.sectionIdentity' | translate }}</h2>
+              <p class="adm-section__sub">{{ 'admin.users.sectionIdentitySub' | translate }}</p>
+            </div>
+          </header>
+
+          <div class="adm-fields">
+            <label class="adm-field adm-field--span2">
+              <span class="adm-field__label">
+                {{ 'admin.users.username' | translate }} <em>*</em>
+              </span>
+              <input
+                type="text"
+                class="adm-input"
+                [(ngModel)]="form.username"
+                name="username"
+                required
+                spellcheck="false"
+                autocomplete="off"
+              />
+            </label>
+            <label class="adm-field adm-field--span2">
+              <span class="adm-field__label">{{ 'common.email' | translate }}</span>
+              <input
+                type="email"
+                class="adm-input"
+                [(ngModel)]="form.email"
+                name="email"
+                spellcheck="false"
+                autocomplete="off"
+              />
+            </label>
+            <label class="adm-field">
+              <span class="adm-field__label">{{ 'common.firstName' | translate }}</span>
+              <input
+                type="text"
+                class="adm-input"
+                [(ngModel)]="form.first_name"
+                name="first_name"
+                autocomplete="off"
+              />
+            </label>
+            <label class="adm-field">
+              <span class="adm-field__label">{{ 'common.lastName' | translate }}</span>
+              <input
+                type="text"
+                class="adm-input"
+                [(ngModel)]="form.last_name"
+                name="last_name"
+                autocomplete="off"
+              />
+            </label>
+          </div>
+        </section>
+
+        <!-- 02 — Access -->
+        <section class="adm-section">
+          <header class="adm-section__head">
+            <div>
+              <h2 class="adm-section__title">{{ 'admin.users.sectionAccess' | translate }}</h2>
+              <p class="adm-section__sub">{{ 'admin.users.sectionAccessSub' | translate }}</p>
+            </div>
+          </header>
+
+          <div class="adm-fields">
+            @if (legacyRole) {
+              <div class="ue-legacy adm-field--span2" role="status">
+                <app-icon name="info"></app-icon>
+                <span>
+                  {{ 'admin.users.legacyRoleNotice' | translate: { role: legacyRole } }}
+                </span>
+              </div>
+            }
+
+            <label class="adm-toggle adm-field--span2">
+              <input
+                type="checkbox"
+                [(ngModel)]="form.active"
+                name="active"
+                [disabled]="isSelf"
+              />
+              <span class="adm-toggle__track"><span class="adm-toggle__dot"></span></span>
+              <span class="adm-toggle__text">
+                {{ 'admin.users.activeToggle' | translate }}
+                <span class="adm-toggle__hint">
+                  {{ (isSelf
+                        ? 'admin.users.activeToggleSelfHint'
+                        : 'admin.users.activeToggleHint') | translate }}
+                </span>
+              </span>
+            </label>
+
+            <div class="adm-role-grid adm-field--span2">
+              @for (opt of roleOptions; track opt.value) {
+                <label
+                  class="adm-role-card"
+                  [class.is-active]="form.role === opt.value"
+                  [attr.data-role]="opt.value"
+                >
+                  <input
+                    type="radio"
+                    name="role"
+                    [value]="opt.value"
+                    [(ngModel)]="form.role"
+                  />
+                  <span class="adm-role-card__dot"></span>
+                  <span class="adm-role-card__label">{{ opt.labelKey | translate }}</span>
+                </label>
+              }
+            </div>
+          </div>
+        </section>
+
+        <!-- 03 — Workspace -->
+        <!-- The same two fields mean different things per role: for a manager
+             the store is the restriction they work inside, for a content editor
+             it is only the catalog-preview context. The sub-label carries the
+             distinction; see isContentEditorRole. -->
+        <section class="adm-section">
+          <header class="adm-section__head">
+            <div>
+              <h2 class="adm-section__title">{{ 'admin.users.sectionWorkspace' | translate }}</h2>
+              <p class="adm-section__sub">
+                {{ (isContentEditorRole
+                    ? 'admin.users.sectionWorkspaceSubPreview'
+                    : 'admin.users.sectionWorkspaceSub') | translate }}
+              </p>
+            </div>
+          </header>
+
+          <div class="adm-fields">
+            <label class="adm-field">
+              <span class="adm-field__label">{{ 'admin.users.linkedStore' | translate }}</span>
+              <select
+                class="adm-input"
+                [(ngModel)]="form.store_uid"
+                name="store_uid"
+              >
+                <option value="">{{ 'admin.users.noStore' | translate }}</option>
+                @for (s of stores; track s.uid) {
+                  <option [value]="s.uid">{{ s.name }}</option>
+                }
+              </select>
+              @if (form.store_uid) {
+                <span class="adm-field__uid">{{ form.store_uid }}</span>
+              }
+            </label>
+
+            <label class="adm-field">
+              <span class="adm-field__label">{{ 'common.priceType' | translate }}</span>
+              <select
+                class="adm-input"
+                [(ngModel)]="form.price_type_uid"
+                name="price_type_uid"
+              >
+                <option value="">{{ 'admin.users.defaultPriceType' | translate }}</option>
+                @for (p of priceTypes; track p.uid) {
+                  <option [value]="p.uid">{{ p.name }}</option>
+                }
+              </select>
+              @if (form.price_type_uid) {
+                <span class="adm-field__uid">{{ form.price_type_uid }}</span>
+              }
+            </label>
+          </div>
+        </section>
+
+        <!-- 04 — Security -->
+        <section class="adm-section">
+          <header class="adm-section__head">
+            <div>
+              <h2 class="adm-section__title">{{ 'admin.users.sectionSecurity' | translate }}</h2>
+              <p class="adm-section__sub">
+                {{ (isCreating
+                    ? 'admin.users.sectionSecuritySubCreate'
+                    : 'admin.users.sectionSecuritySubEdit') | translate }}
+              </p>
+            </div>
+          </header>
+
+          <div class="adm-fields">
+            <label class="adm-field adm-field--span2">
+              <span class="adm-field__label">
+                {{ 'common.password' | translate }}
+                @if (isCreating) { <em>*</em> }
+              </span>
+              <div class="adm-pwd">
+                <input
+                  [type]="showPassword ? 'text' : 'password'"
+                  class="adm-input adm-input--mono"
+                  [(ngModel)]="form.password"
+                  name="password"
+                  [required]="isCreating"
+                  autocomplete="new-password"
+                />
+                <button
+                  type="button"
+                  class="adm-icon-btn"
+                  (click)="showPassword = !showPassword"
+                  [title]="(showPassword ? 'admin.users.hidePassword' : 'admin.users.showPassword') | translate"
+                  [attr.aria-label]="(showPassword ? 'admin.users.hidePassword' : 'admin.users.showPassword') | translate"
+                >
+                  <app-icon [name]="showPassword ? 'visibility_off' : 'visibility'"></app-icon>
+                </button>
+                <button
+                  type="button"
+                  class="adm-icon-btn"
+                  (click)="copyPassword()"
+                  [disabled]="!form.password"
+                  [title]="'admin.users.copyPassword' | translate"
+                  [attr.aria-label]="'admin.users.copyPassword' | translate"
+                >
+                  <app-icon name="content_copy"></app-icon>
+                </button>
+                <button
+                  type="button"
+                  class="adm-btn adm-btn--mini"
+                  (click)="generatePassword()"
+                >
+                  {{ 'common.generate' | translate }}
+                </button>
+              </div>
+            </label>
+
+            @if (form.password) {
+              <label class="adm-field adm-field--span2">
+                <span class="adm-field__label">{{ 'admin.users.confirmPassword' | translate }}</span>
+                <input
+                  type="password"
+                  class="adm-input adm-input--mono"
+                  [(ngModel)]="form.confirmPassword"
+                  name="confirmPassword"
+                  autocomplete="new-password"
+                />
+              </label>
+
+              @if (form.email) {
+                <label class="adm-toggle adm-field--span2">
+                  <input
+                    type="checkbox"
+                    [(ngModel)]="sendPasswordEmail"
+                    name="sendPasswordEmail"
+                  />
+                  <span class="adm-toggle__track"><span class="adm-toggle__dot"></span></span>
+                  <span class="adm-toggle__text">
+                    {{ 'admin.users.emailNewPasswordTo' | translate }} <strong>{{ form.email }}</strong>
+                  </span>
+                </label>
+              }
+            }
+          </div>
+        </section>
+
+        <!-- 05 — Notifications -->
+        <section class="adm-section">
+          <header class="adm-section__head">
+            <div>
+              <h2 class="adm-section__title">{{ 'admin.users.sectionNotifications' | translate }}</h2>
+              <p class="adm-section__sub">{{ 'admin.users.sectionNotificationsSub' | translate }}</p>
+            </div>
+          </header>
+
+          <div class="adm-fields">
+            <label class="adm-toggle adm-field--span2">
+              <input
+                type="checkbox"
+                [(ngModel)]="form.receive_email_notifications"
+                name="receive_email_notifications"
+              />
+              <span class="adm-toggle__track"><span class="adm-toggle__dot"></span></span>
+              <span class="adm-toggle__text">
+                {{ 'admin.users.receiveEmailNotifications' | translate }}
+              </span>
+            </label>
+
+            @if (form.role === 'manager') {
+              <label class="adm-toggle adm-field--span2">
+                <input
+                  type="checkbox"
+                  [(ngModel)]="form.all_orders"
+                  name="all_orders"
+                />
+                <span class="adm-toggle__track"><span class="adm-toggle__dot"></span></span>
+                <span class="adm-toggle__text">
+                  {{ 'admin.users.allOrdersToggle' | translate }}
+                  <span class="adm-toggle__hint">
+                    {{ 'admin.users.allOrdersToggleHint' | translate }}
+                  </span>
+                </span>
+              </label>
+            }
+          </div>
+        </section>
+
+      </form>
+    </div>
+  }
+</div>

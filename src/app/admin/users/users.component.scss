@@ -1,104 +1,34 @@
 @use '../../../styles/mixins' as *;
 
-.users-container {
+:host {
+  display: block;
 }
 
-// .btn-primary uses global styles from styles.scss
-.btn-primary {
-  @media (max-width: 768px) {
-    .btn-text {
-      display: none;
-    }
-  }
+/* Filters panel sits as the first section when expanded */
+.usl-filters {
+  padding-block: var(--spacing-sm-md);
 }
 
-// Filter toggle - hidden on desktop
-.filter-toggle {
-  display: none;
+/* Empty state inside an adm-section */
+.usl-empty {
+  padding: var(--spacing-lg);
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: var(--text-md);
 }
 
-.filters {
-  display: none;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: var(--spacing-sm-md);
-  margin-bottom: var(--spacing-sm-md);
-  padding: var(--spacing-sm-md);
-  background-color: var(--card-bg);
+/* ---------- Table (page-local until table partial lands) ---------- */
+.usl-table-wrap {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
   border-radius: var(--radius-md);
-  box-shadow: var(--shadow-sm);
-
-  &.expanded {
-    display: grid;
-  }
-
-  @media (max-width: 480px) {
-    grid-template-columns: 1fr;
-  }
-
-  @media (min-width: 481px) and (max-width: 768px) {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-.filter-group {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-sm);
-  min-width: 0;
-
-  label {
-    font-weight: 600;
-    color: var(--color-text-primary);
-    font-size: 0.85rem;
-    white-space: nowrap;
-  }
-
-  select, input {
-    padding: var(--spacing-sm);
-    border: 2px solid var(--color-border);
-    border-radius: var(--radius-md);
-    font-size: 15px;
-    width: 100%;
-    min-width: 0;
-    box-sizing: border-box;
-    background: var(--input-bg);
-    color: var(--input-text);
-    transition: border-color 0.3s ease, box-shadow 0.3s ease;
-
-    &::placeholder {
-      color: var(--color-text-muted);
-    }
-
-    &:focus {
-      outline: none;
-      border-color: var(--color-primary);
-      box-shadow: var(--focus-ring);
-    }
-  }
-
-  select {
-    cursor: pointer;
-  }
-}
-
-.search-group {
-  @media (min-width: 769px) {
-    grid-column: span 1;
-  }
-}
-
-.users-table {
-  background-color: var(--card-bg);
-  border-radius: 8px;
-  box-shadow: var(--shadow-sm);
   overflow-x: auto;
-  margin-bottom: 8px;
 }
 
-table {
+.data-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.9rem;
+  font-size: var(--text-md);
 
   thead {
     background: var(--table-header-bg);
@@ -108,7 +38,7 @@ table {
       @include table-cell-padding;
       text-align: left;
       font-weight: 600;
-      font-size: 0.85rem;
+      font-size: var(--text-sm);
       white-space: nowrap;
     }
   }
@@ -117,8 +47,13 @@ table {
     tr {
       border-bottom: 1px solid var(--color-border-light);
 
-      &:hover {
-        background-color: var(--color-background-secondary);
+      &:last-child { border-bottom: none; }
+
+      &.usl-row {
+        cursor: pointer;
+        transition: background-color .15s ease;
+
+        &:hover { background-color: var(--color-background-secondary); }
       }
     }
 
@@ -127,542 +62,140 @@ table {
       color: var(--color-text-primary);
     }
   }
-}
 
-// Role colors
-.role-admin {
-  color: var(--color-danger);
-  font-weight: 600;
-}
-
-.role-manager {
-  color: var(--color-primary);
-  font-weight: 600;
-}
-
-.role-user {
-  color: var(--color-info);
-  font-weight: 600;
-}
-
-.role-client {
-  color: var(--color-text-muted);
-  font-weight: 600;
-}
-
-.actions {
-  display: flex;
-  gap: var(--spacing-sm);
-
-  button {
-    @include button-typography;
-    padding: var(--spacing-sm) var(--spacing-md-sm);
-    min-height: var(--touch-target-min);
-    border: none;
-    border-radius: var(--radius-md);
-    cursor: pointer;
-
-    &.btn-edit {
-      background-color: var(--color-info);
-      color: var(--color-text-inverse);
-
-      &:hover:not(:disabled) {
-        background-color: var(--color-info-dark);
-      }
-    }
-
-    &.btn-delete {
-      background-color: var(--color-danger);
-      color: var(--color-text-inverse);
-
-      &:hover:not(:disabled) {
-        background-color: var(--color-danger-dark);
-      }
-    }
+  .actions-col {
+    width: 1%;
+    white-space: nowrap;
   }
 }
 
-.no-data {
-  text-align: center;
-  padding: 40px;
-  color: var(--color-text-muted);
-}
-
-.pagination {
+/* ---------- Mobile cards ----------
+   .desktop-only / .mobile-only are switched by styles/admin/_tables.scss. */
+.usl-cards {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: var(--spacing-md);
-  border-top: 1px solid var(--color-border-light);
-  background-color: var(--color-background-secondary);
-
-  button {
-    @include pagination-button;
-    background-color: var(--color-info);
-
-    &:hover:not(:disabled) {
-      background-color: var(--color-info-dark);
-    }
-
-    &:disabled {
-      background-color: var(--color-disabled);
-    }
-  }
-}
-
-.loading, .error {
-  padding: 20px;
-  text-align: center;
-  background-color: var(--card-bg);
-  border-radius: 8px;
-  margin-bottom: 20px;
-}
-
-.error {
-  color: var(--color-danger);
-}
-
-// Desktop/Mobile visibility
-.desktop-only {
-  display: block;
-}
-
-.mobile-only {
-  display: none;
-}
-
-// Mobile Card Layout
-.users-cards {
   flex-direction: column;
-  gap: 12px;
+  gap: var(--spacing-sm);
 }
 
-.user-card {
+.usl-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
   background: var(--card-bg);
   border: 1px solid var(--card-border);
-  border-radius: 8px;
-  box-shadow: var(--shadow-sm);
+  border-radius: var(--radius-md);
   overflow: hidden;
-  cursor: pointer;
-  transition: box-shadow 0.2s, border-color 0.2s;
+  transition: border-color .15s ease;
 
-  &:hover {
-    border-color: var(--color-primary);
+  &:hover { border-color: var(--color-primary); }
+
+  &__head {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: var(--spacing-sm-md) var(--spacing-md);
+    padding-right: calc(var(--icon-md) + var(--spacing-md));
+    cursor: pointer;
+    user-select: none;
+    border-bottom: 1px solid var(--color-border-light);
   }
 
-  &:active {
-    background-color: var(--color-background-secondary);
-  }
-
-  &.expanded {
-    border-color: var(--color-primary);
-    box-shadow: var(--shadow-lg);
-  }
-
-  .card-header {
-    padding: 12px 16px;
-  }
-
-  .card-title {
+  &__title {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    margin-bottom: 4px;
-
-    .user-name {
-      font-weight: 600;
-      color: var(--color-text-primary);
-      font-size: 1rem;
-      flex: 1;
-    }
-
-    .role-badge {
-      @include badge-typography;
-      font-size: 0.75rem;
-      white-space: nowrap;
-      text-transform: capitalize;
-
-      &.role-admin {
-        background-color: var(--status-error-bg);
-        color: var(--color-danger);
-      }
-
-      &.role-manager {
-        background-color: var(--color-primary-container);
-        color: var(--color-primary);
-      }
-
-      &.role-user {
-        background-color: var(--status-info-bg);
-        color: var(--color-info);
-      }
-
-      &.role-client {
-        background-color: var(--color-background-secondary);
-        color: var(--color-text-muted);
-      }
-    }
+    gap: var(--spacing-sm);
+    min-width: 0;
   }
 
-  .card-subtitle {
-    font-size: 0.85rem;
+  &__name {
+    font-size: var(--text-md);
+    font-weight: 600;
+    color: var(--color-text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  &__sub {
+    font-size: var(--text-sm);
     color: var(--color-text-muted);
   }
 
-  .card-summary {
+  &__expand {
+    position: absolute;
+    top: 50%;
+    right: var(--spacing-md);
+    transform: translateY(-50%);
+    color: var(--color-text-muted);
+    font-size: var(--icon-md);
+  }
+
+  &__row {
     display: flex;
-    align-items: center;
-    gap: 16px;
-    padding: 8px 16px;
-    background-color: var(--color-background-secondary);
-    border-top: 1px solid var(--color-border-light);
-
-    .summary-item {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      font-size: 0.85rem;
-
-      .label {
-        color: var(--color-text-muted);
-      }
-
-      .value {
-        font-weight: 600;
-        color: var(--color-text-primary);
-      }
-    }
-
-    .expand-icon {
-      margin-left: auto;
-      color: var(--color-text-muted);
-      font-size: 20px;
-      transition: transform 0.2s;
-    }
-  }
-
-  &.expanded .card-summary .expand-icon {
-    transform: rotate(180deg);
-  }
-
-  .card-details {
-    padding: 12px 16px;
-    background-color: var(--color-background-secondary);
-    border-top: 1px solid var(--color-border-light);
-
-    .detail-row {
-      display: flex;
-      justify-content: space-between;
-      padding: 8px 0;
-      font-size: 0.9rem;
-
-      &:not(:last-child) {
-        border-bottom: 1px solid var(--color-border-light);
-      }
-
-      .label {
-        color: var(--color-text-muted);
-      }
-
-      .value {
-        color: var(--color-text-primary);
-        font-weight: 500;
-        text-align: right;
-      }
-    }
-
-    .card-actions {
-      display: flex;
-      gap: var(--spacing-md-sm);
-      margin-top: 12px;
-      padding-top: 12px;
-      border-top: 1px solid var(--color-border-light);
-    }
-  }
-}
-
-.btn-edit-card {
-  @include button-typography;
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--spacing-sm);
-  padding: var(--spacing-sm-md) var(--spacing-md);
-  min-height: var(--touch-target-min);
-  background-color: var(--color-info);
-  color: var(--color-text-inverse);
-  border: none;
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  transition: background-color 0.2s;
-
-  .material-icons {
-    font-size: 18px;
-  }
-
-  &:hover:not(:disabled) {
-    background-color: var(--color-info-dark);
-  }
-}
-
-.btn-delete-card {
-  @include button-typography;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--spacing-sm);
-  padding: var(--spacing-sm-md) var(--spacing-md);
-  min-height: var(--touch-target-min);
-  background-color: var(--color-danger);
-  color: var(--color-text-inverse);
-  border: none;
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  transition: background-color 0.2s;
-
-  .material-icons {
-    font-size: 18px;
-  }
-
-  &:hover:not(:disabled) {
-    background-color: var(--color-danger-dark);
-  }
-}
-
-.no-data-card {
-  text-align: center;
-  padding: 40px 20px;
-  background: var(--card-bg);
-  border-radius: 8px;
-  color: var(--color-text-muted);
-  font-size: 0.95rem;
-}
-
-// Modal styles
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: var(--overlay-bg);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-}
-
-.modal-content {
-  background-color: var(--card-bg);
-  padding: 24px;
-  border-radius: 8px;
-  max-width: 600px;
-  width: 90%;
-  max-height: 90vh;
-  overflow-y: auto;
-
-  h2 {
-    margin-top: 0;
-    margin-bottom: 20px;
-    color: var(--color-text-primary);
-    font-size: 1.25rem;
-  }
-}
-
-.form-group {
-  margin-bottom: 15px;
-
-  label {
-    display: block;
-    margin-bottom: 5px;
-    font-weight: 600;
-    color: var(--color-text-primary);
-    font-size: 0.9rem;
-  }
-
-  input, select {
-    width: 100%;
-    padding: var(--spacing-sm);
-    border: 2px solid var(--color-border);
-    border-radius: var(--radius-md);
-    font-size: 15px;
-    font-family: inherit;
-    box-sizing: border-box;
-    background: var(--input-bg);
-    color: var(--input-text);
-    transition: border-color 0.3s ease, box-shadow 0.3s ease;
-
-    &::placeholder {
-      color: var(--color-text-muted);
-    }
-
-    &:focus {
-      outline: none;
-      border-color: var(--color-primary);
-      box-shadow: var(--focus-ring);
-    }
-  }
-
-  .password-field {
-    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
     gap: var(--spacing-sm);
+    padding: 6px var(--spacing-md);
+    font-size: var(--text-sm);
 
-    input {
-      flex: 1;
-      min-width: 0;
-      font-family: monospace;
-    }
-
-    .btn-generate {
-      white-space: nowrap;
-      padding: var(--spacing-sm) var(--spacing-sm-md);
-      border: 2px solid var(--color-primary);
-      border-radius: var(--radius-md);
-      background: transparent;
-      color: var(--color-primary);
-      font-size: 0.85rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: background-color 0.2s ease, color 0.2s ease;
-
-      &:hover {
-        background: var(--color-primary);
-        color: var(--color-on-primary);
-      }
-    }
+    & + & { border-top: 1px dashed var(--color-border-light); }
   }
-}
 
-.form-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: var(--spacing-sm-md);
-  margin-top: var(--spacing-md-lg);
-
-  button {
-    @include button-typography;
-    padding: var(--spacing-sm-md) var(--spacing-md-lg);
-    min-height: var(--touch-target-min);
-    border: none;
-    border-radius: var(--radius-md);
-    cursor: pointer;
-
-    &.btn-cancel {
-      background-color: var(--color-text-secondary);
-      color: var(--color-text-inverse);
-
-      &:hover:not(:disabled) {
-        background-color: var(--color-text-muted);
-      }
-    }
-
-    &.btn-save {
-      background-color: var(--color-success);
-      color: var(--color-text-inverse);
-
-      &:hover:not(:disabled) {
-        background-color: var(--color-success-dark);
-      }
-    }
-  }
-}
-
-// Mobile Responsive Styles
-@media (max-width: 768px) {
-  // Show filter toggle
-  .filter-toggle {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    width: 100%;
-    padding: 12px 16px;
-    margin-bottom: 12px;
-    background: var(--card-bg);
-    border: 1px solid var(--color-border);
-    border-radius: 8px;
+  &__label { color: var(--color-text-muted); flex: 0 0 auto; }
+  &__value {
     color: var(--color-text-primary);
-    font-size: 0.95rem;
     font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s;
-
-    .material-icons:first-child {
-      color: var(--color-info);
-    }
-
-    .toggle-icon {
-      margin-left: auto;
-      transition: transform 0.2s;
-
-      &.expanded {
-        transform: rotate(180deg);
-      }
-    }
-
-    &:hover {
-      border-color: var(--color-info);
-    }
+    text-align: right;
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
-  // Collapsible filters - margin override for mobile
-  .filters {
-    margin-bottom: var(--spacing-sm);
+  &__details { display: contents; }
+
+  &__actions {
+    display: flex;
+    justify-content: flex-end;
+    padding: var(--spacing-sm) var(--spacing-md) var(--spacing-sm-md);
+    border-top: 1px dashed var(--color-border-light);
   }
+}
 
-  .filter-group {
-    select, input {
-      padding: var(--spacing-sm-md);
-      font-size: 16px;
-      min-height: var(--touch-target-min);
-    }
+/* ---------- Login-gate status ----------
+   Blocked is the exception worth spotting in a scan, so only that state gets
+   colour — an "active" pill on nearly every row would be noise. */
+.usl-status {
+  display: inline-block;
+  padding: 2px var(--spacing-xs);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--color-text-muted);
+
+  &--blocked {
+    color: var(--color-danger);
+    border: 1px solid var(--color-danger);
+    background: var(--status-error-bg);
   }
+}
 
-  // Toggle visibility
-  .desktop-only {
-    display: none !important;
-  }
+/* Dim a blocked user's card so the list reads at a glance on mobile. */
+.usl-card.is-blocked .usl-card__head {
+  opacity: .7;
+}
 
-  .mobile-only {
-    display: flex !important;
-  }
-
-  // Mobile pagination
-  .mobile-pagination {
-    background: var(--card-bg);
-    border-radius: 8px;
-    margin-top: 12px;
-    flex-direction: column;
-    gap: 12px;
-    padding: 16px;
-
-    button {
-      width: 100%;
-    }
-
-    span {
-      text-align: center;
-      order: -1;
-    }
-  }
-
-  // Modal adjustments
-  .modal-content {
-    padding: 16px;
-    width: 95%;
-    max-height: 95vh;
-
-    h2 {
-      font-size: 1.1rem;
-    }
-  }
-
-  .form-actions {
-    flex-direction: column;
-
-    button {
-      width: 100%;
-    }
-  }
+/* Marks a row whose role is no longer assignable ("user"/"client"). The
+   account grants no access, so it wants attention without shouting. */
+.usl-legacy {
+  margin-left: var(--spacing-xs);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--color-warning, var(--color-text-muted));
+  cursor: help;
 }

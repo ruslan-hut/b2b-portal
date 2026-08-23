@@ -1,4 +1,4 @@
-import { Order, OrderItem, BackendOrderRequest, BackendOrderResponse, ShippingAddress, OrderStatus } from '../models/order.model';
+import { Order, OrderItem, BackendOrderRequest, BackendOrderResponse, ShippingAddress } from '../models/order.model';
 
 export class OrderMapper {
   /**
@@ -85,7 +85,8 @@ export class OrderMapper {
         priceDiscount: item.price_discount ? item.price_discount / 100 : undefined, // Price after discount without VAT
         priceAfterDiscountWithVat: item.price_after_discount_with_vat ? item.price_after_discount_with_vat / 100 : undefined, // Price after discount with VAT
         tax: item.tax ? item.tax / 100 : undefined, // VAT amount for this item
-        subtotal: (item.subtotal || item.total) / 100 // Convert from cents (total with VAT)
+        subtotal: (item.subtotal || item.total) / 100, // Convert from cents (total with VAT)
+        lineNumber: item.line_number // 1-based line position assigned at confirm (0 = draft/unset)
       })),
       totalAmount: response.total / 100, // Convert from cents
       discountPercent: response.discount_percent, // Client discount percentage
@@ -94,8 +95,9 @@ export class OrderMapper {
       totalVat: response.total_vat ? response.total_vat / 100 : undefined, // Total VAT amount (in cents, convert to regular)
       originalTotal: response.original_total ? response.original_total / 100 : undefined, // Original total before discount
       discountAmount: response.discount_amount ? response.discount_amount / 100 : undefined, // Total discount amount saved
-      status: response.status, // Pass through status as-is (CRM stage name or legacy status)
-      draft: response.draft ?? (response.status === 'draft'), // Use backend draft field, fallback to status check
+      deliveryCost: response.delivery_cost ? response.delivery_cost / 100 : undefined, // Delivery cost
+      clientPhase: response.client_phase ?? '', // Coarse phase; the internal stage name is not sent
+      draft: response.draft ?? false,
       createdAt: new Date(response.created_at),
       // Backend may return `updated_at` or `last_update` depending on API version.
       // Prefer `last_update` if present, otherwise fall back to `updated_at` or `created_at`.

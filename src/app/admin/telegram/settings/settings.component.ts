@@ -2,6 +2,8 @@ import { Component, OnInit, OnDestroy, ChangeDetectorRef, ChangeDetectionStrateg
 import { HttpClient } from '@angular/common/http';
 import { Subscription } from 'rxjs';
 import { environment } from '../../../../environments/environment';
+import { formatDateTime } from '../../../core/utils/date-format';
+import { ConfirmDialogService } from '../../../core/services/confirm-dialog.service';
 
 interface TelegramBotSettings {
   id: number;
@@ -61,6 +63,7 @@ export class SettingsComponent implements OnInit, OnDestroy {
 
   constructor(
     private http: HttpClient,
+    private confirmDialog: ConfirmDialogService,
     private cdr: ChangeDetectorRef
   ) {}
 
@@ -189,8 +192,8 @@ export class SettingsComponent implements OnInit, OnDestroy {
     );
   }
 
-  restartBot(): void {
-    if (!confirm('Are you sure you want to restart the Telegram bot?')) {
+  async restartBot(): Promise<void> {
+    if (!await this.confirmDialog.ask({ message: 'Are you sure you want to restart the Telegram bot?' })) {
       return;
     }
 
@@ -231,6 +234,6 @@ export class SettingsComponent implements OnInit, OnDestroy {
   }
 
   formatDate(dateString: string): string {
-    return new Date(dateString).toLocaleString();
+    return formatDateTime(dateString);
   }
 }

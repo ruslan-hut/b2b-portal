@@ -1,28 +1,27 @@
-import { Component, OnInit, HostListener, ChangeDetectionStrategy } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { TranslationService, Language } from '../../services/translation.service';
 import { Observable } from 'rxjs';
 
 @Component({
-    selector: 'app-language-switcher',
-    templateUrl: './language-switcher.component.html',
-    styleUrls: ['./language-switcher.component.scss'],
-    standalone: false,
-    changeDetection: ChangeDetectionStrategy.OnPush
+  selector: 'app-language-switcher',
+  templateUrl: './language-switcher.component.html',
+  styleUrls: ['./language-switcher.component.scss'],
+  standalone: false,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    '(document:click)': 'onDocumentClick($event)'
+  }
 })
-export class LanguageSwitcherComponent implements OnInit {
-  currentLanguage$: Observable<Language>;
+export class LanguageSwitcherComponent {
+  private readonly translationService = inject(TranslationService);
+
+  readonly currentLanguage$: Observable<Language> = this.translationService.currentLanguage$;
   isDropdownOpen = false;
-  
-  languages: { code: Language; label: string }[] = [
+
+  readonly languages: { code: Language; label: string }[] = [
     { code: 'en', label: 'English' },
     { code: 'uk', label: 'Українська' }
   ];
-
-  constructor(private translationService: TranslationService) {
-    this.currentLanguage$ = this.translationService.currentLanguage$;
-  }
-
-  ngOnInit(): void {}
 
   toggleDropdown(): void {
     this.isDropdownOpen = !this.isDropdownOpen;
@@ -38,8 +37,7 @@ export class LanguageSwitcherComponent implements OnInit {
   }
 
   getCurrentLanguageCode(): string {
-    const currentLang = this.translationService.getCurrentLanguage();
-    return currentLang.toUpperCase();
+    return this.translationService.getCurrentLanguage().toUpperCase();
   }
 
   getCurrentLanguageLabel(): string {
@@ -48,7 +46,6 @@ export class LanguageSwitcherComponent implements OnInit {
     return language ? language.label : '';
   }
 
-  @HostListener('document:click', ['$event'])
   onDocumentClick(event: MouseEvent): void {
     const target = event.target as HTMLElement;
     const clickedInside = target.closest('.language-switcher');
@@ -57,4 +54,3 @@ export class LanguageSwitcherComponent implements OnInit {
     }
   }
 }
-

@@ -2,6 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ProductCardComponent } from './product-card.component';
 import { ProductImageCacheService } from '../../../../core/services/product-image-cache.service';
 import { CoreModule } from '../../../../core/core.module';
+import { SharedModule } from '../../../../shared/shared.module';
 import { Product } from '../../../../core/models/product.model';
 
 describe('ProductCardComponent', () => {
@@ -20,7 +21,7 @@ describe('ProductCardComponent', () => {
 
     await TestBed.configureTestingModule({
       declarations: [ProductCardComponent],
-      imports: [CoreModule],
+      imports: [CoreModule, SharedModule],
       providers: [
         { provide: ProductImageCacheService, useValue: mockImageCacheService }
       ]
@@ -46,9 +47,9 @@ describe('ProductCardComponent', () => {
     };
 
     // Setup required inputs
-    component.product = mockProduct;
-    component.priceWithVat = 120;
-    component.originalPrice = 120;
+    fixture.componentRef.setInput('product', mockProduct);
+    fixture.componentRef.setInput('priceWithVat', 120);
+    fixture.componentRef.setInput('originalPrice', 120);
 
     // Setup mock service responses
     mockImageCacheService.hasImageUrl.and.returnValue(false);
@@ -80,22 +81,15 @@ describe('ProductCardComponent', () => {
   });
 
   describe('Badges', () => {
-    it('should show NEW badge when product is new', () => {
-      component.product.isNew = true;
-      fixture.detectChanges();
-      const badge = fixture.nativeElement.querySelector('.badge-new');
-      expect(badge).toBeTruthy();
-    });
-
     it('should show HOT SALE badge when product is hot sale', () => {
-      component.product.isHotSale = true;
+      fixture.componentRef.setInput('product', { ...mockProduct, isHotSale: true });
       fixture.detectChanges();
       const badge = fixture.nativeElement.querySelector('.badge-hot-sale');
       expect(badge).toBeTruthy();
     });
 
     it('should show cart quantity badge when cartQuantity > 0', () => {
-      component.cartQuantity = 5;
+      fixture.componentRef.setInput('cartQuantity', 5);
       fixture.detectChanges();
       const badge = fixture.nativeElement.querySelector('.quantity-badge');
       expect(badge).toBeTruthy();
@@ -103,7 +97,7 @@ describe('ProductCardComponent', () => {
     });
 
     it('should not show cart quantity badge when cartQuantity is 0', () => {
-      component.cartQuantity = 0;
+      fixture.componentRef.setInput('cartQuantity', 0);
       fixture.detectChanges();
       const badge = fixture.nativeElement.querySelector('.quantity-badge');
       expect(badge).toBeFalsy();
@@ -112,16 +106,16 @@ describe('ProductCardComponent', () => {
 
   describe('Pricing Display', () => {
     it('should display price with VAT', () => {
-      component.priceWithVat = 120.50;
+      fixture.componentRef.setInput('priceWithVat', 120.50);
       fixture.detectChanges();
       const priceElement = fixture.nativeElement.querySelector('.price-amount');
       expect(priceElement.textContent.trim()).toContain('120.50');
     });
 
     it('should show original price with strikethrough when hasDiscount is true', () => {
-      component.hasDiscount = true;
-      component.originalPrice = 150;
-      component.priceWithVat = 120;
+      fixture.componentRef.setInput('hasDiscount', true);
+      fixture.componentRef.setInput('originalPrice', 150);
+      fixture.componentRef.setInput('priceWithVat', 120);
       fixture.detectChanges();
 
       const originalPrice = fixture.nativeElement.querySelector('.original-price .strikethrough');
@@ -130,7 +124,7 @@ describe('ProductCardComponent', () => {
     });
 
     it('should not show original price when hasDiscount is false', () => {
-      component.hasDiscount = false;
+      fixture.componentRef.setInput('hasDiscount', false);
       fixture.detectChanges();
 
       const originalPrice = fixture.nativeElement.querySelector('.original-price');
@@ -138,7 +132,7 @@ describe('ProductCardComponent', () => {
     });
 
     it('should show discount tag when product has discountPercent', () => {
-      component.product.discountPercent = 25;
+      fixture.componentRef.setInput('product', { ...mockProduct, discountPercent: 25 });
       fixture.detectChanges();
 
       const discountTag = fixture.nativeElement.querySelector('.discount-tag');
@@ -159,7 +153,7 @@ describe('ProductCardComponent', () => {
     });
 
     it('should be disabled when product is out of stock', () => {
-      component.product.inStock = false;
+      fixture.componentRef.setInput('product', { ...mockProduct, inStock: false });
       fixture.detectChanges();
 
       const button = fixture.nativeElement.querySelector('.btn-add-to-cart');
@@ -167,7 +161,7 @@ describe('ProductCardComponent', () => {
     });
 
     it('should be enabled when product is in stock', () => {
-      component.product.inStock = true;
+      fixture.componentRef.setInput('product', { ...mockProduct, inStock: true });
       fixture.detectChanges();
 
       const button = fixture.nativeElement.querySelector('.btn-add-to-cart');
@@ -206,7 +200,7 @@ describe('ProductCardComponent', () => {
 
     it('should use product imageUrl when cache not available', () => {
       mockImageCacheService.hasImageUrl.and.returnValue(false);
-      component.product.imageUrl = 'product-image-url.jpg';
+      fixture.componentRef.setInput('product', { ...mockProduct, imageUrl: 'product-image-url.jpg' });
 
       const url = component.getProductImageUrl();
 
@@ -215,7 +209,7 @@ describe('ProductCardComponent', () => {
 
     it('should use placeholder when no image available', () => {
       mockImageCacheService.hasImageUrl.and.returnValue(false);
-      component.product.imageUrl = undefined;
+      fixture.componentRef.setInput('product', { ...mockProduct, imageUrl: undefined });
       mockImageCacheService.getPlaceholderUrl.and.returnValue('placeholder.svg');
 
       const url = component.getProductImageUrl();

@@ -1,10 +1,10 @@
-@if (product) {
+@if (product(); as product) {
   <div class="overlay-backdrop" (click)="onOverlayClick($event)">
     <div class="overlay-content" (click)="$event.stopPropagation()">
       <div class="overlay-header">
         <h2>{{ 'products.details' | translate }}</h2>
         <button class="close-btn" (click)="onClose()" [attr.aria-label]="'common.close' | translate">
-          <span class="material-icons">close</span>
+          <app-icon name="close"></app-icon>
         </button>
       </div>
       <div class="overlay-body">
@@ -34,15 +34,17 @@
                       <span class="price-currency"> {{ currencyName }}</span>
                     }
                   </div>
-                  <!-- Savings info -->
-                  <!--                <div class="savings-info" *ngIf="hasDiscount()">-->
-                  <!--                  <span class="savings-label">{{ 'products.youSave' | translate }}:</span>-->
-                  <!--                  <span class="savings-amount">{{ getSavingsAmount(product.price).toFixed(2) }}</span>-->
-                  <!--                  <span class="savings-percent">({{ currentDiscount }}%)</span>-->
-                <!--                </div>-->
-              } @else {
-                <span class="price-not-available">{{ 'products.priceNotAvailable' | translate }}</span>
-              }
+                  <span class="price-vat">
+                    @if (getVatRate() > 0) {
+                      {{ 'products.vatIncluded' | translate: { rate: getVatRate() } }}
+                    } @else {
+                      {{ 'products.vatNone' | translate }}
+                    }
+                  </span>
+                } @else {
+                  <span class="price-not-available">{{ 'products.priceNotAvailable' | translate }}</span>
+                }
+              </div>
             </div>
           </div>
           <div class="product-status-section">
@@ -60,16 +62,30 @@
             </div>
           </div>
         </div>
-      </div>
-      <div class="product-info-section">
-        <div class="product-category-badge">{{ product.category }}</div>
-        <h3 class="product-name">{{ product.name }}</h3>
-        <div class="product-description-section">
-          <h4 class="section-label">{{ 'products.description' | translate }}</h4>
-          <div class="product-description" [innerHTML]="sanitizedDescription"></div>
+        <div class="product-info-section">
+          <div class="product-category-badge">{{ product.category }}</div>
+          <h3 class="product-name">{{ product.name }}</h3>
+          <div class="product-description-section">
+            <h4 class="section-label">{{ 'products.description' | translate }}</h4>
+            <div class="product-description" [innerHTML]="sanitizedDescription"></div>
+          </div>
+          @if (hasCertificationInfo) {
+            <div class="product-certification-section">
+              <h4 class="section-label">{{ 'products.certification' | translate }}</h4>
+              @if (certifiedAnyCountry) {
+                <p class="certification-any">{{ 'products.certifiedAnyCountry' | translate }}</p>
+              }
+              @if (certifiedCountries.length > 0) {
+                <ul class="certification-countries">
+                  @for (code of certifiedCountries; track code) {
+                    <li class="certification-country">{{ code }}</li>
+                  }
+                </ul>
+              }
+            </div>
+          }
         </div>
       </div>
     </div>
   </div>
-</div>
 }

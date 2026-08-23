@@ -1,0 +1,251 @@
+<article class="pp-article">
+  @if (title) {
+    <h1 class="pp-article__title">{{ title }}</h1>
+  }
+
+  @if (summary) {
+    <p class="pp-article__summary">{{ summary }}</p>
+  }
+
+  @for (block of blocks; track block.uid) {
+    @switch (block.block_type) {
+
+      @case ('heading') {
+        @if (headingLevel(block) === 2) {
+          <h2 class="pp-h2">{{ payloadOf(block)['text'] }}</h2>
+        } @else {
+          <h3 class="pp-h3">{{ payloadOf(block)['text'] }}</h3>
+        }
+      }
+
+      @case ('text') {
+        <div class="pp-text" [innerHTML]="htmlOf(block)"></div>
+      }
+
+      @case ('callout') {
+        <aside class="pp-callout" [attr.data-tone]="calloutTone(block)">
+          <app-icon [name]="calloutIcon(block)" class="pp-callout__icon"></app-icon>
+          <span class="pp-callout__text">{{ payloadOf(block)['text'] }}</span>
+        </aside>
+      }
+
+      @case ('divider') {
+        <hr class="pp-divider" />
+      }
+
+      @case ('image') {
+        @if (block.settings?.['file_uid']; as uid) {
+          <figure class="pp-figure" [attr.data-width]="block.settings?.['width'] || 'full'">
+            <!-- Loaded through the pipe, not straight from the API path: the
+                 file endpoint wants a bearer token an <img> cannot send. -->
+            @if (uid | contentFileUrl | async; as url) {
+              <img [src]="url" [alt]="payloadOf(block)['caption'] || ''" />
+            }
+            @if (payloadOf(block)['caption']) {
+              <figcaption>{{ payloadOf(block)['caption'] }}</figcaption>
+            }
+          </figure>
+        }
+      }
+
+      <!-- Two shapes, one block. `cover` is the picture-led index: the image
+           carries the meaning and the title captions it, which is how a
+           category page is scanned. `list` is the original icon+title row. -->
+      @case ('link_cards') {
+        @if (cardDisplay(block) === 'cover') {
+          <div class="pp-covers" [attr.data-columns]="cardColumns(block)">
+            @for (item of cardsOf(block); track trackByIndex($index)) {
+              @if (!linksActive) {
+                <!-- Inert in the editor preview: following a card would
+                     discard unsaved work. An <a> with no href is already
+                     unfocusable and unclickable, so nothing else is needed. -->
+                <a class="pp-cover is-inert">
+                  <ng-container
+                    [ngTemplateOutlet]="coverBody"
+                    [ngTemplateOutletContext]="{ $implicit: item }"
+                  ></ng-container>
+                </a>
+              } @else if (cardIsExternal(item)) {
+                <a class="pp-cover" [href]="item['url']" target="_blank" rel="noopener noreferrer">
+                  <ng-container
+                    [ngTemplateOutlet]="coverBody"
+                    [ngTemplateOutletContext]="{ $implicit: item }"
+                  ></ng-container>
+                </a>
+              } @else {
+                <a class="pp-cover" [routerLink]="cardLink(item)">
+                  <ng-container
+                    [ngTemplateOutlet]="coverBody"
+                    [ngTemplateOutletContext]="{ $implicit: item }"
+                  ></ng-container>
+                </a>
+              }
+            }
+          </div>
+        } @else {
+          <div class="pp-linkcards">
+            @for (item of cardsOf(block); track trackByIndex($index)) {
+              @if (linksActive) {
+                <a class="pp-linkcard" [routerLink]="cardLink(item)">
+                  <app-icon [name]="item['icon'] || 'chevron_right'" class="pp-linkcard__icon"></app-icon>
+                  <span class="pp-linkcard__title">{{ item['title'] }}</span>
+                  @if (item['description']) {
+                    <span class="pp-linkcard__sub">{{ item['description'] }}</span>
+                  }
+                </a>
+              } @else {
+                <span class="pp-linkcard is-inert">
+                  <app-icon [name]="item['icon'] || 'chevron_right'" class="pp-linkcard__icon"></app-icon>
+                  <span class="pp-linkcard__title">{{ item['title'] }}</span>
+                  @if (item['description']) {
+                    <span class="pp-linkcard__sub">{{ item['description'] }}</span>
+                  }
+                </span>
+              }
+            }
+          </div>
+        }
+      }
+
+      <!-- The signature element: a document is a versioned regulatory
+           artefact tied to a market, so the row carries provenance. -->
+      @case ('files') {
+        <div class="pp-docs">
+          @for (group of documentGroups(block); track group.key) {
+            @if (group.key) {
+              <h3 class="pp-docs__group">{{ group.key }}</h3>
+            }
+            @for (row of group.rows; track trackByIndex($index)) {
+              <div class="pp-doc" [class.is-superseded]="row.superseded">
+                <app-icon [name]="iconForFile(row)" class="pp-doc__icon"></app-icon>
+
+                <div class="pp-doc__body">
+                  <div class="pp-doc__line1">
+                    <span class="pp-doc__name">{{ row.label }}</span>
+                    <span class="pp-doc__chips">
+                      @if (row.language) { <span class="pp-chip">{{ row.language }}</span> }
+                      @if (row.market) { <span class="pp-chip pp-chip--market">{{ row.market }}</span> }
+                    </span>
+                  </div>
+                  <div class="pp-doc__line2">
+                    @if (row.file?.revision_date) {
+                      <span class="pp-doc__rev">
+                        {{ 'partners.revision' | translate }} {{ row.file!.revision_date | dateFormat }}
+                      </span>
+                    }
+                    @if (row.file?.size_bytes) {
+                      <span class="pp-doc__size">{{ formatSize(row.file!.size_bytes) }}</span>
+                    }
+                    @if (row.superseded) {
+                      <span class="pp-doc__status pp-doc__status--old">
+                        {{ 'partners.superseded' | translate }}
+                      </span>
+                      @if (row.replacement?.revision_date) {
+                        <span class="pp-doc__replaced">
+                          {{ 'partners.replacedBy' | translate }}
+                          {{ row.replacement!.revision_date | dateFormat }}
+                        </span>
+                      }
+                    } @else if (row.file) {
+                      <span class="pp-doc__status pp-doc__status--current">
+                        {{ 'partners.current' | translate }}
+                      </span>
+                    } @else {
+                      <!-- An item whose file was never chosen, or was deleted from
+                           the library. Named rather than rendered as a row with no
+                           action, which reads as a broken download. -->
+                      <span class="pp-doc__status pp-doc__status--missing">
+                        {{ 'partners.fileMissing' | translate }}
+                      </span>
+                    }
+                  </div>
+                </div>
+
+                <!-- A superseded row keeps its link to the replacement
+                     but loses the primary download, so the current
+                     version is the obvious next tap. -->
+                <!-- Buttons, not links: the endpoint authenticates a bearer
+                     token, so the bytes are fetched through HttpClient and
+                     handed to the browser as a save. An href would 401. -->
+                @if (row.superseded && row.replacement) {
+                  <button type="button" class="pp-doc__link" (click)="download(row.replacement)">
+                    {{ 'partners.openCurrent' | translate }}
+                    <app-icon name="arrow_forward"></app-icon>
+                  </button>
+                } @else if (row.file) {
+                  <button
+                    type="button"
+                    class="pp-doc__download"
+                    (click)="download(row.file)"
+                    [disabled]="downloading.has(row.file.uid)"
+                    [attr.aria-label]="('partners.download' | translate) + ': ' + row.label"
+                  >
+                    <app-icon [name]="downloading.has(row.file.uid) ? 'hourglass_empty' : 'download'"></app-icon>
+                    <span class="pp-doc__download-label">{{ 'partners.download' | translate }}</span>
+                  </button>
+                }
+              </div>
+            }
+          }
+        </div>
+      }
+    }
+  }
+
+  <!-- Declared once and outlet into every host element: a cover card is an
+       internal link, an external link or an inert preview, and only the host
+       tag differs between them. Duplicating the body three ways is how the
+       three drift apart. -->
+  <ng-template #coverBody let-item>
+    <span class="pp-cover__media">
+      @if (item['file_uid']; as uid) {
+        <!-- Blank while the bytes are in flight rather than a broken-image
+             icon: the box is already tinted, so an empty one reads as loading. -->
+        @if (uid | contentFileUrl | async; as url) {
+          <img [src]="url" [alt]="item['title'] || ''" />
+        }
+      } @else {
+        <!-- No picture chosen, or the file was removed from the library. A
+             card is still a link, so it keeps its shape and shows its icon
+             rather than collapsing to a caption. -->
+        <app-icon [name]="item['icon'] || 'image'" class="pp-cover__placeholder"></app-icon>
+      }
+    </span>
+    <span class="pp-cover__foot">
+      <app-icon [name]="item['icon'] || 'description'" class="pp-cover__icon"></app-icon>
+      <span class="pp-cover__text">
+        <span class="pp-cover__title">{{ item['title'] }}</span>
+        @if (item['description']) {
+          <span class="pp-cover__sub">{{ item['description'] }}</span>
+        }
+      </span>
+    </span>
+  </ng-template>
+
+  @if (children.length) {
+    <div class="pp-children">
+      <h2 class="pp-h2">{{ 'partners.inThisSection' | translate }}</h2>
+      <div class="pp-linkcards">
+        @for (child of children; track trackByUid($index, child)) {
+          @if (linksActive) {
+            <a class="pp-linkcard" [routerLink]="childLink(child)" [class.is-draft]="child.status !== 'published'">
+              <app-icon [name]="child.icon || 'chevron_right'" class="pp-linkcard__icon"></app-icon>
+              <span class="pp-linkcard__title">{{ child.title }}</span>
+              @if (child.summary) {
+                <span class="pp-linkcard__sub">{{ child.summary }}</span>
+              }
+            </a>
+          } @else {
+            <span class="pp-linkcard is-inert" [class.is-draft]="child.status !== 'published'">
+              <app-icon [name]="child.icon || 'chevron_right'" class="pp-linkcard__icon"></app-icon>
+              <span class="pp-linkcard__title">{{ child.title }}</span>
+              @if (child.summary) {
+                <span class="pp-linkcard__sub">{{ child.summary }}</span>
+              }
+            </span>
+          }
+        }
+      </div>
+    </div>
+  }
+</article>

@@ -1,4 +1,19 @@
 <div class="order-history-container">
+  <!-- Catalog order form: download the catalog as a spreadsheet, fill in the
+       quantity column, upload it back as an order. -->
+  <div class="catalog-actions">
+    <button type="button" class="btn-action-bar" (click)="openExportDialog()">
+      <app-icon name="download"></app-icon>
+      <span class="action-text">{{ 'orders.exportCatalog' | translate }}</span>
+    </button>
+    @if (canImport) {
+      <button type="button" class="btn-action-bar" (click)="openImportDialog()">
+        <app-icon name="upload_file"></app-icon>
+        <span class="action-text">{{ 'orders.importOrder' | translate }}</span>
+      </button>
+    }
+  </div>
+
   @if (loading) {
     <div class="loading-container">
       <div class="spinner-large"></div>
@@ -8,9 +23,9 @@
 
   @if (!loading && orders.length === 0 && filteredOrders.length === 0) {
     <div class="empty-state">
-      <span class="material-icons empty-icon">inventory_2</span>
+      <app-icon name="inventory_2" class="empty-icon"></app-icon>
       <h2>{{ 'orders.noOrders' | translate }}</h2>
-      <p>{{ 'navigation.products' | translate }}</p>
+      <p>{{ 'orders.noOrdersHint' | translate }}</p>
       <button class="btn btn-primary" (click)="navigateToCatalog()">
         {{ 'navigation.products' | translate }}
       </button>
@@ -21,33 +36,33 @@
     <div class="filters-section" [class.expanded]="filtersExpanded">
       <div class="filters-header" (click)="toggleFilters()">
         <div class="filters-title">
-          <span class="material-icons filter-icon">filter_list</span>
+          <app-icon name="filter_list" class="filter-icon"></app-icon>
           <span>{{ 'common.filter' | translate }}</span>
           @if (hasActiveFilters()) {
             <span class="active-filters-badge"></span>
           }
         </div>
-        <span class="material-icons expand-icon">{{ filtersExpanded ? 'expand_less' : 'expand_more' }}</span>
+        <app-icon [name]="filtersExpanded ? 'expand_less' : 'expand_more'" class="expand-icon"></app-icon>
       </div>
       @if (filtersExpanded) {
         <div class="filters-container">
           <div class="filter-group">
-            <label for="status-filter">{{ 'orders.status' | translate }}:</label>
-            <select id="status-filter" [(ngModel)]="statusFilter" (change)="applyFilters()" class="filter-select">
+            <label for="status-filter">{{ 'orders.status' | translate }}</label>
+            <select id="status-filter" [(ngModel)]="statusFilter" (change)="applyFilters()" class="compact-select">
               @for (option of getStatusOptions(); track option) {
                 <option [value]="option.value">{{ option.label }}</option>
               }
             </select>
           </div>
           <div class="filter-group">
-            <label for="date-from">{{ 'orders.dateFrom' | translate }}:</label>
-            <input type="date" id="date-from" [(ngModel)]="dateFromFilter" (change)="applyFilters()" class="filter-input">
+            <label for="date-from">{{ 'orders.dateFrom' | translate }}</label>
+            <input type="date" id="date-from" [(ngModel)]="dateFromFilter" (change)="applyFilters()" class="compact-input">
           </div>
           <div class="filter-group">
-            <label for="date-to">{{ 'orders.dateTo' | translate }}:</label>
-            <input type="date" id="date-to" [(ngModel)]="dateToFilter" (change)="applyFilters()" class="filter-input">
+            <label for="date-to">{{ 'orders.dateTo' | translate }}</label>
+            <input type="date" id="date-to" [(ngModel)]="dateToFilter" (change)="applyFilters()" class="compact-input">
           </div>
-          <button class="btn btn-secondary" (click)="clearFilters()">{{ 'orders.clearFilters' | translate }}</button>
+          <button type="button" class="btn-action-bar" (click)="clearFilters()">{{ 'orders.clearFilters' | translate }}</button>
         </div>
       }
     </div>
@@ -62,24 +77,60 @@
   @if (!loading && filteredOrders.length > 0) {
     <div class="orders-list">
       @for (order of filteredOrders; track order) {
-        <div class="order-card" (click)="viewOrderDetails(order.id)">
+        <div class="order-card"
+             [ngClass]="'phase-' + order.clientPhase"
+             role="button"
+             tabindex="0"
+             (click)="viewOrderDetails(order.id)"
+             (keydown.enter)="viewOrderDetails(order.id)"
+             (keydown.space)="$event.preventDefault(); viewOrderDetails(order.id)">
           <div class="order-row">
-            <span class="order-date">{{ order.createdAt | date: 'shortDate' }}</span>
+            <span class="order-date">{{ order.createdAt | dateFormat }}</span>
             <span class="order-number">{{ order.number || order.orderNumber }}</span>
-            <span class="order-total">{{ order.totalAmount.toFixed(2) }}{{ currencyName ? ' ' + currencyName : '' }}</span>
-            <span class="status-badge" [ngClass]="getStatusClass(order.status)">
-              {{ getTranslatedStatus(order.status) }}
+            @if (order.clientPhase) {
+              <span class="status-badge">{{ phaseLabel(order.clientPhase) }}</span>
+            }
+            <span class="order-total">
+              <span class="amount">{{ formatTotal(order.totalAmount) }}</span>
+              @if (currencyName) {
+                <span class="currency">{{ currencyName }}</span>
+              }
             </span>
-            <span class="chevron-icon material-icons">chevron_right</span>
+            <app-icon name="chevron_right" class="chevron-icon"></app-icon>
           </div>
           @if (order.comment) {
             <div class="order-comment-row">
-              <span class="material-icons comment-icon">comment</span>
+              <app-icon name="comment" class="comment-icon"></app-icon>
               <span class="comment-text">{{ order.comment }}</span>
             </div>
           }
         </div>
       }
     </div>
+  }
+
+  @if (exportDialogOpen) {
+    <app-catalog-export-dialog
+      [categories]="categories"
+      [categoriesLoading]="categoriesLoading"
+      [exporting]="exporting"
+      (confirmed)="onExportConfirmed($event)"
+      (closed)="closeExportDialog()"
+    />
+  }
+
+  @if (importDialogOpen) {
+    <app-order-import-dialog
+      [parsing]="importParsing"
+      [applying]="importApplying"
+      [result]="importResult"
+      [currencyName]="currencyName"
+      [cartItemCount]="cartItemCount"
+      [fileName]="importFileName"
+      [columns]="importColumns"
+      (fileSelected)="onImportFileSelected($event)"
+      (confirmed)="onImportConfirmed($event)"
+      (closed)="closeImportDialog()"
+    />
   }
 </div>

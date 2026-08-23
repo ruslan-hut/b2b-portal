@@ -1,0 +1,28 @@
+/* ============================================================================
+   LIVE THEME OVERRIDES — safe to edit on a running installation
+   ============================================================================
+   Loaded last, after the compiled stylesheet, so anything declared here wins on
+   source order. Intended for a colour tweak that cannot wait for a rebuild and
+   redeploy: change the file on the server, hard-refresh, done.
+
+   This is an escape hatch, not the mechanism. A change that outlives the
+   afternoon belongs in src/brand/_<installation>.scss, where it is reviewed,
+   versioned, and checked by `npm run check:theme` — none of which applies to
+   this file.
+
+   Ships empty. It exists rather than being absent so a stock installation does
+   not log a 404 for it on every page load.
+
+   Override tokens, not selectors — the token layer is the contract, component
+   class names are not. See docs/development/theming-contract.md.
+
+     :root, [data-theme="light"] { --color-primary: #0f6f68; }
+     [data-theme="dark"]         { --color-primary: #4fb3aa; }
+     @media (prefers-color-scheme: dark) {
+       [data-theme="system"]     { --color-primary: #4fb3aa; }
+     }
+
+   Whatever you change, keep --color-primary at 4.5:1 against
+   --color-on-primary. White text sits directly on it in the table header,
+   primary buttons and the active nav item.
+   ============================================================================ */

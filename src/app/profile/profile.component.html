@@ -78,6 +78,14 @@
             }
           }
           <!-- Non-cumulative (fixed_discount=false, cumulative=false): show nothing -->
+          <!-- Bonus discount: shown separately because it is applied only after a
+               product's discount limit, so it cannot be folded into the number above -->
+          @if (discountInfo && discountInfo.additional_discount) {
+            <div class="field-group">
+              <label>{{ 'profile.additionalDiscount' | translate }}</label>
+              <span class="field-value">+{{ discountInfo.additional_discount }}%</span>
+            </div>
+          }
           @if (client.vat_rate) {
             <div class="field-group">
               <label>{{ 'profile.vatRate' | translate }}</label>
@@ -171,16 +179,13 @@
             </div>
             <div class="form-group">
               <label for="language">{{ 'profile.language' | translate }}</label>
-              <select
+              <input
+                type="text"
                 id="language"
-                [value]="selectedLanguage"
-                (change)="changeLanguage($event)"
-                [disabled]="languageLoading"
+                [value]="(client.language || '').toUpperCase()"
+                readonly
                 >
-                @for (lang of availableLanguages; track lang) {
-                  <option [value]="lang" [selected]="lang === selectedLanguage">{{ lang.toUpperCase() }}</option>
-                }
-              </select>
+              <span class="field-hint">{{ 'profile.languageHint' | translate }}</span>
             </div>
           </div>
           <!-- Success/Error Messages -->
@@ -196,6 +201,59 @@
           }
         </form>
       </section>
+      <!-- Branches: the legal entities orders are invoiced to. Read-only — the
+           ERP owns these records; the client picks which one an address bills
+           to, but never edits the details themselves. Hidden for accounts that
+           have no branches. -->
+      @if (branches.length > 0) {
+        <section class="profile-section branches-section">
+          <div class="section-header">
+            <h2>{{ 'profile.branches' | translate }}</h2>
+          </div>
+          <p class="branches-hint">{{ 'profile.branchesHint' | translate }}</p>
+          <div class="branches-list">
+            @for (branch of branches; track branch.uid) {
+              <div class="branch-card" [class.inactive]="!branch.active">
+                <div class="branch-card-header">
+                  <span class="branch-name">{{ branch.name }}</span>
+                  @if (!branch.active) {
+                    <span class="inactive-badge" [title]="'profile.branchInactiveHint' | translate">
+                      {{ 'profile.branchInactiveBadge' | translate }}
+                    </span>
+                  }
+                </div>
+                <div class="branch-facts">
+                  <div class="branch-fact">
+                    <span class="branch-fact-label">{{ 'profile.branchVatNumber' | translate }}</span>
+                    <span class="branch-fact-value" [class.muted]="!branch.vat_number">
+                      {{ branch.vat_number || ('profile.branchNotSet' | translate) }}
+                    </span>
+                  </div>
+                  @if (branch.vat_rate !== undefined && branch.vat_rate !== null) {
+                    <div class="branch-fact">
+                      <span class="branch-fact-label">{{ 'profile.branchVatRate' | translate }}</span>
+                      <span class="branch-fact-value">{{ branch.vat_rate }}%</span>
+                    </div>
+                  }
+                  <div class="branch-fact">
+                    <span class="branch-fact-label">{{ 'profile.branchRegistrationNumber' | translate }}</span>
+                    <span class="branch-fact-value" [class.muted]="!branch.business_registration_number">
+                      {{ branch.business_registration_number || ('profile.branchNotSet' | translate) }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+        </section>
+      }
+
+      <!-- Client API: always on the page. Without access it is how a client
+           learns the feature exists and where to read about it. -->
+      <section class="profile-section api-keys-section">
+        <app-profile-api-keys [access]="apiAccess"></app-profile-api-keys>
+      </section>
+
       <!-- Addresses Section -->
       <section class="profile-section addresses-section">
         <div class="section-header">
@@ -235,6 +293,22 @@
                         {{ 'profile.defaultBadge' | translate }}
                       </span>
                     }
+                    @if (address.is_official) {
+                      <span class="official-badge">
+                        {{ 'profile.officialBadge' | translate }}
+                      </span>
+                    }
+                    <!-- Display only: the branch an address belongs to is set by
+                         staff and by the ERP, never from here. -->
+                    @if (getBranchName(address); as branchName) {
+                      <span class="branch-badge" [class.inactive]="isBranchInactive(address)">{{ branchName }}</span>
+                    }
+                    @if (isBranchInactive(address)) {
+                      <span
+                        class="inactive-badge"
+                        [title]="'profile.branchInactiveHint' | translate"
+                      >{{ 'profile.branchInactiveBadge' | translate }}</span>
+                    }
                   </div>
                   <div class="address-actions">
                     @if (!address.is_default) {
@@ -244,6 +318,15 @@
                         [title]="'profile.setDefault' | translate"
                         >
                         <span class="star-icon">&#9734;</span>
+                      </button>
+                    }
+                    @if (!address.is_official) {
+                      <button
+                        class="btn btn-icon"
+                        (click)="setOfficialAddress(address)"
+                        [title]="'profile.setOfficial' | translate"
+                        >
+                        <span class="official-icon">&#9873;</span>
                       </button>
                     }
                     <button
@@ -354,10 +437,40 @@
               placeholder="{{ 'profile.addressPlaceholder' | translate }}"
             ></textarea>
           </div>
+          <!-- Which legal entity orders to this address are billed to. Only
+               active branches are offered; the account itself is the default. -->
+          @if (branches.length > 0) {
+            <div class="form-group">
+              <label for="branch_uid">{{ 'profile.addressBranch' | translate }}</label>
+              <select id="branch_uid" formControlName="branch_uid">
+                <option value="">{{ 'profile.addressBranchNone' | translate }}</option>
+                @for (branch of selectableBranches; track branch.uid) {
+                  <option [value]="branch.uid">
+                    {{ branch.name }}@if (!branch.active) { — {{ 'profile.branchInactiveBadge' | translate }}}
+                  </option>
+                }
+              </select>
+              <span class="field-hint">
+                @if (selectedFormBranchInactive) {
+                  {{ 'profile.branchInactiveHint' | translate }}
+                } @else {
+                  {{ 'profile.addressBranchHint' | translate }}
+                }
+              </span>
+            </div>
+          }
+
           <div class="form-group switch-group">
             <span class="switch-label">{{ 'profile.setAsDefault' | translate }}</span>
             <label class="switch">
               <input type="checkbox" formControlName="is_default">
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div class="form-group switch-group">
+            <span class="switch-label">{{ 'profile.setAsOfficial' | translate }}</span>
+            <label class="switch">
+              <input type="checkbox" formControlName="is_official">
               <span class="slider"></span>
             </label>
           </div>

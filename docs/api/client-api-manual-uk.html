@@ -1,0 +1,855 @@
+<title>Client API за 15 хвилин</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=IBM+Plex+Sans:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@400;600&display=swap">
+
+<style>
+:root{
+  --ground:#faf9fc;
+  --surface:#ffffff;
+  --surface-2:#f2f1f8;
+  --line:#e2e0ee;
+  --line-strong:#cdcae0;
+  --ink:#1a1a26;
+  --ink-muted:#5c5b74;
+  --accent:#4a5bc8;
+  --accent-soft:#e9ecfb;
+  --accent-ink:#2c3a90;
+  --on-accent:#ffffff;
+  --code-ground:#1b1b28;
+  --code-ink:#e6e6f2;
+  --code-line:#2c2c40;
+  --ok:#1c7a45;
+  --ok-soft:#e2f3e9;
+  --warn:#8a5a12;
+  --warn-soft:#fbf0d9;
+  --danger:#b3323f;
+  --danger-soft:#fbe9ea;
+  --radius:10px;
+  --shadow:0 1px 2px rgba(26,26,38,.05), 0 8px 24px -16px rgba(26,26,38,.35);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ground:#131320;
+    --surface:#1b1b2a;
+    --surface-2:#232337;
+    --line:#2f2f47;
+    --line-strong:#3d3d5a;
+    --ink:#e9e8f3;
+    --ink-muted:#a2a0bd;
+    --accent:#8f9dfb;
+    --accent-soft:#232a4d;
+    --accent-ink:#b6c0ff;
+  --on-accent:#12121e;
+    --on-accent:#12121e;
+    --code-ground:#0f0f1a;
+    --code-ink:#e6e6f2;
+    --code-line:#28283c;
+    --ok:#66d19a;
+    --ok-soft:#16321f;
+    --warn:#e0b062;
+    --warn-soft:#332711;
+    --danger:#f28b93;
+    --danger-soft:#361a1e;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.8);
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#131320;
+  --surface:#1b1b2a;
+  --surface-2:#232337;
+  --line:#2f2f47;
+  --line-strong:#3d3d5a;
+  --ink:#e9e8f3;
+  --ink-muted:#a2a0bd;
+  --accent:#8f9dfb;
+  --accent-soft:#232a4d;
+  --accent-ink:#b6c0ff;
+  --code-ground:#0f0f1a;
+  --code-ink:#e6e6f2;
+  --code-line:#28283c;
+  --ok:#66d19a;
+  --ok-soft:#16321f;
+  --warn:#e0b062;
+  --warn-soft:#332711;
+  --danger:#f28b93;
+  --danger-soft:#361a1e;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.8);
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:var(--ground);
+  color:var(--ink);
+  font-family:"IBM Plex Sans","Segoe UI",system-ui,sans-serif;
+  font-size:16.5px;
+  line-height:1.62;
+  -webkit-font-smoothing:antialiased;
+}
+.page{max-width:1120px;margin:0 auto;padding:0 24px 96px}
+
+/* ---------- head ---------- */
+.masthead{
+  display:flex;flex-direction:column;gap:18px;
+  padding:56px 0 34px;border-bottom:1px solid var(--line);
+}
+.eyebrow{
+  font-family:"IBM Plex Mono",monospace;font-size:12px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--accent);
+}
+h1{
+  font-family:Manrope,"Segoe UI",sans-serif;font-weight:800;
+  font-size:clamp(2.1rem,5vw,3.1rem);line-height:1.08;letter-spacing:-.02em;
+  margin:0;text-wrap:balance;
+}
+.lede{margin:0;max-width:62ch;font-size:1.08rem;color:var(--ink-muted)}
+.masthead .facts{
+  display:flex;flex-wrap:wrap;gap:10px 28px;margin-top:6px;
+  font-family:"IBM Plex Mono",monospace;font-size:12.5px;color:var(--ink-muted);
+}
+.masthead .facts b{color:var(--ink);font-weight:600}
+
+/* ---------- layout ---------- */
+.body{display:grid;grid-template-columns:212px minmax(0,1fr);gap:56px;padding-top:44px;align-items:start}
+@media (max-width:900px){.body{grid-template-columns:1fr;gap:28px}}
+nav.toc{position:sticky;top:24px;font-size:14px}
+@media (max-width:900px){nav.toc{position:static;border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;background:var(--surface)}}
+nav.toc p{
+  font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--ink-muted);margin:0 0 12px;
+}
+nav.toc ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:9px;counter-reset:toc}
+nav.toc a{
+  display:flex;gap:10px;color:var(--ink-muted);text-decoration:none;line-height:1.35;
+}
+nav.toc a::before{
+  counter-increment:toc;content:counter(toc,decimal-leading-zero);
+  font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:var(--line-strong);padding-top:2px;
+}
+nav.toc a:hover,nav.toc a:focus-visible{color:var(--accent)}
+
+main{min-width:0;display:flex;flex-direction:column;gap:52px}
+section{scroll-margin-top:20px}
+h2{
+  font-family:Manrope,sans-serif;font-weight:700;font-size:1.55rem;letter-spacing:-.015em;
+  margin:0 0 6px;text-wrap:balance;
+}
+h2 .num{
+  font-family:"IBM Plex Mono",monospace;font-size:.72em;font-weight:400;
+  color:var(--accent);margin-right:.6em;
+}
+h3{font-family:Manrope,sans-serif;font-weight:700;font-size:1.06rem;margin:30px 0 8px}
+p{margin:12px 0;max-width:68ch}
+ul,ol.steps{max-width:68ch}
+li{margin:6px 0}
+a{color:var(--accent-ink);text-decoration-thickness:1px;text-underline-offset:2px}
+code{
+  font-family:"IBM Plex Mono",monospace;font-size:.87em;
+  background:var(--surface-2);border:1px solid var(--line);border-radius:5px;padding:1px 5px;
+}
+strong{font-weight:600}
+
+/* ---------- code blocks ---------- */
+.snippet{border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;background:var(--code-ground);margin:16px 0}
+.snippet header{
+  display:flex;justify-content:space-between;align-items:center;gap:12px;
+  padding:9px 14px;background:var(--code-ground);border-bottom:1px solid var(--code-line);
+  font-family:"IBM Plex Mono",monospace;font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;
+  color:#9a9ac0;
+}
+.snippet header .verb{color:#a8b6ff}
+.snippet pre{margin:0;padding:16px 18px;overflow-x:auto}
+.snippet code{
+  background:none;border:0;padding:0;color:var(--code-ink);
+  font-size:13.2px;line-height:1.72;white-space:pre;
+}
+.snippet .c{color:#7d7da6}
+.snippet .s{color:#9ad7a8}
+.snippet .k{color:#a8b6ff}
+.snippet .n{color:#e8c48a}
+
+/* ---------- tables ---------- */
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);margin:16px 0}
+table{border-collapse:collapse;width:100%;font-size:14.6px}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+th{
+  background:var(--surface-2);font-family:Manrope,sans-serif;font-weight:700;font-size:12.5px;
+  letter-spacing:.04em;text-transform:uppercase;color:var(--ink-muted);white-space:nowrap;
+}
+tbody tr:last-child td{border-bottom:0}
+td code{white-space:nowrap}
+.num-col{font-variant-numeric:tabular-nums}
+
+/* ---------- callouts ---------- */
+.note{
+  border-left:3px solid var(--accent);background:var(--accent-soft);
+  border-radius:0 var(--radius) var(--radius) 0;padding:14px 18px;margin:18px 0;
+}
+.note.warn{border-left-color:var(--warn);background:var(--warn-soft)}
+.note.stop{border-left-color:var(--danger);background:var(--danger-soft)}
+.note p{margin:0;max-width:64ch}
+.note p + p{margin-top:8px}
+.note b{font-family:Manrope,sans-serif}
+
+/* ---------- UI mockups ---------- */
+figure{margin:22px 0}
+figcaption{
+  font-family:"IBM Plex Mono",monospace;font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--ink-muted);margin-top:10px;
+}
+.ui{
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+  box-shadow:var(--shadow);overflow:hidden;
+}
+.ui__bar{
+  display:flex;align-items:center;gap:8px;padding:9px 14px;
+  background:var(--surface-2);border-bottom:1px solid var(--line);
+  font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:var(--ink-muted);
+}
+.ui__dot{width:9px;height:9px;border-radius:50%;background:var(--line-strong)}
+.ui__body{padding:20px 22px;display:flex;flex-direction:column;gap:16px}
+.ui__head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap}
+.ui__title{font-family:Manrope,sans-serif;font-weight:700;font-size:1.05rem;margin:0}
+.ui__sub{margin:4px 0 0;font-size:13.4px;color:var(--ink-muted);max-width:52ch}
+.btn{
+  display:inline-flex;align-items:center;gap:6px;border-radius:7px;padding:7px 13px;
+  font-size:13.4px;font-family:Manrope,sans-serif;font-weight:700;border:1px solid var(--line-strong);
+  background:var(--surface);color:var(--ink);white-space:nowrap;
+}
+.btn--primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.btn--ghost{background:transparent;color:var(--ink-muted)}
+.keyrow{
+  display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;
+  padding:13px 15px;border:1px solid var(--line);border-radius:8px;background:var(--surface-2);
+}
+.keyrow__name{font-family:Manrope,sans-serif;font-weight:700;font-size:14.5px}
+.keyrow__prefix{font-family:"IBM Plex Mono",monospace;font-size:12.8px;color:var(--ink-muted)}
+.pill{
+  font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.04em;
+  padding:2px 8px;border-radius:999px;border:1px solid var(--line-strong);color:var(--ink-muted);
+}
+.pill--scope{background:var(--accent-soft);border-color:transparent;color:var(--accent-ink)}
+.pill--ok{background:var(--ok-soft);border-color:transparent;color:var(--ok)}
+.pill--test{background:var(--warn-soft);border-color:transparent;color:var(--warn)}
+.keyrow__meta{width:100%;display:flex;flex-wrap:wrap;gap:6px 18px;font-size:12.4px;color:var(--ink-muted)}
+.field{display:flex;flex-direction:column;gap:6px}
+.field > span{font-size:12.6px;color:var(--ink-muted);font-family:Manrope,sans-serif;font-weight:700}
+.input{
+  border:1px solid var(--line-strong);border-radius:7px;padding:9px 12px;background:var(--surface);
+  font-size:14px;color:var(--ink);
+}
+.input.placeholder{color:var(--ink-muted)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{
+  border:1px solid var(--line-strong);border-radius:999px;padding:5px 12px;
+  font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--ink-muted);background:var(--surface);
+}
+.chip.on{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.check{display:flex;gap:9px;align-items:flex-start;font-size:13.6px;color:var(--ink-muted)}
+.check .box{
+  width:16px;height:16px;border-radius:4px;border:1px solid var(--line-strong);
+  background:var(--surface);flex:none;margin-top:3px;
+}
+.secret{
+  display:flex;gap:12px;align-items:center;flex-wrap:wrap;justify-content:space-between;
+  background:var(--code-ground);border-radius:8px;padding:13px 15px;
+}
+.secret code{
+  background:none;border:0;padding:0;color:#9ad7a8;font-size:12.8px;word-break:break-all;white-space:normal;
+}
+.ui__foot{display:flex;justify-content:flex-end;gap:10px;border-top:1px solid var(--line);padding-top:14px}
+
+/* ---------- misc ---------- */
+.checklist{list-style:none;padding:0;margin:14px 0;display:flex;flex-direction:column;gap:8px}
+.checklist li{display:flex;gap:11px;align-items:flex-start}
+.checklist li::before{
+  content:"";width:7px;height:7px;border-radius:2px;background:var(--accent);flex:none;margin-top:9px;
+}
+footer{
+  margin-top:64px;padding-top:22px;border-top:1px solid var(--line);
+  font-size:13.4px;color:var(--ink-muted);display:flex;flex-wrap:wrap;gap:8px 26px;
+}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:3px}
+@media (prefers-reduced-motion:no-preference){html{scroll-behavior:smooth}}
+</style>
+
+<div class="page">
+
+  <header class="masthead">
+    <span class="eyebrow">Comex B2B · Client API v1</span>
+    <h1>Підключення до API за 15 хвилин</h1>
+    <p class="lede">
+      Ваша ERP або бек-офіс може працювати з порталом напряму: читати каталог із вашими цінами,
+      рахувати замовлення й створювати їх без ручного вводу. Цей посібник проводить шлях від
+      кнопки «Новий ключ» у профілі до першого збереженого замовлення.
+    </p>
+    <div class="facts">
+      <span>База: <b>https://b2b.darkbyrior.com/api/client/v1</b></span>
+      <span>Формат: <b>JSON</b></span>
+      <span>Авторизація: <b>API-ключ</b></span>
+      <span>Довідник: <b><a href="https://b2b.darkbyrior.com/api-docs">/api-docs</a></b></span>
+    </div>
+  </header>
+
+  <div class="body">
+    <nav class="toc" aria-label="Зміст">
+      <p>Зміст</p>
+      <ol>
+        <li><a href="#access">Увімкнути доступ</a></li>
+        <li><a href="#create">Створити ключ</a></li>
+        <li><a href="#first">Перший запит</a></li>
+        <li><a href="#catalog">Каталог і ціни</a></li>
+        <li><a href="#order">Замовлення</a></li>
+        <li><a href="#code">Код: Python і Node</a></li>
+        <li><a href="#errors">Помилки й ліміти</a></li>
+        <li><a href="#safety">Безпека ключів</a></li>
+        <li><a href="#reference">Усі ендпоінти</a></li>
+      </ol>
+    </nav>
+
+    <main>
+
+      <!-- 1 -->
+      <section id="access">
+        <h2><span class="num">01</span>Увімкнути доступ</h2>
+        <p>
+          Доступ до API вмикає ваш менеджер — за замовчуванням він вимкнений. Напишіть менеджеру,
+          що плануєте інтеграцію, і він відкриє API для вашого облікового запису.
+        </p>
+        <p>
+          Після цього увійдіть у портал під своїм звичайним логіном і відкрийте
+          <strong>Профіль</strong> (<code>/profile</code>). Унизу сторінки з’явиться розділ
+          <strong>«Доступ до API»</strong>. Якщо розділу немає — доступ ще не увімкнено;
+          вийдіть і зайдіть знову, а якщо не з’явився, зверніться до менеджера.
+        </p>
+        <div class="note">
+          <p><b>Хто що робить.</b> Менеджер відкриває доступ один раз. Ключі ви створюєте, замінюєте
+          й відкликаєте самостійно — звертатися до нас за цим не потрібно.</p>
+        </div>
+      </section>
+
+      <!-- 2 -->
+      <section id="create">
+        <h2><span class="num">02</span>Створити ключ</h2>
+
+        <figure>
+          <div class="ui">
+            <div class="ui__bar"><span class="ui__dot"></span> b2b.darkbyrior.com/profile</div>
+            <div class="ui__body">
+              <div class="ui__head">
+                <div>
+                  <p class="ui__title">Доступ до API</p>
+                  <p class="ui__sub">API-ключі дозволяють вашим системам (ERP, бек-офіс) читати каталог
+                    і створювати замовлення від вашого імені.</p>
+                </div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap">
+                  <span class="btn">Документація API</span>
+                  <span class="btn btn--primary">+ Новий ключ</span>
+                </div>
+              </div>
+              <p style="margin:0;font-size:13.4px;color:var(--ink-muted)">1 з 5 активних ключів</p>
+              <div class="keyrow">
+                <span class="keyrow__name">Наша ERP</span>
+                <span class="keyrow__prefix">cmx_live_Ab3dEf9h_…</span>
+                <span class="pill pill--scope">catalog:read</span>
+                <span class="pill pill--scope">orders:read</span>
+                <span class="pill pill--ok">Активний</span>
+                <span class="keyrow__meta">
+                  <span>спливає 17.08.2027</span>
+                  <span>останнє використання 19.08.2026</span>
+                  <span>дії: перейменувати · замінити · відкликати</span>
+                </span>
+              </div>
+            </div>
+          </div>
+          <figcaption>Профіль → розділ «Доступ до API»</figcaption>
+        </figure>
+
+        <p>Натисніть <strong>«Новий ключ»</strong> і заповніть форму:</p>
+
+        <figure>
+          <div class="ui">
+            <div class="ui__bar"><span class="ui__dot"></span> Новий ключ</div>
+            <div class="ui__body">
+              <div class="field">
+                <span>Назва ключа</span>
+                <div class="input placeholder">напр. Наша ERP</div>
+              </div>
+              <div class="field">
+                <span>Дозволи</span>
+                <div class="chips">
+                  <span class="chip on">catalog:read</span>
+                  <span class="chip on">orders:read</span>
+                  <span class="chip">orders:write</span>
+                  <span class="chip">profile:read</span>
+                  <span class="chip">profile:write</span>
+                </div>
+              </div>
+              <div class="check">
+                <span class="box"></span>
+                <span>Тестовий режим — <em>замовлення перевіряються й розраховуються, але не зберігаються</em></span>
+              </div>
+              <p style="margin:0;font-size:13.2px;color:var(--ink-muted)">Ключ дійсний 365 днів.</p>
+              <div class="ui__foot">
+                <span class="btn btn--ghost">Скасувати</span>
+                <span class="btn btn--primary">Створити ключ</span>
+              </div>
+            </div>
+          </div>
+          <figcaption>Діалог створення ключа</figcaption>
+        </figure>
+
+        <h3>Дозволи (scopes)</h3>
+        <p>Давайте ключу лише те, що потрібно саме цій інтеграції.</p>
+        <div class="tablewrap">
+          <table>
+            <thead><tr><th>Дозвіл</th><th>Що відкриває</th></tr></thead>
+            <tbody>
+              <tr><td><code>catalog:read</code></td><td>каталог, картка товару, розрахунок замовлення (quote)</td></tr>
+              <tr><td><code>orders:read</code></td><td>список і картка замовлень, статуси, накладні, трекінг</td></tr>
+              <tr><td><code>orders:write</code></td><td>створення замовлень</td></tr>
+              <tr><td><code>profile:read</code></td><td>профіль і адреси доставки</td></tr>
+              <tr><td><code>profile:write</code></td><td>редагування профілю та адрес</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>Ключ показується один раз</h3>
+        <figure>
+          <div class="ui">
+            <div class="ui__bar"><span class="ui__dot"></span> Ваш новий API-ключ</div>
+            <div class="ui__body">
+              <p style="margin:0;font-size:13.8px">
+                Скопіюйте ключ зараз — з міркувань безпеки його не можна показати повторно.
+                Якщо загубите, створіть новий.
+              </p>
+              <div class="secret">
+                <code>cmx_live_Ab3dEf9h_7pQ2mVx4LkT9dS1cH8bN3rY6uZ0wJ5eG</code>
+                <span class="btn">Копіювати</span>
+              </div>
+              <p style="margin:0;font-size:13.2px;color:var(--ink-muted)">
+                Надсилайте його з кожним запитом як <code>Authorization: Bearer &lt;key&gt;</code>
+              </p>
+              <div class="ui__foot"><span class="btn btn--primary">Я зберіг ключ</span></div>
+            </div>
+          </div>
+          <figcaption>Показ ключа — єдиний раз</figcaption>
+        </figure>
+
+        <p>
+          Ключ має вигляд <code>cmx_&lt;режим&gt;_&lt;префікс&gt;_&lt;секрет&gt;</code>. Режим —
+          <code>live</code> або <code>test</code>. Префікс із 8 символів публічний: за ним ключ видно
+          у списку й у логах, і саме його називайте в листі до підтримки. Секрет ми не зберігаємо
+          у відкритому вигляді й відновити не можемо.
+        </p>
+        <div class="note warn">
+          <p><b>Почніть із тестового ключа.</b> Поставте позначку «Тестовий режим» — такий ключ читає
+          дані як звичайний, а <code>POST /orders</code> проходить усю перевірку й розрахунок, але нічого
+          не зберігає. Коли інтеграція готова, створіть окремий бойовий ключ.</p>
+        </div>
+      </section>
+
+      <!-- 3 -->
+      <section id="first">
+        <h2><span class="num">03</span>Перший запит</h2>
+        <p>
+          Найпростіша перевірка — <code>GET /me</code>. Вона не потребує жодного дозволу й одразу
+          показує, чи ключ живий і що саме йому дозволено.
+        </p>
+
+        <div class="snippet">
+          <header><span class="verb">GET</span><span>/me · curl</span></header>
+          <pre><code>curl -s https://b2b.darkbyrior.com/api/client/v1/me \
+  -H <span class="s">"Authorization: Bearer cmx_test_Ab3dEf9h_…"</span></code></pre>
+        </div>
+
+        <p>Ключ можна передавати і заголовком <code>X-API-Key</code> — це рівноцінно.</p>
+
+        <div class="snippet">
+          <header><span class="verb">200 OK</span><span>відповідь (скорочено)</span></header>
+          <pre><code>{
+  <span class="k">"success"</span>: <span class="n">true</span>,
+  <span class="k">"data"</span>: {
+    <span class="k">"client"</span>: { <span class="k">"uid"</span>: <span class="s">"c-1f4a…"</span>, <span class="k">"name"</span>: <span class="s">"Студія «Ажур»"</span>, <span class="k">"phone"</span>: <span class="s">"+380671234567"</span> },
+    <span class="k">"currency"</span>: { <span class="k">"code"</span>: <span class="s">"UAH"</span> },
+    <span class="k">"vat_rate"</span>: <span class="n">20</span>,
+    <span class="k">"addresses"</span>: [ { <span class="k">"uid"</span>: <span class="s">"a-88c1…"</span>, <span class="k">"is_default"</span>: <span class="n">true</span>, <span class="k">"city"</span>: <span class="s">"Київ"</span> } ],
+    <span class="k">"api_key"</span>: {
+      <span class="k">"name"</span>: <span class="s">"Наша ERP"</span>,
+      <span class="k">"scopes"</span>: [<span class="s">"catalog:read"</span>, <span class="s">"orders:read"</span>],
+      <span class="k">"is_test"</span>: <span class="n">true</span>,
+      <span class="k">"expires_at"</span>: <span class="s">"2027-08-17T10:00:00Z"</span>,
+      <span class="k">"rate_limit_read_per_minute"</span>: <span class="n">600</span>,
+      <span class="k">"rate_limit_write_per_minute"</span>: <span class="n">60</span>
+    }
+  },
+  <span class="k">"request_id"</span>: <span class="s">"req_9f2c…"</span>
+}</code></pre>
+        </div>
+
+        <p>
+          Кожна відповідь має однакову оболонку: <code>success</code>, далі <code>data</code> або
+          <code>error</code>, і <code>request_id</code>. Той самий ідентифікатор повертається
+          в заголовку <code>X-Request-ID</code> — логуйте його у себе, з ним ми знайдемо будь-який
+          ваш запит за секунди.
+        </p>
+        <div class="note stop">
+          <p><b>Отримали 401?</b> Це єдина відповідь на всі причини — невідомий ключ, відкликаний,
+          прострочений або вимкнений доступ. Перевірте, що скопіювали ключ повністю, що він не
+          відкликаний у профілі, і що менеджер увімкнув доступ. Після кількох невдалих спроб поспіль
+          (20 за 10 хвилин) ваша IP-адреса тимчасово блокується — зачекайте час із заголовка
+          <code>Retry-After</code>.</p>
+        </div>
+      </section>
+
+      <!-- 4 -->
+      <section id="catalog">
+        <h2><span class="num">04</span>Каталог і ціни</h2>
+        <p>
+          Каталог уже приведений під вас: у ньому лише товари з ціною для вашого прайсу, дозволені
+          до продажу у вашій країні. Ціни — у копійках/центах, цілим числом.
+        </p>
+
+        <div class="snippet">
+          <header><span class="verb">GET</span><span>/catalog/products</span></header>
+          <pre><code>curl -s <span class="s">"https://b2b.darkbyrior.com/api/client/v1/catalog/products?limit=2&amp;search=gel"</span> \
+  -H <span class="s">"Authorization: Bearer $COMEX_KEY"</span></code></pre>
+        </div>
+
+        <div class="snippet">
+          <header><span class="verb">200 OK</span><span>масив товарів</span></header>
+          <pre><code>{
+  <span class="k">"success"</span>: <span class="n">true</span>,
+  <span class="k">"data"</span>: [
+    {
+      <span class="k">"uid"</span>: <span class="s">"p-7b21…"</span>,
+      <span class="k">"sku"</span>: <span class="s">"DBR-1042"</span>,
+      <span class="k">"barcode"</span>: <span class="s">"4820001234567"</span>,
+      <span class="k">"name"</span>: <span class="s">"Gel Polish 8 ml, відтінок 042"</span>,
+      <span class="k">"base_price"</span>: <span class="n">18000</span>,          <span class="c">// 180.00 без знижки і ПДВ</span>
+      <span class="k">"price_with_discount"</span>: <span class="n">16200</span>,
+      <span class="k">"price_final"</span>: <span class="n">19440</span>,         <span class="c">// зі знижкою і ПДВ — це те, що заплатите</span>
+      <span class="k">"vat_rate"</span>: <span class="n">20</span>,
+      <span class="k">"discount_percent"</span>: <span class="n">10</span>,
+      <span class="k">"available"</span>: <span class="n">true</span>
+    }
+  ]
+}</code></pre>
+        </div>
+
+        <div class="tablewrap">
+          <table>
+            <thead><tr><th>Поле</th><th>Значення</th></tr></thead>
+            <tbody>
+              <tr><td><code>base_price</code></td><td>ціна до знижки й без ПДВ</td></tr>
+              <tr><td><code>price_with_discount</code></td><td>зі знижкою, без ПДВ</td></tr>
+              <tr><td><code>price_final</code></td><td>зі знижкою і з ПДВ — сума до сплати за одиницю</td></tr>
+              <tr><td><code>available</code></td><td><code>true</code>, якщо товар є на складі для вас</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p>
+          Залишків API не показує — лише ознаку <code>available</code>. Якщо потрібної кількості
+          не вистачає, ви дізнаєтесь про це під час розрахунку замовлення.
+        </p>
+
+        <h3>Зіставлення за вашими артикулами</h3>
+        <p>
+          Щоб не тягнути весь каталог, надішліть свої SKU або штрихкоди — у відповідь отримаєте
+          товари з цінами й окремий список <code>not_found</code>.
+        </p>
+        <div class="snippet">
+          <header><span class="verb">POST</span><span>/catalog/products/lookup</span></header>
+          <pre><code>curl -s https://b2b.darkbyrior.com/api/client/v1/catalog/products/lookup \
+  -H <span class="s">"Authorization: Bearer $COMEX_KEY"</span> \
+  -H <span class="s">"Content-Type: application/json"</span> \
+  -d <span class="s">'{"skus":["DBR-1042","DBR-9999"],"language":"uk"}'</span></code></pre>
+        </div>
+        <p>Також доступні <code>/catalog/categories</code>, <code>/catalog/languages</code>,
+        картка товару за <code>uid</code> або за артикулом
+        (<code>/catalog/products/by-sku/{sku}</code>) та її зображення.</p>
+      </section>
+
+      <!-- 5 -->
+      <section id="order">
+        <h2><span class="num">05</span>Замовлення</h2>
+        <p>
+          Спершу <strong>розрахунок</strong>, потім <strong>створення</strong>. Тіло запиту в обох
+          випадках однакове, тому перехід від перевірки до бойового замовлення — це зміна одного
+          рядка URL.
+        </p>
+
+        <div class="snippet">
+          <header><span class="verb">POST</span><span>/orders/quote · нічого не зберігає</span></header>
+          <pre><code>curl -s https://b2b.darkbyrior.com/api/client/v1/orders/quote \
+  -H <span class="s">"Authorization: Bearer $COMEX_KEY"</span> \
+  -H <span class="s">"Content-Type: application/json"</span> \
+  -d <span class="s">'{
+        "items": [
+          {"product_uid": "p-7b21…", "quantity": 6},
+          {"product_uid": "p-3c08…", "quantity": 2}
+        ],
+        "client_reference": "PO-2026-118",
+        "comment": "Відвантажити разом із попереднім"
+      }'</span></code></pre>
+        </div>
+
+        <div class="snippet">
+          <header><span class="verb">200 OK</span><span>розрахунок</span></header>
+          <pre><code>{
+  <span class="k">"success"</span>: <span class="n">true</span>,
+  <span class="k">"data"</span>: {
+    <span class="k">"quote"</span>: <span class="n">true</span>,
+    <span class="k">"items"</span>: [ { <span class="k">"product_sku"</span>: <span class="s">"DBR-1042"</span>, <span class="k">"quantity"</span>: <span class="n">6</span>, <span class="k">"total"</span>: <span class="n">116640</span> } ],
+    <span class="k">"subtotal"</span>: <span class="n">129600</span>,
+    <span class="k">"total_vat"</span>: <span class="n">25920</span>,
+    <span class="k">"delivery_cost"</span>: <span class="n">0</span>,
+    <span class="k">"total"</span>: <span class="n">155520</span>,
+    <span class="k">"currency_code"</span>: <span class="s">"UAH"</span>
+  }
+}</code></pre>
+        </div>
+        <p>Суми сходяться так: <code>total = subtotal + total_vat + delivery_cost</code>
+        (доставка не входить ані в <code>subtotal</code>, ані в <code>total_vat</code>).</p>
+
+        <h3>Створення замовлення</h3>
+        <p>
+          Той самий запит на <code>POST /orders</code> створює <strong>підтверджене</strong>
+          замовлення: воно одразу з’являється в роботі у менеджера. Обов’язково додайте заголовок
+          <code>Idempotency-Key</code> — з ним повторна спроба після обриву мережі не створить
+          друге замовлення.
+        </p>
+        <div class="snippet">
+          <header><span class="verb">POST</span><span>/orders · потрібен orders:write</span></header>
+          <pre><code>curl -s https://b2b.darkbyrior.com/api/client/v1/orders \
+  -H <span class="s">"Authorization: Bearer $COMEX_KEY"</span> \
+  -H <span class="s">"Content-Type: application/json"</span> \
+  -H <span class="s">"Idempotency-Key: PO-2026-118"</span> \
+  -d <span class="s">'{"items":[{"product_uid":"p-7b21…","quantity":6}],
+       "client_reference":"PO-2026-118"}'</span></code></pre>
+        </div>
+        <ul class="checklist">
+          <li><strong>201</strong> — замовлення створено, у відповіді <code>uid</code> і <code>number</code>.</li>
+          <li><strong>200</strong> з <code>"test": true</code> — тестовий ключ: усе перевірено й пораховано, нічого не збережено.</li>
+          <li><strong>409</strong> — той самий <code>Idempotency-Key</code> надіслано з <em>іншим</em> тілом.</li>
+          <li>Повтор із тим самим ключем і тим самим тілом протягом 24 годин поверне ту саму відповідь із заголовком <code>Idempotent-Replayed: true</code>.</li>
+        </ul>
+        <p>
+          Адреса доставки береться з вашої основної, якщо не передати
+          <code>shipping_address_uid</code>. Поле <code>client_reference</code> — ваш власний номер
+          (PO): він зберігається, показується менеджеру й за ним можна шукати замовлення.
+        </p>
+
+        <h3>Якщо замовлення відхилено</h3>
+        <div class="snippet">
+          <header><span class="verb">400</span><span>відхилення</span></header>
+          <pre><code>{
+  <span class="k">"success"</span>: <span class="n">false</span>,
+  <span class="k">"error"</span>: {
+    <span class="k">"code"</span>: <span class="s">"VALIDATION_ERROR"</span>,
+    <span class="k">"message"</span>: <span class="s">"Order rejected"</span>,
+    <span class="k">"details"</span>: { <span class="k">"reason"</span>: <span class="s">"insufficient_stock"</span> },
+    <span class="k">"extra"</span>: { <span class="k">"problems"</span>: [ { <span class="k">"product_uid"</span>: <span class="s">"p-3c08…"</span>, <span class="k">"reason"</span>: <span class="s">"insufficient_stock"</span> } ] }
+  }
+}</code></pre>
+        </div>
+        <p>
+          Типові причини у <code>details.reason</code>: <code>validation</code> (проблеми по рядках —
+          у <code>extra.problems</code>), <code>insufficient_stock</code>,
+          <code>address_invalid</code>, <code>business_registration_required</code>.
+        </p>
+
+        <h3>Стеження за замовленням</h3>
+        <div class="tablewrap">
+          <table>
+            <thead><tr><th>Запит</th><th>Що повертає</th></tr></thead>
+            <tbody>
+              <tr><td><code>GET /orders?updated_since=…</code></td><td>усе, що змінилося з минулої синхронізації</td></tr>
+              <tr><td><code>GET /orders?client_reference=PO-2026-118</code></td><td>пошук за вашим номером</td></tr>
+              <tr><td><code>GET /orders/{uid}</code></td><td>замовлення, рядки, накладні, відправлення</td></tr>
+              <tr><td><code>GET /orders/{uid}/timeline</code></td><td>історія стадій</td></tr>
+              <tr><td><code>GET /orders/{uid}/shipments/{uid}/tracking</code></td><td>перевізник, номер накладної, події</td></tr>
+              <tr><td><code>GET /orders/{uid}/invoices/{uid}/file</code></td><td>файл документа</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          Стадії у полі <code>phase</code>: <code>placed</code>, <code>confirmed</code>,
+          <code>processing</code>, <code>shipped</code>, <code>delivered</code>,
+          <code>cancelled</code>. Для регулярної синхронізації використовуйте
+          <code>updated_since</code> — це дешевше, ніж перечитувати весь список.
+        </p>
+      </section>
+
+      <!-- 6 -->
+      <section id="code">
+        <h2><span class="num">06</span>Код: Python і Node</h2>
+
+        <div class="snippet">
+          <header><span class="verb">Python</span><span>requests</span></header>
+          <pre><code><span class="k">import</span> os, requests
+
+BASE = <span class="s">"https://b2b.darkbyrior.com/api/client/v1"</span>
+S = requests.Session()
+S.headers.update({<span class="s">"Authorization"</span>: <span class="s">f"Bearer {os.environ['COMEX_KEY']}"</span>})
+
+<span class="c"># 1. перевірка ключа</span>
+me = S.get(<span class="s">f"{BASE}/me"</span>, timeout=<span class="n">15</span>).json()[<span class="s">"data"</span>]
+<span class="k">print</span>(me[<span class="s">"client"</span>][<span class="s">"name"</span>], me[<span class="s">"api_key"</span>][<span class="s">"scopes"</span>])
+
+<span class="c"># 2. знайти товар за своїм артикулом</span>
+found = S.post(<span class="s">f"{BASE}/catalog/products/lookup"</span>,
+               json={<span class="s">"skus"</span>: [<span class="s">"DBR-1042"</span>]}, timeout=<span class="n">15</span>).json()[<span class="s">"data"</span>]
+product = found[<span class="s">"products"</span>][<span class="n">0</span>]
+
+<span class="c"># 3. створити замовлення (повтор безпечний завдяки Idempotency-Key)</span>
+r = S.post(<span class="s">f"{BASE}/orders"</span>,
+           headers={<span class="s">"Idempotency-Key"</span>: <span class="s">"PO-2026-118"</span>},
+           json={<span class="s">"items"</span>: [{<span class="s">"product_uid"</span>: product[<span class="s">"uid"</span>], <span class="s">"quantity"</span>: <span class="n">6</span>}],
+                 <span class="s">"client_reference"</span>: <span class="s">"PO-2026-118"</span>}, timeout=<span class="n">30</span>)
+
+body = r.json()
+<span class="k">if not</span> body[<span class="s">"success"</span>]:
+    <span class="k">raise</span> RuntimeError(body[<span class="s">"error"</span>][<span class="s">"message"</span>], r.headers.get(<span class="s">"X-Request-ID"</span>))
+<span class="k">print</span>(<span class="s">"замовлення"</span>, body[<span class="s">"data"</span>][<span class="s">"number"</span>], body[<span class="s">"data"</span>][<span class="s">"total"</span>] / <span class="n">100</span>)</code></pre>
+        </div>
+
+        <div class="snippet">
+          <header><span class="verb">Node.js</span><span>fetch (18+)</span></header>
+          <pre><code><span class="k">const</span> BASE = <span class="s">"https://b2b.darkbyrior.com/api/client/v1"</span>;
+
+<span class="k">async function</span> call(path, init = {}) {
+  <span class="k">const</span> res = <span class="k">await</span> fetch(BASE + path, {
+    ...init,
+    headers: {
+      Authorization: <span class="s">`Bearer ${process.env.COMEX_KEY}`</span>,
+      <span class="s">"Content-Type"</span>: <span class="s">"application/json"</span>,
+      ...init.headers,
+    },
+  });
+  <span class="k">const</span> body = <span class="k">await</span> res.json();
+  <span class="k">if</span> (!body.success) {
+    <span class="c">// request_id варто записати в лог — з ним ми знайдемо запит</span>
+    <span class="k">throw new</span> Error(<span class="s">`${body.error.code}: ${body.error.message} (${body.request_id})`</span>);
+  }
+  <span class="k">return</span> body.data;
+}
+
+<span class="k">const</span> quote = <span class="k">await</span> call(<span class="s">"/orders/quote"</span>, {
+  method: <span class="s">"POST"</span>,
+  body: JSON.stringify({ items: [{ product_uid: <span class="s">"p-7b21…"</span>, quantity: <span class="n">6</span> }] }),
+});
+console.log(<span class="s">"до сплати:"</span>, quote.total / <span class="n">100</span>, quote.currency_code);</code></pre>
+        </div>
+      </section>
+
+      <!-- 7 -->
+      <section id="errors">
+        <h2><span class="num">07</span>Помилки й ліміти</h2>
+        <div class="tablewrap">
+          <table>
+            <thead><tr><th class="num-col">Код</th><th><code>error.code</code></th><th>Що робити</th></tr></thead>
+            <tbody>
+              <tr><td class="num-col">400</td><td><code>VALIDATION_ERROR</code></td><td>виправити тіло запиту; деталі — у <code>error.fields</code> або <code>extra.problems</code></td></tr>
+              <tr><td class="num-col">401</td><td><code>UNAUTHORIZED</code></td><td>ключ невірний, відкликаний, прострочений або доступ вимкнено</td></tr>
+              <tr><td class="num-col">403</td><td><code>FORBIDDEN</code></td><td>ключу бракує дозволу (див. <code>details.required_scope</code>) або це запис тестовим ключем</td></tr>
+              <tr><td class="num-col">404</td><td><code>NOT_FOUND</code></td><td>об’єкта немає — або він не ваш</td></tr>
+              <tr><td class="num-col">409</td><td><code>CONFLICT</code></td><td>той самий <code>Idempotency-Key</code> з іншим тілом</td></tr>
+              <tr><td class="num-col">429</td><td><code>RATE_LIMIT_EXCEEDED</code></td><td>зачекати <code>Retry-After</code> секунд і повторити</td></tr>
+              <tr><td class="num-col">503</td><td><code>MAINTENANCE</code></td><td>планові роботи — повторити пізніше</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>Обмеження частоти</h3>
+        <p>
+          На ключ діють два ліміти: <strong>600 читань</strong> і <strong>60 записів</strong> за
+          хвилину (можемо змінити на запит). Кожна відповідь несе
+          <code>X-RateLimit-Limit</code> і <code>X-RateLimit-Remaining</code>; відмова —
+          <code>Retry-After</code> і <code>X-RateLimit-Reset</code>.
+        </p>
+        <ul class="checklist">
+          <li>Тіло запиту — до 1 МіБ, таймаут — 10 секунд.</li>
+          <li>Списки посторінково: <code>offset</code> і <code>limit</code> (максимум 100).</li>
+          <li>На <code>429</code> і <code>5xx</code> робіть повтор із витримкою; на <code>4xx</code> повтор не допоможе.</li>
+        </ul>
+      </section>
+
+      <!-- 8 -->
+      <section id="safety">
+        <h2><span class="num">08</span>Безпека ключів</h2>
+        <ul class="checklist">
+          <li>Ключ = доступ до ваших цін і замовлень. Тримайте його в змінних оточення або сховищі секретів, не в коді й не в репозиторії.</li>
+          <li>Ніколи не використовуйте ключ у браузері чи мобільному застосунку — лише на вашому сервері.</li>
+          <li>Окремий ключ на кожну систему: тоді відкликання одного не зупиняє решту.</li>
+          <li>Ключ дійсний 365 днів. Стежте за датою в профілі — ми попереджаємо менеджера заздалегідь.</li>
+        </ul>
+        <p>
+          <strong>Замінити ключ</strong> (кнопка «Замінити новим ключем») видає новий і залишає
+          старий робочим ще на короткий пільговий період — 24 години. Це штатний спосіб оновлення
+          без простою: створіть новий, оновіть налаштування у себе, дочекайтесь, поки трафік перейде.
+        </p>
+        <p>
+          <strong>Відкликати</strong> — миттєво й безповоротно: усе, що використовує цей ключ,
+          одразу перестає працювати. Так і треба робити, якщо є підозра, що ключ витік.
+        </p>
+      </section>
+
+      <!-- 9 -->
+      <section id="reference">
+        <h2><span class="num">09</span>Усі ендпоінти</h2>
+        <p>
+          Повний інтерактивний довідник із усіма полями — на сторінці
+          <a href="https://b2b.darkbyrior.com/api-docs">/api-docs</a> (кнопка «Документація API»
+          у профілі). Машинна специфікація OpenAPI:
+          <code>GET /api/client/v1/openapi.yaml</code> — її можна імпортувати в Postman чи
+          згенерувати з неї клієнт.
+        </p>
+        <div class="tablewrap">
+          <table>
+            <thead><tr><th>Метод і шлях</th><th>Дозвіл</th><th>Призначення</th></tr></thead>
+            <tbody>
+              <tr><td><code>GET /me</code></td><td>—</td><td>клієнт, валюта, ПДВ, адреси, права ключа</td></tr>
+              <tr><td><code>GET /catalog/products</code></td><td><code>catalog:read</code></td><td>каталог із вашими цінами</td></tr>
+              <tr><td><code>POST /catalog/products/lookup</code></td><td><code>catalog:read</code></td><td>SKU / штрихкоди → товари</td></tr>
+              <tr><td><code>GET /catalog/products/{uid}</code></td><td><code>catalog:read</code></td><td>картка товару</td></tr>
+              <tr><td><code>GET /catalog/products/by-sku/{sku}</code></td><td><code>catalog:read</code></td><td>картка за артикулом</td></tr>
+              <tr><td><code>GET /catalog/products/{uid}/images</code></td><td><code>catalog:read</code></td><td>зображення</td></tr>
+              <tr><td><code>GET /catalog/categories</code></td><td><code>catalog:read</code></td><td>категорії</td></tr>
+              <tr><td><code>GET /catalog/languages</code></td><td><code>catalog:read</code></td><td>мови описів</td></tr>
+              <tr><td><code>POST /catalog/export</code></td><td><code>catalog:read</code></td><td>бланк замовлення .xlsx</td></tr>
+              <tr><td><code>POST /orders/quote</code></td><td><code>catalog:read</code></td><td>розрахунок без збереження</td></tr>
+              <tr><td><code>POST /orders</code></td><td><code>orders:write</code></td><td>створити замовлення</td></tr>
+              <tr><td><code>GET /orders</code></td><td><code>orders:read</code></td><td>список із фільтрами</td></tr>
+              <tr><td><code>GET /orders/{uid}</code></td><td><code>orders:read</code></td><td>замовлення повністю</td></tr>
+              <tr><td><code>GET /orders/{uid}/timeline</code></td><td><code>orders:read</code></td><td>історія стадій</td></tr>
+              <tr><td><code>GET /orders/{uid}/invoices</code></td><td><code>orders:read</code></td><td>документи</td></tr>
+              <tr><td><code>GET /orders/{uid}/shipments</code></td><td><code>orders:read</code></td><td>відправлення</td></tr>
+              <tr><td><code>GET /orders/{uid}/shipments/{uid}/tracking</code></td><td><code>orders:read</code></td><td>події доставки</td></tr>
+              <tr><td><code>GET /addresses</code></td><td><code>profile:read</code></td><td>адреси доставки</td></tr>
+              <tr><td><code>POST /addresses</code></td><td><code>profile:write</code></td><td>створити або змінити адресу</td></tr>
+              <tr><td><code>PUT /addresses/{uid}/default</code></td><td><code>profile:write</code></td><td>зробити основною</td></tr>
+              <tr><td><code>PUT /addresses/{uid}/official</code></td><td><code>profile:write</code></td><td>адреса для документів</td></tr>
+              <tr><td><code>DELETE /addresses/{uid}</code></td><td><code>profile:write</code></td><td>видалити адресу</td></tr>
+              <tr><td><code>PATCH /me</code></td><td><code>profile:write</code></td><td>назва, e-mail, податковий номер</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="note">
+          <p><b>Потрібна допомога?</b> Напишіть менеджеру й додайте <code>request_id</code>
+          (або <code>X-Request-ID</code>) проблемного запиту та публічний префікс ключа —
+          наприклад <code>cmx_live_Ab3dEf9h</code>. Секрет ключа не надсилайте нікому, зокрема нам.</p>
+        </div>
+      </section>
+
+      <footer>
+        <span>Comex B2B · Client API v1</span>
+        <span>Посібник для клієнтів</span>
+        <span>Оновлено 19.08.2026</span>
+      </footer>
+
+    </main>
+  </div>
+</div>

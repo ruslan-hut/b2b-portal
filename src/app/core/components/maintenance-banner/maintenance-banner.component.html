@@ -1,0 +1,18 @@
+@if (maintenance.enabled()) {
+  <div class="maintenance-banner" role="alert" aria-live="polite">
+    <app-icon name="build" class="banner-icon"></app-icon>
+    <div class="banner-body">
+      <span class="banner-title">{{ 'admin.maintenance.bannerTitle' | translate }}</span>
+      @if (maintenance.message(); as msg) {
+        <span class="banner-message">{{ msg }}</span>
+      }
+    </div>
+    @if (maintenance.countdown(); as remaining) {
+      <span
+        class="banner-countdown"
+        [attr.aria-label]="'admin.maintenance.bannerCountdownLabel' | translate">
+        {{ remaining }}
+      </span>
+    }
+  </div>
+}

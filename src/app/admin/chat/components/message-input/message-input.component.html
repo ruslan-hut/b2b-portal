@@ -1,18 +1,54 @@
 <div class="message-input">
-  <textarea
-    #textarea
-    [(ngModel)]="text"
-    (keydown)="onKeydown($event)"
-    (input)="onInput()"
-    [placeholder]="'chat.placeholder' | translate"
-    rows="1"
-  ></textarea>
-  <button
-    class="send-btn"
-    (click)="onSend()"
-    [disabled]="!text.trim()"
-    [title]="'chat.send' | translate"
-  >
-    <span class="material-icons">send</span>
-  </button>
+  @if (fileSizeError) {
+    <div class="file-error">
+      <app-icon name="error_outline"></app-icon>
+      <span>{{ fileSizeError }}</span>
+      <button class="dismiss-btn" (click)="fileSizeError = ''">
+        <app-icon name="close"></app-icon>
+      </button>
+    </div>
+  }
+  @if (selectedFiles.length) {
+    <div class="file-previews">
+      @for (file of selectedFiles; track file.name; let i = $index) {
+        <div class="file-preview">
+          @if (isImageFile(file)) {
+            <img [src]="filePreviews[i]" alt="" />
+          } @else {
+            <app-icon name="insert_drive_file"></app-icon>
+          }
+          <span class="file-preview-name">{{ file.name }}</span>
+          <button class="remove-btn" (click)="removeFile(i)">
+            <app-icon name="close"></app-icon>
+          </button>
+        </div>
+      }
+    </div>
+  }
+
+  <div class="input-row">
+    <input type="file" #fileInput multiple (change)="onFilesSelected($event)" hidden />
+
+    <button class="attach-btn" (click)="fileInput.click()" [title]="'chat.attach' | translate">
+      <app-icon name="attach_file"></app-icon>
+    </button>
+
+    <textarea
+      #textarea
+      [(ngModel)]="text"
+      (keydown)="onKeydown($event)"
+      (input)="onInput()"
+      [placeholder]="'chat.placeholder' | translate"
+      rows="1"
+    ></textarea>
+
+    <button
+      class="send-btn"
+      (click)="onSend()"
+      [disabled]="!text.trim() && !selectedFiles.length"
+      [title]="'chat.send' | translate"
+    >
+      <app-icon name="send"></app-icon>
+    </button>
+  </div>
 </div>

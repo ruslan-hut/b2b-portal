@@ -1,0 +1,151 @@
+<div class="adm-page">
+
+  <header class="adm-bar">
+    <div class="adm-bar__crumbs">
+      <span class="adm-crumb adm-crumb--active">{{ 'admin.shipments.eventHistory' | translate }}</span>
+    </div>
+    <div class="adm-bar__actions">
+      <button
+        type="button"
+        class="adm-btn adm-btn--ghost"
+        (click)="filters.toggle()"
+        [class.is-active]="filters.expanded"
+        [attr.aria-expanded]="filters.expanded"
+      >
+        <app-icon name="filter_list"></app-icon>
+        {{ 'common.filters' | translate }}
+      </button>
+      <button type="button" class="adm-btn adm-btn--ghost" (click)="loadEvents()" [title]="'common.refresh' | translate">
+        <app-icon name="refresh"></app-icon>
+        {{ 'common.refresh' | translate }}
+      </button>
+    </div>
+  </header>
+
+  <div class="adm-grid adm-grid--full">
+
+    @if (filters.expanded) {
+      <section class="adm-section evt-filters">
+        <div class="adm-fields">
+          <label class="adm-field">
+            <span class="adm-field__label">{{ 'admin.shipments.driver' | translate }}</span>
+            <select class="adm-input" [(ngModel)]="driverFilter" (change)="onFilterChange()">
+              <option value="">{{ 'common.all' | translate }}</option>
+              @for (option of driverOptions; track option.uid) {
+                <option [value]="option.uid">{{ option.name }}</option>
+              }
+            </select>
+          </label>
+
+          <label class="adm-field">
+            <span class="adm-field__label">{{ 'admin.shipments.level' | translate }}</span>
+            <input
+              type="text"
+              class="adm-input"
+              [(ngModel)]="statusFilter"
+              (keyup.enter)="onFilterChange()"
+              (change)="onFilterChange()"
+              [placeholder]="'admin.shipments.levelPlaceholder' | translate"
+            />
+          </label>
+
+          <label class="adm-field">
+            <span class="adm-field__label">{{ 'admin.shipments.shipment' | translate }}</span>
+            <input
+              type="text"
+              class="adm-input"
+              [(ngModel)]="searchFilter"
+              (keyup.enter)="onFilterChange()"
+              (change)="onFilterChange()"
+              [placeholder]="'admin.shipments.searchEventsPlaceholder' | translate"
+            />
+          </label>
+
+          <label class="adm-field">
+            <span class="adm-field__label">{{ 'common.dateFrom' | translate }}</span>
+            <input type="date" class="adm-input" [(ngModel)]="dateFromFilter" (change)="onFilterChange()" />
+          </label>
+
+          <label class="adm-field">
+            <span class="adm-field__label">{{ 'common.dateTo' | translate }}</span>
+            <input type="date" class="adm-input" [(ngModel)]="dateToFilter" (change)="onFilterChange()" />
+          </label>
+        </div>
+      </section>
+    }
+
+    @if (loading) {
+      <div class="adm-loading">{{ 'common.loading' | translate }}</div>
+    } @else if (error) {
+      <div class="adm-error" role="alert">{{ error }}</div>
+    } @else if (events.length === 0) {
+      <div class="adm-section evt-empty">{{ 'admin.shipments.noEvents' | translate }}</div>
+    } @else {
+
+      <div class="evt-table-wrap">
+        <table class="data-table" [attr.aria-label]="'admin.shipments.eventHistory' | translate">
+          <thead>
+            <tr>
+              <th class="expand-col"></th>
+              <th>{{ 'common.time' | translate }}</th>
+              <th>{{ 'admin.shipments.driver' | translate }}</th>
+              <th>{{ 'admin.shipments.order' | translate }}</th>
+              <th>{{ 'admin.shipments.level' | translate }}</th>
+              <th>{{ 'admin.shipments.event' | translate }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (e of events; track e.uid) {
+              <tr
+                class="evt-row"
+                (click)="rows.toggle(e.uid)"
+                (keydown.enter)="rows.toggle(e.uid)"
+                (keydown.space)="rows.toggle(e.uid); $event.preventDefault()"
+                tabindex="0"
+                role="button"
+                [attr.aria-expanded]="rows.isExpanded(e.uid)"
+              >
+                <td class="expand-col">
+                  <app-icon [name]="rows.isExpanded(e.uid) ? 'expand_less' : 'expand_more'"></app-icon>
+                </td>
+                <td>{{ formatDate(e.event_timestamp) }}</td>
+                <td>{{ getDriverName(e) }}</td>
+                <td class="mono"><a class="shp-link" [routerLink]="['/admin/orders', e.order_uid]" (click)="$event.stopPropagation()">{{ e.order_number || e.order_uid }}</a></td>
+                <td>
+                  <span class="evt-level" [ngClass]="getStatusClass(e.event_status)">{{ e.event_status || '—' }}</span>
+                </td>
+                <td class="evt-desc">{{ e.event_description || e.event_code }}</td>
+              </tr>
+              @if (rows.isExpanded(e.uid)) {
+                <tr class="evt-detail-row">
+                  <td colspan="6">
+                    <div class="evt-detail">
+                      <div class="evt-detail__item"><span class="evt-detail__label">{{ 'admin.shipments.eventCode' | translate }}</span><span class="mono">{{ e.event_code }}</span></div>
+                      <div class="evt-detail__item"><span class="evt-detail__label">{{ 'admin.shipments.shipment' | translate }}</span><span class="mono">{{ e.shipment_uid }}</span></div>
+                      @if (e.tracking_number) {
+                        <div class="evt-detail__item"><span class="evt-detail__label">{{ 'admin.shipments.tracking' | translate }}</span><span class="mono">{{ e.tracking_number }}</span></div>
+                      }
+                      @if (e.terminal_name || e.terminal_city) {
+                        <div class="evt-detail__item"><span class="evt-detail__label">{{ 'admin.shipments.terminal' | translate }}</span><span>{{ e.terminal_name }}{{ e.terminal_name && e.terminal_city ? ', ' : '' }}{{ e.terminal_city }}</span></div>
+                      }
+                      <div class="evt-detail__item"><span class="evt-detail__label">{{ 'admin.shipments.receivedAt' | translate }}</span><span>{{ formatDate(e.received_at) }}</span></div>
+                    </div>
+                  </td>
+                </tr>
+              }
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <app-pagination
+        [currentPage]="currentPage"
+        [totalPages]="totalPages"
+        [total]="total"
+        [pageSize]="pageSize"
+        [itemLabel]="'admin.shipments.totalEvents' | translate"
+        (pageChange)="goToPage($event)"
+      ></app-pagination>
+    }
+  </div>
+</div>

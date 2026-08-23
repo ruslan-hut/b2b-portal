@@ -1,236 +1,255 @@
-<div class="products-container">
-  <app-action-bar>
-    <div actionBarLeft>
-      <button class="btn-filter" (click)="toggleFilters()" [class.active]="isFiltersExpanded" [attr.aria-label]="'Toggle filters'" [attr.aria-expanded]="isFiltersExpanded">
-        <span class="material-icons" aria-hidden="true">filter_list</span>
-        <span class="btn-text">Filters</span>
-        <span class="material-icons toggle-icon" aria-hidden="true">{{ isFiltersExpanded ? 'expand_less' : 'expand_more' }}</span>
+<div class="adm-page">
+
+  <header class="adm-bar">
+    <div class="adm-bar__crumbs">
+      <span class="adm-crumb adm-crumb--active">{{ 'admin.products.productsCount' | translate }}</span>
+    </div>
+    <div class="adm-bar__actions">
+      <button
+        type="button"
+        class="adm-btn adm-btn--ghost"
+        (click)="filters.toggle()"
+        [class.is-active]="filters.expanded"
+        [attr.aria-expanded]="filters.expanded"
+      >
+        <app-icon name="filter_list"></app-icon>
+        {{ 'common.filters' | translate }}
       </button>
     </div>
-    <div actionBarRight></div>
-  </app-action-bar>
+  </header>
 
-  <div class="filters" [class.expanded]="isFiltersExpanded">
-    <div class="filter-group">
-      <label for="products-language-filter">Language:</label>
-      <select id="products-language-filter" [(ngModel)]="selectedLanguage" (change)="onFilterChange()" [attr.aria-label]="'Filter products by language'">
-        @for (lang of languages; track lang) {
-          <option [value]="lang.value">{{ lang.label }}</option>
-        }
-      </select>
-    </div>
+  <div class="adm-grid adm-grid--full">
 
-    <div class="filter-group">
-      <label for="products-store-filter">Store:</label>
-      <select id="products-store-filter" [(ngModel)]="selectedStore" (change)="onFilterChange()" [attr.aria-label]="'Filter products by store'">
-        @for (store of stores; track store) {
-          <option [value]="store.value">{{ store.label }}</option>
-        }
-      </select>
-    </div>
+    @if (filters.expanded) {
+      <section class="adm-section prd-filters">
+        <div class="adm-fields">
+          <label class="adm-field">
+            <span class="adm-field__label">{{ 'common.language' | translate }}</span>
+            <select class="adm-input" [(ngModel)]="selectedLanguage" (change)="onFilterChange()">
+              @for (lang of languages; track lang) {
+                <option [value]="lang.value">{{ lang.label }}</option>
+              }
+            </select>
+          </label>
 
-    <div class="filter-group">
-      <label for="products-price-type-filter">Price Type:</label>
-      <select id="products-price-type-filter" [(ngModel)]="selectedPriceType" (change)="onFilterChange()" [attr.aria-label]="'Filter products by price type'">
-        @for (pt of priceTypes; track pt) {
-          <option [value]="pt.value">{{ pt.label }}</option>
-        }
-      </select>
-    </div>
-
-    <div class="filter-group">
-      <label for="products-category-filter">Category:</label>
-      <select id="products-category-filter" [(ngModel)]="selectedCategory" (change)="onFilterChange()" [attr.aria-label]="'Filter products by category'">
-        @for (cat of categories; track cat) {
-          <option [value]="cat.value">{{ cat.label }}</option>
-        }
-      </select>
-    </div>
-
-    <div class="filter-group search-group">
-      <label for="products-search">Search:</label>
-      <input
-        type="text"
-        id="products-search"
-        [(ngModel)]="searchTerm"
-        (input)="onSearchChange()"
-        placeholder="Search products..."
-        [attr.aria-label]="'Search products by name or SKU'"
-        />
-    </div>
-  </div>
-
-  @if (loading) {
-    <div class="loading">Loading products...</div>
-  }
-  @if (error) {
-    <div class="error">{{ error }}</div>
-  }
-
-  @if (!loading && !error) {
-    <!-- Desktop Table -->
-    <div class="products-table desktop-only">
-      <table role="table" [attr.aria-label]="'Products table'">
-        <thead>
-          <tr>
-            <th scope="col" id="col-uid" [attr.aria-describedby]="'uid-help'">Product UID</th>
-            <th scope="col" id="col-sku">SKU</th>
-            <th scope="col" id="col-name">Product Name</th>
-            <th scope="col" id="col-category">Category</th>
-            <th scope="col" id="col-price">Price</th>
-            <th scope="col" id="col-quantity" [attr.aria-describedby]="'quantity-help'">Quantity</th>
-            <th scope="col" id="col-active">Active</th>
-            <th scope="col" id="col-sort" [attr.aria-describedby]="'sort-help'">Sort Order</th>
-            <th scope="col" id="col-new" [attr.aria-describedby]="'new-help'">Is New</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (product of filteredProducts; track product) {
-            <tr>
-              <td headers="col-uid">{{ product.uid }}</td>
-              <td headers="col-sku">{{ product.sku || '-' }}</td>
-              <td headers="col-name">{{ product.product_name || '-' }}</td>
-              <td headers="col-category">{{ product.category_name || product.category_uid || '-' }}</td>
-              <td headers="col-price">{{ formatPrice(product.price) }}</td>
-              <td headers="col-quantity">{{ product.quantity !== undefined ? product.quantity : '-' }}</td>
-              <td headers="col-active">
-                <span class="status-icon" [class.status-active]="product.active" [class.status-inactive]="!product.active" [attr.aria-label]="'Active: ' + (product.active ? 'Yes' : 'No')" role="status">
-                  ●
-                </span>
-              </td>
-              <td headers="col-sort">{{ product.sort_order || '-' }}</td>
-              <td headers="col-new">{{ product.is_new ? 'Yes' : 'No' }}</td>
-            </tr>
+          @if (!storeLocked) {
+            <label class="adm-field">
+              <span class="adm-field__label">{{ 'common.store' | translate }}</span>
+              <select class="adm-input" [(ngModel)]="selectedStore" (change)="onFilterChange()">
+                @for (store of stores; track store) {
+                  <option [value]="store.value">{{ store.label }}</option>
+                }
+              </select>
+            </label>
           }
-          @if (filteredProducts.length === 0) {
-            <tr>
-              <td colspan="9" class="no-data">No products found</td>
-            </tr>
-          }
-        </tbody>
-      </table>
-      <!-- Screen reader only help text -->
-      <p id="uid-help" class="sr-only">Unique product identifier</p>
-      <p id="quantity-help" class="sr-only">Available quantity in stock</p>
-      <p id="sort-help" class="sr-only">Display order in product catalog</p>
-      <p id="new-help" class="sr-only">Marks product as new in catalog</p>
-    </div>
 
-    <!-- Mobile Cards -->
-    <div class="products-cards mobile-only">
-      @for (product of filteredProducts; track product) {
-        <div class="product-card" [class.expanded]="isCardExpanded(product.uid)">
-          <div
-            class="card-header"
-            (click)="toggleCardExpanded(product.uid)"
-            (keydown.enter)="toggleCardExpanded(product.uid)"
-            (keydown.space)="toggleCardExpanded(product.uid); $event.preventDefault()"
-            role="button"
-            tabindex="0"
-            [attr.aria-expanded]="isCardExpanded(product.uid)"
-            [attr.aria-label]="'Expand details for ' + (product.product_name || 'Unnamed Product')"
-          >
-            <div class="card-title">
-              <span class="product-name">{{ product.product_name || 'Unnamed Product' }}</span>
-              <span class="status-icon" [class.status-active]="product.active" [class.status-inactive]="!product.active" [attr.aria-label]="'Status: ' + (product.active ? 'Active' : 'Inactive')" role="status">
-                ●
-              </span>
+          <label class="adm-field">
+            <span class="adm-field__label">{{ 'common.priceType' | translate }}</span>
+            <select class="adm-input" [(ngModel)]="selectedPriceType" (change)="onFilterChange()">
+              @for (pt of priceTypes; track pt) {
+                <option [value]="pt.value">{{ pt.label }}</option>
+              }
+            </select>
+          </label>
+
+          <label class="adm-field">
+            <span class="adm-field__label">{{ 'products.category' | translate }}</span>
+            <select class="adm-input" [(ngModel)]="selectedCategory" (change)="onFilterChange()">
+              @for (cat of categories; track cat) {
+                <option [value]="cat.value">{{ cat.label }}</option>
+              }
+            </select>
+          </label>
+
+          <label class="adm-field">
+            <span class="adm-field__label">{{ 'common.search' | translate }}</span>
+            <div class="adm-pwd">
+              <input
+                type="text"
+                class="adm-input"
+                [(ngModel)]="searchTerm"
+                (keyup.enter)="onSearch()"
+                [placeholder]="'admin.products.searchPlaceholder' | translate"
+              />
+              <button type="button" class="adm-icon-btn" (click)="onSearch()" [attr.aria-label]="'common.search' | translate" [title]="'common.search' | translate">
+                <app-icon name="search"></app-icon>
+              </button>
             </div>
-            <div class="card-subtitle">SKU: {{ product.sku || '-' }}</div>
-          </div>
-          <div class="card-summary">
-            <div class="summary-item">
-              <span class="label">Price:</span>
-              <span class="value">{{ formatPrice(product.price) }}</span>
-            </div>
-            <div class="summary-item">
-              <span class="label">Qty:</span>
-              <span class="value">{{ product.quantity !== undefined ? product.quantity : '-' }}</span>
-            </div>
-            @if (product.is_new) {
-              <span class="new-badge">NEW</span>
-            }
-            <span class="material-icons expand-icon" aria-hidden="true">{{ isCardExpanded(product.uid) ? 'expand_less' : 'expand_more' }}</span>
-          </div>
-          @if (isCardExpanded(product.uid)) {
-            <div class="card-details">
-              <div class="detail-row">
-                <span class="label">Category:</span>
-                <span class="value">{{ product.category_name || product.category_uid || '-' }}</span>
-              </div>
-              <div class="detail-row">
-                <span class="label">Sort Order:</span>
-                <span class="value">{{ product.sort_order || '-' }}</span>
-              </div>
-              <div class="detail-row">
-                <span class="label">Product UID:</span>
-                <span class="value uid">{{ product.uid }}</span>
-              </div>
-            </div>
-          }
+          </label>
         </div>
-      }
-      @if (filteredProducts.length === 0) {
-        <div class="no-data-card">No products found</div>
-      }
-    </div>
-
-    <!-- Pagination -->
-    @if (totalPages > 1) {
-      <div class="pagination">
-        <div class="pagination-info" role="status" [attr.aria-live]="'polite'">
-          <span>Showing {{ getStartItemNumber() }} - {{ getEndItemNumber() }} of {{ total }} products</span>
-        </div>
-        <nav class="pagination-controls" [attr.aria-label]="'Pagination navigation'">
-          <button
-            class="pagination-btn first"
-            [disabled]="currentPage === 1"
-            (click)="goToFirstPage()"
-            [attr.aria-label]="'Go to first page'"
-            [attr.title]="'First page'">
-            ««
-          </button>
-          <button
-            class="pagination-btn prev"
-            [disabled]="currentPage === 1"
-            (click)="goToPage(currentPage - 1)"
-            [attr.aria-label]="'Go to previous page'"
-            [attr.title]="'Previous page'">
-            ‹
-          </button>
-
-          @for (page of getPageNumbers(); track page) {
-            <button
-              class="pagination-btn page-number"
-              [class.active]="page === currentPage"
-              (click)="goToPage(page)"
-              [attr.aria-label]="'Go to page ' + page"
-              [attr.aria-current]="page === currentPage ? 'page' : null">
-              {{ page }}
-            </button>
-          }
-
-          <button
-            class="pagination-btn next"
-            [disabled]="currentPage === totalPages"
-            (click)="goToPage(currentPage + 1)"
-            [attr.aria-label]="'Go to next page'"
-            [attr.title]="'Next page'">
-            ›
-          </button>
-          <button
-            class="pagination-btn last"
-            [disabled]="currentPage === totalPages"
-            (click)="goToLastPage()"
-            [attr.aria-label]="'Go to last page'"
-            [attr.title]="'Last page'">
-            »»
-          </button>
-        </nav>
-        <div class="pagination-page-info">
-          <span>Page {{ currentPage }} of {{ totalPages }}</span>
-        </div>
-      </div>
+      </section>
     }
-  }
+
+    @if (loading) {
+      <div class="adm-loading">{{ 'admin.products.loadingProducts' | translate }}</div>
+    } @else if (error) {
+      <div class="adm-error" role="alert">{{ error }}</div>
+    } @else if (products.length === 0) {
+      <div class="adm-section prd-empty">{{ 'products.noProducts' | translate }}</div>
+    } @else {
+
+      <!-- Desktop table -->
+      <div class="prd-table-wrap desktop-only">
+        <table class="data-table" [attr.aria-label]="'admin.products.productsCount' | translate">
+          <thead>
+            <tr>
+              <th>{{ 'products.sku' | translate }}</th>
+              <th>{{ 'admin.products.productName' | translate }}</th>
+              <th>{{ 'products.category' | translate }}</th>
+              <th class="num">{{ 'products.price' | translate }}</th>
+              <th class="num">{{ 'orders.quantity' | translate }}</th>
+              <th>{{ 'common.active' | translate }}</th>
+              <th>{{ 'admin.products.certification' | translate }}</th>
+              <th class="num">{{ 'admin.products.sortOrder' | translate }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (product of products; track product) {
+              <tr>
+                <td class="mono">{{ product.sku || '—' }}</td>
+                <td>
+                  @for (tag of product.tags; track tag.uid) {
+                    <span class="prd-tag" [style.background-color]="tag.color" [style.color]="textColorFor(tag.color)">{{ tag.name }}</span>
+                  }
+                  {{ product.product_name || '—' }}
+                </td>
+                <td>{{ product.category_name || product.category_uid || '—' }}</td>
+                <td class="num">{{ formatPrice(product.price) }}</td>
+                <td class="num">{{ product.quantity !== undefined ? product.quantity : '—' }}</td>
+                <td>
+                  <span class="prd-dot" [class.is-active]="product.active" [attr.aria-label]="(product.active ? 'common.active' : 'common.inactive') | translate" role="status"></span>
+                </td>
+                <td class="prd-cert-cell">
+                  @if (hasAvailability(product)) {
+                    <button
+                      type="button"
+                      class="prd-cert-badge"
+                      (click)="toggleAvailability(product, $event)"
+                      [attr.aria-expanded]="isAvailabilityOpen(product)"
+                      [attr.aria-label]="'admin.products.certificationCountries' | translate"
+                    >
+                      <app-icon name="verified"></app-icon>
+                      {{ availabilityCount(product) }}
+                    </button>
+                    @if (isAvailabilityOpen(product)) {
+                      <div class="prd-cert-panel" [style.top.px]="availabilityPanelTop" [style.left.px]="availabilityPanelLeft" (click)="$event.stopPropagation()">
+                        <table class="prd-cert-table">
+                          <thead>
+                            <tr>
+                              <th>{{ 'admin.products.country' | translate }}</th>
+                              <th>{{ 'admin.products.available' | translate }}</th>
+                              <th>{{ 'admin.products.certified' | translate }}</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            @for (row of availabilityRows(product); track row.country_code) {
+                              <tr>
+                                <td class="prd-cert-country-cell">
+                                  <span class="prd-cert-code">{{ availabilityCountryLabel(row) }}</span>
+                                  @if (availabilityCountryName(row); as name) {
+                                    <span class="prd-cert-name">{{ name }}</span>
+                                  }
+                                </td>
+                                <td>
+                                  <app-icon [name]="row.is_available ? 'check' : 'close'" class="prd-cert-flag" [class.is-on]="row.is_available"></app-icon>
+                                </td>
+                                <td>
+                                  <app-icon [name]="row.is_certified ? 'check' : 'close'" class="prd-cert-flag" [class.is-on]="row.is_certified"></app-icon>
+                                </td>
+                              </tr>
+                            }
+                          </tbody>
+                        </table>
+                      </div>
+                    }
+                  } @else {
+                    <span class="prd-cert-empty">—</span>
+                  }
+                </td>
+                <td class="num">{{ product.sort_order || '—' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Mobile cards -->
+      <div class="prd-cards mobile-only">
+        @for (product of products; track product) {
+          <article class="prd-card" [class.is-expanded]="cards.isExpanded(product.uid)">
+            <header
+              class="prd-card__head"
+              (click)="cards.toggle(product.uid)"
+              (keydown.enter)="cards.toggle(product.uid)"
+              (keydown.space)="cards.toggle(product.uid); $event.preventDefault()"
+              role="button"
+              tabindex="0"
+              [attr.aria-expanded]="cards.isExpanded(product.uid)"
+            >
+              <div class="prd-card__title">
+                <span class="prd-card__name">{{ product.product_name || ('admin.products.unnamedProduct' | translate) }}</span>
+                <span class="prd-dot" [class.is-active]="product.active" role="status"></span>
+              </div>
+              <div class="prd-card__sub">{{ 'products.sku' | translate }}: {{ product.sku || '—' }}</div>
+            </header>
+            <div class="prd-card__summary">
+              <div class="prd-card__row">
+                <span class="prd-card__label">{{ 'products.price' | translate }}</span>
+                <span class="prd-card__value">{{ formatPrice(product.price) }}</span>
+              </div>
+              <div class="prd-card__row">
+                <span class="prd-card__label">{{ 'admin.products.qty' | translate }}</span>
+                <span class="prd-card__value">{{ product.quantity !== undefined ? product.quantity : '—' }}</span>
+              </div>
+              @if (product.is_new) {
+                <span class="adm-role-chip" data-role="user">{{ 'products.new' | translate }}</span>
+              }
+              <app-icon [name]="cards.isExpanded(product.uid) ? 'expand_less' : 'expand_more'" class="prd-card__expand"></app-icon>
+            </div>
+            @if (cards.isExpanded(product.uid)) {
+              <div class="prd-card__details">
+                <div class="prd-card__row">
+                  <span class="prd-card__label">{{ 'products.category' | translate }}</span>
+                  <span class="prd-card__value">{{ product.category_name || product.category_uid || '—' }}</span>
+                </div>
+                <div class="prd-card__row">
+                  <span class="prd-card__label">{{ 'admin.products.sortOrder' | translate }}</span>
+                  <span class="prd-card__value">{{ product.sort_order || '—' }}</span>
+                </div>
+                @if (hasAvailability(product)) {
+                  <div class="prd-card__row prd-card__row--stacked">
+                    <span class="prd-card__label">{{ 'admin.products.certification' | translate }}</span>
+                    <ul class="prd-cert-list">
+                      @for (row of availabilityRows(product); track row.country_code) {
+                        <li>
+                          <span class="prd-cert-country">{{ availabilityCountryLabel(row) }}</span>
+                          <app-icon [name]="row.is_available ? 'check' : 'close'" class="prd-cert-flag" [class.is-on]="row.is_available" [attr.title]="'admin.products.available' | translate"></app-icon>
+                          <app-icon [name]="row.is_certified ? 'verified' : 'close'" class="prd-cert-flag" [class.is-on]="row.is_certified" [attr.title]="'admin.products.certified' | translate"></app-icon>
+                        </li>
+                      }
+                    </ul>
+                  </div>
+                }
+                <div class="prd-card__row">
+                  <span class="prd-card__label">{{ 'admin.products.productUid' | translate }}</span>
+                  <span class="prd-card__value adm-uid" [copyOnClick]="product.uid">
+                    <span class="adm-uid__text">{{ product.uid }}</span>
+                  </span>
+                </div>
+              </div>
+            }
+          </article>
+        }
+      </div>
+
+      <app-pagination
+        [currentPage]="currentPage"
+        [totalPages]="totalPages"
+        [total]="total"
+        [pageSize]="pageSize"
+        [itemLabel]="'admin.products.productsCount' | translate"
+        (pageChange)="goToPage($event)"
+      ></app-pagination>
+    }
+  </div>
 </div>

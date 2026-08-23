@@ -3,11 +3,12 @@
   border-radius: var(--radius-lg);
   overflow: hidden;
   box-shadow: var(--shadow-md);
-  transition: all 0.3s ease;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
   display: flex;
   flex-direction: column;
   height: 100%;
   cursor: pointer;
+  animation: slideUp 0.4s ease-out both;
 
   &:hover {
     transform: translateY(-5px);
@@ -72,7 +73,7 @@
       display: flex;
       flex-direction: column;
       align-items: flex-end;
-      gap: 6px;
+      gap: var(--spacing-xs);
       margin: 0;
       z-index: 3;
 
@@ -92,6 +93,12 @@
 
         &.badge-hot-sale {
           background: var(--gradient-danger);
+          color: var(--color-text-inverse);
+          box-shadow: var(--shadow-sm);
+        }
+
+        // Custom tags carry an admin-chosen hex via inline style; we just provide the rest.
+        &.badge-custom {
           color: var(--color-text-inverse);
           box-shadow: var(--shadow-sm);
         }
@@ -129,6 +136,13 @@
       margin-bottom: var(--spacing-md);
       margin-top: auto;
       flex-shrink: 0;
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--spacing-xs) var(--spacing-md);
+
+      .product-barcode {
+        font-family: monospace;
+      }
     }
 
     .product-footer {

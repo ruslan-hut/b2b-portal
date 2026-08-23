@@ -2,9 +2,20 @@ import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRe
 import { Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { CrmService } from '../../services/crm.service';
-import { CrmDashboardStats, CrmPipelineStageStats, CrmWorkloadStats, CrmTaskStats, CrmDashboardFilters } from '../../models/crm-dashboard.model';
+import {
+  CrmDashboardStats,
+  CrmPipelineStageStats,
+  CrmWorkloadStats,
+  CrmTaskStats,
+  CrmDashboardFilters
+} from '../../models/crm-dashboard.model';
 import { CrmActivity } from '../../models/crm-activity.model';
 import { PageTitleService } from '../../../../core/services/page-title.service';
+import { TranslationService } from '../../../../core/services/translation.service';
+import { formatDate } from '../../../../core/utils/date-format';
+import { formatAmount, formatCount } from '../../../../core/utils/money-format';
+import { Currency } from '../../../../core/models/currency.model';
+import { CrmFiltersEmit } from '../../components/dashboard-filters/dashboard-filters.component';
 
 @Component({
     selector: 'app-crm-dashboard',
@@ -16,7 +27,6 @@ import { PageTitleService } from '../../../../core/services/page-title.service';
 export class CrmDashboardComponent implements OnInit, OnDestroy {
   private subscriptions = new Subscription();
 
-  // Dashboard data
   pipelineStats: CrmPipelineStageStats[] = [];
   workloadStats: CrmWorkloadStats[] = [];
   taskStats: CrmTaskStats = {
@@ -28,24 +38,35 @@ export class CrmDashboardComponent implements OnInit, OnDestroy {
   };
   recentActivity: CrmActivity[] = [];
 
-  // UI state
   loading = false;
   error: string | null = null;
   isFiltersExpanded = false;
 
-  // Filters
   currentFilters: CrmDashboardFilters = {};
+  selectedCurrency?: Currency;
 
   constructor(
     private crmService: CrmService,
     public router: Router,
     private cdr: ChangeDetectorRef,
-    private pageTitleService: PageTitleService
+    private pageTitleService: PageTitleService,
+    private translation: TranslationService
   ) {}
 
   ngOnInit(): void {
     this.pageTitleService.setTitle('CRM Dashboard');
+    // Currency conversion is performed server-side per order (see
+    // CRMDashboardRepo.GetPipelineStats). The frontend just sends the
+    // selected currency_code in filters and formats the already-converted
+    // total_value with that currency's locale.
     this.loadDashboard();
+
+    // Relative times and day counts are translated in the component rather than
+    // by the pipe, so nothing re-renders them when the language changes on its
+    // own. OnPush means we have to say so.
+    this.subscriptions.add(
+      this.translation.translations$.subscribe(() => this.cdr.markForCheck())
+    );
   }
 
   ngOnDestroy(): void {
@@ -70,35 +91,41 @@ export class CrmDashboardComponent implements OnInit, OnDestroy {
           };
           this.recentActivity = stats.recent_activity || [];
           this.loading = false;
-          this.cdr.detectChanges();
+          this.cdr.markForCheck();
         },
         error: (err) => {
           console.error('Failed to load dashboard:', err);
           this.error = 'Failed to load dashboard data';
           this.loading = false;
-          this.cdr.detectChanges();
+          this.cdr.markForCheck();
         }
       })
     );
   }
 
-  onFiltersChange(filters: CrmDashboardFilters): void {
-    this.currentFilters = filters;
+  onFiltersChange(event: CrmFiltersEmit): void {
+    this.currentFilters = event.filters;
+    this.selectedCurrency = event.currency;
     this.loadDashboard();
   }
 
   toggleFilters(): void {
     this.isFiltersExpanded = !this.isFiltersExpanded;
-    this.cdr.detectChanges();
+    this.cdr.markForCheck();
   }
 
-  // Computed values
+  // Final stages (won/lost/closed) are excluded from the headline totals so the
+  // dashboard reflects work currently in flight. Their values still appear in
+  // the per-stage chart for visibility.
   get totalOrdersInPipeline(): number {
-    return this.pipelineStats.reduce((sum, s) => sum + s.order_count, 0);
+    return this.pipelineStats.reduce((sum, s) => s.is_final ? sum : sum + s.order_count, 0);
   }
 
+  // Backend has already converted each stage's total_value to the requested
+  // currency (per-order conversion to handle mixed PLN/EUR/USD orders), so we
+  // can just sum the already-comparable numbers here.
   get totalPipelineValue(): number {
-    return this.pipelineStats.reduce((sum, s) => sum + s.total_value, 0);
+    return this.pipelineStats.reduce((sum, s) => s.is_final ? sum : sum + s.total_value, 0);
   }
 
   get totalActiveTasks(): number {
@@ -109,23 +136,27 @@ export class CrmDashboardComponent implements OnInit, OnDestroy {
     return this.workloadStats.length;
   }
 
-  // Formatting
-  formatCurrency(value: number): string {
-    return (value / 100).toLocaleString(undefined, {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    });
+  /** The currency every amount on the page is already expressed in. Stated once
+   *  per block instead of suffixed to each of ~15 figures. */
+  get currencyCode(): string {
+    return this.selectedCurrency?.code || '';
+  }
+
+  // Display helpers — one money format app-wide (DESIGN_POLICY §1.1). The
+  // backend serialises total_value as entity.Money, i.e. display units, so this
+  // is the formatAmount family, not formatCents.
+  formatMoney(value: number): string {
+    return formatAmount(value);
   }
 
   formatNumber(value: number): string {
-    return value.toLocaleString();
+    return formatCount(value);
   }
 
+  /** "< 1 дн" / "5 дн" — a stage's average dwell time, in the UI language. */
   formatAvgDays(days: number): string {
-    if (days < 1) {
-      return '< 1 day';
-    }
-    return `${Math.round(days)} day${Math.round(days) !== 1 ? 's' : ''}`;
+    if (days < 1) return this.translation.translate('admin.crm.avgUnderDay');
+    return this.translation.translate('admin.crm.avgDays', { count: Math.round(days) });
   }
 
   formatActivityDate(dateString: string): string {
@@ -136,50 +167,61 @@ export class CrmDashboardComponent implements OnInit, OnDestroy {
     const diffMins = Math.floor(diffMs / (1000 * 60));
     const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
     const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-
-    if (diffMins < 1) return 'Just now';
-    if (diffMins < 60) return `${diffMins}m ago`;
-    if (diffHours < 24) return `${diffHours}h ago`;
-    if (diffDays < 7) return `${diffDays}d ago`;
-
-    return date.toLocaleDateString(undefined, {
-      month: 'short',
-      day: 'numeric'
-    });
+    if (diffMins < 1) return this.translation.translate('admin.crm.justNow');
+    if (diffMins < 60) return this.translation.translate('admin.crm.minutesAgo', { count: diffMins });
+    if (diffHours < 24) return this.translation.translate('admin.crm.hoursAgo', { count: diffHours });
+    if (diffDays < 7) return this.translation.translate('admin.crm.daysAgo', { count: diffDays });
+    return formatDate(date);
   }
 
+  /** Icon-set name for an activity row. Unknown types get the neutral dot —
+   *  the timeline still reads as a timeline when the backend adds a type. */
   getActivityIcon(activityType: string): string {
     switch (activityType) {
-      case 'stage_change': return '&#8644;';
-      case 'assignment': return '&#128100;';
-      case 'unassignment': return '&#128101;';
-      case 'note': return '&#128221;';
-      case 'task_created': return '&#9998;';
-      case 'task_completed': return '&#10003;';
-      case 'order_created': return '&#128230;';
-      default: return '&#9679;';
+      case 'stage_change': return 'swap_horiz';
+      case 'assignment': return 'person_add';
+      case 'unassignment': return 'person_remove';
+      case 'note': return 'note';
+      case 'task_created': return 'edit';
+      case 'task_completed': return 'check_circle';
+      case 'order_created': return 'inventory_2';
+      default: return 'dot';
     }
   }
 
-  // Pipeline chart helpers
-  getMaxOrderCount(): number {
-    if (this.pipelineStats.length === 0) return 1;
-    return Math.max(...this.pipelineStats.map(s => s.order_count), 1);
+  // Active (non-final) stages drive the chart bars; final stages live in their
+  // own section below and don't influence the bar scale.
+  get activePipelineStats(): CrmPipelineStageStats[] {
+    return this.pipelineStats.filter(s => !s.is_final);
   }
 
-  getBarWidth(orderCount: number): number {
-    const max = this.getMaxOrderCount();
-    return (orderCount / max) * 100;
+  get finalPipelineStats(): CrmPipelineStageStats[] {
+    return this.pipelineStats.filter(s => s.is_final);
   }
 
-  // Workload helpers
+  /** The bar encodes the value printed at the end of its own row. It used to
+   *  encode order_count while the row was labelled with money, so the widest
+   *  bar was rarely the largest number on screen. */
+  private get maxStageValue(): number {
+    const active = this.activePipelineStats;
+    if (active.length === 0) return 1;
+    return Math.max(...active.map(s => s.total_value), 1);
+  }
+
+  getBarWidth(stage: CrmPipelineStageStats): number {
+    const pct = (stage.total_value / this.maxStageValue) * 100;
+    // A stage holding orders worth nothing (unpriced, fully discounted) still
+    // exists; give it a sliver rather than an empty track.
+    if (pct <= 0) return stage.order_count > 0 ? 1.5 : 0;
+    return pct;
+  }
+
   getMaxWorkload(): number {
     if (this.workloadStats.length === 0) return 1;
     return Math.max(...this.workloadStats.map(w => w.assigned_orders + w.pending_tasks), 1);
   }
 
   getWorkloadBarWidth(stats: CrmWorkloadStats): number {
-    const max = this.getMaxWorkload();
-    return ((stats.assigned_orders + stats.pending_tasks) / max) * 100;
+    return ((stats.assigned_orders + stats.pending_tasks) / this.getMaxWorkload()) * 100;
   }
 }

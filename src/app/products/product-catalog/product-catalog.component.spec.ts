@@ -1,6 +1,9 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 
 import { ProductCatalogComponent } from './product-catalog.component';
+import { ProductsModule } from '../products.module';
 
 describe('ProductCatalogComponent', () => {
   let component: ProductCatalogComponent;
@@ -8,10 +11,13 @@ describe('ProductCatalogComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ProductCatalogComponent]
+      // The catalog composes ~10 sibling components; importing the owning
+      // module declares them all rather than stubbing each one.
+      imports: [ProductsModule, HttpClientTestingModule],
+      providers: [provideRouter([])]
     })
     .compileComponents();
-    
+
     fixture = TestBed.createComponent(ProductCatalogComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();

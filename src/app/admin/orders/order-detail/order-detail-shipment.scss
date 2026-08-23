@@ -1,0 +1,1109 @@
+@use '../../../../styles/mixins' as *;
+
+// Shipment styles for the order detail page: the shipments list on the page and
+// the create-shipment modal it opens.
+//
+// Split out of order-detail.component.scss because the modal alone is a third of
+// that file — the seam here is where the modal becomes its own component, and
+// keeping its styles in one file makes that move a straight lift.
+//
+// The spinners here use the `spin` keyframes declared in
+// order-detail.component.scss. Keyframes are document-global, so it resolves
+// while both files belong to this component — carry it along if this file ever
+// leaves.
+
+.shipments-section {
+  .no-shipments {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm) var(--spacing-md);
+
+    app-icon {
+      font-size: var(--icon-md);
+      color: var(--color-text-muted);
+    }
+
+    p {
+      color: var(--color-text-muted);
+      margin: 0;
+      font-size: var(--text-md);
+    }
+
+    .btn-create-shipment {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--spacing-xs);
+      padding: 0 var(--spacing-sm-md);
+      min-height: var(--control-h-md);
+      border: 1px solid var(--color-border);
+      background: var(--card-bg);
+      border-radius: var(--radius-control);
+      cursor: pointer;
+      color: var(--color-text-primary);
+      font-size: var(--text-md);
+      transition: border-color 0.2s, color 0.2s;
+
+      app-icon {
+        font-size: var(--icon-sm);
+        color: inherit;
+      }
+
+      &:hover:not(:disabled) {
+        border-color: var(--color-primary);
+        color: var(--color-primary);
+      }
+    }
+  }
+}
+
+.shipments-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.shipment-card {
+  background: var(--color-background-secondary);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md);
+  border-left: 4px solid var(--color-info);
+
+  // Says this AWB is not only about the order being viewed. Sits above the
+  // details so it is read before the receiver and cost, which describe the
+  // whole consignment rather than this order alone.
+  .consolidated-badge {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--spacing-xs);
+    margin-top: var(--spacing-sm);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: var(--radius-sm);
+    background: var(--color-background);
+    font-size: var(--text-sm);
+    color: var(--color-text-secondary);
+
+    app-icon { font-size: var(--text-md); flex: 0 0 auto; }
+
+    .consolidated-link {
+      color: var(--color-primary);
+      text-decoration: none;
+
+      &:hover { text-decoration: underline; }
+    }
+
+    // Separates a run of links. A real element rather than a ::before on the
+    // link, which would sit inside the anchor and underline with it.
+    .consolidated-sep {
+      margin-right: var(--spacing-xs);
+      color: var(--color-text-muted);
+    }
+  }
+
+  &.shipment-delivered {
+    border-left-color: var(--color-success);
+  }
+
+  &.shipment-transit {
+    border-left-color: var(--color-info);
+  }
+
+  &.shipment-pending {
+    border-left-color: var(--color-warning);
+  }
+
+  &.shipment-error {
+    border-left-color: var(--color-danger);
+  }
+
+  &.shipment-cancelled {
+    border-left-color: var(--color-border);
+    background: transparent;
+    opacity: 0.65;
+
+    .carrier-name,
+    .shipment-number,
+    .shipment-status {
+      color: var(--color-text-muted);
+    }
+
+    .shipment-number {
+      background: transparent;
+    }
+  }
+
+  .shipment-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-sm-md);
+
+    .shipment-info {
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-xs);
+
+      .shipment-title {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-sm);
+      }
+
+      .carrier-name {
+        font-weight: 600;
+        color: var(--color-text-primary);
+      }
+
+      .shipment-number {
+        font-family: monospace;
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: var(--color-primary);
+        background: var(--color-background-secondary);
+        padding: 2px 8px;
+        border-radius: var(--radius-sm);
+      }
+
+      // When the number itself is the carrier tracking link.
+      a.shipment-number {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        text-decoration: none;
+        transition: all 0.2s;
+
+        app-icon {
+          font-size: 14px;
+          opacity: 0.7;
+        }
+
+        &:hover {
+          text-decoration: underline;
+
+          app-icon {
+            opacity: 1;
+          }
+        }
+
+        &:active {
+          transform: translateY(1px);
+        }
+      }
+
+      .btn-track-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+        height: 24px;
+        padding: 0;
+        border: none;
+        background: transparent;
+        color: var(--color-text-muted);
+        cursor: pointer;
+        border-radius: var(--radius-sm);
+        transition: all 0.2s;
+
+        app-icon {
+          font-size: 18px;
+        }
+
+        &.btn-icon-print {
+          color: var(--color-primary);
+        }
+
+        &.btn-icon-cancel {
+          color: var(--color-danger);
+        }
+
+        &:hover:not(:disabled) {
+          background: var(--color-background-secondary);
+          color: var(--color-primary);
+        }
+
+        &.btn-icon-cancel:hover:not(:disabled) {
+          color: var(--color-danger);
+        }
+
+        &:disabled {
+          cursor: not-allowed;
+          opacity: 0.5;
+        }
+
+        .spinning {
+          animation: spin 1s linear infinite;
+        }
+      }
+
+      .shipment-notice {
+        display: flex;
+        align-items: flex-start;
+        gap: var(--spacing-sm);
+        margin-top: var(--spacing-sm);
+        padding: var(--spacing-sm) var(--spacing-sm-md);
+        border: 1px solid var(--color-border);
+        border-left-width: 3px;
+        background: var(--color-background);
+        border-radius: var(--radius-control);
+        font-size: var(--text-sm);
+        line-height: 1.5;
+
+        .notice-icon {
+          font-size: var(--icon-md);
+          flex-shrink: 0;
+          margin-top: 1px;
+        }
+
+        .notice-body {
+          flex: 1;
+          min-width: 0;
+        }
+
+        .notice-title {
+          font-size: var(--text-sm);
+          font-weight: 600;
+          letter-spacing: 0.01em;
+          margin-bottom: 2px;
+        }
+
+        .notice-text {
+          margin: 0;
+          color: var(--color-text-primary);
+          word-break: break-word;
+        }
+
+        .notice-details {
+          margin-top: var(--spacing-xs);
+          font-size: var(--text-xs);
+
+          summary {
+            cursor: pointer;
+            display: inline-block;
+            padding: 2px 0;
+            color: var(--color-text-muted);
+            font-weight: 500;
+            user-select: none;
+            transition: color 0.15s ease;
+            list-style: none;
+
+            &::-webkit-details-marker { display: none; }
+
+            &::before {
+              content: '›';
+              display: inline-block;
+              margin-right: 6px;
+              transition: transform 0.15s ease;
+              transform: rotate(0deg);
+            }
+
+            &:hover { color: var(--color-text-primary); }
+          }
+
+          &[open] summary::before {
+            transform: rotate(90deg);
+          }
+
+          pre {
+            margin: var(--spacing-xs) 0 0;
+            padding: var(--spacing-xs) var(--spacing-sm);
+            background: var(--color-background-secondary);
+            border: 1px solid var(--color-border-light);
+            border-radius: var(--radius-sm);
+            font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+            font-size: var(--text-xs);
+            color: var(--color-text-secondary, var(--color-text-primary));
+            white-space: pre-wrap;
+            word-break: break-all;
+            max-height: 240px;
+            overflow: auto;
+          }
+        }
+
+        &.is-warning {
+          border-color: var(--color-alert-warning-border);
+          border-left-color: var(--color-warning);
+          background: var(--color-alert-warning-bg);
+
+          .notice-icon { color: var(--color-warning); }
+          .notice-title { color: var(--color-alert-warning-text); }
+        }
+
+        &.is-error {
+          border-color: var(--color-alert-error-border, var(--color-danger));
+          border-left-color: var(--color-danger);
+          background: var(--color-alert-error-bg);
+
+          .notice-icon { color: var(--color-danger); }
+          .notice-title { color: var(--color-alert-error-text, var(--color-danger)); }
+        }
+      }
+
+    }
+
+    .shipment-status {
+      padding: 4px 10px;
+      border-radius: var(--radius-sm-md);
+      font-size: 0.8rem;
+      font-weight: 500;
+      text-transform: capitalize;
+      background: var(--status-info-bg);
+      color: var(--color-info);
+    }
+  }
+
+  .shipment-details {
+    margin-bottom: var(--spacing-sm-md);
+
+    .detail-row {
+      display: flex;
+      gap: var(--spacing-sm);
+      margin-bottom: var(--spacing-xs);
+      font-size: 0.9rem;
+
+      .label {
+        color: var(--color-text-muted);
+        min-width: 70px;
+      }
+
+      .value {
+        color: var(--color-text-primary);
+      }
+
+      &.error .value {
+        color: var(--color-danger);
+      }
+    }
+  }
+
+  .tracking-timeline {
+    margin-top: var(--spacing-md);
+    padding-top: var(--spacing-md);
+    border-top: 1px solid var(--color-border-light);
+
+    h4 {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--color-text-primary);
+      margin: 0 0 var(--spacing-sm-md) 0;
+    }
+
+    .timeline-toggle {
+      margin-top: var(--spacing-sm);
+      padding: 4px 8px;
+      background: transparent;
+      border: none;
+      color: var(--color-primary);
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      border-radius: var(--radius-sm);
+      transition: background 0.2s;
+
+      &:hover {
+        background: var(--color-background-secondary);
+        text-decoration: underline;
+      }
+    }
+
+    .timeline {
+      position: relative;
+      padding-left: 20px;
+
+      &::before {
+        content: '';
+        position: absolute;
+        left: 6px;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: var(--color-border);
+      }
+    }
+
+    .timeline-item {
+      position: relative;
+      padding-bottom: var(--spacing-sm-md);
+
+      &:last-child {
+        padding-bottom: 0;
+      }
+
+      .timeline-marker {
+        position: absolute;
+        left: -14px;
+        top: 4px;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: var(--color-info);
+        border: 2px solid var(--card-bg);
+      }
+
+      .timeline-content {
+        .event-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 2px;
+
+          .event-status {
+            font-weight: 500;
+            color: var(--color-text-primary);
+            font-size: 0.85rem;
+          }
+
+          .event-time {
+            font-size: 0.75rem;
+            color: var(--color-text-muted);
+          }
+        }
+
+        .event-description {
+          font-size: 0.8rem;
+          color: var(--color-text-secondary);
+        }
+
+        .event-location {
+          font-size: 0.75rem;
+          color: var(--color-text-muted);
+          font-style: italic;
+        }
+      }
+    }
+  }
+
+}
+
+// Shipment Modal
+.shipment-modal {
+  .form-group {
+    margin-bottom: var(--spacing-md);
+
+    label {
+      display: block;
+      font-weight: 500;
+      color: var(--color-text-primary);
+      margin-bottom: var(--spacing-sm);
+      font-size: 0.9rem;
+    }
+
+    input,
+    select {
+      width: 100%;
+      padding: var(--spacing-sm);
+      border: 2px solid var(--color-border);
+      border-radius: var(--radius-md);
+      font-size: var(--text-md);
+      background: var(--input-bg);
+      color: var(--input-text);
+      transition: border-color 0.3s ease, box-shadow 0.3s ease;
+
+      &:focus {
+        outline: none;
+        border-color: var(--color-primary);
+        box-shadow: var(--focus-ring);
+      }
+    }
+  }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-md);
+  }
+
+  // Resolved-state ✓ shown next to a lookup selector's label.
+  .lookup-check {
+    font-size: 1rem;
+    vertical-align: middle;
+    margin-left: var(--spacing-xs);
+    color: var(--color-success);
+  }
+
+  // Remote-search autocomplete (city / warehouse).
+  .lookup-field {
+    position: relative;
+
+    .lookup-spinner {
+      position: absolute;
+      top: 50%;
+      right: var(--spacing-sm);
+      transform: translateY(-50%);
+      pointer-events: none;
+    }
+
+    &.resolved input {
+      border-color: var(--color-success);
+    }
+
+    .lookup-results {
+      position: absolute;
+      z-index: 20;
+      top: calc(100% + 2px);
+      left: 0;
+      right: 0;
+      margin: 0;
+      padding: var(--spacing-xs) 0;
+      list-style: none;
+      max-height: 240px;
+      overflow-y: auto;
+      background: var(--color-background);
+      border: 2px solid var(--color-border);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-md);
+
+      li {
+        display: flex;
+        flex-direction: column;
+        gap: 1px;
+        padding: var(--spacing-xs) var(--spacing-sm);
+        cursor: pointer;
+
+        &:hover {
+          background: var(--color-background-secondary);
+        }
+
+        .lookup-opt-label {
+          font-size: 0.9rem;
+          color: var(--color-text-primary);
+        }
+        .lookup-opt-sub {
+          font-size: 0.75rem;
+          color: var(--color-text-muted);
+        }
+      }
+    }
+  }
+
+  // Reference card: what the order records about the destination. Deliberately
+  // muted — it is context, not an input, and for carriers that resolve their own
+  // destination it is not what gets shipped to.
+  .order-data {
+    margin-bottom: var(--spacing-md);
+    background: var(--color-background-secondary);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+
+    .order-data-header {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-xs);
+      width: 100%;
+      padding: var(--spacing-sm) var(--spacing-md);
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: var(--text-sm);
+      font-weight: var(--font-weight-semibold);
+      color: var(--color-text-secondary);
+      text-align: left;
+
+      app-icon { font-size: var(--text-md); }
+      &:hover { color: var(--color-text-primary); }
+    }
+
+    // One grid for the whole body so labels align on the longest of them —
+    // a fixed label column truncates or wraps in Ukrainian.
+    .order-data-body {
+      display: grid;
+      grid-template-columns: max-content minmax(0, 1fr);
+      gap: var(--spacing-xs) var(--spacing-sm);
+      padding: 0 var(--spacing-md) var(--spacing-sm);
+      font-size: var(--text-md);
+    }
+
+    .order-data-row {
+      display: contents;
+
+      .order-data-label {
+        color: var(--color-text-muted);
+      }
+      .order-data-value {
+        color: var(--color-text-primary);
+        min-width: 0;
+        word-break: break-word;
+      }
+    }
+
+    .order-data-note {
+      grid-column: 1 / -1;
+      display: flex;
+      align-items: flex-start;
+      gap: var(--spacing-xs);
+      margin-top: var(--spacing-xs);
+      font-size: var(--text-sm);
+      color: var(--color-text-muted);
+
+      app-icon { font-size: var(--text-md); flex: 0 0 auto; }
+    }
+  }
+
+  // Consolidation picker. Shares the collapsible shape of .order-data above so
+  // the two optional sections of this modal read as one family.
+  .consolidation {
+    margin-bottom: var(--spacing-md);
+    background: var(--color-background-secondary);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+
+    .consolidation-header {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-xs);
+      width: 100%;
+      padding: var(--spacing-sm) var(--spacing-md);
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: var(--text-sm);
+      font-weight: var(--font-weight-semibold);
+      color: var(--color-text-secondary);
+      text-align: left;
+
+      app-icon { font-size: var(--text-md); }
+      &:hover { color: var(--color-text-primary); }
+    }
+
+    // Carries the count while collapsed, so a selection is never invisible.
+    .consolidation-count {
+      margin-left: auto;
+      min-width: 1.25rem;
+      padding: 0 var(--spacing-xs);
+      border-radius: var(--radius-pill);
+      background: var(--color-primary);
+      color: var(--color-on-primary);
+      font-size: var(--text-xs);
+      line-height: 1.25rem;
+      text-align: center;
+    }
+
+    .consolidation-body {
+      padding: 0 var(--spacing-md) var(--spacing-sm);
+
+      &[hidden] { display: none; }
+    }
+
+    // Every .spinner in this file is scoped to the button it sits in, so a
+    // panel that is not a button needs its own. Same geometry as those.
+    .spinner {
+      width: var(--icon-sm);
+      height: var(--icon-sm);
+      flex: 0 0 auto;
+      border: 2px solid var(--color-border);
+      border-top-color: var(--color-primary);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    .consolidation-hint {
+      margin: 0 0 var(--spacing-sm);
+      font-size: var(--text-sm);
+      color: var(--color-text-muted);
+    }
+
+    .consolidation-state {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-xs);
+      padding: var(--spacing-sm) 0;
+      font-size: var(--text-sm);
+      color: var(--color-text-muted);
+
+      app-icon { font-size: var(--text-md); flex: 0 0 auto; }
+
+      &.consolidation-error { color: var(--color-danger); }
+    }
+
+    .consolidation-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-xs);
+    }
+
+    .consolidation-item {
+      border-radius: var(--radius-sm);
+
+      // A row that cannot be ticked recedes as a whole. Muting only its number
+      // while the reason stayed loud made unavailable orders the most active
+      // thing in the list — the reader's eye went to what it could not use.
+      &.ineligible {
+        .consolidation-number { color: var(--color-text-secondary); font-weight: var(--font-weight-regular); }
+        .consolidation-label { cursor: default; }
+      }
+    }
+
+    .consolidation-label {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--spacing-sm);
+      padding: var(--spacing-xs);
+      cursor: pointer;
+
+      input[aria-disabled='true'] { cursor: default; }
+    }
+
+    .consolidation-order {
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-2xs);
+      min-width: 0;
+    }
+
+    .consolidation-number {
+      font-size: var(--text-md);
+      font-weight: var(--font-weight-semibold);
+      color: var(--color-text-primary);
+    }
+
+    // The totals stack down a column, so the digits have to line up — grouped
+    // money without tabular figures is grouping that does not pay off (§1.1).
+    .consolidation-meta {
+      font-size: var(--text-sm);
+      color: var(--color-text-muted);
+      font-variant-numeric: tabular-nums;
+    }
+
+    // The reason is small text, so it takes a text colour and lets the icon
+    // carry the warning. --color-warning is a fill: at --text-sm on this ground
+    // it sits near 2.6:1, well under the 4.5:1 small text has to clear.
+    .consolidation-reason {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--spacing-xs);
+      font-size: var(--text-sm);
+      color: var(--color-text-secondary);
+
+      app-icon { font-size: var(--text-md); flex: 0 0 auto; color: var(--color-warning); }
+    }
+
+    .consolidation-summary {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-xs);
+      margin-top: var(--spacing-sm);
+      padding-top: var(--spacing-sm);
+      border-top: 1px solid var(--color-border);
+      font-size: var(--text-sm);
+      color: var(--color-text-secondary);
+
+      app-icon { font-size: var(--text-md); flex: 0 0 auto; }
+
+      // The set cannot be booked as it stands. Same weight as the summary it
+      // replaces — it answers the same question, with a no.
+      &.consolidation-blocked app-icon { color: var(--color-warning); }
+    }
+
+    .consolidation-stale {
+      margin: var(--spacing-xs) 0 0;
+      font-size: var(--text-sm);
+      color: var(--color-text-muted);
+    }
+  }
+
+  // Raised only when the label would go out without a usable contact.
+  .recipient-warning {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--spacing-xs);
+    margin-bottom: var(--spacing-md);
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: var(--color-alert-warning-bg);
+    border: 1px solid var(--color-alert-warning-border);
+    border-radius: var(--radius-md);
+    font-size: var(--text-sm);
+
+    // Ink from the same alert triple as the ground. --color-warning is a red
+    // and reads as an error inside an amber band.
+    > app-icon {
+      font-size: var(--text-md);
+      flex: 0 0 auto;
+      color: var(--color-alert-warning-text);
+    }
+
+    .recipient-warning-lines {
+      color: var(--color-alert-warning-text);
+      font-weight: var(--font-weight-medium);
+    }
+    // One ink for the whole band, weight carries the hierarchy: the grey
+    // secondary only reaches 4.4:1 on the dark theme's amber.
+    .recipient-warning-hint {
+      margin-top: var(--spacing-xs);
+      color: var(--color-alert-warning-text);
+    }
+  }
+
+  // What keeps Create disabled. Same amber band as the contact warning: both
+  // say "this waybill cannot go out yet", and this one lives next to the
+  // buttons it explains.
+  .selector-issues {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--spacing-xs);
+    margin-top: var(--spacing-md);
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: var(--color-alert-warning-bg);
+    border: 1px solid var(--color-alert-warning-border);
+    border-radius: var(--radius-md);
+    font-size: var(--text-sm);
+    color: var(--color-alert-warning-text);
+
+    > app-icon { font-size: var(--text-md); flex: 0 0 auto; }
+
+    .selector-issues-title { font-weight: var(--font-weight-medium); }
+
+    .selector-issues-list {
+      margin: var(--spacing-xs) 0 0;
+      padding-left: var(--spacing-md);
+    }
+
+    .selector-issues-hint {
+      margin-top: var(--spacing-xs);
+
+      .link-btn {
+        background: none;
+        border: none;
+        padding: 0;
+        font: inherit;
+        color: inherit;
+        text-decoration: underline;
+        cursor: pointer;
+      }
+    }
+  }
+
+  // A required field the operator still has to deal with.
+  .form-group.invalid {
+    input, select { border-color: var(--color-alert-warning-border); }
+  }
+
+  // Saved recipient picker: one control that stands in for the whole
+  // who-and-where block when a repeat order reuses a known destination.
+  .recipient-book {
+    margin-bottom: var(--spacing-md);
+
+    .recipient-picker {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-xs);
+
+      select {
+        flex: 1 1 auto;
+        min-width: 0;
+      }
+
+      // Carries the tooltip so it still shows when the button inside is
+      // disabled — a disabled button suppresses its own title in Safari/Firefox,
+      // which is exactly when the explanation is needed.
+      .btn-icon-hint {
+        display: inline-flex;
+        flex: 0 0 auto;
+      }
+
+      .btn-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 auto;
+        height: var(--control-h-md);
+        width: var(--control-h-md);
+        padding: 0;
+        background: var(--color-background-secondary);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-control);
+        color: var(--color-text-secondary);
+        cursor: pointer;
+
+        app-icon { font-size: var(--text-md); }
+
+        &:hover:not(:disabled) {
+          background: var(--color-background-hover, var(--color-background-secondary));
+          color: var(--color-text-primary);
+        }
+        &:disabled { opacity: 0.5; cursor: default; }
+      }
+    }
+
+    .recipient-summary {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-xs);
+      margin-top: var(--spacing-xs);
+      font-size: var(--text-sm);
+      color: var(--color-text-secondary);
+
+      app-icon { font-size: var(--text-md); }
+    }
+
+    .form-error {
+      margin-top: var(--spacing-xs);
+      font-size: var(--text-sm);
+      color: var(--color-alert-error-text, var(--color-danger));
+    }
+  }
+
+  .recipient-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-xs);
+    margin-bottom: var(--spacing-md);
+
+    .btn-secondary.danger {
+      color: var(--color-danger);
+      border-color: var(--color-alert-error-border, var(--color-danger));
+    }
+  }
+
+  .erp-boxes-summary {
+    padding: var(--spacing-sm-md);
+    background: var(--color-background-secondary);
+    border-radius: var(--radius-md);
+
+    label {
+      display: block;
+      font-weight: 500;
+      color: var(--color-text-muted);
+      margin-bottom: var(--spacing-xs);
+      font-size: 0.8rem;
+    }
+
+    .erp-boxes-summary-text {
+      font-size: 0.95rem;
+      color: var(--color-text-primary);
+      margin-bottom: var(--spacing-sm);
+    }
+
+    .erp-boxes-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+
+      li {
+        font-size: 0.85rem;
+        color: var(--color-text-secondary);
+        padding: var(--spacing-xs) 0;
+        border-top: 1px solid var(--color-border);
+
+        &:first-child {
+          border-top: none;
+        }
+      }
+    }
+  }
+
+  .price-preview {
+    display: flex;
+    align-items: baseline;
+    gap: var(--spacing-sm);
+    margin-top: var(--spacing-sm);
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: var(--color-background-secondary);
+    border-radius: var(--radius-control);
+    font-size: var(--text-md);
+
+    .price-label {
+      color: var(--color-text-muted);
+    }
+    .price-value {
+      font-weight: var(--font-weight-semibold);
+      color: var(--color-text-primary);
+    }
+    .price-fuel {
+      color: var(--color-text-muted);
+      font-size: var(--text-sm);
+    }
+    .price-eta {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      color: var(--color-text-secondary);
+      font-size: var(--text-sm);
+
+      app-icon { font-size: var(--text-md); }
+    }
+  }
+
+  .price-error {
+    margin-top: var(--spacing-sm);
+    padding: var(--spacing-sm) var(--spacing-md);
+    color: var(--color-alert-error-text, var(--color-danger));
+    background: var(--color-alert-error-bg);
+    border: 1px solid var(--color-alert-error-border);
+    border-radius: var(--radius-control);
+    font-size: var(--text-sm);
+  }
+
+  .btn-calculate {
+    @include button-typography;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm) var(--spacing-md);
+    min-height: var(--touch-target-min);
+    border: 1px solid var(--color-border);
+    background: var(--card-bg);
+    color: var(--color-text-primary);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: background 0.2s, opacity 0.2s;
+
+    &:hover:not(:disabled) {
+      background: var(--color-background-secondary);
+    }
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid var(--color-border);
+      border-top-color: var(--color-primary);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    app-icon {
+      font-size: var(--icon-md);
+    }
+  }
+
+  .btn-create {
+    @include button-typography;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm) var(--spacing-md);
+    min-height: var(--touch-target-min);
+    border: none;
+    background: var(--gradient-primary);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    color: var(--color-on-primary);
+    transition: opacity 0.2s;
+
+    &:hover:not(:disabled) {
+      opacity: 0.9;
+    }
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid var(--overlay-highlight-md);
+      border-top-color: var(--color-on-primary);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+  }
+}

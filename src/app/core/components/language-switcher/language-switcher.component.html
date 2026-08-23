@@ -3,9 +3,9 @@
     class="language-toggle"
     (click)="toggleDropdown()"
     [attr.aria-label]="'Select language'">
-    <span class="material-icons flag-icon">public</span>
+    <app-icon name="public" class="flag-icon"></app-icon>
     <span class="language-code">{{ getCurrentLanguageCode() }}</span>
-    <span class="material-icons arrow">keyboard_arrow_down</span>
+    <app-icon name="keyboard_arrow_down" class="arrow"></app-icon>
   </button>
 
   <div class="language-dropdown" [class.open]="isDropdownOpen">
@@ -15,7 +15,7 @@
         [class.active]="(currentLanguage$ | async) === language.code"
         (click)="selectLanguage(language.code)"
         [attr.aria-label]="'Switch to ' + language.label">
-        <span class="material-icons flag-icon">public</span>
+        <app-icon name="public" class="flag-icon"></app-icon>
         <span class="label">{{ language.label }}</span>
       </button>
     }

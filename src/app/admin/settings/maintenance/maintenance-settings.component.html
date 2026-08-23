@@ -1,0 +1,107 @@
+<div class="adm-page">
+
+  <header class="adm-bar">
+    <div class="adm-bar__crumbs">
+      <button
+        type="button"
+        class="adm-crumb-back"
+        (click)="back()"
+        [attr.aria-label]="'admin.maintenance.back' | translate"
+      >
+        <app-icon name="arrow_back"></app-icon>
+      </button>
+      <a class="adm-crumb" (click)="back()" (keydown.enter)="back()" tabindex="0">
+        {{ 'admin.settings.title' | translate }}
+      </a>
+      <span class="adm-crumb-sep">/</span>
+      <span class="adm-crumb adm-crumb--active">{{ 'admin.maintenance.title' | translate }}</span>
+    </div>
+    @if (form) {
+      <div class="adm-bar__actions">
+        <button type="button" class="adm-btn adm-btn--ghost" (click)="back()" [disabled]="loading">
+          <app-icon name="close"></app-icon>
+          {{ 'admin.maintenance.cancel' | translate }}
+        </button>
+        <button
+          type="button"
+          class="adm-btn adm-btn--primary"
+          (click)="onSubmit()"
+          [disabled]="loading || form.invalid"
+        >
+          <app-icon [name]="loading ? 'sync' : 'check'"></app-icon>
+          {{ (loading ? 'admin.maintenance.saving' : 'admin.maintenance.save') | translate }}
+        </button>
+      </div>
+    }
+  </header>
+
+  @if (form) {
+    <div class="adm-grid adm-grid--full">
+      <form [formGroup]="form" (ngSubmit)="onSubmit()" class="adm-main mnt-main">
+
+        <section class="adm-section">
+          <header class="adm-section__head">
+            <div>
+              <h2 class="adm-section__title">{{ 'admin.maintenance.title' | translate }}</h2>
+              <p class="adm-section__sub">{{ 'admin.maintenance.intro' | translate }}</p>
+            </div>
+          </header>
+
+          <div class="adm-fields">
+            <label class="adm-toggle adm-field--span2">
+              <input type="checkbox" formControlName="enabled" />
+              <span class="adm-toggle__track"><span class="adm-toggle__dot"></span></span>
+              <span class="adm-toggle__text">{{ 'admin.maintenance.enableLabel' | translate }}</span>
+            </label>
+
+            <label class="adm-field adm-field--span2">
+              <span class="adm-field__label">{{ 'admin.maintenance.messageLabel' | translate }}</span>
+              <textarea
+                class="adm-input"
+                formControlName="message"
+                rows="3"
+                [attr.placeholder]="'admin.maintenance.messagePlaceholder' | translate"
+              ></textarea>
+            </label>
+
+            <label class="adm-field adm-field--span2">
+              <span class="adm-field__label">{{ 'admin.maintenance.endTimeLabel' | translate }}</span>
+              <input type="datetime-local" class="adm-input" formControlName="endsAtLocal" />
+              <span class="mnt-hint">{{ 'admin.maintenance.endTimeHint' | translate }}</span>
+            </label>
+
+            <div class="adm-field--span2 mnt-subsection">
+              <h3 class="mnt-subsection__title">{{ 'admin.maintenance.accessTitle' | translate }}</h3>
+              <p class="mnt-subsection__sub">{{ 'admin.maintenance.accessIntro' | translate }}</p>
+            </div>
+
+            <label class="adm-toggle adm-field--span2">
+              <input type="checkbox" formControlName="denyClientLogin" />
+              <span class="adm-toggle__track"><span class="adm-toggle__dot"></span></span>
+              <span class="adm-toggle__text">
+                {{ 'admin.maintenance.denyClientLoginLabel' | translate }}
+                <span class="adm-toggle__hint">{{ 'admin.maintenance.denyClientLoginHint' | translate }}</span>
+              </span>
+            </label>
+
+            <label class="adm-toggle adm-field--span2">
+              <input type="checkbox" formControlName="denyApiConnections" />
+              <span class="adm-toggle__track"><span class="adm-toggle__dot"></span></span>
+              <span class="adm-toggle__text">
+                {{ 'admin.maintenance.denyApiLabel' | translate }}
+                <span class="adm-toggle__hint">{{ 'admin.maintenance.denyApiHint' | translate }}</span>
+              </span>
+            </label>
+
+            @if (errorMessage) {
+              <div class="adm-error adm-field--span2" role="alert">{{ errorMessage }}</div>
+            }
+            @if (successMessage) {
+              <div class="adm-success adm-field--span2">{{ successMessage }}</div>
+            }
+          </div>
+        </section>
+      </form>
+    </div>
+  }
+</div>

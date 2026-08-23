@@ -1,527 +1,944 @@
-<div class="client-edit-container">
-  <div class="page-header">
-    <button class="btn-icon-header" (click)="navigateBack()" [attr.aria-label]="'Back to clients'" [attr.title]="'Back to Clients'">
-      <span class="material-icons" aria-hidden="true">arrow_back</span>
-    </button>
-    <h1>
-      {{ isEditMode ? 'Edit Client' : 'Create Client' }}
-      @if (hasUnsavedChanges) {
-        <span class="material-icons unsaved-warning-icon" [attr.aria-label]="'You have unsaved changes'" [attr.title]="'You have unsaved changes'">warning</span>
-      }
-    </h1>
-    <button
-      type="button"
-      class="btn-icon-header btn-save"
-      [disabled]="clientForm.invalid || saving"
-      (click)="saveClient()"
-      [attr.aria-label]="isEditMode ? 'Save changes' : 'Create client'"
-      [attr.title]="isEditMode ? 'Save Changes' : 'Create Client'"
-    >
-      @if (saving) {
-        <span class="spinner-small" aria-hidden="true"></span>
-      } @else {
-        <span class="material-icons" aria-hidden="true">save</span>
-      }
-    </button>
-  </div>
+<div class="adm-page">
 
-  <!-- Loading State -->
-  @if (loading) {
-    <div class="loading-container">
-      <div class="spinner-large"></div>
-      <p>Loading client...</p>
+  <header class="adm-bar">
+    <div class="adm-bar__crumbs">
+      <button
+        type="button"
+        class="adm-crumb-back"
+        (click)="navigateBack()"
+        [attr.aria-label]="'admin.clients.backToList' | translate"
+      >
+        <app-icon name="arrow_back"></app-icon>
+      </button>
+      <a class="adm-crumb" (click)="navigateBack()" (keydown.enter)="navigateBack()" tabindex="0">
+        {{ 'admin.clients.title' | translate }}
+      </a>
+      <span class="adm-crumb-sep">/</span>
+      <span class="adm-crumb adm-crumb--active">
+        {{ isEditMode ? (clientForm.get('name')?.value || ('admin.clients.editClient' | translate))
+                       : ('admin.clients.createClient' | translate) }}
+        @if (hasUnsavedChanges) {
+          <app-icon name="warning" class="ce-unsaved" [attr.aria-label]="'admin.clients.unsavedChanges' | translate" [attr.title]="'admin.clients.unsavedChanges' | translate"></app-icon>
+        }
+      </span>
     </div>
-  }
+    <div class="adm-bar__actions">
+      <button type="button" class="adm-btn adm-btn--ghost" (click)="navigateBack()" [disabled]="saving">
+        <app-icon name="close"></app-icon>
+        {{ 'common.cancel' | translate }}
+      </button>
+      <button
+        type="button"
+        class="adm-btn adm-btn--primary"
+        (click)="saveClient()"
+        [disabled]="clientForm.invalid || saving || loading"
+      >
+        <app-icon [name]="saving ? 'sync' : 'check'"></app-icon>
+        {{ saving
+            ? ('common.saving' | translate)
+            : (isEditMode
+                ? ('admin.clients.saveChanges' | translate)
+                : ('admin.clients.createClient' | translate)) }}
+      </button>
+    </div>
+  </header>
 
-  <!-- Error Message -->
-  @if (error) {
-    <div class="message error">{{ error }}</div>
-  }
-
-  <!-- Success Message -->
-  @if (successMessage) {
-    <div class="message success">{{ successMessage }}</div>
+  <!-- Loading skeleton -->
+  @if (loading) {
+    <div class="adm-loading" aria-busy="true">{{ 'admin.clients.loadingClient' | translate }}</div>
   }
 
   @if (!loading) {
-    <form [formGroup]="clientForm" (ngSubmit)="saveClient()" class="client-form">
-      <!-- Basic Information Section -->
-      <section class="form-section">
-        <h2>Basic Information</h2>
-        <div class="form-row">
-          <div class="form-group">
-            <label for="name">Name *</label>
-            <input
-              type="text"
-              id="name"
-              formControlName="name"
-              [class.invalid]="isFieldInvalid('name')"
-              [attr.aria-invalid]="isFieldInvalid('name')"
-              [attr.aria-describedby]="isFieldInvalid('name') ? 'name-error' : null"
-              [attr.aria-required]="true"
-              placeholder="Client name"
-            >
-            @if (isFieldInvalid('name')) {
-              <span class="error-message" id="name-error" role="alert">{{ getFieldError('name') }}</span>
-            }
-          </div>
-          <div class="form-group">
-            <label for="active">Status</label>
-            <div class="switch-wrapper">
-              <span class="switch-text" [class.active]="clientForm.get('active')?.value">
-                {{ clientForm.get('active')?.value ? 'Active' : 'Inactive' }}
-              </span>
-              <label class="switch">
-                <input type="checkbox" formControlName="active">
-                <span class="slider"></span>
-              </label>
-            </div>
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label for="store_uid">Store *</label>
-            <select
-              id="store_uid"
-              formControlName="store_uid"
-              [class.invalid]="isFieldInvalid('store_uid')"
-              [attr.aria-invalid]="isFieldInvalid('store_uid')"
-              [attr.aria-describedby]="isFieldInvalid('store_uid') ? 'store_uid-error' : null"
-              [attr.aria-required]="true"
-            >
-              <option value="">Select a store</option>
-              @for (store of stores; track store.value) {
-                <option [value]="store.value">{{ store.label }}</option>
-              }
-            </select>
-            @if (isFieldInvalid('store_uid')) {
-              <span class="error-message" id="store_uid-error" role="alert">{{ getFieldError('store_uid') }}</span>
-            }
-          </div>
-          <div class="form-group">
-            <label for="price_type_uid">Price Type *</label>
-            <select
-              id="price_type_uid"
-              formControlName="price_type_uid"
-              [class.invalid]="isFieldInvalid('price_type_uid')"
-              [attr.aria-invalid]="isFieldInvalid('price_type_uid')"
-              [attr.aria-describedby]="isFieldInvalid('price_type_uid') ? 'price_type_uid-error' : null"
-              [attr.aria-required]="true"
-            >
-              <option value="">Select a price type</option>
-              @for (pt of priceTypes; track pt.value) {
-                <option [value]="pt.value">{{ pt.label }}</option>
-              }
-            </select>
-            @if (isFieldInvalid('price_type_uid')) {
-              <span class="error-message" id="price_type_uid-error" role="alert">{{ getFieldError('price_type_uid') }}</span>
-            }
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label for="manager_uid">Assigned Manager</label>
-            <select
-              id="manager_uid"
-              formControlName="manager_uid"
-            >
-              <option value="">Select a manager (optional)</option>
-              @for (manager of managers; track manager.value) {
-                <option [value]="manager.value">{{ manager.label }}</option>
-              }
-            </select>
-            <span class="field-hint">Optional. Assign a manager to this client.</span>
-          </div>
-        </div>
-      </section>
+    <div class="adm-grid">
 
-      <!-- Contact Information Section -->
-      <section class="form-section">
-        <h2>Contact Information</h2>
-        <div class="form-row">
-          <div class="form-group">
-            <label for="phone">Phone *</label>
-            <input
-              type="tel"
-              id="phone"
-              formControlName="phone"
-              [class.invalid]="isFieldInvalid('phone')"
-              [attr.aria-invalid]="isFieldInvalid('phone')"
-              [attr.aria-describedby]="isFieldInvalid('phone') ? 'phone-error' : 'phone-hint'"
-              [attr.aria-required]="true"
-              placeholder="e.g., 380501234567"
-            >
-            @if (isFieldInvalid('phone')) {
-              <span class="error-message" id="phone-error" role="alert">{{ getFieldError('phone') }}</span>
-            }
-            <span class="field-hint" id="phone-hint">8-15 digits only</span>
+      <!-- Sidebar -->
+      <aside class="adm-side">
+        <div class="adm-id-card">
+          <div class="adm-avatar" data-role="client">{{ initials() }}</div>
+          <div class="adm-id-name">
+            {{ clientForm.get('name')?.value || ('admin.clients.createClient' | translate) }}
           </div>
-          <div class="form-group">
-            <label for="email">Email</label>
-            <input
-              type="email"
-              id="email"
-              formControlName="email"
-              [class.invalid]="isFieldInvalid('email')"
-              [attr.aria-invalid]="isFieldInvalid('email')"
-              [attr.aria-describedby]="isFieldInvalid('email') ? 'email-error' : null"
-              placeholder="client@example.com"
-            >
-            @if (isFieldInvalid('email')) {
-              <span class="error-message" id="email-error" role="alert">{{ getFieldError('email') }}</span>
-            }
+          @if (clientForm.get('phone')?.value) {
+            <div class="adm-id-username">{{ clientForm.get('phone')?.value }}</div>
+          }
+          <div class="adm-id-role">
+            <span class="adm-role-chip" [attr.data-role]="clientForm.get('active')?.value ? 'manager' : 'client'">
+              {{ (clientForm.get('active')?.value ? 'common.active' : 'common.inactive') | translate }}
+            </span>
           </div>
         </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label for="pin_code">PIN Code</label>
-            <div class="input-with-button">
+
+        <div class="adm-meta">
+          <div class="adm-meta__title">{{ 'admin.clients.basicInfo' | translate }}</div>
+          <div class="adm-meta__row">
+            <span class="adm-meta__label">{{ 'admin.clients.store' | translate }}</span>
+            <span class="adm-meta__value">{{ storeLabel() || '—' }}</span>
+          </div>
+          <div class="adm-meta__row">
+            <span class="adm-meta__label">{{ 'admin.clients.priceType' | translate }}</span>
+            <span class="adm-meta__value">{{ priceTypeLabel() || '—' }}</span>
+          </div>
+          <div class="adm-meta__row">
+            <span class="adm-meta__label">{{ 'admin.clients.assignedManager' | translate }}</span>
+            <span class="adm-meta__value">{{ managerLabel() || '—' }}</span>
+          </div>
+          <div class="adm-meta__row">
+            <span class="adm-meta__label">{{ 'admin.clients.language' | translate }}</span>
+            <span class="adm-meta__value">
+              {{ clientForm.get('language')?.value
+                  ? (clientForm.get('language')?.value || '').toUpperCase()
+                  : '—' }}
+            </span>
+          </div>
+          @if (isEditMode && clientUid) {
+            <div class="adm-meta__row adm-meta__row--mono">
+              <span class="adm-meta__label">UID</span>
+              <span class="adm-meta__value adm-uid" [copyOnClick]="clientUid">
+                <span class="adm-uid__text">{{ clientUid }}</span>
+              </span>
+            </div>
+          }
+        </div>
+      </aside>
+
+      <!-- Main -->
+      <form class="adm-main" [formGroup]="clientForm" (ngSubmit)="saveClient()" autocomplete="off">
+
+        @if (error) {
+          <div class="adm-error" role="alert">{{ error }}</div>
+        }
+        @if (successMessage) {
+          <div class="adm-success">{{ successMessage }}</div>
+        }
+
+        <!-- Identity -->
+        <section class="adm-section">
+          <header class="adm-section__head">
+            <div>
+              <h2 class="adm-section__title">{{ 'admin.clients.basicInfo' | translate }}</h2>
+              <p class="adm-section__sub">{{ 'admin.clients.namePlaceholder' | translate }}</p>
+            </div>
+          </header>
+
+          <div class="adm-fields">
+            <label class="adm-field adm-field--span2">
+              <span class="adm-field__label">
+                {{ 'admin.clients.name' | translate }} <em>*</em>
+              </span>
               <input
                 type="text"
-                id="pin_code"
-                formControlName="pin_code"
-                placeholder="Optional PIN code"
-              >
-              <button type="button" class="btn btn-generate" (click)="generatePinCode()" title="Generate 6-digit PIN">
-                Generate
-              </button>
-            </div>
-          </div>
-          <div class="form-group">
-            <label for="address">Legacy Address</label>
-            <textarea
-              id="address"
-              formControlName="address"
-              rows="2"
-              placeholder="Legacy address field (use Addresses section below)"
-            ></textarea>
-          </div>
-        </div>
-      </section>
+                class="adm-input"
+                formControlName="name"
+                [class.is-invalid]="isFieldInvalid('name')"
+                [placeholder]="'admin.clients.namePlaceholder' | translate"
+                autocomplete="off"
+              />
+              @if (isFieldInvalid('name')) {
+                <span class="ce-field-error" role="alert">{{ getFieldError('name') }}</span>
+              }
+            </label>
 
-      <!-- Financial Settings Section -->
-      <section class="form-section">
-        <h2>Financial Settings</h2>
-        <div class="form-row">
-          <div class="form-group">
-            <label for="fixed_discount">Discount Mode</label>
-            <div class="radio-group">
-              <label class="radio-label">
-                <input
-                  type="radio"
-                  [value]="true"
-                  formControlName="fixed_discount"
-                >
-                <span>Fixed Discount</span>
-              </label>
-              <label class="radio-label">
-                <input
-                  type="radio"
-                  [value]="false"
-                  formControlName="fixed_discount"
-                >
-                <span>Scale-based (by turnover)</span>
-              </label>
-            </div>
-          </div>
-        </div>
-        <!-- Cumulative Mode (only visible when scale-based) -->
-        @if (!clientForm.get('fixed_discount')?.value) {
-          <div class="form-row">
-            <div class="form-group">
-              <label>Cumulative Mode</label>
-              <div class="radio-group">
-                <label class="radio-label">
-                  <input
-                    type="radio"
-                    [value]="true"
-                    formControlName="cumulative_discount"
-                  >
-                  <span>Cumulative (balance + order)</span>
-                </label>
-                <label class="radio-label">
-                  <input
-                    type="radio"
-                    [value]="false"
-                    formControlName="cumulative_discount"
-                  >
-                  <span>Per-order only</span>
-                </label>
-              </div>
-              <span class="field-hint">
-                Cumulative: discount based on total turnover history.<br>
-                Per-order: discount based on current order amount only.
+            <label class="adm-toggle adm-field--span2">
+              <input type="checkbox" formControlName="active" />
+              <span class="adm-toggle__track"><span class="adm-toggle__dot"></span></span>
+              <span class="adm-toggle__text">
+                {{ 'common.status' | translate }}:
+                <strong>{{ (clientForm.get('active')?.value ? 'common.active' : 'common.inactive') | translate }}</strong>
               </span>
+            </label>
+          </div>
+        </section>
+
+        <!-- Workspace -->
+        <section class="adm-section">
+          <header class="adm-section__head">
+            <div>
+              <h2 class="adm-section__title">{{ 'admin.clients.store' | translate }}</h2>
+              <p class="adm-section__sub">{{ 'admin.clients.managerHint' | translate }}</p>
             </div>
-          </div>
-        }
-        <div class="form-row">
-          <div class="form-group">
-            <label for="discount">Fixed Discount (%)</label>
-            <input
-              type="number"
-              id="discount"
-              formControlName="discount"
-              [class.invalid]="isFieldInvalid('discount')"
-              [attr.aria-invalid]="isFieldInvalid('discount')"
-              [attr.aria-describedby]="isFieldInvalid('discount') ? 'discount-error' : 'discount-hint'"
-              min="0"
-              max="100"
-              [attr.disabled]="!clientForm.get('fixed_discount')?.value ? null : null"
-            >
-            @if (isFieldInvalid('discount')) {
-              <span class="error-message" id="discount-error" role="alert">{{ getFieldError('discount') }}</span>
-            }
-            <span class="field-hint" id="discount-hint">Used when Fixed Discount mode is selected</span>
-          </div>
-          <div class="form-group">
-            <label for="balance">Balance (turnover in cents)</label>
-            <input
-              type="number"
-              id="balance"
-              formControlName="balance"
-              [attr.aria-describedby]="'balance-hint'"
-              [attr.aria-readonly]="true"
-              min="0"
-              readonly
-              class="readonly-field"
-            >
-            <span class="field-hint" id="balance-hint">Current monthly purchase turnover (set by CRM)</span>
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label for="vat_rate">VAT Rate (%)</label>
-            <input
-              type="number"
-              id="vat_rate"
-              formControlName="vat_rate"
-              [attr.aria-describedby]="'vat_rate-hint'"
-              [attr.aria-readonly]="true"
-              min="0"
-              max="100"
-              step="0.01"
-              readonly
-              class="readonly-field"
-            >
-            <span class="field-hint" id="vat_rate-hint">Managed by CRM</span>
-          </div>
-          <div class="form-group">
-            <label for="vat_number">VAT Number</label>
-            <input
-              type="text"
-              id="vat_number"
-              formControlName="vat_number"
-              [attr.aria-describedby]="'vat_number-hint'"
-              placeholder="e.g., PL1234567890"
-            >
-            <span class="field-hint" id="vat_number-hint">If empty, store's default VAT rate is used</span>
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label for="business_registration_number">{{ 'profile.businessRegistrationNumber' | translate }}</label>
-            <input
-              type="text"
-              id="business_registration_number"
-              formControlName="business_registration_number"
-              [class.invalid]="isFieldInvalid('business_registration_number')"
-              [attr.aria-invalid]="isFieldInvalid('business_registration_number')"
-              [attr.aria-describedby]="'business_registration_number-hint'"
-              placeholder="e.g., 12345678"
-            >
-            @if (isFieldInvalid('business_registration_number')) {
-              <span class="error-message" role="alert">{{ getFieldError('business_registration_number') }}</span>
-            }
-            <span class="field-hint" id="business_registration_number-hint">{{ 'profile.businessRegNumberRequired' | translate }}</span>
-          </div>
-        </div>
-      </section>
+          </header>
 
-    </form>
+          <div class="adm-fields">
+            <label class="adm-field">
+              <span class="adm-field__label">
+                {{ 'admin.clients.store' | translate }} <em>*</em>
+              </span>
+              <select
+                class="adm-input"
+                formControlName="store_uid"
+                [class.is-invalid]="isFieldInvalid('store_uid')"
+                [attr.disabled]="storeLocked ? '' : null"
+              >
+                <option value="">{{ 'admin.clients.selectStore' | translate }}</option>
+                @for (store of stores; track store.value) {
+                  <option [value]="store.value">{{ store.label }}</option>
+                }
+              </select>
+              @if (isFieldInvalid('store_uid')) {
+                <span class="ce-field-error" role="alert">{{ getFieldError('store_uid') }}</span>
+              }
+            </label>
 
-    <!-- Addresses Section (only in edit mode) -->
-    @if (isEditMode) {
-      <section class="form-section addresses-section">
-        <div class="section-header">
-          <h2>Addresses</h2>
-          <button class="btn-icon-header btn-save" (click)="openAddAddressModal()" [attr.aria-label]="'Add address'" [attr.title]="'Add Address'">
-            <span class="material-icons" aria-hidden="true">add</span>
-          </button>
-        </div>
+            <label class="adm-field">
+              <span class="adm-field__label">
+                {{ 'admin.clients.priceType' | translate }} <em>*</em>
+              </span>
+              <select
+                class="adm-input"
+                formControlName="price_type_uid"
+                [class.is-invalid]="isFieldInvalid('price_type_uid')"
+              >
+                <option value="">{{ 'admin.clients.selectPriceType' | translate }}</option>
+                @for (pt of priceTypes; track pt.value) {
+                  <option [value]="pt.value">{{ pt.label }}</option>
+                }
+              </select>
+              @if (isFieldInvalid('price_type_uid')) {
+                <span class="ce-field-error" role="alert">{{ getFieldError('price_type_uid') }}</span>
+              }
+            </label>
 
-        @if (addressesLoading) {
-          <div class="loading-container small">
-            <div class="spinner-small"></div>
+            <label class="adm-field">
+              <span class="adm-field__label">{{ 'admin.clients.assignedManager' | translate }}</span>
+              <select class="adm-input" formControlName="manager_uid">
+                <option value="">{{ 'admin.clients.selectManager' | translate }}</option>
+                @for (manager of managers; track manager.value) {
+                  <option [value]="manager.value">{{ manager.label }}</option>
+                }
+              </select>
+            </label>
+
+            <label class="adm-field">
+              <span class="adm-field__label">{{ 'admin.clients.language' | translate }}</span>
+              <select class="adm-input" formControlName="language">
+                <option value="">{{ 'admin.clients.languageNone' | translate }}</option>
+                @for (lang of availableLanguages; track lang) {
+                  <option [value]="lang">{{ lang.toUpperCase() }}</option>
+                }
+              </select>
+            </label>
           </div>
-        }
+        </section>
 
-        @if (!addressesLoading && addresses.length === 0) {
-          <div class="empty-addresses">
-            <p>No addresses found for this client.</p>
+        <!-- Contact -->
+        <section class="adm-section">
+          <header class="adm-section__head">
+            <div>
+              <h2 class="adm-section__title">{{ 'admin.clients.contactInfo' | translate }}</h2>
+              <p class="adm-section__sub">{{ 'admin.clients.phoneHint' | translate }}</p>
+            </div>
+          </header>
+
+          <div class="adm-fields">
+            <label class="adm-field">
+              <span class="adm-field__label">
+                {{ 'admin.clients.phone' | translate }} <em>*</em>
+              </span>
+              <input
+                type="tel"
+                class="adm-input"
+                formControlName="phone"
+                [class.is-invalid]="isFieldInvalid('phone')"
+                [placeholder]="'admin.clients.phonePlaceholder' | translate"
+                autocomplete="off"
+              />
+              @if (isFieldInvalid('phone')) {
+                <span class="ce-field-error" role="alert">{{ getFieldError('phone') }}</span>
+              }
+            </label>
+
+            <label class="adm-field">
+              <span class="adm-field__label">{{ 'admin.clients.email' | translate }}</span>
+              <input
+                type="email"
+                class="adm-input"
+                formControlName="email"
+                [class.is-invalid]="isFieldInvalid('email')"
+                [placeholder]="'admin.clients.emailPlaceholder' | translate"
+                autocomplete="off"
+              />
+              @if (isFieldInvalid('email')) {
+                <span class="ce-field-error" role="alert">{{ getFieldError('email') }}</span>
+              }
+            </label>
+
+            <label class="adm-field adm-field--span2">
+              <span class="adm-field__label">{{ 'admin.clients.pinCode' | translate }}</span>
+              <div class="adm-pwd">
+                <input
+                  type="text"
+                  class="adm-input adm-input--mono"
+                  formControlName="pin_code"
+                  [placeholder]="'admin.clients.pinCodePlaceholder' | translate"
+                  autocomplete="off"
+                />
+                <button type="button" class="adm-btn adm-btn--mini" (click)="generatePinCode()">
+                  {{ 'common.generate' | translate }}
+                </button>
+              </div>
+            </label>
           </div>
-        }
+        </section>
 
-        @if (!addressesLoading && addresses.length > 0) {
-          <div class="addresses-list">
-            @for (address of addresses; track address.uid) {
-              <div class="address-card" [class.is-default]="address.is_default">
-                <div class="address-header">
-                  <div class="address-country">
-                    <strong>{{ getCountryName(address.country_code) }}</strong>
-                    @if (address.is_default) {
-                      <span class="default-badge">Default</span>
-                    }
-                  </div>
-                  <div class="address-actions">
-                    @if (!address.is_default) {
-                      <button
-                        class="btn btn-icon"
-                        (click)="setDefaultAddress(address)"
-                        [attr.aria-label]="'Set as default address'"
-                        [attr.title]="'Set as default'"
-                      >
-                        <span class="star-icon" aria-hidden="true">&#9734;</span>
-                      </button>
-                    }
-                    <button
-                      class="btn btn-icon"
-                      (click)="openEditAddressModal(address)"
-                      [attr.aria-label]="'Edit address'"
-                      [attr.title]="'Edit'"
-                    >
-                      <span class="edit-icon" aria-hidden="true">&#9998;</span>
-                    </button>
-                    <button
-                      class="btn btn-icon btn-danger"
-                      (click)="deleteAddress(address)"
-                      [attr.aria-label]="'Delete address'"
-                      [attr.title]="'Delete'"
-                    >
-                      <span class="delete-icon" aria-hidden="true">&times;</span>
-                    </button>
-                  </div>
+        <!-- Discount & VAT -->
+        <section class="adm-section">
+          <header class="adm-section__head">
+            <div>
+              <h2 class="adm-section__title">{{ 'admin.clients.financialSettings' | translate }}</h2>
+              <p class="adm-section__sub">{{ 'admin.clients.discountHint' | translate }}</p>
+            </div>
+          </header>
+
+          <div class="adm-fields">
+            <div class="adm-field adm-field--span2">
+              <span class="adm-field__label">{{ 'admin.clients.discountMode' | translate }}</span>
+              <div class="adm-role-grid ce-mode-grid">
+                <label
+                  class="adm-role-card"
+                  [class.is-active]="clientForm.get('fixed_discount')?.value === true"
+                >
+                  <input type="radio" [value]="true" formControlName="fixed_discount" />
+                  <span class="adm-role-card__dot"></span>
+                  <span class="adm-role-card__label">{{ 'admin.clients.fixedDiscount' | translate }}</span>
+                </label>
+                <label
+                  class="adm-role-card"
+                  [class.is-active]="clientForm.get('fixed_discount')?.value === false"
+                >
+                  <input type="radio" [value]="false" formControlName="fixed_discount" />
+                  <span class="adm-role-card__dot"></span>
+                  <span class="adm-role-card__label">{{ 'admin.clients.scaleBasedByTurnover' | translate }}</span>
+                </label>
+              </div>
+            </div>
+
+            @if (!clientForm.get('fixed_discount')?.value) {
+              <div class="adm-field adm-field--span2">
+                <span class="adm-field__label">{{ 'admin.clients.cumulativeMode' | translate }}</span>
+                <div class="adm-role-grid ce-mode-grid">
+                  <label
+                    class="adm-role-card"
+                    [class.is-active]="clientForm.get('cumulative_discount')?.value === true"
+                  >
+                    <input type="radio" [value]="true" formControlName="cumulative_discount" />
+                    <span class="adm-role-card__dot"></span>
+                    <span class="adm-role-card__label">{{ 'admin.clients.cumulative' | translate }}</span>
+                  </label>
+                  <label
+                    class="adm-role-card"
+                    [class.is-active]="clientForm.get('cumulative_discount')?.value === false"
+                  >
+                    <input type="radio" [value]="false" formControlName="cumulative_discount" />
+                    <span class="adm-role-card__dot"></span>
+                    <span class="adm-role-card__label">{{ 'admin.clients.perOrderOnly' | translate }}</span>
+                  </label>
                 </div>
-                <div class="address-details">
-                  <p>{{ formatAddress(address) }}</p>
-                </div>
+                <span class="ce-field-hint">
+                  {{ 'admin.clients.cumulativeHint' | translate }}<br />
+                  {{ 'admin.clients.perOrderHint' | translate }}
+                </span>
               </div>
             }
+
+            <label class="adm-field">
+              <span class="adm-field__label">{{ 'admin.clients.discount' | translate }} (%)</span>
+              <input
+                type="number"
+                class="adm-input"
+                formControlName="discount"
+                [class.is-invalid]="isFieldInvalid('discount')"
+                min="0"
+                max="100"
+              />
+              @if (isFieldInvalid('discount')) {
+                <span class="ce-field-error" role="alert">{{ getFieldError('discount') }}</span>
+              }
+            </label>
+
+            <label class="adm-field">
+              <span class="adm-field__label">{{ 'admin.clients.additionalDiscount' | translate }} (%)</span>
+              <input
+                type="number"
+                class="adm-input"
+                formControlName="additional_discount"
+                [class.is-invalid]="isFieldInvalid('additional_discount')"
+                min="0"
+                max="100"
+              />
+              <span class="ce-field-hint">{{ 'admin.clients.additionalDiscountHint' | translate }}</span>
+              @if (isFieldInvalid('additional_discount')) {
+                <span class="ce-field-error" role="alert">{{ getFieldError('additional_discount') }}</span>
+              }
+            </label>
+
+            <label class="adm-field">
+              <span class="adm-field__label">{{ 'admin.clients.balanceTurnover' | translate }}</span>
+              <input
+                type="text"
+                class="adm-input adm-input--mono"
+                [value]="formatBalance(clientForm.get('balance')?.value)"
+                readonly
+              />
+              <span class="ce-field-hint">{{ 'admin.clients.balanceCrmHint' | translate }}</span>
+            </label>
+
+            <label class="adm-field">
+              <span class="adm-field__label">{{ 'admin.clients.vatRate' | translate }} (%)</span>
+              <input
+                type="number"
+                class="adm-input adm-input--mono"
+                formControlName="vat_rate"
+                readonly
+                min="0"
+                max="100"
+                step="0.01"
+              />
+              <span class="ce-field-hint">{{ 'admin.clients.vatRateCrmHint' | translate }}</span>
+            </label>
+
+            <label class="adm-field">
+              <span class="adm-field__label">{{ 'admin.clients.vatNumber' | translate }}</span>
+              <input
+                type="text"
+                class="adm-input"
+                formControlName="vat_number"
+                [class.is-invalid]="isFieldInvalid('vat_number')"
+                [placeholder]="'admin.clients.vatNumberPlaceholder' | translate"
+              />
+              @if (isFieldInvalid('vat_number')) {
+                <span class="ce-field-error" role="alert">{{ getFieldError('vat_number') }}</span>
+              }
+              <span class="ce-field-hint">{{ 'admin.clients.vatNumberHint' | translate }}</span>
+            </label>
+
+            <label class="adm-field adm-field--span2">
+              <span class="adm-field__label">{{ 'profile.businessRegistrationNumber' | translate }}</span>
+              <input
+                type="text"
+                class="adm-input"
+                formControlName="business_registration_number"
+                [class.is-invalid]="isFieldInvalid('business_registration_number')"
+                placeholder="e.g., 12345678"
+              />
+              @if (isFieldInvalid('business_registration_number')) {
+                <span class="ce-field-error" role="alert">{{ getFieldError('business_registration_number') }}</span>
+              }
+              <span class="ce-field-hint">{{ 'profile.businessRegNumberRequired' | translate }}</span>
+            </label>
           </div>
+        </section>
+
+        <!-- Client API access: the per-client gate of the machine-to-machine API
+             plus a glance at this client's keys. Keys themselves are managed on
+             the Client API page. -->
+        @if (isEditMode && apiAccessLoaded) {
+          <section class="adm-section">
+            <header class="adm-section__head">
+              <div>
+                <h2 class="adm-section__title">{{ 'admin.clientApi.clientAccess' | translate }}</h2>
+                <p class="adm-section__sub">{{ (apiAccessEnabled ? 'admin.clientApi.clientAccessOn' : 'admin.clientApi.clientAccessOff') | translate }}</p>
+              </div>
+              <a class="adm-section__link" [routerLink]="['/admin/client-api/keys']" [queryParams]="{ client_uid: clientUid }">
+                {{ 'admin.clientApi.manageKeys' | translate }} ({{ activeApiKeyCount }} {{ 'admin.clientApi.activeKeys' | translate }})
+              </a>
+            </header>
+            <label class="adm-toggle">
+              <input type="checkbox" [checked]="apiAccessEnabled" [disabled]="!isAdminUser || apiAccessSaving" (change)="toggleApiAccess()" />
+              <span class="adm-toggle__track"><span class="adm-toggle__dot"></span></span>
+              <span class="adm-toggle__text">{{ 'admin.clientApi.enabled' | translate }}</span>
+            </label>
+            @if (apiKeys.length > 0) {
+              <ul class="ce-api-keys">
+                @for (k of apiKeys; track k.uid) {
+                  <li class="ce-api-key" [class.is-revoked]="k.status !== 'active'">
+                    <span class="ce-api-key__name">{{ k.name }}</span>
+                    <span class="ce-api-key__prefix">{{ k.display_label }}</span>
+                    <span class="ce-api-key__meta">{{ k.scopes.join(' ') }}</span>
+                    <span class="ce-api-key__meta">{{ (k.status === 'active' ? 'common.active' : 'admin.clientApi.revoked') | translate }} · 24h: {{ k.requests_24h }}</span>
+                  </li>
+                }
+              </ul>
+            }
+          </section>
         }
-      </section>
-    }
+
+        <!-- Branches (edit mode only, read-only: the ERP owns this data) -->
+        @if (isEditMode && branches.length > 0) {
+          <section class="adm-section">
+            <header class="adm-section__head">
+              <div>
+                <h2 class="adm-section__title">{{ 'admin.clients.branches' | translate }}</h2>
+                <p class="adm-section__sub">{{ 'admin.clients.branchesHint' | translate }}</p>
+              </div>
+            </header>
+
+            <div class="ce-branches" id="ce-branches-list">
+              @for (branch of visibleBranches; track branch.uid) {
+                <!-- The whole card is clickable for convenience, but the name is
+                     the real button: role="button" on the card would make every
+                     descendant presentational and hide the labelled field list
+                     from a screen reader — the one thing this card exists to
+                     show. -->
+                <article
+                  class="ce-branch"
+                  [class.is-inactive]="!branch.active"
+                  (click)="openBranchModal(branch)"
+                >
+                  <div class="ce-branch__head">
+                    <button
+                      type="button"
+                      class="ce-branch__open"
+                      [id]="'branch-open-' + branch.uid"
+                      aria-haspopup="dialog"
+                      (click)="$event.stopPropagation(); openBranchModal(branch)"
+                    >{{ branch.name }}</button>
+                    @if (!branch.active) {
+                      <span class="ce-branch__badge">{{ 'common.inactive' | translate }}</span>
+                    }
+                  </div>
+                  <!-- Gaps that change how the branch is billed are marked on
+                       the field they are about, with the consequence in the
+                       tooltip: the ERP owns this record so nothing can be fixed
+                       here, and three sentences of prose under the card buried
+                       the values the card exists to show. -->
+                  <dl class="ce-branch__fields">
+                    <dt>{{ 'admin.clients.vatNumber' | translate }}</dt>
+                    <dd>
+                      <span class="ce-branch__value" [title]="branch.vat_number">{{ branch.vat_number || '—' }}</span>
+                      <ng-container
+                        *ngTemplateOutlet="warnMark; context: { $implicit: branchWarning(branch, 'vat') }"
+                      ></ng-container>
+                    </dd>
+
+                    <dt>{{ 'admin.clients.businessRegistrationNumber' | translate }}</dt>
+                    <dd>
+                      <span class="ce-branch__value" [title]="branch.business_registration_number">{{ branch.business_registration_number || '—' }}</span>
+                      <ng-container
+                        *ngTemplateOutlet="warnMark; context: { $implicit: branchWarning(branch, 'business_registration_number') }"
+                      ></ng-container>
+                    </dd>
+
+                    <dt>{{ 'admin.clients.contactName' | translate }}</dt>
+                    <dd>
+                      <span class="ce-branch__value" [title]="branch.contact_name">{{ branch.contact_name || '—' }}</span>
+                    </dd>
+
+                    <dt>{{ 'admin.clients.phone' | translate }}</dt>
+                    <dd>
+                      <span class="ce-branch__value" [title]="branch.contact_phone">{{ branch.contact_phone || '—' }}</span>
+                    </dd>
+
+                    <dt>{{ 'admin.clients.email' | translate }}</dt>
+                    <dd>
+                      <span class="ce-branch__value" [title]="branch.contact_email">{{ branch.contact_email || '—' }}</span>
+                      <ng-container
+                        *ngTemplateOutlet="warnMark; context: { $implicit: branchWarning(branch, 'contact_email') }"
+                      ></ng-container>
+                    </dd>
+                  </dl>
+                </article>
+              }
+            </div>
+
+            @if (hiddenBranchCount > 0) {
+              <button
+                type="button"
+                class="adm-btn adm-btn--ghost adm-btn--mini ce-show-all"
+                (click)="toggleBranches()"
+                [attr.aria-expanded]="branchesExpanded"
+                aria-controls="ce-branches-list"
+              >
+                <app-icon [name]="branchesExpanded ? 'expand_less' : 'expand_more'"></app-icon>
+                {{ branchesExpanded
+                    ? ('common.showLess' | translate)
+                    : ('common.showAll' | translate) + ' (' + branches.length + ')' }}
+              </button>
+            }
+          </section>
+        }
+
+        <!-- Certification countries (edit mode only, read-only: the ERP owns
+             this data). Deliberately placed before the addresses, because the
+             first question it answers is "why is this different from the
+             delivery country?" — they are different things. -->
+        @if (showCertificationCountries) {
+          <section class="adm-section">
+            <header class="adm-section__head">
+              <div>
+                <h2 class="adm-section__title">{{ 'admin.clients.certificationCountries' | translate }}</h2>
+                <p class="adm-section__sub">{{ 'admin.clients.certificationCountriesHint' | translate }}</p>
+              </div>
+            </header>
+
+            @if (certificationCountries.length > 0) {
+              <ul class="ce-cert-countries">
+                @for (code of certificationCountries; track code) {
+                  <li class="ce-cert-country">
+                    <span class="ce-cert-country__code">{{ code }}</span>
+                    <span class="ce-cert-country__name">{{ getCountryName(code) }}</span>
+                  </li>
+                }
+              </ul>
+            } @else {
+              <!-- Empty is not neutral here: with the store gate on it is the
+                   strictest possible setting, so say what it does. -->
+              <div class="ce-empty ce-empty--warn">
+                {{ 'admin.clients.certificationCountriesEmpty' | translate }}
+              </div>
+            }
+          </section>
+        }
+
+        <!-- Addresses (edit mode only) -->
+        @if (isEditMode) {
+          <section class="adm-section">
+            <header class="adm-section__head ce-addr-head">
+              <div>
+                <h2 class="adm-section__title">{{ 'admin.clients.addresses' | translate }}</h2>
+                <p class="adm-section__sub">{{ addresses.length }} {{ 'admin.clients.addresses' | translate }}</p>
+              </div>
+              <button
+                type="button"
+                class="adm-btn adm-btn--mini"
+                (click)="openAddAddressModal()"
+                [attr.aria-label]="'admin.clients.addAddress' | translate"
+              >
+                <app-icon name="add"></app-icon>
+                {{ 'admin.clients.addAddress' | translate }}
+              </button>
+            </header>
+
+            @if (addressesLoading) {
+              <div class="adm-loading">…</div>
+            }
+
+            @if (!addressesLoading && addresses.length === 0) {
+              <div class="ce-empty">{{ 'admin.clients.noAddressesForClient' | translate }}</div>
+            }
+
+            @if (!addressesLoading && addresses.length > 0) {
+              <div class="ce-addresses" id="ce-addresses-list">
+                @for (address of visibleAddresses; track address.uid) {
+                  <article class="ce-address" [class.is-default]="address.is_default">
+                    <header class="ce-address__head">
+                      <div class="ce-address__country">
+                        <strong>{{ getCountryName(address.country_code) }}</strong>
+                        @if (address.is_default) {
+                          <span class="ce-default-badge">{{ 'admin.clients.defaultBadge' | translate }}</span>
+                        }
+                        @if (address.is_official) {
+                          <span class="ce-official-badge">{{ 'admin.clients.officialBadge' | translate }}</span>
+                        }
+                        @if (branchNameFor(address)) {
+                          <span class="ce-branch-badge">{{ branchNameFor(address) }}</span>
+                        }
+                      </div>
+                      <div class="ce-address__actions">
+                        @if (!address.is_default) {
+                          <button
+                            type="button"
+                            class="adm-icon-btn"
+                            (click)="setDefaultAddress(address)"
+                            [attr.aria-label]="'admin.clients.setAsDefault' | translate"
+                            [attr.title]="'admin.clients.setAsDefault' | translate"
+                          >
+                            <app-icon name="star_outline"></app-icon>
+                          </button>
+                        }
+                        @if (!address.is_official) {
+                          <button
+                            type="button"
+                            class="adm-icon-btn"
+                            (click)="setOfficialAddress(address)"
+                            [attr.aria-label]="'admin.clients.setAsOfficial' | translate"
+                            [attr.title]="'admin.clients.setAsOfficial' | translate"
+                          >
+                            <app-icon name="receipt_long"></app-icon>
+                          </button>
+                        }
+                        <button
+                          type="button"
+                          class="adm-icon-btn"
+                          (click)="openEditAddressModal(address)"
+                          [attr.aria-label]="'admin.clients.editAddress' | translate"
+                        >
+                          <app-icon name="edit"></app-icon>
+                        </button>
+                        <button
+                          type="button"
+                          class="adm-icon-btn adm-icon-btn--danger"
+                          (click)="deleteAddress(address)"
+                          [attr.aria-label]="'common.delete' | translate"
+                        >
+                          <app-icon name="delete"></app-icon>
+                        </button>
+                      </div>
+                    </header>
+                    <p class="ce-address__body">{{ formatAddress(address) }}</p>
+                  </article>
+                }
+              </div>
+
+              @if (hiddenAddressCount > 0) {
+                <button
+                  type="button"
+                  class="adm-btn adm-btn--ghost adm-btn--mini ce-show-all"
+                  (click)="toggleAddresses()"
+                  [attr.aria-expanded]="addressesExpanded"
+                  aria-controls="ce-addresses-list"
+                >
+                  <app-icon [name]="addressesExpanded ? 'expand_less' : 'expand_more'"></app-icon>
+                  {{ addressesExpanded
+                      ? ('common.showLess' | translate)
+                      : ('common.showAll' | translate) + ' (' + addresses.length + ')' }}
+                </button>
+              }
+            }
+          </section>
+        }
+      </form>
+    </div>
+  }
+
+  <!-- Branch detail. Read-only: the ERP owns branch records, so this shows the
+       values in full where the card has to truncate them. -->
+  @if (selectedBranch; as branch) {
+    <div class="ce-modal-overlay" (click)="closeBranchModal()">
+      <div
+        class="ce-modal ce-modal--narrow"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="branch-modal-title"
+        (click)="$event.stopPropagation()"
+      >
+        <header class="ce-modal__head">
+          <div class="ce-modal__heading">
+            <h3 id="branch-modal-title" class="ce-modal__title">{{ branch.name }}</h3>
+            @if (!branch.active) {
+              <span class="ce-branch__badge">{{ 'common.inactive' | translate }}</span>
+            }
+          </div>
+          <button
+            #branchModalClose
+            type="button"
+            class="adm-icon-btn"
+            (click)="closeBranchModal()"
+            [attr.aria-label]="'common.close' | translate"
+          >
+            <app-icon name="close"></app-icon>
+          </button>
+        </header>
+
+        <div class="ce-modal__body">
+          <dl class="ce-branch-detail">
+            <dt>{{ 'admin.clients.vatNumber' | translate }}</dt>
+            <dd>{{ branch.vat_number || '—' }}</dd>
+
+            <!-- The VAT warning is about the rate, and unlike the card, the
+                 rate is visible here — so it is marked where it is read. -->
+            <dt>{{ 'admin.clients.vatRate' | translate }}</dt>
+            <dd>
+              <span>{{ branch.vat_rate ?? 0 }}%</span>
+              <ng-container
+                *ngTemplateOutlet="warnMark; context: { $implicit: branchWarning(branch, 'vat') }"
+              ></ng-container>
+            </dd>
+
+            <dt>{{ 'admin.clients.businessRegistrationNumber' | translate }}</dt>
+            <dd>
+              <span>{{ branch.business_registration_number || '—' }}</span>
+              <ng-container
+                *ngTemplateOutlet="warnMark; context: { $implicit: branchWarning(branch, 'business_registration_number') }"
+              ></ng-container>
+            </dd>
+
+            <dt>{{ 'admin.clients.contactName' | translate }}</dt>
+            <dd>{{ branch.contact_name || '—' }}</dd>
+
+            <dt>{{ 'admin.clients.phone' | translate }}</dt>
+            <dd>{{ branch.contact_phone || '—' }}</dd>
+
+            <dt>{{ 'admin.clients.email' | translate }}</dt>
+            <dd>
+              <span>{{ branch.contact_email || '—' }}</span>
+              <ng-container
+                *ngTemplateOutlet="warnMark; context: { $implicit: branchWarning(branch, 'contact_email') }"
+              ></ng-container>
+            </dd>
+
+            <dt>{{ 'common.identifier' | translate }}</dt>
+            <dd class="ce-branch-detail__uid">{{ branch.uid }}</dd>
+          </dl>
+        </div>
+
+        <footer class="ce-modal__foot">
+          <button type="button" class="adm-btn adm-btn--ghost" (click)="closeBranchModal()">
+            {{ 'common.close' | translate }}
+          </button>
+        </footer>
+      </div>
+    </div>
   }
 
   <!-- Address Modal -->
   @if (showAddressModal) {
-    <div class="modal-overlay" (click)="closeAddressModal()" [attr.aria-hidden]="!showAddressModal">
+    <div class="ce-modal-overlay" (click)="closeAddressModal()" [attr.aria-hidden]="!showAddressModal">
       <div
-        class="modal-content"
+        class="ce-modal"
         role="dialog"
         aria-modal="true"
-        [attr.aria-labelledby]="'address-modal-title'"
+        aria-labelledby="address-modal-title"
         (click)="$event.stopPropagation()"
       >
-        <div class="modal-header">
-          <h3 id="address-modal-title">{{ editingAddress ? 'Edit Address' : 'Add Address' }}</h3>
-          <button class="btn btn-close" (click)="closeAddressModal()" [attr.aria-label]="'Close dialog'">&times;</button>
-        </div>
-        <form [formGroup]="addressForm" (ngSubmit)="saveAddress()" class="address-form">
-          <div class="form-group country-autocomplete">
-            <label for="country_search">Country *</label>
-            <div class="autocomplete-wrapper">
-              <input
-                type="text"
-                id="country_search"
-                [(ngModel)]="countrySearchText"
-                [ngModelOptions]="{standalone: true}"
-                (ngModelChange)="onCountrySearchChange($event)"
-                (focus)="onCountryInputFocus()"
-                (blur)="onCountryInputBlur()"
-                placeholder="Search country..."
-                [class.invalid]="addressForm.get('country_code')?.invalid && addressForm.get('country_code')?.touched"
-                [attr.aria-invalid]="addressForm.get('country_code')?.invalid && addressForm.get('country_code')?.touched"
-                [attr.aria-required]="true"
-                [attr.aria-autocomplete]="'list'"
-                [attr.aria-expanded]="showCountryDropdown"
-                [attr.aria-controls]="showCountryDropdown ? 'country-list' : null"
-                autocomplete="off"
-              >
-              @if (countrySearchText) {
-                <button
-                  type="button"
-                  class="btn-clear"
-                  (mousedown)="$event.preventDefault()"
-                  (click)="clearCountrySelection()"
-                >&times;</button>
-              }
-              @if (showCountryDropdown && filteredCountries.length > 0) {
-                <div class="autocomplete-dropdown" role="listbox" id="country-list">
-                  @for (country of filteredCountries; track country.country_code) {
-                    <div
-                      class="autocomplete-item"
-                      role="option"
-                      [attr.aria-selected]="selectedCountry?.country_code === country.country_code"
-                      (mousedown)="$event.preventDefault()"
-                      (click)="selectCountry(country)"
-                      [class.selected]="selectedCountry?.country_code === country.country_code"
-                    >
-                      <span class="country-code">{{ country.country_code }}</span>
-                      <span class="country-name">{{ country.name }}</span>
-                    </div>
+        <header class="ce-modal__head">
+          <h3 id="address-modal-title" class="ce-modal__title">
+            {{ editingAddress ? ('admin.clients.editAddress' | translate) : ('admin.clients.addAddress' | translate) }}
+          </h3>
+          <button
+            type="button"
+            class="adm-icon-btn"
+            (click)="closeAddressModal()"
+            [attr.aria-label]="'common.close' | translate"
+          >
+            <app-icon name="close"></app-icon>
+          </button>
+        </header>
+
+        <form [formGroup]="addressForm" (ngSubmit)="saveAddress()" class="ce-modal__body">
+          <div class="adm-fields">
+            <label class="adm-field adm-field--span2 ce-country-field">
+              <span class="adm-field__label">
+                {{ 'admin.clients.country' | translate }} <em>*</em>
+              </span>
+              <div class="ce-autocomplete">
+                <input
+                  type="text"
+                  class="adm-input"
+                  [(ngModel)]="countrySearchText"
+                  [ngModelOptions]="{standalone: true}"
+                  (ngModelChange)="onCountrySearchChange($event)"
+                  (focus)="onCountryInputFocus()"
+                  (blur)="onCountryInputBlur()"
+                  [placeholder]="'admin.clients.selectCountry' | translate"
+                  [attr.aria-expanded]="showCountryDropdown"
+                  [attr.aria-controls]="showCountryDropdown ? 'country-list' : null"
+                  autocomplete="off"
+                />
+                @if (countrySearchText) {
+                  <button
+                    type="button"
+                    class="ce-autocomplete__clear"
+                    (mousedown)="$event.preventDefault()"
+                    (click)="clearCountrySelection()"
+                    [attr.aria-label]="'common.close' | translate"
+                  >
+                    <app-icon name="close"></app-icon>
+                  </button>
+                }
+                @if (showCountryDropdown && filteredCountries.length > 0) {
+                  <div class="ce-autocomplete__list" role="listbox" id="country-list">
+                    @for (country of filteredCountries; track country.country_code) {
+                      <div
+                        class="ce-autocomplete__item"
+                        role="option"
+                        [attr.aria-selected]="selectedCountry?.country_code === country.country_code"
+                        [class.is-selected]="selectedCountry?.country_code === country.country_code"
+                        (mousedown)="$event.preventDefault()"
+                        (click)="selectCountry(country)"
+                      >
+                        <span class="ce-autocomplete__code">{{ country.country_code }}</span>
+                        <span class="ce-autocomplete__name">{{ country.name }}</span>
+                      </div>
+                    }
+                  </div>
+                }
+                @if (showCountryDropdown && filteredCountries.length === 0 && countrySearchText) {
+                  <div class="ce-autocomplete__list">
+                    <div class="ce-autocomplete__empty">{{ 'admin.clients.noCountryFound' | translate }}</div>
+                  </div>
+                }
+              </div>
+            </label>
+
+            @if (branches.length > 0) {
+              <label class="adm-field adm-field--span2">
+                <span class="adm-field__label">{{ 'admin.clients.branch' | translate }}</span>
+                <select class="adm-input" formControlName="branch_uid">
+                  <option value="">{{ 'admin.clients.noBranch' | translate }}</option>
+                  @for (branch of branches; track branch.uid) {
+                    <option [value]="branch.uid">{{ branch.name }}</option>
                   }
-                </div>
-              }
-              @if (showCountryDropdown && filteredCountries.length === 0 && countrySearchText) {
-                <div class="autocomplete-dropdown">
-                  <div class="autocomplete-no-results">No country found</div>
-                </div>
-              }
-            </div>
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label for="city">City</label>
-              <input type="text" id="city" formControlName="city">
-            </div>
-            <div class="form-group">
-              <label for="zipcode">Zipcode</label>
-              <input type="text" id="zipcode" formControlName="zipcode">
-            </div>
-          </div>
-          <div class="form-group">
-            <label for="address_text">Address</label>
-            <textarea
-              id="address_text"
-              formControlName="address_text"
-              rows="3"
-              placeholder="Street, building, apartment..."
-            ></textarea>
-          </div>
-          <div class="form-group checkbox-group">
-            <label class="checkbox-label">
-              <input type="checkbox" formControlName="is_default">
-              <span>Set as default address</span>
+                </select>
+                <span class="ce-field-hint">{{ 'admin.clients.branchHint' | translate }}</span>
+              </label>
+            }
+
+            <label class="adm-field">
+              <span class="adm-field__label">{{ 'admin.clients.city' | translate }}</span>
+              <input type="text" class="adm-input" formControlName="city" />
+            </label>
+            <label class="adm-field">
+              <span class="adm-field__label">{{ 'admin.clients.zipcode' | translate }}</span>
+              <input type="text" class="adm-input" formControlName="zipcode" />
+            </label>
+
+            <label class="adm-field adm-field--span2">
+              <span class="adm-field__label">{{ 'admin.clients.addressText' | translate }}</span>
+              <textarea
+                class="adm-input"
+                formControlName="address_text"
+                rows="3"
+                [placeholder]="'admin.clients.addressPlaceholder' | translate"
+              ></textarea>
+            </label>
+
+            <label class="adm-toggle adm-field--span2">
+              <input type="checkbox" formControlName="is_default" />
+              <span class="adm-toggle__track"><span class="adm-toggle__dot"></span></span>
+              <span class="adm-toggle__text">{{ 'admin.clients.setAsDefault' | translate }}</span>
+            </label>
+
+            <label class="adm-toggle adm-field--span2">
+              <input type="checkbox" formControlName="is_official" />
+              <span class="adm-toggle__track"><span class="adm-toggle__dot"></span></span>
+              <span class="adm-toggle__text">{{ 'admin.clients.setAsOfficial' | translate }}</span>
             </label>
           </div>
-          <div class="modal-actions">
-            <button type="button" class="btn btn-secondary" (click)="closeAddressModal()">
-              Cancel
+
+          <footer class="ce-modal__foot">
+            <button type="button" class="adm-btn adm-btn--ghost" (click)="closeAddressModal()">
+              {{ 'common.cancel' | translate }}
             </button>
             <button
               type="submit"
-              class="btn btn-primary"
+              class="adm-btn adm-btn--primary"
               [disabled]="addressForm.invalid || addressSaving"
             >
-              @if (addressSaving) {
-                <span class="spinner-small"></span>
-              }
-              {{ addressSaving ? 'Saving...' : 'Save' }}
+              <app-icon [name]="addressSaving ? 'sync' : 'check'"></app-icon>
+              {{ (addressSaving ? 'common.saving' : 'common.save') | translate }}
             </button>
-          </div>
+          </footer>
         </form>
       </div>
     </div>
   }
 </div>
+
+<!-- Field-level warning marker. The icon is what you see; the consequence is the
+     tooltip, so a full sentence per gap does not crowd out the values. Focusable
+     so keyboard and touch reach the text too, and it swallows the click so the
+     branch card underneath does not open. -->
+<ng-template #warnMark let-key>
+  @if (key) {
+    <span
+      class="ce-warn"
+      tabindex="0"
+      role="img"
+      [attr.aria-label]="key | translate"
+      (click)="$event.stopPropagation()"
+    >
+      <app-icon name="warning" class="ce-warn__icon"></app-icon>
+      <span class="ce-warn__tip">{{ key | translate }}</span>
+    </span>
+  }
+</ng-template>

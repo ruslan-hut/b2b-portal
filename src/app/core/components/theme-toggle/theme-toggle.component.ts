@@ -1,4 +1,4 @@
-import { Component, HostListener, ChangeDetectionStrategy } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ThemeService, Theme, ResolvedTheme } from '../../services/theme.service';
 import { TranslationService } from '../../services/translation.service';
@@ -8,26 +8,24 @@ import { TranslationService } from '../../services/translation.service';
   templateUrl: './theme-toggle.component.html',
   styleUrls: ['./theme-toggle.component.scss'],
   standalone: false,
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    '(document:click)': 'onDocumentClick($event)'
+  }
 })
 export class ThemeToggleComponent {
-  theme$: Observable<Theme>;
-  resolvedTheme$: Observable<ResolvedTheme>;
+  private readonly themeService = inject(ThemeService);
+  readonly translationService = inject(TranslationService);
+
+  readonly theme$: Observable<Theme> = this.themeService.theme$;
+  readonly resolvedTheme$: Observable<ResolvedTheme> = this.themeService.resolvedTheme$;
   isDropdownOpen = false;
 
-  themes: { value: Theme; labelKey: string; icon: string }[] = [
+  readonly themes: { value: Theme; labelKey: string; icon: string }[] = [
     { value: 'light', labelKey: 'theme.light', icon: 'light_mode' },
     { value: 'dark', labelKey: 'theme.dark', icon: 'dark_mode' },
     { value: 'system', labelKey: 'theme.system', icon: 'settings_brightness' }
   ];
-
-  constructor(
-    private themeService: ThemeService,
-    public translationService: TranslationService
-  ) {
-    this.theme$ = this.themeService.theme$;
-    this.resolvedTheme$ = this.themeService.resolvedTheme$;
-  }
 
   toggleDropdown(): void {
     this.isDropdownOpen = !this.isDropdownOpen;
@@ -55,7 +53,6 @@ export class ThemeToggleComponent {
     return resolved === 'dark' ? 'dark_mode' : 'light_mode';
   }
 
-  @HostListener('document:click', ['$event'])
   onDocumentClick(event: MouseEvent): void {
     const target = event.target as HTMLElement;
     const clickedInside = target.closest('.theme-toggle-wrapper');

@@ -1,0 +1,83 @@
+@use '../../../../styles/mixins' as *;
+
+.pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-md);
+  border-top: 1px solid var(--color-border-light);
+  flex-wrap: wrap;
+  gap: var(--spacing-sm-md);
+  background-color: var(--color-background-secondary);
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--spacing-sm-md);
+    padding: var(--spacing-md-sm);
+    background: var(--card-bg);
+    border-radius: var(--radius-md);
+    margin-top: var(--spacing-md-sm);
+  }
+}
+
+.pagination-info {
+  font-size: 0.9rem;
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-medium);
+
+  @media (max-width: 768px) {
+    text-align: center;
+    order: 1;
+  }
+}
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  flex-wrap: wrap;
+  justify-content: center;
+
+  @media (max-width: 768px) {
+    order: 2;
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+.pagination-btn {
+  @include pagination-button;
+
+  &:hover:not(:disabled) {
+    background-color: var(--color-info);
+    color: var(--color-text-inverse);
+    border-color: var(--color-info);
+  }
+
+  &:disabled {
+    background-color: var(--input-disabled-bg);
+    color: var(--color-text-muted);
+    border-color: var(--color-border);
+  }
+
+  &.active {
+    background-color: var(--color-info);
+    color: var(--color-text-inverse);
+    border-color: var(--color-info);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  &.first,
+  &.last {
+    font-weight: var(--font-weight-semibold);
+  }
+
+  &.prev,
+  &.next {
+    font-size: 1.2rem;
+    line-height: 1;
+    padding-top: var(--spacing-sm-md);
+    padding-bottom: var(--spacing-sm-md);
+  }
+}

@@ -1,0 +1,140 @@
+@use '../../../styles/mixins' as *;
+
+:host {
+  display: block;
+}
+
+/* Store filter select sits in the top bar — narrow it so it doesn't dominate */
+.tags-store-select {
+  width: 220px;
+  max-width: 50vw;
+}
+
+/* Empty state inside an adm-section */
+.tags-empty {
+  padding: var(--spacing-lg);
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: var(--text-md);
+}
+
+/* ---------- Table (page-local until the table partial lands) ---------- */
+.tags-table-wrap {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-md);
+  overflow-x: auto;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-md);
+
+  thead {
+    background: var(--table-header-bg);
+    color: var(--table-header-text);
+
+    th {
+      @include table-cell-padding;
+      text-align: left;
+      font-weight: 600;
+      font-size: var(--text-sm);
+      white-space: nowrap;
+    }
+  }
+
+  tbody {
+    tr {
+      border-bottom: 1px solid var(--color-border-light);
+
+      &:hover { background-color: var(--color-background-secondary); }
+      &:last-child { border-bottom: none; }
+    }
+
+    td {
+      @include table-cell-padding;
+      color: var(--color-text-primary);
+    }
+  }
+
+  .actions-col {
+    width: 1%;
+    white-space: nowrap;
+
+    .adm-icon-btn + .adm-icon-btn { margin-left: var(--spacing-xs); }
+  }
+}
+
+/* ---------- Tag preview chip (shared with tag-edit) ---------- */
+.tag-preview-chip {
+  display: inline-flex;
+  align-items: center;
+  height: var(--control-h-xs);
+  padding: 0 var(--spacing-sm-md);
+  border-radius: var(--radius-pill, 999px);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.tag-color-code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+/* Tags that opted out of catalog ordering (negative sort_order). */
+.tag-sort-off {
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--color-text-muted);
+}
+
+/* ---------- Mobile card view ----------
+   .desktop-only / .mobile-only are switched by styles/admin/_tables.scss. */
+.tag-cards {
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+
+.tag-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm-md) var(--spacing-md);
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: border-color .15s ease;
+
+  &:hover { border-color: var(--color-primary); }
+  &:active { background: var(--color-background-secondary); }
+
+  &__main {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    flex-wrap: wrap;
+  }
+
+  &__meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-md);
+    font-size: var(--text-sm);
+  }
+
+  &__meta-item {
+    display: inline-flex;
+    gap: var(--spacing-xs);
+  }
+
+  &__meta-label { color: var(--color-text-muted); }
+  &__meta-value { color: var(--color-text-primary); font-weight: 600; }
+}

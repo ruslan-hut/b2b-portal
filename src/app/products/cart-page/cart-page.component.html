@@ -2,25 +2,119 @@
   <!-- Header -->
   <div class="cart-page-header">
     <button class="btn-back" (click)="goBack()">
-      <span class="material-icons">arrow_back</span>
+      <app-icon name="arrow_back"></app-icon>
       <span class="back-text">{{ 'navigation.products' | translate }}</span>
     </button>
     <h1 class="cart-title">
-      <span class="material-icons cart-title-icon">shopping_cart</span>
+      <app-icon name="shopping_cart" class="cart-title-icon"></app-icon>
       {{ 'navigation.cart' | translate }}
       <span class="cart-count">({{ cartItems.length }})</span>
     </h1>
   </div>
 
+  <!-- The cart on screen was replaced because another session changed it. Nothing
+       was lost — this only explains why the list moved on its own. -->
+  @if (cartRefreshed) {
+    <div class="removed-items-notice cart-refreshed-notice" role="status">
+      <app-icon name="sync" class="notice-icon"></app-icon>
+      <div class="notice-body">
+        <div class="notice-header">{{ 'cart.refreshedNotice.header' | translate }}</div>
+        <div class="notice-text">{{ 'cart.refreshedNotice.text' | translate }}</div>
+      </div>
+      <button class="notice-dismiss" (click)="dismissRefreshedNotice()" [attr.aria-label]="'common.close' | translate">
+        <app-icon name="close"></app-icon>
+      </button>
+    </div>
+  }
+
+  <!-- Cart open in another session: nothing was saved and the local cart is
+       untouched, so the user chooses — wait for that session to go idle, or take
+       the cart over. Without the takeover a dead session (closed laptop, killed
+       tab) would lock them out until the lease lapses. -->
+  @if (cartLocked) {
+    <div class="removed-items-notice" role="alert">
+      <app-icon name="lock" class="notice-icon"></app-icon>
+      <div class="notice-body">
+        <div class="notice-header">{{ 'cart.lockedNotice.header' | translate }}</div>
+        <div class="notice-text">{{ 'cart.lockedNotice.text' | translate }}</div>
+        @if (cartLocked.holderUserAgent) {
+          <div class="notice-text notice-holder">{{ cartLocked.holderUserAgent }}</div>
+        }
+        <button class="btn-takeover" [disabled]="takingOverCart" (click)="takeOverCart()">
+          {{ (takingOverCart ? 'cart.lockedNotice.takingOver' : 'cart.lockedNotice.takeOver') | translate }}
+        </button>
+      </div>
+      <button class="notice-dismiss" (click)="dismissLockedNotice()" [attr.aria-label]="'common.close' | translate">
+        <app-icon name="close"></app-icon>
+      </button>
+    </div>
+  }
+
+  <!-- Cart changed in another session: the save was refused and the list below is
+       the server's cart, not what this tab had. Says so, because otherwise the
+       user's last change appears to have silently done nothing. -->
+  @if (cartConflict) {
+    <div class="removed-items-notice" role="alert">
+      <app-icon name="sync_problem" class="notice-icon"></app-icon>
+      <div class="notice-body">
+        <div class="notice-header">{{ 'cart.conflictNotice.header' | translate }}</div>
+        <div class="notice-text">{{ 'cart.conflictNotice.text' | translate }}</div>
+      </div>
+      <button class="notice-dismiss" (click)="dismissConflictNotice()" [attr.aria-label]="'common.close' | translate">
+        <app-icon name="close"></app-icon>
+      </button>
+    </div>
+  }
+
+  <!-- Removed items notice (cart validation on login). Shown above both the
+       empty state and the item list — the cart may have become empty because
+       of the removal itself. -->
+  @if (removedItems.length > 0) {
+    <div class="removed-items-notice" role="alert">
+      <app-icon name="info" class="notice-icon"></app-icon>
+      <div class="notice-body">
+        <div class="notice-header">
+          {{ 'cart.removedNotice.header' | translate: { count: removedItems.length } }}
+        </div>
+        <ul class="notice-list">
+          @for (item of removedItems; track item.productId) {
+            <li class="notice-row">
+              <span class="notice-name">{{ item.productName || item.sku || item.productId }}</span>
+              <span class="notice-reason">
+                @switch (item.reason) {
+                  @case ('not_found') {
+                    {{ 'cart.removedNotice.reason.notFound' | translate }}
+                  }
+                  @case ('no_price') {
+                    {{ 'cart.removedNotice.reason.noPrice' | translate }}
+                  }
+                  @case ('not_available') {
+                    {{ 'cart.removedNotice.reason.notAvailable' | translate }}
+                  }
+                  @default {
+                    {{ 'cart.removedNotice.reason.inactive' | translate }}
+                  }
+                }
+              </span>
+            </li>
+          }
+        </ul>
+      </div>
+      <button class="notice-dismiss" (click)="dismissRemovedNotice()" [attr.aria-label]="'common.close' | translate">
+        <app-icon name="close"></app-icon>
+      </button>
+    </div>
+  }
+
   <!-- Empty Cart State -->
   @if (cartItems.length === 0) {
     <div class="empty-cart-container">
       <div class="empty-cart">
-        <span class="material-icons empty-icon">shopping_cart</span>
+        <app-icon name="shopping_cart" class="empty-icon"></app-icon>
         <h2>{{ 'messages.cartCleared' | translate }}</h2>
         <p class="empty-description">{{ 'messages.cartEmpty' | translate }}</p>
         <button class="btn-continue-shopping" (click)="goBack()">
-          <span class="material-icons">storefront</span>
+          <app-icon name="storefront"></app-icon>
           {{ 'navigation.products' | translate }}
         </button>
       </div>
@@ -32,10 +126,26 @@
     <div class="cart-page-content">
       <!-- Cart Items Section -->
       <div class="cart-items-section">
+        <!-- Problems Filter Chip -->
+        @if (problemCount > 0) {
+          <button
+            type="button"
+            class="cart-filter-chip"
+            [class.active]="showProblemsOnly"
+            (click)="toggleProblemsFilter()"
+          >
+            <app-icon [name]="showProblemsOnly ? 'filter_list_off' : 'filter_list'"></app-icon>
+            <span class="chip-label">{{ 'cart.filter.problemsOnly' | translate }}</span>
+            <span class="chip-count">{{ problemCount }}</span>
+          </button>
+        }
+
         <!-- Desktop View -->
         <div class="cart-items-list cart-items-desktop">
-          @for (item of cartItems; track item.productId) {
-            <div class="cart-item-card" [class.insufficient-stock]="item.insufficientStock">
+          @for (item of displayedItems; track item.productId) {
+            <div class="cart-item-card"
+                 [class.insufficient-stock]="item.insufficientStock"
+                 [class.inactive-product]="item.active === false">
               <div class="item-main">
                 <div class="item-info">
                   <h3 class="item-name">{{ item.productName }}</h3>
@@ -66,14 +176,14 @@
                     (click)="updateQuantity(item.productId, item.quantity - 1)"
                     [disabled]="item.quantity <= 1"
                   >
-                    <span class="material-icons">remove</span>
+                    <app-icon name="remove"></app-icon>
                   </button>
                   <input
                     class="qty-input"
                     type="number"
                     min="1"
                     [ngModel]="item.quantity"
-                    (ngModelChange)="updateQuantity(item.productId, $event)"
+                    (ngModelChange)="onQuantityInput(item.productId, $event)"
                     aria-label="Quantity"
                   />
                   <button
@@ -81,7 +191,7 @@
                     type="button"
                     (click)="updateQuantity(item.productId, item.quantity + 1)"
                   >
-                    <span class="material-icons">add</span>
+                    <app-icon name="add"></app-icon>
                   </button>
                 </div>
                 <div class="item-subtotal">
@@ -89,16 +199,26 @@
                   <span class="subtotal-value">{{ item.subtotal.toFixed(2) }}</span>
                 </div>
                 <button class="btn-remove" (click)="removeFromCart(item.productId)">
-                  <span class="material-icons">delete_outline</span>
+                  <app-icon name="delete_outline"></app-icon>
                 </button>
               </div>
 
               @if (item.insufficientStock) {
                 <div class="stock-warning">
-                  <span class="material-icons warning-icon">warning</span>
+                  <app-icon name="warning" class="warning-icon"></app-icon>
                   <span class="warning-text">
-                    {{ 'products.insufficientStock' | translate: {available: item.availableQuantity ?? 0} }}
+                    @if (showQuantity) {
+                      {{ 'products.insufficientStock' | translate: {available: item.availableQuantity ?? 0} }}
+                    } @else {
+                      {{ 'products.insufficientStockGeneric' | translate }}
+                    }
                   </span>
+                </div>
+              }
+              @if (item.active === false) {
+                <div class="stock-warning inactive">
+                  <app-icon name="block" class="warning-icon"></app-icon>
+                  <span class="warning-text">{{ 'cart.itemBadge.inactive' | translate }}</span>
                 </div>
               }
             </div>
@@ -112,6 +232,7 @@
               class="cart-item-card-mobile"
               [class.expanded]="isItemExpanded(item.productId)"
               [class.insufficient-stock]="item.insufficientStock"
+              [class.inactive-product]="item.active === false"
             >
               <!-- Collapsed Row -->
               <div class="item-collapsed" (click)="toggleItemExpanded(item.productId)">
@@ -119,16 +240,19 @@
                   <span class="item-name">{{ item.productName }}</span>
                   @if (item.insufficientStock) {
                     <span class="item-warning-badge">
-                      <span class="material-icons">warning</span>
+                      <app-icon name="warning"></app-icon>
+                    </span>
+                  }
+                  @if (item.active === false) {
+                    <span class="item-warning-badge inactive">
+                      <app-icon name="block"></app-icon>
                     </span>
                   }
                 </div>
                 <div class="item-collapsed-right">
                   <span class="item-qty-badge">{{ item.quantity }}</span>
                   <span class="item-subtotal">{{ item.subtotal.toFixed(2) }}</span>
-                  <span class="expand-icon material-icons">
-                    {{ isItemExpanded(item.productId) ? 'expand_less' : 'expand_more' }}
-                  </span>
+                  <app-icon [name]="isItemExpanded(item.productId) ? 'expand_less' : 'expand_more'" class="expand-icon"></app-icon>
                 </div>
               </div>
 
@@ -161,14 +285,14 @@
                         (click)="updateQuantity(item.productId, item.quantity - 1)"
                         [disabled]="item.quantity <= 1"
                       >
-                        <span class="material-icons">remove</span>
+                        <app-icon name="remove"></app-icon>
                       </button>
                       <input
                         class="qty-input"
                         type="number"
                         min="1"
                         [ngModel]="item.quantity"
-                        (ngModelChange)="updateQuantity(item.productId, $event)"
+                        (ngModelChange)="onQuantityInput(item.productId, $event)"
                         (click)="$event.stopPropagation()"
                         aria-label="Quantity"
                       />
@@ -177,7 +301,7 @@
                         type="button"
                         (click)="updateQuantity(item.productId, item.quantity + 1)"
                       >
-                        <span class="material-icons">add</span>
+                        <app-icon name="add"></app-icon>
                       </button>
                     </div>
                   </div>
@@ -185,10 +309,20 @@
                   <!-- Stock Warning -->
                   @if (item.insufficientStock) {
                     <div class="stock-warning">
-                      <span class="material-icons warning-icon">warning</span>
+                      <app-icon name="warning" class="warning-icon"></app-icon>
                       <span class="warning-text">
-                        {{ 'products.insufficientStock' | translate: {available: item.availableQuantity ?? 0} }}
+                        @if (showQuantity) {
+                          {{ 'products.insufficientStock' | translate: {available: item.availableQuantity ?? 0} }}
+                        } @else {
+                          {{ 'products.insufficientStockGeneric' | translate }}
+                        }
                       </span>
+                    </div>
+                  }
+                  @if (item.active === false) {
+                    <div class="stock-warning inactive">
+                      <app-icon name="block" class="warning-icon"></app-icon>
+                      <span class="warning-text">{{ 'cart.itemBadge.inactive' | translate }}</span>
                     </div>
                   }
 
@@ -200,7 +334,7 @@
 
                   <!-- Delete Button -->
                   <button class="btn-delete" (click)="removeFromCart(item.productId)">
-                    <span class="material-icons">delete</span>
+                    <app-icon name="delete"></app-icon>
                     {{ 'common.delete' | translate }}
                   </button>
                 </div>
@@ -211,7 +345,7 @@
           <!-- Show More Button -->
           @if (hasMoreMobileItems && !showAllMobileItems) {
             <button class="btn-show-more" (click)="toggleShowAllMobileItems()">
-              <span class="material-icons">expand_more</span>
+              <app-icon name="expand_more"></app-icon>
               {{ 'orders.showMore' | translate }} ({{ remainingMobileItemsCount }})
             </button>
           }
@@ -219,7 +353,7 @@
           <!-- Show Less Button -->
           @if (hasMoreMobileItems && showAllMobileItems) {
             <button class="btn-show-less" (click)="toggleShowAllMobileItems()">
-              <span class="material-icons">expand_less</span>
+              <app-icon name="expand_less"></app-icon>
               {{ 'orders.showLess' | translate }}
             </button>
           }
@@ -280,7 +414,7 @@
                 [attr.aria-expanded]="commentSectionExpanded"
                 aria-label="Toggle comment section"
               >
-                <span class="material-icons">{{ commentSectionExpanded ? 'expand_less' : 'expand_more' }}</span>
+                <app-icon [name]="commentSectionExpanded ? 'expand_less' : 'expand_more'"></app-icon>
               </button>
             </div>
             <div class="comment-content" [class.expanded]="commentSectionExpanded">
@@ -297,30 +431,45 @@
           <!-- Stock Warning -->
           @if (hasInsufficientStock) {
             <div class="cart-stock-warning">
-              <span class="material-icons">warning</span>
+              <app-icon name="warning"></app-icon>
               <span>{{ 'errors.insufficientStock' | translate }}</span>
+            </div>
+          }
+
+          <!-- Inactive Product Warning -->
+          @if (hasInactiveProducts) {
+            <div class="cart-stock-warning inactive">
+              <app-icon name="block"></app-icon>
+              <span>{{ 'errors.productInactive' | translate }}</span>
             </div>
           }
 
           <!-- Business Registration Warning -->
           @if (isMissingBusinessRegistration) {
             <div class="cart-business-reg-warning">
-              <span class="material-icons">warning</span>
+              <app-icon name="warning"></app-icon>
               <span>{{ 'errors.businessRegNumberRequired' | translate }}</span>
             </div>
           }
+
+          <!-- An inactive branch is stated once, on the address card that caused
+               it and next to the button that changes it. Here it only explains
+               the disabled state, on hover. -->
 
           <!-- Checkout Button -->
           <button
             class="btn-checkout btn-primary-cta"
             (click)="proceedToCheckout()"
-            [disabled]="isCreatingOrder || hasInsufficientStock || (entityType === 'client' && !hasSelectedAddress()) || isMissingBusinessRegistration"
+            [disabled]="isCreatingOrder || hasBlockingProblems || (entityType === 'client' && !hasSelectedAddress()) || isMissingBusinessRegistration || hasInactiveBranch"
+            [title]="hasBlockingProblems ? ('cart.submitDisabled.problems' | translate: { count: problemCount })
+                     : hasInactiveBranch ? ('cart.branchInactiveWarning' | translate: { branch: billedBranchName })
+                     : ''"
           >
             @if (isCreatingOrder) {
-              <span class="material-icons spinner">sync</span>
+              <app-icon name="sync" class="spinner"></app-icon>
               {{ 'common.loading' | translate }}
             } @else {
-              <span class="material-icons">check_circle</span>
+              <app-icon name="check_circle"></app-icon>
               {{ 'products.confirmOrder' | translate }}
             }
           </button>
@@ -338,5 +487,15 @@
       [isSuccess]="isOrderSuccess"
       (closed)="closeOrderDialog()"
     ></app-order-confirmation-dialog>
+  }
+
+  <!-- Order Error Dialog -->
+  @if (showErrorDialog) {
+    <app-order-error-dialog
+      [detail]="errorDetail"
+      [canShowProblems]="problemCount > 0"
+      (closed)="closeErrorDialog()"
+      (showProblems)="showProblemItemsFromError()"
+    ></app-order-error-dialog>
   }
 </div>

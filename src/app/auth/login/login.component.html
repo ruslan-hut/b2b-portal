@@ -1,7 +1,17 @@
 <div class="login-container">
   <div class="login-card">
+    @if (accessNotice) {
+      <div class="access-notice" role="status">
+        <app-icon name="build" class="access-notice__icon"></app-icon>
+        <div class="access-notice__body">
+          <span class="access-notice__title">{{ accessNoticeTitle }}</span>
+          <span class="access-notice__text">{{ accessNotice }}</span>
+          <span class="access-notice__text">{{ 'auth.maintenanceStaffOnly' | translate }}</span>
+        </div>
+      </div>
+    }
     <div class="login-header">
-      <h1>{{ 'auth.title' | translate }}</h1>
+      <h1>{{ siteName }}</h1>
       <p>{{ 'auth.welcomeMessage' | translate }}</p>
       <app-language-switcher></app-language-switcher>
     </div>
@@ -48,6 +58,13 @@
         }
       </div>
 
+      @if (noticeMessage) {
+        <div class="alert alert-info" role="status">
+          <app-icon name="schedule"></app-icon>
+          <span>{{ noticeMessage }}</span>
+        </div>
+      }
+
       @if (errorMessage) {
         <div class="alert alert-danger">
           {{ errorMessage }}
@@ -66,6 +83,14 @@
         }
       </button>
     </form>
+
+    @if (mailEnabled) {
+      <div class="forgot-link-wrap">
+        <a routerLink="/auth/forgot-password" class="forgot-link">
+          {{ 'auth.forgotPassword' | translate }}
+        </a>
+      </div>
+    }
 
     <div class="login-footer">
       <p class="hint">

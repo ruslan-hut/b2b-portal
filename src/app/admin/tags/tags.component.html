@@ -1,0 +1,157 @@
+<div class="adm-page">
+
+  <header class="adm-bar">
+    <div class="adm-bar__crumbs">
+      <span class="adm-crumb adm-crumb--active">{{ 'admin.tags.title' | translate }}</span>
+    </div>
+    <div class="adm-bar__actions">
+      @if (!storeLocked) {
+        <select
+          class="adm-input tags-store-select"
+          [(ngModel)]="selectedStore"
+          (change)="onStoreChange()"
+          [attr.aria-label]="'admin.tags.store' | translate"
+        >
+          <option value="">{{ 'admin.tags.selectStore' | translate }}</option>
+          @for (store of stores; track store.uid) {
+            <option [value]="store.uid">{{ store.name }}</option>
+          }
+        </select>
+      }
+      <button
+        type="button"
+        class="adm-btn adm-btn--primary"
+        (click)="createTag()"
+        [disabled]="!selectedStore"
+      >
+        <app-icon name="add"></app-icon>
+        {{ 'admin.tags.addTag' | translate }}
+      </button>
+    </div>
+  </header>
+
+  <div class="adm-grid adm-grid--full">
+
+    @if (loading) {
+      <div class="adm-loading">{{ 'admin.tags.loadingTags' | translate }}</div>
+    } @else if (error) {
+      <div class="adm-error" role="alert">{{ error }}</div>
+    } @else if (!selectedStore) {
+      <div class="adm-section">
+        <div class="tags-empty">{{ 'admin.tags.selectStorePrompt' | translate }}</div>
+      </div>
+    } @else if (tags.length === 0) {
+      <div class="adm-section">
+        <div class="tags-empty">{{ 'admin.tags.noTags' | translate }}</div>
+      </div>
+    } @else {
+      <!-- Desktop table -->
+      <div class="tags-table-wrap desktop-only">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>{{ 'admin.tags.preview' | translate }}</th>
+              <th>{{ 'admin.tags.tagName' | translate }}</th>
+              <th>{{ 'admin.tags.color' | translate }}</th>
+              <th>{{ 'admin.tags.sortOrder' | translate }}</th>
+              <th class="actions-col">{{ 'admin.tags.actions' | translate }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (tag of tags; track tag.uid) {
+              <tr>
+                <td>
+                  <span
+                    class="tag-preview-chip"
+                    [style.background-color]="tag.color"
+                    [style.color]="textColorFor(tag.color)"
+                  >{{ tag.name }}</span>
+                </td>
+                <td>{{ tag.name }}</td>
+                <td><code class="tag-color-code">{{ tag.color }}</code></td>
+                <td>
+                  @if (tag.sort_order < 0) {
+                    <span class="tag-sort-off">{{ 'admin.tags.sortingOff' | translate }}</span>
+                  } @else {
+                    {{ tag.sort_order }}
+                  }
+                </td>
+                <td class="actions-col">
+                  <button
+                    type="button"
+                    class="adm-icon-btn"
+                    (click)="editTag(tag)"
+                    [attr.aria-label]="'admin.tags.editTag' | translate"
+                  >
+                    <app-icon name="edit"></app-icon>
+                  </button>
+                  <button
+                    type="button"
+                    class="adm-icon-btn adm-icon-btn--danger"
+                    (click)="deleteTag(tag)"
+                    [attr.aria-label]="'admin.tags.deleteTag' | translate"
+                  >
+                    <app-icon name="delete"></app-icon>
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Mobile cards -->
+      <div class="tag-cards mobile-only">
+        @for (tag of tags; track tag.uid) {
+          <div
+            class="tag-card"
+            (click)="editTag(tag)"
+            role="button"
+            tabindex="0"
+            (keydown.enter)="editTag(tag)"
+            (keydown.space)="editTag(tag); $event.preventDefault()"
+            [attr.aria-label]="('admin.tags.editTag' | translate) + ' ' + tag.name"
+          >
+            <div class="tag-card__main">
+              <span
+                class="tag-preview-chip"
+                [style.background-color]="tag.color"
+                [style.color]="textColorFor(tag.color)"
+              >{{ tag.name }}</span>
+              <code class="tag-color-code">{{ tag.color }}</code>
+            </div>
+            <div class="tag-card__meta">
+              <span class="tag-card__meta-item">
+                <span class="tag-card__meta-label">{{ 'admin.tags.sortOrder' | translate }}:</span>
+                <span class="tag-card__meta-value">
+                  @if (tag.sort_order < 0) {
+                    <span class="tag-sort-off">{{ 'admin.tags.sortingOff' | translate }}</span>
+                  } @else {
+                    {{ tag.sort_order }}
+                  }
+                </span>
+              </span>
+              <button
+                type="button"
+                class="adm-icon-btn adm-icon-btn--danger"
+                (click)="deleteTag(tag); $event.stopPropagation()"
+                [attr.aria-label]="'admin.tags.deleteTag' | translate"
+              >
+                <app-icon name="delete"></app-icon>
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+
+      <app-pagination
+        [currentPage]="currentPage"
+        [totalPages]="totalPages"
+        [total]="total"
+        [pageSize]="pageSize"
+        [itemLabel]="'admin.tags.title' | translate"
+        (pageChange)="goToPage($event)"
+      ></app-pagination>
+    }
+  </div>
+</div>

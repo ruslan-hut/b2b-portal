@@ -1,12 +1,12 @@
 <div class="admin-container">
   <!-- Mobile Header -->
   <header class="mobile-header">
-    <button class="mobile-menu-btn" (click)="toggleMobileMenu()" aria-label="Toggle menu">
-      <span class="material-icons">{{ isMobileMenuOpen ? 'close' : 'menu' }}</span>
+    <button class="mobile-menu-btn" (click)="toggleMobileMenu()" [attr.aria-label]="'admin.nav.expandMenu' | translate">
+      <app-icon [name]="isMobileMenuOpen ? 'close' : 'menu'"></app-icon>
     </button>
-    <h1>Admin Zone</h1>
-    <button class="mobile-close-btn" (click)="goToClientZone()" aria-label="Exit admin zone">
-      <span class="material-icons">close</span>
+    <h1>{{ 'admin.nav.title' | translate }}</h1>
+    <button class="mobile-close-btn" (click)="goToClientZone()" [attr.aria-label]="'admin.nav.exitAdmin' | translate">
+      <app-icon name="close"></app-icon>
     </button>
   </header>
 
@@ -15,92 +15,90 @@
     <div class="mobile-menu-backdrop" (click)="closeMobileMenu()"></div>
     <nav class="mobile-dropdown-menu">
       <ul>
+        @if (isOperationalStaff) {
+          <li>
+            <a routerLink="/admin/dashboard" routerLinkActive="active" (click)="closeMobileMenu()">
+              <app-icon name="dashboard"></app-icon>
+              <span>{{ 'admin.nav.dashboard' | translate }}</span>
+            </a>
+          </li>
+          <li>
+            <a routerLink="/admin/crm" routerLinkActive="active" (click)="closeMobileMenu()">
+              <app-icon name="view_kanban"></app-icon>
+              <span>{{ 'admin.nav.crmPipeline' | translate }}</span>
+            </a>
+          </li>
+          @if (isChatConfigured$ | async) {
+            <li>
+              <a routerLink="/admin/chat" routerLinkActive="active" (click)="closeMobileMenu()">
+                <app-icon name="chat_bubble"></app-icon>
+                <span>{{ 'admin.nav.chat' | translate }}</span>
+                @if ((totalUnread$ | async); as count) {
+                  <span class="mobile-unread-badge">{{ count > 99 ? '99+' : count }}</span>
+                }
+              </a>
+            </li>
+          }
+          <li>
+            <a routerLink="/admin/clients" routerLinkActive="active" (click)="closeMobileMenu()">
+              <app-icon name="people"></app-icon>
+              <span>{{ 'admin.nav.clients' | translate }}</span>
+            </a>
+          </li>
+          @if (hasCompanies$ | async) {
+            <li>
+              <a routerLink="/admin/companies" routerLinkActive="active" (click)="closeMobileMenu()">
+                <app-icon name="business"></app-icon>
+                <span>{{ 'admin.nav.companies' | translate }}</span>
+              </a>
+            </li>
+          }
+          <li>
+            <a routerLink="/admin/orders" routerLinkActive="active" (click)="closeMobileMenu()">
+              <app-icon name="receipt"></app-icon>
+              <span>{{ 'admin.nav.orders' | translate }}</span>
+            </a>
+          </li>
+          @if (isAdmin) {
+            <li>
+              <a routerLink="/admin/shipments" routerLinkActive="active" (click)="closeMobileMenu()">
+                <app-icon name="local_shipping"></app-icon>
+                <span>{{ 'admin.nav.shipments' | translate }}</span>
+              </a>
+            </li>
+          }
+          <li>
+            <a routerLink="/admin/products" routerLinkActive="active" (click)="closeMobileMenu()">
+              <app-icon name="inventory_2"></app-icon>
+              <span>{{ 'admin.nav.products' | translate }}</span>
+            </a>
+          </li>
+          <li>
+            <a routerLink="/admin/tags" routerLinkActive="active" (click)="closeMobileMenu()">
+              <app-icon name="sell"></app-icon>
+              <span>{{ 'admin.nav.tags' | translate }}</span>
+            </a>
+          </li>
+        }
+        @if (isAdmin || isContentEditor) {
+          <li>
+            <a routerLink="/admin/content" routerLinkActive="active" (click)="closeMobileMenu()">
+              <app-icon name="menu_book"></app-icon>
+              <span>{{ 'admin.nav.content' | translate }}</span>
+            </a>
+          </li>
+        }
         <li>
-          <a routerLink="/admin/dashboard" routerLinkActive="active" (click)="closeMobileMenu()">
-            <span class="material-icons">dashboard</span>
-            <span>Dashboard</span>
-          </a>
-        </li>
-        <li>
-          <a routerLink="/admin/crm" routerLinkActive="active" (click)="closeMobileMenu()">
-              <span class="material-icons">view_kanban</span>
-              <span>CRM Pipeline</span>
-          </a>
-        </li>
-        <li>
-          <a routerLink="/admin/chat" routerLinkActive="active" (click)="closeMobileMenu()">
-            <span class="material-icons">chat_bubble</span>
-            <span>Chat</span>
-            @if ((totalUnread$ | async); as count) {
-              <span class="mobile-unread-badge">{{ count > 99 ? '99+' : count }}</span>
-            }
-          </a>
-        </li>
-        <li>
-          <a routerLink="/admin/clients" routerLinkActive="active" (click)="closeMobileMenu()">
-            <span class="material-icons">people</span>
-            <span>Clients</span>
-          </a>
-        </li>
-        <li>
-          <a routerLink="/admin/orders" routerLinkActive="active" (click)="closeMobileMenu()">
-            <span class="material-icons">receipt</span>
-            <span>Orders</span>
-          </a>
-        </li>
-        <li>
-          <a routerLink="/admin/products" routerLinkActive="active" (click)="closeMobileMenu()">
-            <span class="material-icons">inventory_2</span>
-            <span>Products</span>
+          <a routerLink="/admin/profile" routerLinkActive="active" (click)="closeMobileMenu()">
+            <app-icon name="person"></app-icon>
+            <span>{{ 'admin.nav.profile' | translate }}</span>
           </a>
         </li>
         @if (isAdmin) {
           <li>
-            <a routerLink="/admin/users" routerLinkActive="active" (click)="closeMobileMenu()">
-              <span class="material-icons">person</span>
-              <span>Users</span>
-            </a>
-          </li>
-          <li>
-            <a routerLink="/admin/tables" routerLinkActive="active" (click)="closeMobileMenu()">
-              <span class="material-icons">table_chart</span>
-              <span>Database Tables</span>
-            </a>
-          </li>
-          <li>
-            <a routerLink="/admin/logs" routerLinkActive="active" (click)="closeMobileMenu()">
-              <span class="material-icons">description</span>
-              <span>Logs</span>
-            </a>
-          </li>
-          <li>
-            <a routerLink="/admin/webhooks" routerLinkActive="active" (click)="closeMobileMenu()">
-              <span class="material-icons">webhook</span>
-              <span>Webhooks</span>
-            </a>
-          </li>
-          <li>
-            <a routerLink="/admin/telegram" routerLinkActive="active" (click)="closeMobileMenu()">
-              <span class="material-icons">send</span>
-              <span>Telegram</span>
-            </a>
-          </li>
-          <li>
-            <a routerLink="/admin/mail" routerLinkActive="active" (click)="closeMobileMenu()">
-              <span class="material-icons">email</span>
-              <span>Mail</span>
-            </a>
-          </li>
-          <li>
-            <a routerLink="/admin/invoice" routerLinkActive="active" (click)="closeMobileMenu()">
-              <span class="material-icons">receipt_long</span>
-              <span>Invoice</span>
-            </a>
-          </li>
-          <li>
-            <a routerLink="/admin/shipment" routerLinkActive="active" (click)="closeMobileMenu()">
-              <span class="material-icons">local_shipping</span>
-              <span>Shipment</span>
+            <a routerLink="/admin/settings" routerLinkActive="active" (click)="closeMobileMenu()">
+              <app-icon name="settings"></app-icon>
+              <span>{{ 'admin.nav.settings' | translate }}</span>
             </a>
           </li>
         }
@@ -113,162 +111,140 @@
     <div class="nav-header">
       <div class="header-top">
         @if (!isMenuCollapsed) {
-          <h2>Admin Zone</h2>
+          <h2>{{ 'admin.nav.title' | translate }}</h2>
         }
-        <button class="toggle-btn" (click)="toggleMenu()" [attr.aria-label]="isMenuCollapsed ? 'Expand menu' : 'Collapse menu'">
-          <span class="material-icons">{{ isMenuCollapsed ? 'chevron_right' : 'chevron_left' }}</span>
+        <button class="toggle-btn" (click)="toggleMenu()" [attr.aria-label]="isMenuCollapsed ? ('admin.nav.expandMenu' | translate) : ('admin.nav.collapseMenu' | translate)">
+          <app-icon [name]="isMenuCollapsed ? 'chevron_right' : 'chevron_left'"></app-icon>
         </button>
       </div>
     </div>
     <ul class="nav-menu">
-      <li>
-        <a routerLink="/admin/dashboard" routerLinkActive="active" [title]="isMenuCollapsed ? 'Dashboard' : ''">
-          <span class="material-icons">dashboard</span>
-          @if (!isMenuCollapsed) {
-            <span class="text">Dashboard</span>
-          }
-        </a>
-      </li>
+      @if (isOperationalStaff) {
         <li>
-            <a routerLink="/admin/crm" routerLinkActive="active" [title]="isMenuCollapsed ? 'CRM Pipeline' : ''">
-                <span class="material-icons">view_kanban</span>
-                @if (!isMenuCollapsed) {
-                    <span class="text">CRM Pipeline</span>
+          <a routerLink="/admin/dashboard" routerLinkActive="active" [title]="isMenuCollapsed ? ('admin.nav.dashboard' | translate) : ''">
+            <app-icon name="dashboard"></app-icon>
+            @if (!isMenuCollapsed) {
+              <span class="text">{{ 'admin.nav.dashboard' | translate }}</span>
+            }
+          </a>
+        </li>
+        <li>
+          <a routerLink="/admin/crm" routerLinkActive="active" [title]="isMenuCollapsed ? ('admin.nav.crmPipeline' | translate) : ''">
+            <app-icon name="view_kanban"></app-icon>
+            @if (!isMenuCollapsed) {
+              <span class="text">{{ 'admin.nav.crmPipeline' | translate }}</span>
+            }
+          </a>
+        </li>
+        @if (isChatConfigured$ | async) {
+          <li>
+            <a routerLink="/admin/chat" routerLinkActive="active" [title]="isMenuCollapsed ? ('admin.nav.chat' | translate) : ''" class="chat-link">
+              <app-icon name="chat_bubble"></app-icon>
+              @if (!isMenuCollapsed) {
+                <span class="text">{{ 'admin.nav.chat' | translate }}</span>
+              }
+              @if ((totalUnread$ | async); as count) {
+                @if (isMenuCollapsed) {
+                  <span class="sidebar-unread-badge collapsed-badge"></span>
+                } @else {
+                  <span class="sidebar-unread-badge">{{ count > 99 ? '99+' : count }}</span>
                 }
+              }
             </a>
-        </li>
-      <li>
-        <a routerLink="/admin/chat" routerLinkActive="active" [title]="isMenuCollapsed ? 'Chat' : ''" class="chat-link">
-          <span class="material-icons">chat_bubble</span>
-          @if (!isMenuCollapsed) {
-            <span class="text">Chat</span>
-          }
-          @if ((totalUnread$ | async); as count) {
-            @if (isMenuCollapsed) {
-              <span class="sidebar-unread-badge collapsed-badge"></span>
-            } @else {
-              <span class="sidebar-unread-badge">{{ count > 99 ? '99+' : count }}</span>
-            }
-          }
-        </a>
-      </li>
-      <li>
-        <a routerLink="/admin/clients" routerLinkActive="active" [title]="isMenuCollapsed ? 'Clients' : ''">
-          <span class="material-icons">people</span>
-          @if (!isMenuCollapsed) {
-            <span class="text">Clients</span>
-          }
-        </a>
-      </li>
-      <li>
-        <a routerLink="/admin/orders" routerLinkActive="active" [title]="isMenuCollapsed ? 'Orders' : ''">
-          <span class="material-icons">receipt</span>
-          @if (!isMenuCollapsed) {
-            <span class="text">Orders</span>
-          }
-        </a>
-      </li>
-      <li>
-        <a routerLink="/admin/products" routerLinkActive="active" [title]="isMenuCollapsed ? 'Products' : ''">
-          <span class="material-icons">inventory_2</span>
-          @if (!isMenuCollapsed) {
-            <span class="text">Products</span>
-          }
-        </a>
-      </li>
-      @if (isAdmin) {
+          </li>
+        }
         <li>
-          <a routerLink="/admin/users" routerLinkActive="active" [title]="isMenuCollapsed ? 'Users' : ''">
-            <span class="material-icons">person</span>
+          <a routerLink="/admin/clients" routerLinkActive="active" [title]="isMenuCollapsed ? ('admin.nav.clients' | translate) : ''">
+            <app-icon name="people"></app-icon>
             @if (!isMenuCollapsed) {
-              <span class="text">Users</span>
+              <span class="text">{{ 'admin.nav.clients' | translate }}</span>
+            }
+          </a>
+        </li>
+        @if (hasCompanies$ | async) {
+          <li>
+            <a routerLink="/admin/companies" routerLinkActive="active" [title]="isMenuCollapsed ? ('admin.nav.companies' | translate) : ''">
+              <app-icon name="business"></app-icon>
+              @if (!isMenuCollapsed) {
+                <span class="text">{{ 'admin.nav.companies' | translate }}</span>
+              }
+            </a>
+          </li>
+        }
+        <li>
+          <a routerLink="/admin/orders" routerLinkActive="active" [title]="isMenuCollapsed ? ('admin.nav.orders' | translate) : ''">
+            <app-icon name="receipt"></app-icon>
+            @if (!isMenuCollapsed) {
+              <span class="text">{{ 'admin.nav.orders' | translate }}</span>
+            }
+          </a>
+        </li>
+        @if (isAdmin) {
+          <li>
+            <a routerLink="/admin/shipments" routerLinkActive="active" [title]="isMenuCollapsed ? ('admin.nav.shipments' | translate) : ''">
+              <app-icon name="local_shipping"></app-icon>
+              @if (!isMenuCollapsed) {
+                <span class="text">{{ 'admin.nav.shipments' | translate }}</span>
+              }
+            </a>
+          </li>
+        }
+        <li>
+          <a routerLink="/admin/products" routerLinkActive="active" [title]="isMenuCollapsed ? ('admin.nav.products' | translate) : ''">
+            <app-icon name="inventory_2"></app-icon>
+            @if (!isMenuCollapsed) {
+              <span class="text">{{ 'admin.nav.products' | translate }}</span>
+            }
+          </a>
+        </li>
+        <li>
+          <a routerLink="/admin/tags" routerLinkActive="active" [title]="isMenuCollapsed ? ('admin.nav.tags' | translate) : ''">
+            <app-icon name="sell"></app-icon>
+            @if (!isMenuCollapsed) {
+              <span class="text">{{ 'admin.nav.tags' | translate }}</span>
             }
           </a>
         </li>
       }
-      @if (isAdmin) {
+      @if (isAdmin || isContentEditor) {
         <li>
-          <a routerLink="/admin/tables" routerLinkActive="active" [title]="isMenuCollapsed ? 'Database Tables' : ''">
-            <span class="material-icons">table_chart</span>
+          <a routerLink="/admin/content" routerLinkActive="active" [title]="isMenuCollapsed ? ('admin.nav.content' | translate) : ''">
+            <app-icon name="menu_book"></app-icon>
             @if (!isMenuCollapsed) {
-              <span class="text">Database Tables</span>
-            }
-          </a>
-        </li>
-      }
-      @if (isAdmin) {
-        <li>
-          <a routerLink="/admin/logs" routerLinkActive="active" [title]="isMenuCollapsed ? 'Logs' : ''">
-            <span class="material-icons">description</span>
-            @if (!isMenuCollapsed) {
-              <span class="text">Logs</span>
-            }
-          </a>
-        </li>
-      }
-      @if (isAdmin) {
-        <li>
-          <a routerLink="/admin/webhooks" routerLinkActive="active" [title]="isMenuCollapsed ? 'Webhooks' : ''">
-            <span class="material-icons">webhook</span>
-            @if (!isMenuCollapsed) {
-              <span class="text">Webhooks</span>
-            }
-          </a>
-        </li>
-      }
-      @if (isAdmin) {
-        <li>
-          <a routerLink="/admin/telegram" routerLinkActive="active" [title]="isMenuCollapsed ? 'Telegram' : ''">
-            <span class="material-icons">send</span>
-            @if (!isMenuCollapsed) {
-              <span class="text">Telegram</span>
-            }
-          </a>
-        </li>
-      }
-      @if (isAdmin) {
-        <li>
-          <a routerLink="/admin/mail" routerLinkActive="active" [title]="isMenuCollapsed ? 'Mail' : ''">
-            <span class="material-icons">email</span>
-            @if (!isMenuCollapsed) {
-              <span class="text">Mail</span>
-            }
-          </a>
-        </li>
-      }
-      @if (isAdmin) {
-        <li>
-          <a routerLink="/admin/invoice" routerLinkActive="active" [title]="isMenuCollapsed ? 'Invoice' : ''">
-            <span class="material-icons">receipt_long</span>
-            @if (!isMenuCollapsed) {
-              <span class="text">Invoice</span>
-            }
-          </a>
-        </li>
-      }
-      @if (isAdmin) {
-        <li>
-          <a routerLink="/admin/shipment" routerLinkActive="active" [title]="isMenuCollapsed ? 'Shipment' : ''">
-            <span class="material-icons">local_shipping</span>
-            @if (!isMenuCollapsed) {
-              <span class="text">Shipment</span>
+              <span class="text">{{ 'admin.nav.content' | translate }}</span>
             }
           </a>
         </li>
       }
     </ul>
     <div class="nav-footer">
-      <button class="exit-btn" (click)="goToClientZone()" [title]="isMenuCollapsed ? 'Exit Admin' : ''">
-        <span class="material-icons">logout</span>
+      <a routerLink="/admin/profile" routerLinkActive="active" class="settings-btn" [title]="isMenuCollapsed ? ('admin.nav.profile' | translate) : ''">
+        <app-icon name="person"></app-icon>
         @if (!isMenuCollapsed) {
-          <span class="text">Exit Admin</span>
+          <span class="text">{{ 'admin.nav.profile' | translate }}</span>
+        }
+      </a>
+      @if (isAdmin) {
+        <a routerLink="/admin/settings" routerLinkActive="active" class="settings-btn" [title]="isMenuCollapsed ? ('admin.nav.settings' | translate) : ''">
+          <app-icon name="settings"></app-icon>
+          @if (!isMenuCollapsed) {
+            <span class="text">{{ 'admin.nav.settings' | translate }}</span>
+          }
+        </a>
+      }
+      <button class="exit-btn" (click)="goToClientZone()" [title]="isMenuCollapsed ? ('admin.nav.exitAdmin' | translate) : ''">
+        <app-icon name="logout"></app-icon>
+        @if (!isMenuCollapsed) {
+          <span class="text">{{ 'admin.nav.exitAdmin' | translate }}</span>
         }
       </button>
     </div>
   </nav>
   <main class="admin-content" [class.expanded]="isMenuCollapsed">
+    <!-- Settings pages carry their own back-arrow + "Settings / …" trail in
+         their sticky .adm-bar (DESIGN_POLICY §2.1). A breadcrumb row here as
+         well gave those pages two stacked bars. -->
     <router-outlet></router-outlet>
   </main>
 
 </div>
-

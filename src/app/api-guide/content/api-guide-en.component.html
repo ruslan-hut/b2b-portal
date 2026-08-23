@@ -1,0 +1,539 @@
+<div class="g-layout">
+
+  <nav class="g-toc" aria-label="Contents">
+    <p class="g-toc__label">Contents</p>
+    <ol>
+      <li><a href="#access">Turn access on</a></li>
+      <li><a href="#create">Issue a key</a></li>
+      <li><a href="#first">Your first request</a></li>
+      <li><a href="#catalog">Catalog and prices</a></li>
+      <li><a href="#order">Orders</a></li>
+      <li><a href="#code">Code: Python and Node</a></li>
+      <li><a href="#errors">Errors and limits</a></li>
+      <li><a href="#safety">Keeping keys safe</a></li>
+      <li><a href="#reference">Every endpoint</a></li>
+    </ol>
+  </nav>
+
+  <main class="g-main">
+
+    <section class="g-section" id="access">
+      <h2 class="g-h2"><span class="g-num">01</span>Turn access on</h2>
+      <p>
+        API access is switched on by your account manager — it is off by default. Tell your manager
+        you are planning an integration and they will open the API for your account.
+      </p>
+      <p>
+        Then sign in to the portal as usual and open <a routerLink="/profile">Profile</a>. The
+        <strong>API access</strong> section sits at the bottom of the page; once access is on, a
+        <strong>New key</strong> button appears in it.
+      </p>
+      <div class="g-note">
+        <p><b>Who does what.</b> Your manager opens access once. Creating, rotating and revoking keys
+          is yours to do — you never have to ask us for that.</p>
+      </div>
+    </section>
+
+    <section class="g-section" id="create">
+      <h2 class="g-h2"><span class="g-num">02</span>Issue a key</h2>
+
+      <figure class="g-figure">
+        <div class="g-ui">
+          <div class="g-ui__bar"><span class="g-ui__dot"></span> Profile → API access</div>
+          <div class="g-ui__body">
+            <div class="g-ui__head">
+              <div>
+                <p class="g-ui__title">API access</p>
+                <p class="g-ui__sub">API keys let your own systems (ERP, back office) read the catalog
+                  and place orders on your behalf.</p>
+              </div>
+              <div class="g-btn-row">
+                <span class="g-btn"><app-icon name="menu_book"></app-icon>API documentation</span>
+                <span class="g-btn g-btn--primary"><app-icon name="add"></app-icon>New key</span>
+              </div>
+            </div>
+            <p class="g-ui__hint">1 of 5 active keys</p>
+            <div class="g-keyrow">
+              <span class="g-keyrow__name">Our ERP</span>
+              <span class="g-keyrow__prefix">cmx_live_Ab3dEf9h_…</span>
+              <span class="g-pill g-pill--scope">catalog:read</span>
+              <span class="g-pill g-pill--scope">orders:read</span>
+              <span class="g-pill g-pill--ok">Active</span>
+              <span class="g-keyrow__meta">
+                <span>expires 17.08.2027</span>
+                <span>last used 19.08.2026</span>
+                <span>actions: rename · rotate · revoke</span>
+              </span>
+            </div>
+          </div>
+        </div>
+        <figcaption class="g-caption">Profile → the “API access” section</figcaption>
+      </figure>
+
+      <p>Click <strong>New key</strong> and fill in the form:</p>
+
+      <figure class="g-figure">
+        <div class="g-ui">
+          <div class="g-ui__bar"><span class="g-ui__dot"></span> New key</div>
+          <div class="g-ui__body">
+            <div class="g-field">
+              <span>Key name</span>
+              <div class="g-input">e.g. Our ERP</div>
+            </div>
+            <div class="g-field">
+              <span>Scopes</span>
+              <div class="g-chips">
+                <span class="g-chip is-on">catalog:read</span>
+                <span class="g-chip is-on">orders:read</span>
+                <span class="g-chip">orders:write</span>
+                <span class="g-chip">profile:read</span>
+                <span class="g-chip">profile:write</span>
+              </div>
+            </div>
+            <div class="g-check">
+              <span class="g-check__box"></span>
+              <span>Test mode — <em>orders are validated and priced, but nothing is saved</em></span>
+            </div>
+            <p class="g-ui__hint">The key is valid for 365 days.</p>
+            <div class="g-ui__foot">
+              <span class="g-btn g-btn--ghost">Cancel</span>
+              <span class="g-btn g-btn--primary">Create key</span>
+            </div>
+          </div>
+        </div>
+        <figcaption class="g-caption">The create-key dialog</figcaption>
+      </figure>
+
+      <h3 class="g-h3">Scopes</h3>
+      <p>Give a key only what that particular integration needs.</p>
+      <div class="g-tablewrap">
+        <table class="g-table">
+          <thead><tr><th>Scope</th><th>Grants</th></tr></thead>
+          <tbody>
+            <tr><td><code>catalog:read</code></td><td>catalog, product detail, order pricing (quote)</td></tr>
+            <tr><td><code>orders:read</code></td><td>order list and detail, statuses, invoices, tracking</td></tr>
+            <tr><td><code>orders:write</code></td><td>placing orders</td></tr>
+            <tr><td><code>profile:read</code></td><td>profile and delivery addresses</td></tr>
+            <tr><td><code>profile:write</code></td><td>editing the profile and addresses</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 class="g-h3">The key is shown once</h3>
+      <figure class="g-figure">
+        <div class="g-ui">
+          <div class="g-ui__bar"><span class="g-ui__dot"></span> Your new API key</div>
+          <div class="g-ui__body">
+            <p class="g-ui__hint">Copy the key now — for security it cannot be shown again. If you
+              lose it, create a new one.</p>
+            <div class="g-secret">
+              <code>cmx_live_Ab3dEf9h_7pQ2mVx4LkT9dS1cH8bN3rY6uZ0wJ5eG</code>
+              <span class="g-btn"><app-icon name="content_copy"></app-icon>Copy</span>
+            </div>
+            <p class="g-ui__hint">Send it with every request as
+              <code>Authorization: Bearer &lt;key&gt;</code></p>
+            <div class="g-ui__foot"><span class="g-btn g-btn--primary">I saved the key</span></div>
+          </div>
+        </div>
+        <figcaption class="g-caption">Shown once, never again</figcaption>
+      </figure>
+
+      <p>
+        A key looks like <code>cmx_&lt;mode&gt;_&lt;prefix&gt;_&lt;secret&gt;</code>. The mode is
+        <code>live</code> or <code>test</code>. The 8-character prefix is public: it identifies the
+        key in your list and in our logs, and it is what to quote in a support request. The secret is
+        never stored in the clear and cannot be recovered.
+      </p>
+      <div class="g-note g-note--warn">
+        <p><b>Start with a test key.</b> Tick “Test mode” — such a key reads normally, and
+          <code>POST /orders</code> runs the full validation and pricing but saves nothing. Once the
+          integration works, create a separate live key.</p>
+      </div>
+    </section>
+
+    <section class="g-section" id="first">
+      <h2 class="g-h2"><span class="g-num">03</span>Your first request</h2>
+      <p>
+        The simplest check is <code>GET /me</code>. It needs no scope and tells you straight away
+        whether the key is alive and what it is allowed to do.
+      </p>
+
+      <div class="g-snippet">
+        <div class="g-snippet__bar"><span class="g-snippet__verb">GET</span><span>/me · curl</span></div>
+        <pre><code>curl -s {{ base }}/me \
+  -H <span class="s">"Authorization: Bearer cmx_test_Ab3dEf9h_…"</span></code></pre>
+      </div>
+
+      <p>The <code>X-API-Key</code> header works just as well as <code>Authorization</code>.</p>
+
+      <div class="g-snippet">
+        <div class="g-snippet__bar"><span class="g-snippet__verb">200 OK</span><span>response (trimmed)</span></div>
+        <pre><code>&#123;
+  <span class="k">"success"</span>: <span class="n">true</span>,
+  <span class="k">"data"</span>: &#123;
+    <span class="k">"client"</span>: &#123; <span class="k">"uid"</span>: <span class="s">"c-1f4a…"</span>, <span class="k">"name"</span>: <span class="s">"Azhur Studio"</span> &#125;,
+    <span class="k">"currency"</span>: &#123; <span class="k">"code"</span>: <span class="s">"UAH"</span> &#125;,
+    <span class="k">"vat_rate"</span>: <span class="n">20</span>,
+    <span class="k">"addresses"</span>: [ &#123; <span class="k">"uid"</span>: <span class="s">"a-88c1…"</span>, <span class="k">"is_default"</span>: <span class="n">true</span>, <span class="k">"city"</span>: <span class="s">"Kyiv"</span> &#125; ],
+    <span class="k">"api_key"</span>: &#123;
+      <span class="k">"name"</span>: <span class="s">"Our ERP"</span>,
+      <span class="k">"scopes"</span>: [<span class="s">"catalog:read"</span>, <span class="s">"orders:read"</span>],
+      <span class="k">"is_test"</span>: <span class="n">true</span>,
+      <span class="k">"expires_at"</span>: <span class="s">"2027-08-17T10:00:00Z"</span>,
+      <span class="k">"rate_limit_read_per_minute"</span>: <span class="n">600</span>,
+      <span class="k">"rate_limit_write_per_minute"</span>: <span class="n">60</span>
+    &#125;
+  &#125;,
+  <span class="k">"request_id"</span>: <span class="s">"req_9f2c…"</span>
+&#125;</code></pre>
+      </div>
+
+      <p>
+        Every response uses the same envelope: <code>success</code>, then <code>data</code> or
+        <code>error</code>, plus <code>request_id</code>. The same id comes back in the
+        <code>X-Request-ID</code> header — log it on your side and we can find any request of yours
+        in seconds.
+      </p>
+      <div class="g-note g-note--stop">
+        <p><b>Got a 401?</b> One answer covers every cause — unknown key, revoked, expired, or access
+          switched off. Check that you copied the key in full, that it is not revoked in your profile,
+          and that your manager has enabled access. After repeated failures (20 in 10 minutes) your IP
+          is blocked for a while — wait out the <code>Retry-After</code> header.</p>
+      </div>
+    </section>
+
+    <section class="g-section" id="catalog">
+      <h2 class="g-h2"><span class="g-num">04</span>Catalog and prices</h2>
+      <p>
+        The catalog already comes scoped to you: only products priced for your price list and
+        sellable in your country. Prices are integer cents.
+      </p>
+
+      <div class="g-snippet">
+        <div class="g-snippet__bar"><span class="g-snippet__verb">GET</span><span>/catalog/products</span></div>
+        <pre><code>curl -s <span class="s">"{{ base }}/catalog/products?limit=2&amp;search=gel"</span> \
+  -H <span class="s">"Authorization: Bearer $COMEX_KEY"</span></code></pre>
+      </div>
+
+      <div class="g-snippet">
+        <div class="g-snippet__bar"><span class="g-snippet__verb">200 OK</span><span>array of products</span></div>
+        <pre><code>&#123;
+  <span class="k">"success"</span>: <span class="n">true</span>,
+  <span class="k">"data"</span>: [
+    &#123;
+      <span class="k">"uid"</span>: <span class="s">"p-7b21…"</span>,
+      <span class="k">"sku"</span>: <span class="s">"DBR-1042"</span>,
+      <span class="k">"barcode"</span>: <span class="s">"4820001234567"</span>,
+      <span class="k">"name"</span>: <span class="s">"Gel Polish 8 ml, shade 042"</span>,
+      <span class="k">"base_price"</span>: <span class="n">18000</span>,          <span class="c">// 180.00 before discount and VAT</span>
+      <span class="k">"price_with_discount"</span>: <span class="n">16200</span>,
+      <span class="k">"price_final"</span>: <span class="n">19440</span>,         <span class="c">// with discount and VAT</span>
+      <span class="k">"vat_rate"</span>: <span class="n">20</span>,
+      <span class="k">"discount_percent"</span>: <span class="n">10</span>,
+      <span class="k">"available"</span>: <span class="n">true</span>
+    &#125;
+  ]
+&#125;</code></pre>
+      </div>
+
+      <div class="g-tablewrap">
+        <table class="g-table">
+          <thead><tr><th>Field</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td><code>base_price</code></td><td>before discount, without VAT</td></tr>
+            <tr><td><code>price_with_discount</code></td><td>with your discount, without VAT</td></tr>
+            <tr><td><code>price_final</code></td><td>with discount and VAT — what you actually pay per unit</td></tr>
+            <tr><td><code>available</code></td><td><code>true</code> when the store holds stock for you</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>
+        Stock levels are never exposed — only the <code>available</code> flag. If the quantity you
+        need is short, you find out when the order is priced.
+      </p>
+
+      <h3 class="g-h3">Matching your own SKUs</h3>
+      <p>
+        Instead of pulling the whole catalog, send your SKUs or barcodes: you get priced products
+        back plus a separate <code>not_found</code> list.
+      </p>
+      <div class="g-snippet">
+        <div class="g-snippet__bar"><span class="g-snippet__verb">POST</span><span>/catalog/products/lookup</span></div>
+        <pre><code>curl -s {{ base }}/catalog/products/lookup \
+  -H <span class="s">"Authorization: Bearer $COMEX_KEY"</span> \
+  -H <span class="s">"Content-Type: application/json"</span> \
+  -d <span class="s">'&#123;"skus":["DBR-1042","DBR-9999"],"language":"en"&#125;'</span></code></pre>
+      </div>
+      <p>Also available: <code>/catalog/categories</code>, <code>/catalog/languages</code>, a product
+        by <code>uid</code> or by SKU (<code>/catalog/products/by-sku/&#123;sku&#125;</code>) and its images.</p>
+    </section>
+
+    <section class="g-section" id="order">
+      <h2 class="g-h2"><span class="g-num">05</span>Orders</h2>
+      <p>
+        Price first, then place. The request body is identical for both, so going from a dry run to a
+        real order is a one-line change of URL.
+      </p>
+
+      <div class="g-snippet">
+        <div class="g-snippet__bar"><span class="g-snippet__verb">POST</span><span>/orders/quote · stores nothing</span></div>
+        <pre><code>curl -s {{ base }}/orders/quote \
+  -H <span class="s">"Authorization: Bearer $COMEX_KEY"</span> \
+  -H <span class="s">"Content-Type: application/json"</span> \
+  -d <span class="s">'&#123;
+        "items": [
+          &#123;"product_uid": "p-7b21…", "quantity": 6&#125;,
+          &#123;"product_uid": "p-3c08…", "quantity": 2&#125;
+        ],
+        "client_reference": "PO-2026-118",
+        "comment": "Ship together with the previous order"
+      &#125;'</span></code></pre>
+      </div>
+
+      <div class="g-snippet">
+        <div class="g-snippet__bar"><span class="g-snippet__verb">200 OK</span><span>quote</span></div>
+        <pre><code>&#123;
+  <span class="k">"success"</span>: <span class="n">true</span>,
+  <span class="k">"data"</span>: &#123;
+    <span class="k">"quote"</span>: <span class="n">true</span>,
+    <span class="k">"items"</span>: [ &#123; <span class="k">"product_sku"</span>: <span class="s">"DBR-1042"</span>, <span class="k">"quantity"</span>: <span class="n">6</span>, <span class="k">"total"</span>: <span class="n">116640</span> &#125; ],
+    <span class="k">"subtotal"</span>: <span class="n">129600</span>,
+    <span class="k">"total_vat"</span>: <span class="n">25920</span>,
+    <span class="k">"delivery_cost"</span>: <span class="n">0</span>,
+    <span class="k">"total"</span>: <span class="n">155520</span>,
+    <span class="k">"currency_code"</span>: <span class="s">"UAH"</span>
+  &#125;
+&#125;</code></pre>
+      </div>
+      <p>The money reconciles as <code>total = subtotal + total_vat + delivery_cost</code>
+        (shipping sits in neither <code>subtotal</code> nor <code>total_vat</code>).</p>
+
+      <h3 class="g-h3">Placing the order</h3>
+      <p>
+        The same request against <code>POST /orders</code> creates a <strong>confirmed</strong>
+        order: it lands in your manager's queue immediately. Always send an
+        <code>Idempotency-Key</code> — with it, a retry after a dropped connection can never create
+        a second order.
+      </p>
+      <div class="g-snippet">
+        <div class="g-snippet__bar"><span class="g-snippet__verb">POST</span><span>/orders · needs orders:write</span></div>
+        <pre><code>curl -s {{ base }}/orders \
+  -H <span class="s">"Authorization: Bearer $COMEX_KEY"</span> \
+  -H <span class="s">"Content-Type: application/json"</span> \
+  -H <span class="s">"Idempotency-Key: PO-2026-118"</span> \
+  -d <span class="s">'&#123;"items":[&#123;"product_uid":"p-7b21…","quantity":6&#125;],
+       "client_reference":"PO-2026-118"&#125;'</span></code></pre>
+      </div>
+      <ul class="g-checklist">
+        <li><strong>201</strong> — order created; the response carries <code>uid</code> and <code>number</code>.</li>
+        <li><strong>200</strong> with <code>"test": true</code> — a test key: validated and priced, nothing saved.</li>
+        <li><strong>409</strong> — the same <code>Idempotency-Key</code> sent with a <em>different</em> body.</li>
+        <li>A retry with the same key and the same body within 24 hours replays the original response
+          with <code>Idempotent-Replayed: true</code>.</li>
+      </ul>
+      <p>
+        The delivery address defaults to your default one unless you pass
+        <code>shipping_address_uid</code>. <code>client_reference</code> is your own number (a PO):
+        it is stored, shown to staff and searchable.
+      </p>
+
+      <h3 class="g-h3">When an order is rejected</h3>
+      <div class="g-snippet">
+        <div class="g-snippet__bar"><span class="g-snippet__verb">400</span><span>rejection</span></div>
+        <pre><code>&#123;
+  <span class="k">"success"</span>: <span class="n">false</span>,
+  <span class="k">"error"</span>: &#123;
+    <span class="k">"code"</span>: <span class="s">"VALIDATION_ERROR"</span>,
+    <span class="k">"message"</span>: <span class="s">"Order rejected"</span>,
+    <span class="k">"details"</span>: &#123; <span class="k">"reason"</span>: <span class="s">"insufficient_stock"</span> &#125;,
+    <span class="k">"extra"</span>: &#123; <span class="k">"problems"</span>: [ &#123; <span class="k">"product_uid"</span>: <span class="s">"p-3c08…"</span>, <span class="k">"reason"</span>: <span class="s">"insufficient_stock"</span> &#125; ] &#125;
+  &#125;
+&#125;</code></pre>
+      </div>
+      <p>
+        Common values of <code>details.reason</code>: <code>validation</code> (per-line problems in
+        <code>extra.problems</code>), <code>insufficient_stock</code>, <code>address_invalid</code>,
+        <code>business_registration_required</code>.
+      </p>
+
+      <h3 class="g-h3">Following an order</h3>
+      <div class="g-tablewrap">
+        <table class="g-table">
+          <thead><tr><th>Request</th><th>Returns</th></tr></thead>
+          <tbody>
+            <tr><td><code>GET /orders?updated_since=…</code></td><td>everything changed since your last sync</td></tr>
+            <tr><td><code>GET /orders?client_reference=PO-2026-118</code></td><td>lookup by your own number</td></tr>
+            <tr><td><code>GET /orders/&#123;uid&#125;</code></td><td>order, lines, invoices, shipments</td></tr>
+            <tr><td><code>GET /orders/&#123;uid&#125;/timeline</code></td><td>phase history</td></tr>
+            <tr><td><code>GET /orders/&#123;uid&#125;/shipments/&#123;uid&#125;/tracking</code></td><td>carrier, tracking number, events</td></tr>
+            <tr><td><code>GET /orders/&#123;uid&#125;/invoices/&#123;uid&#125;/file</code></td><td>the document file</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        The <code>phase</code> field is one of <code>placed</code>, <code>confirmed</code>,
+        <code>processing</code>, <code>shipped</code>, <code>delivered</code>,
+        <code>cancelled</code>. For routine syncing use <code>updated_since</code> — far cheaper than
+        re-reading the whole list.
+      </p>
+    </section>
+
+    <section class="g-section" id="code">
+      <h2 class="g-h2"><span class="g-num">06</span>Code: Python and Node</h2>
+
+      <div class="g-snippet">
+        <div class="g-snippet__bar"><span class="g-snippet__verb">Python</span><span>requests</span></div>
+        <pre><code><span class="k">import</span> os, requests
+
+BASE = <span class="s">"{{ base }}"</span>
+S = requests.Session()
+S.headers.update(&#123;<span class="s">"Authorization"</span>: <span class="s">f"Bearer &#123;os.environ['COMEX_KEY']&#125;"</span>&#125;)
+
+<span class="c"># 1. check the key</span>
+me = S.get(<span class="s">f"&#123;BASE&#125;/me"</span>, timeout=<span class="n">15</span>).json()[<span class="s">"data"</span>]
+<span class="k">print</span>(me[<span class="s">"client"</span>][<span class="s">"name"</span>], me[<span class="s">"api_key"</span>][<span class="s">"scopes"</span>])
+
+<span class="c"># 2. resolve a product by your own SKU</span>
+found = S.post(<span class="s">f"&#123;BASE&#125;/catalog/products/lookup"</span>,
+               json=&#123;<span class="s">"skus"</span>: [<span class="s">"DBR-1042"</span>]&#125;, timeout=<span class="n">15</span>).json()[<span class="s">"data"</span>]
+product = found[<span class="s">"products"</span>][<span class="n">0</span>]
+
+<span class="c"># 3. place the order (safe to retry thanks to Idempotency-Key)</span>
+r = S.post(<span class="s">f"&#123;BASE&#125;/orders"</span>,
+           headers=&#123;<span class="s">"Idempotency-Key"</span>: <span class="s">"PO-2026-118"</span>&#125;,
+           json=&#123;<span class="s">"items"</span>: [&#123;<span class="s">"product_uid"</span>: product[<span class="s">"uid"</span>], <span class="s">"quantity"</span>: <span class="n">6</span>&#125;],
+                 <span class="s">"client_reference"</span>: <span class="s">"PO-2026-118"</span>&#125;, timeout=<span class="n">30</span>)
+
+body = r.json()
+<span class="k">if not</span> body[<span class="s">"success"</span>]:
+    <span class="k">raise</span> RuntimeError(body[<span class="s">"error"</span>][<span class="s">"message"</span>], r.headers.get(<span class="s">"X-Request-ID"</span>))
+<span class="k">print</span>(<span class="s">"order"</span>, body[<span class="s">"data"</span>][<span class="s">"number"</span>], body[<span class="s">"data"</span>][<span class="s">"total"</span>] / <span class="n">100</span>)</code></pre>
+      </div>
+
+      <div class="g-snippet">
+        <div class="g-snippet__bar"><span class="g-snippet__verb">Node.js</span><span>fetch (18+)</span></div>
+        <pre><code><span class="k">const</span> BASE = <span class="s">"{{ base }}"</span>;
+
+<span class="k">async function</span> call(path, init = &#123;&#125;) &#123;
+  <span class="k">const</span> res = <span class="k">await</span> fetch(BASE + path, &#123;
+    ...init,
+    headers: &#123;
+      Authorization: <span class="s">`Bearer $&#123;process.env.COMEX_KEY&#125;`</span>,
+      <span class="s">"Content-Type"</span>: <span class="s">"application/json"</span>,
+      ...init.headers,
+    &#125;,
+  &#125;);
+  <span class="k">const</span> body = <span class="k">await</span> res.json();
+  <span class="k">if</span> (!body.success) &#123;
+    <span class="c">// log request_id — it is how we find the request</span>
+    <span class="k">throw new</span> Error(<span class="s">`$&#123;body.error.code&#125;: $&#123;body.error.message&#125;`</span>);
+  &#125;
+  <span class="k">return</span> body.data;
+&#125;
+
+<span class="k">const</span> quote = <span class="k">await</span> call(<span class="s">"/orders/quote"</span>, &#123;
+  method: <span class="s">"POST"</span>,
+  body: JSON.stringify(&#123; items: [&#123; product_uid: <span class="s">"p-7b21…"</span>, quantity: <span class="n">6</span> &#125;] &#125;),
+&#125;);
+console.log(<span class="s">"to pay:"</span>, quote.total / <span class="n">100</span>, quote.currency_code);</code></pre>
+      </div>
+    </section>
+
+    <section class="g-section" id="errors">
+      <h2 class="g-h2"><span class="g-num">07</span>Errors and limits</h2>
+      <div class="g-tablewrap">
+        <table class="g-table">
+          <thead><tr><th class="g-code-col">HTTP</th><th><code>error.code</code></th><th>What to do</th></tr></thead>
+          <tbody>
+            <tr><td class="g-code-col">400</td><td><code>VALIDATION_ERROR</code></td><td>fix the request body; details in <code>error.fields</code> or <code>extra.problems</code></td></tr>
+            <tr><td class="g-code-col">401</td><td><code>UNAUTHORIZED</code></td><td>key invalid, revoked, expired, or access switched off</td></tr>
+            <tr><td class="g-code-col">403</td><td><code>FORBIDDEN</code></td><td>missing scope (see <code>details.required_scope</code>) or a write with a test key</td></tr>
+            <tr><td class="g-code-col">404</td><td><code>NOT_FOUND</code></td><td>no such object — or it is not yours</td></tr>
+            <tr><td class="g-code-col">409</td><td><code>CONFLICT</code></td><td>same <code>Idempotency-Key</code>, different body</td></tr>
+            <tr><td class="g-code-col">429</td><td><code>RATE_LIMIT_EXCEEDED</code></td><td>wait <code>Retry-After</code> seconds and retry</td></tr>
+            <tr><td class="g-code-col">503</td><td><code>MAINTENANCE</code></td><td>planned maintenance — retry later</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 class="g-h3">Rate limits</h3>
+      <p>
+        Two limits per key: <strong>600 reads</strong> and <strong>60 writes</strong> per minute.
+        Every response carries <code>X-RateLimit-Limit</code> and <code>X-RateLimit-Remaining</code>;
+        a refusal adds <code>Retry-After</code> and <code>X-RateLimit-Reset</code>.
+      </p>
+      <ul class="g-checklist">
+        <li>Request body up to 1 MiB, request timeout 10 seconds.</li>
+        <li>Lists are paged with <code>offset</code> and <code>limit</code> (max 100).</li>
+        <li>Retry with backoff on <code>429</code> and <code>5xx</code>; retrying a <code>4xx</code> will not help.</li>
+      </ul>
+    </section>
+
+    <section class="g-section" id="safety">
+      <h2 class="g-h2"><span class="g-num">08</span>Keeping keys safe</h2>
+      <ul class="g-checklist">
+        <li>A key is access to your prices and your orders. Keep it in environment variables or a
+          secret store — never in code or in a repository.</li>
+        <li>Never use a key from a browser or a mobile app — server-side only.</li>
+        <li>One key per system: revoking one then never stops the others.</li>
+        <li>Keys are valid for 365 days. Watch the expiry date in your profile.</li>
+      </ul>
+      <p>
+        <strong>Rotate</strong> issues a new key and keeps the old one working for a short grace
+        period — 24 hours. That is the no-downtime way to refresh: create the new key, update your
+        configuration, let the traffic move over.
+      </p>
+      <p>
+        <strong>Revoke</strong> is immediate and final: anything using that key stops working at
+        once. That is exactly what to do if you suspect a key has leaked.
+      </p>
+    </section>
+
+    <section class="g-section" id="reference">
+      <h2 class="g-h2"><span class="g-num">09</span>Every endpoint</h2>
+      <p>
+        The full interactive reference with every field is on the
+        <a routerLink="/api-docs">Client API reference</a> page. The machine-readable contract is
+        <code>GET /api/client/v1/openapi.yaml</code> — import it into Postman or generate a client
+        from it.
+      </p>
+      <div class="g-tablewrap">
+        <table class="g-table">
+          <thead><tr><th>Method and path</th><th>Scope</th><th>Purpose</th></tr></thead>
+          <tbody>
+            <tr><td><code>GET /me</code></td><td>—</td><td>client, currency, VAT, addresses, the key's own rights</td></tr>
+            <tr><td><code>GET /catalog/products</code></td><td><code>catalog:read</code></td><td>catalog with your prices</td></tr>
+            <tr><td><code>POST /catalog/products/lookup</code></td><td><code>catalog:read</code></td><td>SKUs / barcodes → products</td></tr>
+            <tr><td><code>GET /catalog/products/&#123;uid&#125;</code></td><td><code>catalog:read</code></td><td>product detail</td></tr>
+            <tr><td><code>GET /catalog/products/by-sku/&#123;sku&#125;</code></td><td><code>catalog:read</code></td><td>product detail by SKU</td></tr>
+            <tr><td><code>GET /catalog/products/&#123;uid&#125;/images</code></td><td><code>catalog:read</code></td><td>images</td></tr>
+            <tr><td><code>GET /catalog/categories</code></td><td><code>catalog:read</code></td><td>categories</td></tr>
+            <tr><td><code>GET /catalog/languages</code></td><td><code>catalog:read</code></td><td>description languages</td></tr>
+            <tr><td><code>POST /catalog/export</code></td><td><code>catalog:read</code></td><td>order form .xlsx</td></tr>
+            <tr><td><code>POST /orders/quote</code></td><td><code>catalog:read</code></td><td>price without placing</td></tr>
+            <tr><td><code>POST /orders</code></td><td><code>orders:write</code></td><td>place an order</td></tr>
+            <tr><td><code>GET /orders</code></td><td><code>orders:read</code></td><td>list with filters</td></tr>
+            <tr><td><code>GET /orders/&#123;uid&#125;</code></td><td><code>orders:read</code></td><td>the whole order</td></tr>
+            <tr><td><code>GET /orders/&#123;uid&#125;/timeline</code></td><td><code>orders:read</code></td><td>phase history</td></tr>
+            <tr><td><code>GET /orders/&#123;uid&#125;/invoices</code></td><td><code>orders:read</code></td><td>documents</td></tr>
+            <tr><td><code>GET /orders/&#123;uid&#125;/shipments</code></td><td><code>orders:read</code></td><td>shipments</td></tr>
+            <tr><td><code>GET /orders/&#123;uid&#125;/shipments/&#123;uid&#125;/tracking</code></td><td><code>orders:read</code></td><td>delivery events</td></tr>
+            <tr><td><code>GET /addresses</code></td><td><code>profile:read</code></td><td>delivery addresses</td></tr>
+            <tr><td><code>POST /addresses</code></td><td><code>profile:write</code></td><td>create or update an address</td></tr>
+            <tr><td><code>PUT /addresses/&#123;uid&#125;/default</code></td><td><code>profile:write</code></td><td>make it the default</td></tr>
+            <tr><td><code>PUT /addresses/&#123;uid&#125;/official</code></td><td><code>profile:write</code></td><td>address for documents</td></tr>
+            <tr><td><code>DELETE /addresses/&#123;uid&#125;</code></td><td><code>profile:write</code></td><td>delete an address</td></tr>
+            <tr><td><code>PATCH /me</code></td><td><code>profile:write</code></td><td>name, e-mail, VAT number</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="g-note">
+        <p><b>Need help?</b> Write to your manager and include the <code>request_id</code> (or
+          <code>X-Request-ID</code>) of the failing request and the public key prefix — for example
+          <code>cmx_live_Ab3dEf9h</code>. Never send the key secret to anyone, us included.</p>
+      </div>
+    </section>
+
+  </main>
+</div>

@@ -1,23 +1,29 @@
-import { Component, Input, Output, EventEmitter, OnInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
-import { Subscription } from 'rxjs';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, OnInit, inject, input, output } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CrmService, CrmAssignableUser } from '../../services/crm.service';
 import { CrmTask, CrmTaskStatus, CrmTaskPriority, CrmCreateTaskRequest } from '../../models/crm-task.model';
 import { AuthService } from '../../../../core/services/auth.service';
+import { ConfirmDialogService } from '../../../../core/services/confirm-dialog.service';
+import { formatDateShort } from '../../../../core/utils/date-format';
 
 @Component({
-    selector: 'app-task-list',
-    templateUrl: './task-list.component.html',
-    styleUrls: ['./task-list.component.scss'],
-    standalone: false,
-    changeDetection: ChangeDetectionStrategy.OnPush
+  selector: 'app-task-list',
+  templateUrl: './task-list.component.html',
+  styleUrls: ['./task-list.component.scss'],
+  standalone: false,
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class TaskListComponent implements OnInit, OnDestroy {
-  @Input() orderUid: string = '';
-  @Input() showAddForm: boolean = true;
-  @Output() taskCreated = new EventEmitter<CrmTask>();
-  @Output() taskUpdated = new EventEmitter<CrmTask>();
+export class TaskListComponent implements OnInit {
+  private readonly crmService = inject(CrmService);
+  private readonly confirmDialog = inject(ConfirmDialogService);
+  private readonly authService = inject(AuthService);
+  private readonly cdr = inject(ChangeDetectorRef);
+  private readonly destroyRef = inject(DestroyRef);
 
-  private subscriptions = new Subscription();
+  readonly orderUid = input<string>('');
+  readonly showAddForm = input<boolean>(true);
+  readonly taskCreated = output<CrmTask>();
+  readonly taskUpdated = output<CrmTask>();
 
   tasks: CrmTask[] = [];
   loading = false;
@@ -38,66 +44,55 @@ export class TaskListComponent implements OnInit, OnDestroy {
   assignableUsers: CrmAssignableUser[] = [];
   currentUserUid = '';
 
-  constructor(
-    private crmService: CrmService,
-    private authService: AuthService,
-    private cdr: ChangeDetectorRef
-  ) {}
-
   ngOnInit(): void {
-    // Get current user UID
     const currentEntity = this.authService.currentEntityValue;
     if (currentEntity && 'uid' in currentEntity) {
       this.currentUserUid = currentEntity.uid;
     }
 
-    // Load assignable users
     this.loadAssignableUsers();
 
-    if (this.orderUid) {
+    if (this.orderUid()) {
       this.loadTasks();
     }
   }
 
   loadAssignableUsers(): void {
-    this.subscriptions.add(
-      this.crmService.getAssignableUsers().subscribe({
-        next: (users) => {
+    this.crmService.getAssignableUsers()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: users => {
           this.assignableUsers = users;
-          this.cdr.detectChanges();
+          this.cdr.markForCheck();
         },
-        error: (err) => {
+        error: err => {
           console.error('Failed to load assignable users:', err);
         }
-      })
-    );
-  }
-
-  ngOnDestroy(): void {
-    this.subscriptions.unsubscribe();
+      });
   }
 
   loadTasks(): void {
-    if (!this.orderUid) return;
+    const orderUid = this.orderUid();
+    if (!orderUid) return;
 
     this.loading = true;
     this.error = null;
 
-    this.subscriptions.add(
-      this.crmService.getTasksByOrder(this.orderUid, 1, 100).subscribe({
-        next: (response) => {
+    this.crmService.getTasksByOrder(orderUid, 1, 100)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: response => {
           this.tasks = response.tasks;
           this.loading = false;
-          this.cdr.detectChanges();
+          this.cdr.markForCheck();
         },
-        error: (err) => {
+        error: err => {
           console.error('Failed to load tasks:', err);
           this.error = 'Failed to load tasks';
           this.loading = false;
-          this.cdr.detectChanges();
+          this.cdr.markForCheck();
         }
-      })
-    );
+      });
   }
 
   get filteredTasks(): CrmTask[] {
@@ -112,7 +107,7 @@ export class TaskListComponent implements OnInit, OnDestroy {
     if (!this.showNewTaskForm) {
       this.resetNewTaskForm();
     }
-    this.cdr.detectChanges();
+    this.cdr.markForCheck();
   }
 
   resetNewTaskForm(): void {
@@ -124,16 +119,16 @@ export class TaskListComponent implements OnInit, OnDestroy {
   }
 
   createTask(): void {
-    if (!this.newTaskTitle.trim() || !this.orderUid) return;
+    const orderUid = this.orderUid();
+    if (!this.newTaskTitle.trim() || !orderUid) return;
 
-    // Convert datetime-local format to ISO format
     let dueDate: string | undefined;
     if (this.newTaskDueDate) {
       dueDate = new Date(this.newTaskDueDate).toISOString();
     }
 
     const request: CrmCreateTaskRequest = {
-      order_uid: this.orderUid,
+      order_uid: orderUid,
       title: this.newTaskTitle.trim(),
       description: this.newTaskDescription.trim() || undefined,
       priority: this.newTaskPriority,
@@ -141,60 +136,60 @@ export class TaskListComponent implements OnInit, OnDestroy {
       assigned_to_uid: this.newTaskAssignee || undefined
     };
 
-    this.subscriptions.add(
-      this.crmService.createTask(request).subscribe({
-        next: (response) => {
+    this.crmService.createTask(request)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
           this.showNewTaskForm = false;
           this.resetNewTaskForm();
           this.loadTasks();
         },
-        error: (err) => {
+        error: err => {
           console.error('Failed to create task:', err);
           this.error = 'Failed to create task';
-          this.cdr.detectChanges();
+          this.cdr.markForCheck();
         }
-      })
-    );
+      });
   }
 
   updateTaskStatus(task: CrmTask, status: CrmTaskStatus): void {
-    this.subscriptions.add(
-      this.crmService.updateTaskStatus(task.uid, status).subscribe({
+    this.crmService.updateTaskStatus(task.uid, status)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
         next: () => {
           task.status = status;
           if (status === 'completed') {
             task.completed_at = new Date().toISOString();
           }
           this.taskUpdated.emit(task);
-          this.cdr.detectChanges();
+          this.cdr.markForCheck();
         },
-        error: (err) => {
+        error: err => {
           console.error('Failed to update task status:', err);
-          this.cdr.detectChanges();
+          this.cdr.markForCheck();
         }
-      })
-    );
+      });
   }
 
   completeTask(task: CrmTask): void {
     this.updateTaskStatus(task, 'completed');
   }
 
-  deleteTask(task: CrmTask): void {
-    if (!confirm('Are you sure you want to delete this task?')) return;
+  async deleteTask(task: CrmTask): Promise<void> {
+    if (!await this.confirmDialog.ask({ message: 'Are you sure you want to delete this task?', danger: true })) return;
 
-    this.subscriptions.add(
-      this.crmService.deleteTask(task.uid).subscribe({
+    this.crmService.deleteTask(task.uid)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
         next: () => {
           this.tasks = this.tasks.filter(t => t.uid !== task.uid);
-          this.cdr.detectChanges();
+          this.cdr.markForCheck();
         },
-        error: (err) => {
+        error: err => {
           console.error('Failed to delete task:', err);
-          this.cdr.detectChanges();
+          this.cdr.markForCheck();
         }
-      })
-    );
+      });
   }
 
   getPriorityClass(priority: CrmTaskPriority): string {
@@ -213,14 +208,7 @@ export class TaskListComponent implements OnInit, OnDestroy {
   }
 
   formatDate(dateString: string): string {
-    if (!dateString) return '-';
-    const date = new Date(dateString);
-    return date.toLocaleDateString(undefined, {
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    return formatDateShort(dateString);
   }
 
   formatDueDate(dateString: string | undefined): string {
@@ -252,20 +240,19 @@ export class TaskListComponent implements OnInit, OnDestroy {
   reassignTask(task: CrmTask, userUid: string): void {
     const assignedToUid = userUid || undefined;
 
-    this.subscriptions.add(
-      this.crmService.updateTask(task.uid, { assigned_to_uid: assignedToUid }).subscribe({
+    this.crmService.updateTask(task.uid, { assigned_to_uid: assignedToUid })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
         next: () => {
           task.assigned_to_uid = userUid || undefined;
-          // Update assigned name from users list
           const user = this.assignableUsers.find(u => u.uid === userUid);
           task.assigned_to_name = user ? `${user.first_name} ${user.last_name}` : undefined;
           this.taskUpdated.emit(task);
-          this.cdr.detectChanges();
+          this.cdr.markForCheck();
         },
-        error: (err) => {
+        error: err => {
           console.error('Failed to reassign task:', err);
         }
-      })
-    );
+      });
   }
 }

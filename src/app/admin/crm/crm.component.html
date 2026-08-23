@@ -1,109 +1,154 @@
-<div class="crm-container">
-  <app-action-bar>
-    <div actionBarLeft>
-      <select [(ngModel)]="selectedStoreUid" (change)="onStoreChange()" class="store-filter">
-        <option *ngFor="let option of storeOptions" [value]="option.value">
-          {{ option.label }}
-        </option>
-      </select>
+<div class="crm-container adm-page">
+  <header class="adm-bar">
+    <div class="adm-bar__crumbs">
+      <app-crm-nav></app-crm-nav>
     </div>
-    <div actionBarRight>
-      <a routerLink="/admin/crm" [routerLinkActiveOptions]="{exact: true}" routerLinkActive="active" class="btn-nav">
-        <span class="material-icons">view_kanban</span>
-        <span class="btn-text">Pipeline</span>
-      </a>
-      <a routerLink="/admin/crm/dashboard" routerLinkActive="active" class="btn-nav">
-        <span class="material-icons">dashboard</span>
-        <span class="btn-text">Dashboard</span>
-      </a>
-      <a routerLink="/admin/crm/workload" routerLinkActive="active" class="btn-nav">
-        <span class="material-icons">bar_chart</span>
-        <span class="btn-text">Workload</span>
-      </a>
-      <a routerLink="/admin/crm/my-tasks" routerLinkActive="active" class="btn-nav">
-        <span class="material-icons">task_alt</span>
-        <span class="btn-text">My Tasks</span>
-      </a>
-      <a routerLink="/admin/crm/settings" routerLinkActive="active" class="btn-nav">
-        <span class="material-icons">settings</span>
-        <span class="btn-text">Settings</span>
-      </a>
-    </div>
-  </app-action-bar>
-
-  <div *ngIf="error" class="error-message">
-    {{ error }}
-    <button class="btn-retry" (click)="loadBoard()">Retry</button>
-  </div>
-
-  <div *ngIf="loading" class="loading-container">
-    <div class="spinner"></div>
-    <p>Loading pipeline...</p>
-  </div>
-
-  <app-pipeline-board
-    *ngIf="!loading && !error"
-    [columns]="board.columns"
-    [transitions]="transitions"
-    (orderMoved)="onOrderMoved($event)"
-    (viewOrder)="viewOrder($event)"
-    (openOrderDetails)="navigateToOrderPage($event)"
-  ></app-pipeline-board>
-
-  <app-assignment-modal
-    *ngIf="showAssignmentModal && selectedOrder"
-    [order]="selectedOrder"
-    (complete)="onAssignmentComplete()"
-    (cancel)="onAssignmentCancel()"
-  ></app-assignment-modal>
-
-  <!-- Order Details Panel -->
-  <div class="order-details-overlay" *ngIf="showOrderDetailsPanel" (click)="closeOrderDetailsPanel()"></div>
-  <div class="order-details-panel" *ngIf="showOrderDetailsPanel && selectedOrderForDetails" [class.open]="showOrderDetailsPanel">
-    <div class="panel-header">
-      <div class="panel-title">
-        <h2>Order {{ selectedOrderForDetails.number || selectedOrderForDetails.uid }}</h2>
-        <span class="order-status" [class]="'status-' + selectedOrderForDetails.status">
-          {{ selectedOrderForDetails.status }}
-        </span>
+    <div class="adm-bar__actions">
+      <div class="crm-search">
+        <app-icon name="search" class="crm-search__icon"></app-icon>
+        <input
+          type="search"
+          class="adm-input crm-search__input"
+          [ngModel]="searchQuery"
+          (ngModelChange)="onSearchChange($event)"
+          [placeholder]="'admin.crm.searchPlaceholder' | translate"
+        />
       </div>
-      <button class="btn-close" (click)="closeOrderDetailsPanel()">
-        <span>&times;</span>
+      <button
+        type="button"
+        class="adm-btn adm-btn--ghost"
+        (click)="toggleFilters()"
+        [class.is-active]="isFiltersExpanded"
+        [attr.aria-expanded]="isFiltersExpanded"
+      >
+        <app-icon name="filter_list"></app-icon>
+        {{ 'common.filters' | translate }}
       </button>
     </div>
+  </header>
 
-    <div class="panel-content">
-      <div class="order-summary">
-        <div class="summary-row">
-          <span class="label">Client</span>
-          <span class="value">{{ selectedOrderForDetails.client_name || 'Unknown' }}</span>
-        </div>
-        <div class="summary-row">
-          <span class="label">Total</span>
-          <span class="value total">{{ formatPrice(selectedOrderForDetails.total, selectedOrderForDetails.currency_code) }}</span>
-        </div>
-        <div class="summary-row">
-          <span class="label">Created</span>
-          <span class="value">{{ formatDate(selectedOrderForDetails.created_at) }}</span>
-        </div>
-        <div class="summary-row" *ngIf="selectedOrderForDetails.assigned_user_name">
-          <span class="label">Assigned to</span>
-          <span class="value">{{ selectedOrderForDetails.assigned_user_name }}</span>
-        </div>
-      </div>
+  @if (isFiltersExpanded) {
+    <section class="adm-section crm-filters">
+      <app-dashboard-filters
+        scope="kanban"
+        [showCurrency]="false"
+        (filtersChange)="onFiltersChange($event)"
+      ></app-dashboard-filters>
+    </section>
+  }
 
-      <div class="panel-actions">
-        <button class="btn-view-full" (click)="navigateToOrderDetails()">
-          View Full Order Details
-        </button>
-        <button class="btn-assign" (click)="onAssignOrder(selectedOrderForDetails)">
-          {{ selectedOrderForDetails.assigned_user_uid ? 'Reassign' : 'Assign' }}
-        </button>
-      </div>
-
-      <app-activity-timeline [orderUid]="selectedOrderForDetails.uid"></app-activity-timeline>
-
-      <app-task-list [orderUid]="selectedOrderForDetails.uid"></app-task-list>
+  @if (error) {
+    <div class="adm-error crm-alert" role="alert">
+      {{ error }}
+      <button type="button" class="adm-btn adm-btn--mini" (click)="loadBoard()">{{ 'common.retry' | translate }}</button>
     </div>
-  </div>
+  }
+
+  @if (loading) {
+    <div class="adm-loading">{{ 'admin.crm.loadingPipeline' | translate }}</div>
+  }
+
+  @if (!loading && !error) {
+    <app-pipeline-board
+      [columns]="board.columns"
+      [transitions]="transitions"
+      [changedOrderUids]="changedOrderUids"
+      (orderMoved)="onOrderMoved($event)"
+      (viewOrder)="viewOrder($event)"
+      (openOrderDetails)="navigateToOrderPage($event)"
+    ></app-pipeline-board>
+  }
+
+  @if (showAssignmentModal && selectedOrder) {
+    <app-assignment-modal
+      [order]="selectedOrder"
+      (complete)="onAssignmentComplete()"
+      (cancel)="onAssignmentCancel()"
+    ></app-assignment-modal>
+  }
+
+  <!-- Order Details Panel -->
+  @if (showOrderDetailsPanel) {
+    <div class="order-details-overlay" (click)="closeOrderDetailsPanel()"></div>
+  }
+  @if (showOrderDetailsPanel && selectedOrderForDetails) {
+    <div class="order-details-panel" [class.open]="showOrderDetailsPanel">
+      <div class="panel-header">
+        <button class="adm-crumb-back" (click)="closeOrderDetailsPanel()" [attr.aria-label]="'common.back' | translate">
+          <app-icon name="arrow_back"></app-icon>
+        </button>
+        <div class="panel-title">
+          <h2>{{ 'admin.crm.order' | translate }} {{ selectedOrderForDetails.number || selectedOrderForDetails.uid }}</h2>
+          <span class="order-status" [class]="'status-' + selectedOrderForDetails.status">
+            {{ selectedOrderForDetails.status }}
+          </span>
+        </div>
+        <button class="adm-icon-btn" (click)="closeOrderDetailsPanel()" [attr.aria-label]="'common.close' | translate">
+          <app-icon name="close"></app-icon>
+        </button>
+      </div>
+
+      <div class="panel-content">
+        <div class="order-summary">
+          <div class="summary-row">
+            <span class="label">{{ 'admin.crm.client' | translate }}</span>
+            <span class="value">{{ selectedOrderForDetails.client_name || ('admin.crm.unknown' | translate) }}</span>
+          </div>
+          @if (selectedOrderForDetails.company_name) {
+            <div class="summary-row">
+              <span class="label">{{ 'admin.crm.company' | translate }}</span>
+              <span class="value">{{ selectedOrderForDetails.company_name }}</span>
+            </div>
+          }
+          <div class="summary-row">
+            <span class="label">{{ 'common.total' | translate }}</span>
+            <span class="value total">{{ formatPrice(selectedOrderForDetails.total, selectedOrderForDetails.currency_code) }}</span>
+          </div>
+          <div class="summary-row">
+            <span class="label">{{ 'common.created' | translate }}</span>
+            <span class="value">{{ formatDate(selectedOrderForDetails.created_at) }}</span>
+          </div>
+          @if (selectedOrderForDetails.assigned_user_name) {
+            <div class="summary-row">
+              <span class="label">{{ 'admin.crm.assignedTo' | translate }}</span>
+              <span class="value">{{ selectedOrderForDetails.assigned_user_name }}</span>
+            </div>
+          }
+        </div>
+
+        <div class="order-indicators" [class.is-loading]="indicatorsLoading">
+          @if (orderInvoiceBadges.length > 0) {
+            @for (badge of orderInvoiceBadges; track badge.uid) {
+              <span class="order-indicator is-active">
+                <app-icon name="receipt_long"></app-icon>
+                {{ badge.name || ('admin.crm.invoice' | translate) }}
+              </span>
+            }
+          } @else {
+            <span class="order-indicator is-muted">
+              <app-icon name="receipt_long"></app-icon>
+              {{ 'admin.crm.noInvoice' | translate }}
+            </span>
+          }
+          <span class="order-indicator" [class.is-active]="orderHasShipment" [class.is-muted]="!orderHasShipment">
+            <app-icon name="local_shipping"></app-icon>
+            {{ (orderHasShipment ? 'admin.crm.hasShipment' : 'admin.crm.noShipment') | translate }}
+          </span>
+        </div>
+
+        <div class="panel-actions">
+          <button class="adm-btn adm-btn--primary" (click)="navigateToOrderDetails()">
+            {{ 'admin.crm.viewFullOrderDetails' | translate }}
+          </button>
+          <button class="adm-btn adm-btn--ghost" (click)="onAssignOrder(selectedOrderForDetails)">
+            {{ selectedOrderForDetails.assigned_user_uid ? ('admin.crm.reassign' | translate) : ('admin.crm.assign' | translate) }}
+          </button>
+        </div>
+
+        <app-activity-timeline [orderUid]="selectedOrderForDetails.uid" [currencyCode]="selectedOrderForDetails.currency_code"></app-activity-timeline>
+
+        <app-task-list [orderUid]="selectedOrderForDetails.uid"></app-task-list>
+      </div>
+    </div>
+  }
 </div>

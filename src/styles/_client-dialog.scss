@@ -1,0 +1,217 @@
+/**
+ * Shared shell for client-zone modal dialogs.
+ *
+ * The client zone has no dialog component of its own — each feature carries its
+ * own SCSS (see docs/development/frontend-coding-policy.md). This mixin keeps
+ * the chrome (overlay, panel, header, scrolling body, footer) identical across
+ * those dialogs so they read as one system, while each component still styles
+ * its own content.
+ *
+ * Follows docs/development/frontend-design-policy.md: modal radius
+ * --radius-lg, elevation-4, tokenised spacing, and a mobile bottom-sheet
+ * presentation with safe-area padding.
+ */
+
+@mixin client-dialog {
+  .dialog-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-md);
+    background: var(--overlay-bg-light);
+    animation: dialog-fade-in 0.2s ease;
+  }
+
+  .dialog-panel {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 560px;
+    max-height: min(88vh, 720px);
+    background: var(--card-bg);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--elevation-4);
+    overflow: hidden;
+    animation: dialog-slide-up 0.2s ease;
+  }
+
+  .dialog-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-md) var(--spacing-lg);
+    border-bottom: 1px solid var(--color-border);
+
+    h2 {
+      margin: 0;
+      font-family: var(--font-heading);
+      font-size: var(--text-xl);
+      font-weight: var(--font-weight-semibold);
+      color: var(--color-text-primary);
+    }
+  }
+
+  .icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--control-h-md);
+    height: var(--control-h-md);
+    padding: 0;
+    background: none;
+    border: none;
+    border-radius: var(--radius-control);
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease;
+
+    app-icon {
+      font-size: var(--icon-md);
+    }
+
+    &:hover:not(:disabled) {
+      background: var(--color-surface-variant);
+      color: var(--color-text-primary);
+    }
+
+    &:focus-visible {
+      outline: none;
+      box-shadow: var(--focus-ring);
+    }
+
+    &:disabled {
+      opacity: 0.38;
+      cursor: not-allowed;
+    }
+  }
+
+  .dialog-body {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: var(--spacing-lg);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg);
+  }
+
+  .dialog-hint {
+    margin: 0;
+    font-size: var(--text-base);
+    line-height: 1.5;
+    color: var(--color-text-secondary);
+  }
+
+  .dialog-footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-md) var(--spacing-lg);
+    border-top: 1px solid var(--color-border);
+  }
+
+  .field-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+  }
+
+  .field-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--spacing-sm);
+  }
+
+  .field-label {
+    margin: 0;
+    font-family: var(--font-body);
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-semibold);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--color-text-secondary);
+  }
+
+  .spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--color-border);
+    border-top-color: var(--color-primary);
+    border-radius: 50%;
+    animation: dialog-spin 0.8s linear infinite;
+    flex-shrink: 0;
+
+    &.spinner-on-primary {
+      border-color: rgb(255 255 255 / 40%);
+      border-top-color: var(--color-on-primary);
+    }
+  }
+
+  @media (max-width: 768px) {
+    .dialog-overlay {
+      padding: 0;
+      align-items: flex-end;
+    }
+
+    .dialog-panel {
+      max-width: none;
+      max-height: 88vh;
+      border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    }
+
+    .dialog-header,
+    .dialog-body {
+      padding-left: var(--spacing-md);
+      padding-right: var(--spacing-md);
+    }
+
+    .dialog-footer {
+      padding: var(--spacing-md);
+      padding-bottom: calc(var(--spacing-md) + env(safe-area-inset-bottom, 0px));
+
+      button {
+        flex: 1;
+        justify-content: center;
+      }
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .dialog-overlay,
+    .dialog-panel {
+      animation: none;
+    }
+  }
+}
+
+@keyframes dialog-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes dialog-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes dialog-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

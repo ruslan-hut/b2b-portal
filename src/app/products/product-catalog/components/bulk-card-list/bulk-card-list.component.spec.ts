@@ -2,6 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BulkCardListComponent } from './bulk-card-list.component';
 import { BulkProductCardComponent } from '../bulk-product-card/bulk-product-card.component';
 import { CoreModule } from '../../../../core/core.module';
+import { SharedModule } from '../../../../shared/shared.module';
 import { Product } from '../../../../core/models/product.model';
 import { OrderItem } from '../../../../core/models/order.model';
 import { Currency } from '../../../../core/models/currency.model';
@@ -16,7 +17,7 @@ describe('BulkCardListComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       declarations: [BulkCardListComponent, BulkProductCardComponent],
-      imports: [CoreModule]
+      imports: [CoreModule, SharedModule]
     })
     .compileComponents();
 
@@ -71,12 +72,12 @@ describe('BulkCardListComponent', () => {
       rate: 1
     };
 
-    component.products = mockProducts;
-    component.cartItems = mockCartItems;
-    component.currency = mockCurrency;
-    component.discount = 0;
-    component.vatRate = 20;
-    component.bulkQuantities = new Map([['prod-1', 5], ['prod-2', 0]]);
+    fixture.componentRef.setInput('products', mockProducts);
+    fixture.componentRef.setInput('cartItems', mockCartItems);
+    fixture.componentRef.setInput('currency', mockCurrency);
+    fixture.componentRef.setInput('discount', 0);
+    fixture.componentRef.setInput('vatRate', 20);
+    fixture.componentRef.setInput('bulkQuantities', new Map([['prod-1', 5], ['prod-2', 0]]));
   });
 
   it('should create', () => {
@@ -91,7 +92,7 @@ describe('BulkCardListComponent', () => {
     });
 
     it('should show empty state when no products', () => {
-      component.products = [];
+      fixture.componentRef.setInput('products', []);
       fixture.detectChanges();
       const emptyState = fixture.nativeElement.querySelector('.empty-state');
       expect(emptyState).toBeTruthy();
@@ -195,57 +196,71 @@ describe('BulkCardListComponent', () => {
   });
 
   describe('Price Calculations', () => {
-    it('should use authoritative price from cart item', () => {
-      // prod-1 is in cart with subtotal 100 and quantity 5
-      const price = component.getPriceWithVat(mockProducts[0]);
-      expect(price).toBe(20); // 100 / 5 = 20
+    // All monetary values are calculated by the backend and arrive on the cart
+    // item (authoritative, for products already in the cart) or on the product
+    // (preview, for everything else). The component only picks between them —
+    // it never derives VAT or discount itself.
+    const cartItemWithPrices = {
+      productId: 'prod-1',
+      productName: 'Product 1',
+      quantity: 5,
+      price: 20,
+      subtotal: 100,
+      priceWithVat: 24,
+      priceAfterDiscountWithVat: 21.6
+    };
+
+    const productWithPrices = (index: number, prices: Record<string, number>) =>
+      mockProducts.map((p, i) => (i === index ? { ...p, ...prices } : p));
+
+    it('should use the price with VAT from the cart item', () => {
+      fixture.componentRef.setInput('cartItems', [cartItemWithPrices]);
+      expect(component.getPriceWithVat(mockProducts[0])).toBe(24);
     });
 
-    it('should use preview price for items not in cart', () => {
-      // prod-2 is not in cart, price is 3000 cents = $30
-      // With 20% VAT: 30 * 1.2 = 36
-      const price = component.getPriceWithVat(mockProducts[1]);
-      expect(price).toBe(36);
+    it('should use the price with VAT from the product when not in cart', () => {
+      const products = productWithPrices(1, { priceWithVat: 36 });
+      fixture.componentRef.setInput('products', products);
+      expect(component.getPriceWithVat(products[1])).toBe(36);
     });
 
-    it('should use preview price when quantity mismatch', () => {
-      // Simulate user changed quantity to 10 but cart still shows 5
-      component.bulkQuantities.set('prod-1', 10);
-      // Should fall back to preview calculation
-      const price = component.getPriceWithVat(mockProducts[0]);
-      // 2000 cents = $20, with 20% VAT = 24
-      expect(price).toBe(24);
+    it('should fall back to the raw product price when the backend supplied none', () => {
+      // prod-2 is not in the cart and carries no calculated price.
+      expect(component.getPriceWithVat(mockProducts[1])).toBe(3000);
     });
 
-    it('should calculate original price with VAT correctly', () => {
-      // prod-1: 2000 cents = $20, with 20% VAT = 24
-      const originalPrice = component.getOriginalPriceWithVat(mockProducts[0]);
-      expect(originalPrice).toBe(24);
+    it('should use the discounted cart price when a discount applies', () => {
+      fixture.componentRef.setInput('discount', 10);
+      fixture.componentRef.setInput('cartItems', [cartItemWithPrices]);
+      expect(component.getPriceWithVat(mockProducts[0])).toBeCloseTo(21.6, 2);
     });
 
-    it('should apply discount in preview price calculation', () => {
-      component.discount = 10; // 10% discount
-      // prod-2: 3000 cents = $30
-      // After 10% discount: $27
-      // With 20% VAT: 27 * 1.2 = 32.4
-      const price = component.getPriceWithVat(mockProducts[1]);
-      expect(price).toBeCloseTo(32.4, 1);
+    it('should use the product final price when discounted and not in cart', () => {
+      fixture.componentRef.setInput('discount', 10);
+      const products = productWithPrices(1, { priceWithVat: 36, priceFinal: 32.4 });
+      fixture.componentRef.setInput('products', products);
+      expect(component.getPriceWithVat(products[1])).toBeCloseTo(32.4, 2);
+    });
+
+    it('should report the undiscounted price as the original price', () => {
+      fixture.componentRef.setInput('discount', 10);
+      fixture.componentRef.setInput('cartItems', [cartItemWithPrices]);
+      expect(component.getOriginalPriceWithVat(mockProducts[0])).toBe(24);
     });
 
     it('should detect discount when discount is greater than 0', () => {
-      component.discount = 10;
+      fixture.componentRef.setInput('discount', 10);
       expect(component.hasDiscount()).toBe(true);
     });
 
     it('should not detect discount when discount is 0', () => {
-      component.discount = 0;
+      fixture.componentRef.setInput('discount', 0);
       expect(component.hasDiscount()).toBe(false);
     });
 
-    it('should calculate item subtotal correctly', () => {
-      // prod-1 in cart: price = 20, quantity = 5
-      const subtotal = component.getItemSubtotalWithVat(mockProducts[0], 5);
-      expect(subtotal).toBe(100); // 20 * 5 = 100
+    it('should calculate item subtotal as price times quantity', () => {
+      fixture.componentRef.setInput('cartItems', [cartItemWithPrices]);
+      expect(component.getItemSubtotalWithVat(mockProducts[0], 5)).toBe(120);
     });
   });
 
@@ -265,17 +280,17 @@ describe('BulkCardListComponent', () => {
 
   describe('Edge Cases', () => {
     it('should handle empty cart items', () => {
-      component.cartItems = [];
+      fixture.componentRef.setInput('cartItems', []);
       expect(component.isInCart('prod-1')).toBe(false);
     });
 
     it('should handle empty bulk quantities map', () => {
-      component.bulkQuantities = new Map();
+      fixture.componentRef.setInput('bulkQuantities', new Map());
       expect(component.getBulkQuantity('prod-1')).toBe(0);
     });
 
     it('should handle null currency', () => {
-      component.currency = null;
+      fixture.componentRef.setInput('currency', null);
       fixture.detectChanges();
       expect(fixture.nativeElement).toBeTruthy();
     });

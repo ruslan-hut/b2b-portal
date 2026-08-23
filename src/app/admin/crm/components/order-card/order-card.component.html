@@ -1,19 +1,39 @@
-<div class="order-card" [style.--accent-color]="stageColor">
+<div class="order-card" [style.--accent-color]="stageColor()" [class.order-changed]="highlight()">
   <div class="card-line first-line">
-    <span class="order-number">{{ order.number || order.uid | slice:0:8 }}</span>
-    <span class="created-date">{{ formatDate(order.created_at) }}</span>
+    <span class="order-number">
+      {{ order().number || order().uid | slice:0:8 }}
+      @if (order().is_edited) {
+        <span class="erp-edited-badge">&#9998;</span>
+      }
+      @if (order().discount_override) {
+        <span class="discount-override-badge"
+              title="Discount set manually — excluded from automatic recalculation">%</span>
+      }
+      <!-- The ERP's document number, trailing the Comex one on the same line.
+           A fourth row would cost vertical density across every card on the
+           board; a quiet monospaced suffix costs nothing. The title carries the
+           full value because this line truncates in a narrow column. -->
+      @if (order().erp_number) {
+        <span class="erp-number" [title]="order().erp_number">
+          <span class="erp-number__sep" aria-hidden="true">·</span>{{ order().erp_number }}
+        </span>
+      }
+    </span>
+    <span class="created-date">{{ formatOrderDate(order().created_at) }}</span>
   </div>
 
   <div class="card-line second-line">
     <span class="client-icon">&#128100;</span>
-    <span class="client-name">{{ order.client_name || 'Unknown Client' }}</span>
+    <span class="client-name">{{ order().client_name || 'Unknown Client' }}</span>
   </div>
 
   <div class="card-line third-line">
-    <span class="order-total">{{ formatPrice(order.total, order.currency_code) }}</span>
-    <div class="manager-info" *ngIf="order.assigned_user_name">
-      <span class="manager-icon">&#128101;</span>
-      <span class="manager-name">{{ order.assigned_user_name }}</span>
-    </div>
+    <span class="order-total">{{ formatPrice(order().total, order().currency_code) }}</span>
+    @if (order().assigned_user_name) {
+      <div class="manager-info">
+        <span class="manager-icon">&#128101;</span>
+        <span class="manager-name">{{ order().assigned_user_name }}</span>
+      </div>
+    }
   </div>
 </div>

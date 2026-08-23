@@ -1,0 +1,137 @@
+<div class="dialog-overlay" (click)="onBackdropClick()">
+  <div
+    class="dialog-panel"
+    role="dialog"
+    aria-modal="true"
+    [attr.aria-label]="'orders.exportCatalogTitle' | translate"
+    (click)="$event.stopPropagation()"
+  >
+    <header class="dialog-header">
+      <h2>{{ 'orders.exportCatalogTitle' | translate }}</h2>
+      <button
+        type="button"
+        class="icon-btn"
+        [disabled]="exporting"
+        [attr.aria-label]="'common.close' | translate"
+        (click)="onClose()"
+      >
+        <app-icon name="close"></app-icon>
+      </button>
+    </header>
+
+    <div class="dialog-body">
+      <p class="dialog-hint">{{ 'orders.exportCatalogHint' | translate }}</p>
+
+      <section class="field-group">
+        <h3 class="field-label">{{ 'orders.exportBarcodeFormat' | translate }}</h3>
+        <div class="segmented" role="radiogroup">
+          <button
+            type="button"
+            class="segment"
+            role="radio"
+            [class.selected]="format === 'text'"
+            [attr.aria-checked]="format === 'text'"
+            (click)="format = 'text'"
+          >
+            <app-icon name="text_fields"></app-icon>
+            <span class="segment-text">
+              <span class="segment-title">{{ 'orders.exportBarcodeNumeric' | translate }}</span>
+              <span class="segment-note">{{ 'orders.exportBarcodeNumericNote' | translate }}</span>
+            </span>
+          </button>
+          <button
+            type="button"
+            class="segment"
+            role="radio"
+            [class.selected]="format === 'image'"
+            [attr.aria-checked]="format === 'image'"
+            (click)="format = 'image'"
+          >
+            <app-icon name="view_week"></app-icon>
+            <span class="segment-text">
+              <span class="segment-title">{{ 'orders.exportBarcodePicture' | translate }}</span>
+              <span class="segment-note">{{ 'orders.exportBarcodePictureNote' | translate }}</span>
+            </span>
+          </button>
+        </div>
+      </section>
+
+      <section class="field-group">
+        <div class="field-header">
+          <h3 class="field-label">{{ 'orders.exportCategories' | translate }}</h3>
+          <span class="selection-summary">
+            @if (exportsEverything) {
+              {{ 'orders.exportAllCategories' | translate }}
+            } @else {
+              {{ 'orders.exportSelectedCount' | translate }}: {{ selectedCount }}
+            }
+          </span>
+        </div>
+
+        @if (categoriesLoading) {
+          <div class="category-placeholder">
+            <div class="spinner"></div>
+            <span>{{ 'common.loading' | translate }}</span>
+          </div>
+        } @else if (categories.length === 0) {
+          <div class="category-placeholder">
+            <span>{{ 'orders.exportNoCategories' | translate }}</span>
+          </div>
+        } @else {
+          <div class="category-toolbar">
+            <input
+              type="search"
+              class="compact-input category-search"
+              [(ngModel)]="categoryFilter"
+              (ngModelChange)="onFilterChange()"
+              [placeholder]="'orders.exportFilterCategories' | translate"
+            />
+            <button type="button" class="compact-btn" (click)="selectAllVisible()">
+              {{ 'orders.exportSelectAll' | translate }}
+            </button>
+            <button
+              type="button"
+              class="compact-btn"
+              [disabled]="exportsEverything"
+              (click)="clearSelection()"
+            >
+              {{ 'orders.exportClearSelection' | translate }}
+            </button>
+          </div>
+
+          <ul class="category-list">
+            @for (category of visibleCategories; track trackByUid($index, category)) {
+              <li>
+                <label class="category-option">
+                  <input
+                    type="checkbox"
+                    [checked]="isSelected(category.uid)"
+                    (change)="toggleCategory(category.uid)"
+                  />
+                  <span class="category-name">{{ category.name }}</span>
+                </label>
+              </li>
+            } @empty {
+              <li class="category-empty">{{ 'orders.exportNoMatchingCategories' | translate }}</li>
+            }
+          </ul>
+        }
+      </section>
+    </div>
+
+    <footer class="dialog-footer">
+      <button type="button" class="btn-action-bar" [disabled]="exporting" (click)="onClose()">
+        {{ 'common.cancel' | translate }}
+      </button>
+      <button type="button" class="btn-primary-cta" [disabled]="exporting" (click)="onConfirm()">
+        @if (exporting) {
+          <span class="spinner spinner-on-primary"></span>
+          <span>{{ 'orders.exportPreparing' | translate }}</span>
+        } @else {
+          <app-icon name="download"></app-icon>
+          <span>{{ 'orders.exportDownload' | translate }}</span>
+        }
+      </button>
+    </footer>
+  </div>
+</div>

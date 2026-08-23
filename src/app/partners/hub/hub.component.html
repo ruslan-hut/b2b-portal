@@ -1,0 +1,61 @@
+<div class="ph-page">
+
+  <header class="ph-head">
+    <h1 class="ph-title">{{ 'partners.title' | translate }}</h1>
+  </header>
+
+  <!-- Country scope filters this hub silently, so the resolved markets are
+       stated rather than left implicit — with a route to fix them when wrong. -->
+  @if (!isStaff && marketsLoaded) {
+    <section class="ph-band" [class.is-empty]="markets.length === 0">
+      @if (markets.length) {
+        <p class="ph-band__line">
+          <span class="ph-band__label">{{ 'partners.yourMarkets' | translate }}</span>
+          @for (code of markets; track code) {
+            <span class="ph-market">{{ code }}</span>
+          }
+        </p>
+      } @else {
+        <p class="ph-band__line">{{ 'partners.noMarkets' | translate }}</p>
+      }
+      <a class="ph-band__link" routerLink="/profile">
+        {{ 'partners.updateAddresses' | translate }}
+        <app-icon name="arrow_forward"></app-icon>
+      </a>
+    </section>
+  }
+
+  @if (loading) {
+    <div class="ph-loading">{{ 'partners.loading' | translate }}</div>
+  } @else if (error) {
+    <div class="ph-error" role="alert">{{ error }}</div>
+  } @else if (sections.length === 0) {
+    <div class="ph-empty">
+      <app-icon name="inbox" class="ph-empty__icon"></app-icon>
+      <p class="ph-empty__title">{{ 'partners.emptyTitle' | translate }}</p>
+      <p class="ph-empty__hint">{{ 'partners.emptyHint' | translate }}</p>
+    </div>
+  } @else {
+    <div class="ph-cards">
+      @for (section of sections; track trackByUid($index, section)) {
+        <a class="ph-card" [routerLink]="linkFor(section)" [class.is-draft]="isDraft(section)">
+          <app-icon [name]="iconOf(section)" class="ph-card__icon"></app-icon>
+          <span class="ph-card__title">
+            {{ section.title }}
+            @if (isDraft(section)) {
+              <span class="ph-draft-chip">{{ 'partners.draft' | translate }}</span>
+            }
+          </span>
+          @if (subtitleOf(section)) {
+            <span class="ph-card__sub">{{ subtitleOf(section) }}</span>
+          }
+          @if (childCount(section)) {
+            <span class="ph-card__count">
+              {{ 'partners.sectionCount' | translate: { count: childCount(section) } }}
+            </span>
+          }
+        </a>
+      }
+    </div>
+  }
+</div>

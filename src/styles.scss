@@ -2,6 +2,9 @@
    DESIGN POLICY COMPLIANCE - SHARED MIXINS
    ======================================== */
 @use 'styles/mixins' as *;
+@use 'styles/themes' as *;
+@use 'brand/active' as brand;
+@use 'styles/admin' as *;
 
 /* Global Styles */
 * {
@@ -19,6 +22,12 @@
   /* Typography - Font Families */
   --font-heading: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --font-body: 'Commissioner', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  /* Identifiers, keys, raw payloads — anywhere character alignment carries meaning. */
+  --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+
+  /* Motion. One duration for state changes on a control (hover, active, tint);
+     anything longer belongs to a named animation, not a token. */
+  --transition-fast: 150ms ease;
 
   /* Typography - Font Weights */
   --font-weight-light: 300;
@@ -29,7 +38,13 @@
   --font-weight-extrabold: 800;
   --font-weight-black: 900;
 
-  /* Border radius - standardized across components */
+  /* Border radius - standardized across components
+     Compact B2B: prefer 6px on controls, 8px on cards. */
+
+  /* The one icon that cannot be an <app-icon>: the copy affordance on
+     .adm-uid is a ::after, so its geometry travels as a mask. Same paths
+     as the registry's `content_copy`. */
+  --icon-copy: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M8.75 8.75h10.5v10.5H8.75z'/%3E%3Cpath d='M15.25 8.75v-4H4.75v10.5h4'/%3E%3C/svg%3E");
   --radius-xs: 2px;
   --radius-sm: 4px;
   --radius-sm-md: 6px;
@@ -40,15 +55,43 @@
   --radius-2xl: 20px;
   --radius-3xl: 24px;
   --radius-pill: 9999px;
+  /* Default control radius token (compact 6px) */
+  --radius-control: var(--radius-sm-md);
 
-  /* Touch targets - minimum 48px for WCAG 2.1 AA compliance */
-  --touch-target-min: 48px;
+  /* Touch targets.
+     Desktop default: 32px (B2B density, Linear/Stripe/Retool peers).
+     Mobile override (<=768px): 44px, set at the bottom of this file. */
+  --touch-target-min: 32px;
 
-  /* Spacing - extended scale */
+  /* Control heights — compact B2B desktop scale */
+  --control-h-xs: 24px;   /* chips, tags, inline badges */
+  --control-h-sm: 28px;   /* dense toolbars, icon actions in tables */
+  --control-h-md: 32px;   /* default: buttons, inputs, selects */
+  --control-h-lg: 36px;   /* primary CTAs, form submits */
+
+  /* Typography scale */
+  --text-xs:   11px;  /* labels, helper, badges */
+  --text-sm:   12px;  /* compact controls, meta */
+  --text-base: 13px;  /* table cells, dense body text */
+  --text-md:   14px;  /* body default, inputs, primary buttons */
+  --text-lg:   16px;  /* h3, card titles */
+  --text-xl:   18px;  /* h2 */
+  --text-2xl:  20px;  /* h1 */
+
+  /* Icon sizes */
+  --icon-sm: 16px;   /* compact controls */
+  --icon-md: 18px;   /* default in buttons */
+  --icon-lg: 20px;   /* sidebar, prominent actions */
+  --icon-xl: 24px;   /* hero/empty-state illustrations */
+
+  /* Spacing - extended scale.
+     Clean 4/8 grid preferred; legacy -sm-md/-md-sm/-md-lg kept for back-compat. */
+  --spacing-2xs: 2px;
   --spacing-xs: 4px;
   --spacing-sm: 8px;
   --spacing-sm-md: 10px;
   --spacing-md-sm: 12px;
+  --spacing-sm-lg: 14px;
   --spacing-md: 16px;
   --spacing-md-lg: 20px;
   --spacing-lg: 24px;
@@ -56,6 +99,28 @@
   --spacing-2xl: 40px;
   --spacing-3xl: 48px;
   --spacing-4xl: 64px;
+
+  /* Authoring typography (content section).
+     Block text is set at reading size rather than control size so what an
+     editor types looks like what a partner will read. */
+  --text-prose: 15px;
+  --leading-prose: 1.65;
+
+  /* Reading scale (Partner Resources — DESIGN_POLICY.md §10).
+     The admin scale tops out at 20px because it typesets tables and forms.
+     The partner article is the one surface in this app people *read* — safety
+     sheets, storage rules, conformity notes — so it gets a scale with real
+     hierarchy instead of a 20/18/16/14 flat stack. Admin pages must not use
+     these. */
+  --read-body: 16px;
+  --read-small: 13px;
+  --read-lead: 1.7;
+  --read-h1: 30px;
+  --read-h2: 21px;
+  --read-h3: 17px;
+
+  /* Stacking order for full-screen overlays. */
+  --z-modal: 1000;
 
   /* Safe areas for notched devices */
   --safe-area-top: env(safe-area-inset-top, 0);
@@ -65,647 +130,33 @@
 }
 
 /* ========================================
-   LIGHT THEME (Default)
-   ======================================== */
+   THEME PALETTES
+   ========================================
+   Two layers, in this order:
+
+     1. the stock palette   — styles/_themes.scss, one mixin per scheme
+     2. the installation    — src/brand/_active.scss, whatever THEME selected
+
+   The brand goes second so it wins on source order alone; it never needs
+   higher specificity, and it overrides tokens rather than restating a palette.
+   `system` shares the dark palette rather than repeating it.
+
+   See docs/development/theming-contract.md. */
 :root,
 [data-theme="light"] {
-  /* Primary Colors */
-  --color-primary: #667eea;
-  --color-primary-dark: #5568d3;
-  --color-primary-light: #8099ff;
-  --color-primary-rgb: 102, 126, 234;
-
-  --color-secondary: #764ba2;
-  --color-secondary-dark: #5f3d85;
-  --color-secondary-rgb: 118, 75, 162;
-
-  /* Material Design 3 Color Roles */
-  --color-on-primary: #ffffff;
-  --color-primary-container: #e8edff;
-  --color-on-primary-container: #1e0060;
-
-  --color-on-secondary: #ffffff;
-  --color-secondary-container: #f3e5ff;
-  --color-on-secondary-container: #2a0052;
-
-  --color-surface: var(--card-bg);
-  --color-surface-variant: #f0f4ff;
-  --color-on-surface: var(--color-text-primary);
-  --color-on-surface-variant: var(--color-text-secondary);
-
-  --color-error: var(--color-danger);
-  --color-on-error: #ffffff;
-  --color-error-container: #f9dedc;
-  --color-on-error-container: #490909;
-
-  /* Gradients */
-  --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  --gradient-primary-hover: linear-gradient(135deg, #5568d3 0%, #5f3d85 100%);
-  --gradient-danger: linear-gradient(135deg, #ff6b6b 0%, #ff4757 100%);
-  --gradient-success: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-
-  /* Semantic Colors */
-  --color-success: #28a745;
-  --color-success-light: #d4edda;
-  --color-success-dark: #155724;
-  --color-success-rgb: 40, 167, 69;
-
-  --color-danger: #dc3545;
-  --color-danger-light: #fff5f5;
-  --color-danger-dark: #c82333;
-  --color-danger-rgb: 220, 53, 69;
-
-  --color-warning: #ff6b6b;
-  --color-warning-light: #fff0f0;
-  --color-warning-rgb: 255, 107, 107;
-
-  --color-info: #3498db;
-  --color-info-light: #d6eaf8;
-  --color-info-rgb: 52, 152, 219;
-
-  /* Background Colors */
-  --color-background: #f5f7fa;
-  --color-background-secondary: #f8f9fa;
-  --color-background-elevated: #ffffff;
-  --color-background-card: #ffffff;
-  --color-background-hover: #f0f4ff;
-  --color-background-active: #e8ecff;
-
-  /* Text Colors */
-  --color-text-primary: #333333;
-  --color-text-secondary: #666666;
-  --color-text-muted: #999999;
-  --color-text-light: #777777;
-  --color-text-inverse: #ffffff;
-
-  /* Border Colors */
-  --color-border: #e1e8ed;
-  --color-border-light: #f0f0f0;
-  --color-border-focus: var(--color-primary);
-
-  /* Shadows */
-  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
-  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
-  --shadow-sm-lg: 0 2px 8px rgba(0, 0, 0, 0.08);
-  --shadow-md: 0 2px 10px rgba(0, 0, 0, 0.1);
-  --shadow-md-lg: 0 4px 12px rgba(0, 0, 0, 0.12);
-  --shadow-lg: 0 5px 20px rgba(0, 0, 0, 0.15);
-  --shadow-xl: 0 10px 40px rgba(0, 0, 0, 0.2);
-  --shadow-primary: 0 5px 20px rgba(102, 126, 234, 0.4);
-  --shadow-primary-lg: 0 8px 28px rgba(102, 126, 234, 0.5);
-
-  /* Material Design 3 Elevation System */
-  --elevation-0: none;
-  --elevation-1: var(--shadow-xs);     /* Cards, raised elements */
-  --elevation-2: var(--shadow-sm-lg);  /* Hover cards, buttons */
-  --elevation-3: var(--shadow-md-lg);  /* Dialogs, menus */
-  --elevation-4: var(--shadow-lg);     /* Modals */
-  --elevation-5: var(--shadow-xl);     /* FABs, tooltips */
-
-  /* Focus rings */
-  --focus-ring-color: rgba(102, 126, 234, 0.25);
-  --focus-ring-width: 3px;
-  --focus-ring: 0 0 0 var(--focus-ring-width) var(--focus-ring-color);
-
-  /* Primary color overlays (for backgrounds with transparency) */
-  --color-primary-overlay-light: rgba(102, 126, 234, 0.08);
-  --color-primary-overlay: rgba(102, 126, 234, 0.12);
-  --color-primary-overlay-medium: rgba(102, 126, 234, 0.2);
-
-  /* Component: Inputs */
-  --input-bg: #ffffff;
-  --input-border: var(--color-border);
-  --input-text: var(--color-text-primary);
-  --input-placeholder: #999999;
-  --input-disabled-bg: #f5f5f5;
-
-  /* Component: Buttons */
-  --btn-secondary-bg: #f8f9fa;
-  --btn-secondary-border: var(--color-border);
-  --btn-secondary-text: var(--color-text-primary);
-  --btn-secondary-hover-bg: #e9ecef;
-
-  /* Component: Header */
-  --header-bg: #ffffff;
-  --header-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-
-  /* Component: Cards */
-  --card-bg: #ffffff;
-  --card-border: transparent;
-  --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-  --card-hover-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
-
-  /* Component: Tables */
-  --table-header-bg: var(--gradient-primary);
-  --table-header-text: #ffffff;
-  --table-header-border: rgba(255, 255, 255, 0.1);
-  --table-row-hover-bg: #f8f9fa;
-  --table-row-selected-bg: #e8eeff;
-  --table-row-in-cart-bg: #f0fff4;
-
-  /* Component: Dropdowns */
-  --dropdown-bg: #ffffff;
-  --dropdown-border: #e1e8ed;
-  --dropdown-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-  --dropdown-item-hover-bg: #f5f7fa;
-  --dropdown-item-active-bg: #f0f4ff;
-
-  /* Component: Overlays & Modals */
-  --overlay-bg: rgba(0, 0, 0, 0.7);
-  --modal-bg: #ffffff;
-
-  /* Component: Admin Zone */
-  --admin-nav-bg: #2c3e50;
-  --admin-nav-item-hover-bg: #34495e;
-  --admin-nav-item-active-bg: #3498db;
-  --admin-nav-text: #ecf0f1;
-  --admin-nav-border: #34495e;
-  --admin-content-bg: #f5f5f5;
-  --admin-header-bg: #2c3e50;
-  /* Admin Zone - Aliases for backward compatibility */
-  --admin-bg: var(--admin-content-bg);
-  --admin-nav-hover: var(--admin-nav-item-hover-bg);
-  --admin-nav-active: var(--admin-nav-item-active-bg);
-
-  /* Component: CRM - Priority Badges */
-  --priority-low-bg: rgba(107, 114, 128, 0.1);
-  --priority-low-color: #6b7280;
-  --priority-medium-bg: rgba(59, 130, 246, 0.1);
-  --priority-medium-color: #3b82f6;
-  --priority-high-bg: rgba(245, 158, 11, 0.1);
-  --priority-high-color: #f59e0b;
-  --priority-urgent-bg: rgba(239, 68, 68, 0.1);
-  --priority-urgent-color: #ef4444;
-
-  /* Component: CRM - Status Badges */
-  --status-pending-bg: rgba(107, 114, 128, 0.1);
-  --status-pending-color: #6b7280;
-  --status-in-progress-bg: rgba(59, 130, 246, 0.1);
-  --status-in-progress-color: #3b82f6;
-  --status-completed-bg: rgba(34, 197, 94, 0.1);
-  --status-completed-color: #22c55e;
-  --status-cancelled-bg: rgba(239, 68, 68, 0.1);
-  --status-cancelled-color: #ef4444;
-
-  /* Component: CRM - Stage Badges */
-  --stage-new-bg: #dbeafe;
-  --stage-new-color: #2563eb;
-  --stage-qualified-bg: #d1fae5;
-  --stage-qualified-color: #059669;
-  --stage-proposal-bg: #e0e7ff;
-  --stage-proposal-color: #4f46e5;
-  --stage-negotiation-bg: #fef3c7;
-  --stage-negotiation-color: #d97706;
-  --stage-won-bg: #d1fae5;
-  --stage-won-color: #059669;
-  --stage-lost-bg: #fee2e2;
-  --stage-lost-color: #dc2626;
-
-  /* Component: CRM - Alerts */
-  --alert-overdue-bg: #fee2e2;
-  --alert-overdue-border: #fca5a5;
-  --alert-overdue-color: #b91c1c;
-
-  /* Component: CRM - Order Stage Border */
-  --stage-border-warning: #f59e0b;
-
-  /* Sticky Column Shadows */
-  --shadow-sticky: 2px 0 4px rgba(0, 0, 0, 0.1);
-  --shadow-sticky-light: 2px 0 4px rgba(0, 0, 0, 0.05);
-
-  /* Status Badges (for Orders) */
-  --status-draft-bg: #ecf0f1;
-  --status-draft-text: #95a5a6;
-  --status-new-bg: #d6eaf8;
-  --status-new-text: #3498db;
-  --status-processing-bg: #fef5e7;
-  --status-processing-text: #f39c12;
-  --status-confirmed-bg: #d5f4e6;
-  --status-confirmed-text: #27ae60;
-  --status-cancelled-bg: #fadbd8;
-  --status-cancelled-text: #e74c3c;
-
-  /* Custom Stage Badges */
-  --status-custom-default-bg: #e8ecff;
-  --status-custom-default-text: #667eea;
-  --status-custom-processing-bg: #fff4e6;
-  --status-custom-processing-text: #f39c12;
-  --status-custom-confirmed-bg: #e6f7ed;
-  --status-custom-confirmed-text: #27ae60;
-  --status-custom-cancelled-bg: #ffe6e6;
-  --status-custom-cancelled-text: #e74c3c;
-
-  /* Spinners */
-  --spinner-border: rgba(102, 126, 234, 0.2);
-  --spinner-border-active: var(--color-primary);
-
-  /* Scrollbar */
-  --scrollbar-track: #f1f1f1;
-  --scrollbar-thumb: #c1c1c1;
-  --scrollbar-thumb-hover: #a1a1a1;
+  @include light-palette;
+  @include brand.light-overrides;
 }
 
-/* ========================================
-   DARK THEME
-   ======================================== */
 [data-theme="dark"] {
-  /* Primary Colors (slightly brighter for dark backgrounds) */
-  --color-primary: #7b93f0;
-  --color-primary-dark: #667eea;
-  --color-primary-light: #9aadff;
-  --color-primary-rgb: 123, 147, 240;
-
-  --color-secondary: #9066c0;
-  --color-secondary-dark: #764ba2;
-  --color-secondary-rgb: 144, 102, 192;
-
-  /* Material Design 3 Color Roles - Dark Mode */
-  --color-on-primary: #0d1117;
-  --color-primary-container: #1c2840;
-  --color-on-primary-container: #c5d0ff;
-
-  --color-on-secondary: #0d1117;
-  --color-secondary-container: #2d1f40;
-  --color-on-secondary-container: #e5d4ff;
-
-  --color-surface: var(--card-bg);
-  --color-surface-variant: #30363d;
-  --color-on-surface: var(--color-text-primary);
-  --color-on-surface-variant: var(--color-text-secondary);
-
-  --color-error: var(--color-danger);
-  --color-on-error: #0d1117;
-  --color-error-container: #3a1a1a;
-  --color-on-error-container: #fca5a5;
-
-  /* Gradients */
-  --gradient-primary: linear-gradient(135deg, #7b93f0 0%, #9066c0 100%);
-  --gradient-primary-hover: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  --gradient-danger: linear-gradient(135deg, #ff7b72 0%, #f85149 100%);
-  --gradient-success: linear-gradient(135deg, #34d058 0%, #28a745 100%);
-
-  /* Semantic Colors */
-  --color-success: #34d058;
-  --color-success-light: #1a3a2a;
-  --color-success-dark: #85e89d;
-  --color-success-rgb: 52, 208, 88;
-
-  --color-danger: #f85149;
-  --color-danger-light: #3a1a1a;
-  --color-danger-dark: #ff7b72;
-  --color-danger-rgb: 248, 81, 73;
-
-  --color-warning: #ff8a80;
-  --color-warning-light: #3a2a1a;
-  --color-warning-rgb: 255, 138, 128;
-
-  --color-info: #58a6ff;
-  --color-info-light: #1a2a3a;
-  --color-info-rgb: 88, 166, 255;
-
-  /* Background Colors */
-  --color-background: #0d1117;
-  --color-background-secondary: #161b22;
-  --color-background-elevated: #21262d;
-  --color-background-card: #161b22;
-  --color-background-hover: #1c2128;
-  --color-background-active: #252b33;
-
-  /* Text Colors */
-  --color-text-primary: #e6edf3;
-  --color-text-secondary: #8b949e;
-  --color-text-muted: #6e7681;
-  --color-text-light: #7d8590;
-  --color-text-inverse: #0d1117;
-
-  /* Border Colors */
-  --color-border: #30363d;
-  --color-border-light: #21262d;
-  --color-border-focus: var(--color-primary);
-
-  /* Shadows */
-  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 2px 10px rgba(0, 0, 0, 0.4);
-  --shadow-lg: 0 5px 20px rgba(0, 0, 0, 0.5);
-  --shadow-xl: 0 10px 40px rgba(0, 0, 0, 0.6);
-  --shadow-primary: 0 5px 20px rgba(123, 147, 240, 0.3);
-  --shadow-primary-lg: 0 8px 28px rgba(123, 147, 240, 0.4);
-
-  /* Material Design 3 Elevation System */
-  --elevation-0: none;
-  --elevation-1: var(--shadow-xs);     /* Cards, raised elements */
-  --elevation-2: var(--shadow-sm-lg);  /* Hover cards, buttons */
-  --elevation-3: var(--shadow-md-lg);  /* Dialogs, menus */
-  --elevation-4: var(--shadow-lg);     /* Modals */
-  --elevation-5: var(--shadow-xl);     /* FABs, tooltips */
-
-  /* Component: Inputs */
-  --input-bg: #0d1117;
-  --input-border: var(--color-border);
-  --input-text: var(--color-text-primary);
-  --input-placeholder: #6e7681;
-  --input-disabled-bg: #21262d;
-
-  /* Component: Buttons */
-  --btn-secondary-bg: #21262d;
-  --btn-secondary-border: var(--color-border);
-  --btn-secondary-text: var(--color-text-primary);
-  --btn-secondary-hover-bg: #30363d;
-
-  /* Component: Header */
-  --header-bg: #161b22;
-  --header-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
-
-  /* Component: Cards */
-  --card-bg: #161b22;
-  --card-border: #30363d;  /* Visible border for dark theme (matches --color-border) */
-  --card-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
-  --card-hover-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
-
-  /* Component: Tables */
-  --table-header-bg: linear-gradient(135deg, #2d3748 0%, #352f44 100%);
-  --table-header-text: #e2e8f0;
-  --table-header-border: #404858;
-  --table-row-hover-bg: #1c2128;
-  --table-row-selected-bg: #1c2840;
-  --table-row-in-cart-bg: #1a3028;
-
-  /* Component: Dropdowns */
-  --dropdown-bg: #21262d;
-  --dropdown-border: #30363d;
-  --dropdown-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-  --dropdown-item-hover-bg: #30363d;
-  --dropdown-item-active-bg: #1c2840;
-
-  /* Component: Overlays & Modals */
-  --overlay-bg: rgba(0, 0, 0, 0.85);
-  --modal-bg: #161b22;
-
-  /* Component: Admin Zone */
-  --admin-nav-bg: #0d1117;
-  --admin-nav-item-hover-bg: #161b22;
-  --admin-nav-item-active-bg: #1c2840;
-  --admin-nav-text: #e6edf3;
-  --admin-nav-border: #21262d;
-  --admin-content-bg: #161b22;
-  --admin-header-bg: #0d1117;
-  /* Admin Zone - Aliases for backward compatibility */
-  --admin-bg: var(--admin-content-bg);
-  --admin-nav-hover: var(--admin-nav-item-hover-bg);
-  --admin-nav-active: var(--admin-nav-item-active-bg);
-
-  /* Component: CRM - Priority Badges (Dark Mode) */
-  --priority-low-bg: rgba(156, 163, 175, 0.15);
-  --priority-low-color: #9ca3af;
-  --priority-medium-bg: rgba(96, 165, 250, 0.15);
-  --priority-medium-color: #60a5fa;
-  --priority-high-bg: rgba(251, 191, 36, 0.15);
-  --priority-high-color: #fbbf24;
-  --priority-urgent-bg: rgba(248, 113, 113, 0.15);
-  --priority-urgent-color: #f87171;
-
-  /* Component: CRM - Status Badges (Dark Mode) */
-  --status-pending-bg: rgba(156, 163, 175, 0.15);
-  --status-pending-color: #9ca3af;
-  --status-in-progress-bg: rgba(96, 165, 250, 0.15);
-  --status-in-progress-color: #60a5fa;
-  --status-completed-bg: rgba(110, 231, 183, 0.15);
-  --status-completed-color: #6ee7b7;
-  --status-cancelled-bg: rgba(248, 113, 113, 0.15);
-  --status-cancelled-color: #f87171;
-
-  /* Component: CRM - Stage Badges (Dark Mode) */
-  --stage-new-bg: #1e3a5f;
-  --stage-new-color: #93c5fd;
-  --stage-qualified-bg: #1a4d2e;
-  --stage-qualified-color: #6ee7b7;
-  --stage-proposal-bg: #2d2a5f;
-  --stage-proposal-color: #a5b4fc;
-  --stage-negotiation-bg: #4a3a1a;
-  --stage-negotiation-color: #fcd34d;
-  --stage-won-bg: #1a4d2e;
-  --stage-won-color: #6ee7b7;
-  --stage-lost-bg: #3a1a1a;
-  --stage-lost-color: #fca5a5;
-
-  /* Component: CRM - Alerts (Dark Mode) */
-  --alert-overdue-bg: #3a1a1a;
-  --alert-overdue-border: #5a2a2a;
-  --alert-overdue-color: #fca5a5;
-
-  /* Component: CRM - Order Stage Border (Dark Mode) */
-  --stage-border-warning: #fbbf24;
-
-  /* Sticky Column Shadows */
-  --shadow-sticky: 2px 0 4px rgba(0, 0, 0, 0.3);
-  --shadow-sticky-light: 2px 0 4px rgba(0, 0, 0, 0.2);
-
-  /* Status Badges (for Orders) */
-  --status-draft-bg: #21262d;
-  --status-draft-text: #8b949e;
-  --status-new-bg: #1c2840;
-  --status-new-text: #58a6ff;
-  --status-processing-bg: #3a2a1a;
-  --status-processing-text: #f0b429;
-  --status-confirmed-bg: #1a3a2a;
-  --status-confirmed-text: #34d058;
-  --status-cancelled-bg: #3a1a1a;
-  --status-cancelled-text: #f85149;
-
-  /* Custom Stage Badges (Dark Theme) */
-  --status-custom-default-bg: #2d2f4a;
-  --status-custom-default-text: #8a9bff;
-  --status-custom-processing-bg: #3a2a1a;
-  --status-custom-processing-text: #f0b429;
-  --status-custom-confirmed-bg: #1a3a2a;
-  --status-custom-confirmed-text: #34d058;
-  --status-custom-cancelled-bg: #3a1a1a;
-  --status-custom-cancelled-text: #f85149;
-
-  /* Spinners */
-  --spinner-border: rgba(123, 147, 240, 0.3);
-  --spinner-border-active: var(--color-primary);
-
-  /* Scrollbar */
-  --scrollbar-track: #21262d;
-  --scrollbar-thumb: #484f58;
-  --scrollbar-thumb-hover: #6e7681;
+  @include dark-palette;
+  @include brand.dark-overrides;
 }
 
-/* ========================================
-   SYSTEM THEME (follows OS preference)
-   ======================================== */
 @media (prefers-color-scheme: dark) {
   [data-theme="system"] {
-    /* Primary Colors */
-    --color-primary: #7b93f0;
-    --color-primary-dark: #667eea;
-    --color-primary-light: #9aadff;
-    --color-primary-rgb: 123, 147, 240;
-
-    --color-secondary: #9066c0;
-    --color-secondary-dark: #764ba2;
-    --color-secondary-rgb: 144, 102, 192;
-
-    /* Material Design 3 Color Roles - System Theme (Dark) */
-    --color-on-primary: #0d1117;
-    --color-primary-container: #1c2840;
-    --color-on-primary-container: #c5d0ff;
-
-    --color-on-secondary: #0d1117;
-    --color-secondary-container: #2d1f40;
-    --color-on-secondary-container: #e5d4ff;
-
-    --color-surface: var(--card-bg);
-    --color-surface-variant: #30363d;
-    --color-on-surface: var(--color-text-primary);
-    --color-on-surface-variant: var(--color-text-secondary);
-
-    --color-error: var(--color-danger);
-    --color-on-error: #0d1117;
-    --color-error-container: #3a1a1a;
-    --color-on-error-container: #fca5a5;
-
-    /* Gradients */
-    --gradient-primary: linear-gradient(135deg, #7b93f0 0%, #9066c0 100%);
-    --gradient-primary-hover: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    --gradient-danger: linear-gradient(135deg, #ff7b72 0%, #f85149 100%);
-    --gradient-success: linear-gradient(135deg, #34d058 0%, #28a745 100%);
-
-    /* Semantic Colors */
-    --color-success: #34d058;
-    --color-success-light: #1a3a2a;
-    --color-success-dark: #85e89d;
-    --color-success-rgb: 52, 208, 88;
-
-    --color-danger: #f85149;
-    --color-danger-light: #3a1a1a;
-    --color-danger-dark: #ff7b72;
-    --color-danger-rgb: 248, 81, 73;
-
-    --color-warning: #ff8a80;
-    --color-warning-light: #3a2a1a;
-    --color-warning-rgb: 255, 138, 128;
-
-    --color-info: #58a6ff;
-    --color-info-light: #1a2a3a;
-    --color-info-rgb: 88, 166, 255;
-
-    /* Background Colors */
-    --color-background: #0d1117;
-    --color-background-secondary: #161b22;
-    --color-background-elevated: #21262d;
-    --color-background-card: #161b22;
-    --color-background-hover: #1c2128;
-    --color-background-active: #252b33;
-
-    /* Text Colors */
-    --color-text-primary: #e6edf3;
-    --color-text-secondary: #8b949e;
-    --color-text-muted: #6e7681;
-    --color-text-light: #7d8590;
-    --color-text-inverse: #0d1117;
-
-    /* Border Colors */
-    --color-border: #30363d;
-    --color-border-light: #21262d;
-    --color-border-focus: var(--color-primary);
-
-    /* Shadows */
-    --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.3);
-    --shadow-md: 0 2px 10px rgba(0, 0, 0, 0.4);
-    --shadow-lg: 0 5px 20px rgba(0, 0, 0, 0.5);
-    --shadow-xl: 0 10px 40px rgba(0, 0, 0, 0.6);
-    --shadow-primary: 0 5px 20px rgba(123, 147, 240, 0.3);
-    --shadow-primary-lg: 0 8px 28px rgba(123, 147, 240, 0.4);
-
-    /* Material Design 3 Elevation System */
-    --elevation-0: none;
-    --elevation-1: var(--shadow-xs);     /* Cards, raised elements */
-    --elevation-2: var(--shadow-sm-lg);  /* Hover cards, buttons */
-    --elevation-3: var(--shadow-md-lg);  /* Dialogs, menus */
-    --elevation-4: var(--shadow-lg);     /* Modals */
-    --elevation-5: var(--shadow-xl);     /* FABs, tooltips */
-
-    /* Component: Inputs */
-    --input-bg: #0d1117;
-    --input-border: var(--color-border);
-    --input-text: var(--color-text-primary);
-    --input-placeholder: #6e7681;
-    --input-disabled-bg: #21262d;
-
-    /* Component: Buttons */
-    --btn-secondary-bg: #21262d;
-    --btn-secondary-border: var(--color-border);
-    --btn-secondary-text: var(--color-text-primary);
-    --btn-secondary-hover-bg: #30363d;
-
-    /* Component: Header */
-    --header-bg: #161b22;
-    --header-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
-
-    /* Component: Cards */
-    --card-bg: #161b22;
-    --card-border: #30363d;  /* Visible border for dark theme (matches --color-border) */
-    --card-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
-    --card-hover-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
-
-    /* Component: Tables */
-    --table-header-bg: linear-gradient(135deg, #2d3748 0%, #352f44 100%);
-    --table-header-text: #e2e8f0;
-    --table-header-border: #404858;
-    --table-row-hover-bg: #1c2128;
-    --table-row-selected-bg: #1c2840;
-    --table-row-in-cart-bg: #1a3028;
-
-    /* Component: Dropdowns */
-    --dropdown-bg: #21262d;
-    --dropdown-border: #30363d;
-    --dropdown-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-    --dropdown-item-hover-bg: #30363d;
-    --dropdown-item-active-bg: #1c2840;
-
-    /* Component: Overlays & Modals */
-    --overlay-bg: rgba(0, 0, 0, 0.85);
-    --modal-bg: #161b22;
-
-    /* Component: Admin Zone */
-    --admin-nav-bg: #0d1117;
-    --admin-nav-item-hover-bg: #161b22;
-    --admin-nav-item-active-bg: #1c2840;
-    --admin-nav-text: #e6edf3;
-    --admin-nav-border: #21262d;
-    --admin-content-bg: #161b22;
-    --admin-header-bg: #0d1117;
-    /* Admin Zone - Aliases for backward compatibility */
-    --admin-bg: var(--admin-content-bg);
-    --admin-nav-hover: var(--admin-nav-item-hover-bg);
-    --admin-nav-active: var(--admin-nav-item-active-bg);
-
-    /* Sticky Column Shadows */
-    --shadow-sticky: 2px 0 4px rgba(0, 0, 0, 0.3);
-    --shadow-sticky-light: 2px 0 4px rgba(0, 0, 0, 0.2);
-
-    /* Status Badges */
-    --status-draft-bg: #21262d;
-    --status-draft-text: #8b949e;
-    --status-new-bg: #1c2840;
-    --status-new-text: #58a6ff;
-    --status-processing-bg: #3a2a1a;
-    --status-processing-text: #f0b429;
-    --status-confirmed-bg: #1a3a2a;
-    --status-confirmed-text: #34d058;
-    --status-cancelled-bg: #3a1a1a;
-    --status-cancelled-text: #f85149;
-
-    /* Spinners */
-    --spinner-border: rgba(123, 147, 240, 0.3);
-    --spinner-border-active: var(--color-primary);
-
-    /* Scrollbar */
-    --scrollbar-track: #21262d;
-    --scrollbar-thumb: #484f58;
-    --scrollbar-thumb-hover: #6e7681;
+    @include dark-palette;
+    @include brand.dark-overrides;
   }
 }
 
@@ -724,7 +175,8 @@ html.theme-transitioning *::after {
 body {
   font-family: var(--font-body);  /* Commissioner */
   font-weight: var(--font-weight-regular);
-  line-height: 1.6;
+  font-size: var(--text-md);
+  line-height: 1.5;
   color: var(--color-text-primary);
   background: var(--color-background);
   -webkit-font-smoothing: antialiased;
@@ -732,8 +184,12 @@ body {
   /* Prevent text size adjustment on orientation change */
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
-  /* Prevent horizontal overflow */
-  overflow-x: hidden;
+  /* Prevent horizontal overflow. Use `clip`, not `hidden`: `overflow-x: hidden`
+     forces the computed `overflow-y` to `auto`, turning <body> into a scroll
+     container that breaks `position: sticky` descendants (they anchor to the
+     non-scrolling body instead of the viewport). `clip` clips the same overflow
+     without establishing a scroll container. */
+  overflow-x: clip;
   max-width: 100vw;
 }
 
@@ -763,14 +219,15 @@ button,
   padding: 0 20px;
 }
 
-/* Form Resets */
+/* Form Resets - compact B2B defaults.
+   Per-component stylesheets may override; mobile media query at the bottom
+   bumps font-size to 16px to prevent iOS zoom. */
 input,
 textarea,
 select {
   font-family: inherit;
-  /* Standardized border-radius */
-  border-radius: var(--radius-md);
-  /* Improve touch response */
+  font-size: var(--text-md);
+  border-radius: var(--radius-control);
   touch-action: manipulation;
 }
 
@@ -832,7 +289,7 @@ button,
 input,
 select,
 textarea {
-  -webkit-tap-highlight-color: rgba(102, 126, 234, 0.2);
+  -webkit-tap-highlight-color: color-mix(in srgb, var(--color-primary) 20%, transparent);
 }
 
 /* Prevent pull-to-refresh on overscroll */
@@ -842,26 +299,19 @@ html {
   max-width: 100vw;
 }
 
-/* Material Icons global styles */
-.material-icons {
-  font-family: 'Material Icons';
-  font-weight: normal;
-  font-style: normal;
-  font-size: 24px;
-  line-height: 1;
-  letter-spacing: normal;
-  text-transform: none;
-  display: inline-block;
-  white-space: nowrap;
-  word-wrap: normal;
-  direction: ltr;
-  -webkit-font-feature-settings: 'liga';
-  -webkit-font-smoothing: antialiased;
-  vertical-align: middle;
-}
 
 /* Mobile-specific improvements */
 @media (max-width: 768px) {
+
+  /* Expand touch target on small screens — B2B desktop density is too tight for touch */
+  :root,
+  [data-theme="light"],
+  [data-theme="dark"],
+  [data-theme="system"] {
+    --touch-target-min: 44px;
+    --control-h-md: 40px;
+    --control-h-lg: 44px;
+  }
 
   /* Prevent iOS zoom on input focus */
   input[type="text"],
@@ -889,32 +339,96 @@ html {
 }
 
 /* ========================================
+   GLOBAL ANIMATIONS
+   ======================================== */
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes shimmer {
+  0% { background-position: -1000px 0; }
+  100% { background-position: 1000px 0; }
+}
+
+@keyframes glow {
+  0%, 100% { box-shadow: 0 0 5px transparent; }
+  50% { box-shadow: 0 0 20px color-mix(in srgb, var(--color-primary) 40%, transparent); }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
+  20%, 40%, 60%, 80% { transform: translateX(4px); }
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+
+/* Prefers reduced motion - disable all animations */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ========================================
    BUTTON SYSTEM - Material Design 3
    ======================================== */
 
-/* 1. Primary CTA Button - Max 1 per screen */
+/* 1. Primary CTA Button - Max 1 per screen. Slightly taller than default for emphasis. */
 .btn-primary-cta,
 .button-primary-cta {
   font-family: var(--font-body);
   font-weight: var(--font-weight-medium);
-  font-size: 14px;
+  font-size: var(--text-md);
   line-height: 20px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: var(--spacing-xs);
-  padding: var(--spacing-sm) var(--spacing-md);
-  min-height: var(--touch-target-min);
+  padding: 6px 14px;
+  min-height: var(--control-h-lg);
   background: var(--gradient-primary);
   color: var(--color-on-primary);
   border: none;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-control);
   cursor: pointer;
   transition: opacity 0.2s ease;
   white-space: nowrap;
 
-  .material-icons {
-    font-size: 18px;
+  app-icon {
+    font-size: var(--icon-md);
   }
 
   &:hover:not(:disabled) {
@@ -936,28 +450,28 @@ html {
   }
 }
 
-/* 2. Action Bar Button - Flat Outlined (all toolbars) */
+/* 2. Action Bar Button - Flat Outlined (all toolbars). Compact 32px. */
 .btn-action-bar,
 .button-action-bar {
   font-family: var(--font-body);
   font-weight: var(--font-weight-medium);
-  font-size: 14px;
-  line-height: 20px;
+  font-size: var(--text-base);
+  line-height: 18px;
   display: inline-flex;
   align-items: center;
   gap: var(--spacing-xs);
-  padding: var(--spacing-sm) var(--spacing-md);
-  min-height: var(--touch-target-min);
+  padding: 4px 12px;
+  min-height: var(--control-h-md);
   background: transparent;
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-control);
   color: var(--color-text-primary);
   cursor: pointer;
   transition: all 0.2s ease;
   white-space: nowrap;
 
-  .material-icons {
-    font-size: 18px;
+  app-icon {
+    font-size: var(--icon-sm);
   }
 
   &:hover:not(:disabled) {
@@ -982,20 +496,21 @@ html {
   }
 }
 
-/* 3. Secondary Button - Filled Tonal (important non-primary) */
+/* 3. Secondary Button - Filled Tonal (important non-primary). Matches primary height. */
 .btn-secondary,
 .button-secondary {
-  padding: 14px 24px;
-  min-height: 48px;
+  padding: 6px 14px;
+  min-height: var(--control-h-lg);
   background: var(--color-primary-container);
   color: var(--color-on-primary-container);
   border: none;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-control);
   font-family: var(--font-body);
+  font-size: var(--text-md);
   font-weight: var(--font-weight-medium);
   cursor: pointer;
   box-shadow: var(--elevation-1);
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
 
   &:hover:not(:disabled) {
     box-shadow: var(--elevation-2);
@@ -1015,16 +530,17 @@ html {
 /* 4. Text Button - Cancel/dismiss */
 .btn-text,
 .button-text {
-  padding: 10px 16px;
-  min-height: 40px;
+  padding: 4px 12px;
+  min-height: var(--control-h-md);
   background: transparent;
   border: none;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-control);
   color: var(--color-primary);
   font-family: var(--font-body);
+  font-size: var(--text-base);
   font-weight: var(--font-weight-medium);
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
 
   &:hover:not(:disabled) {
     background: var(--color-primary-overlay-light);
@@ -1043,19 +559,25 @@ html {
 /* 5. Icon Button - Toolbars */
 .btn-icon,
 .button-icon {
-  width: 48px;
-  height: 48px;
-  padding: 12px;
+  width: var(--control-h-md);
+  height: var(--control-h-md);
+  min-width: var(--control-h-md);
+  min-height: var(--control-h-md);
+  padding: 0;
   background: transparent;
   border: none;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-control);
   color: var(--color-text-secondary);
   font-family: var(--font-body);
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
+
+  app-icon {
+    font-size: var(--icon-md);
+  }
 
   &:hover:not(:disabled) {
     background: var(--color-surface-variant);
@@ -1079,6 +601,112 @@ html {
 
 .btn-filter {
   @extend .btn-action-bar;
+}
+
+/* ========================================
+   COMPACT CONTROLS - Toolbar & Filter Inputs
+   ======================================== */
+
+/* Compact select/input for use in action bars and filter rows.
+   Visual height: 32px. Touch target maintained via line-height. */
+.compact-select,
+.compact-input {
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  font-weight: var(--font-weight-medium);
+  line-height: 18px;
+  padding: 4px 10px;
+  height: var(--control-h-md);
+  min-height: var(--control-h-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  background: var(--card-bg);
+  color: var(--color-text-primary);
+  cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  box-sizing: border-box;
+
+  &:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: var(--focus-ring);
+  }
+
+  &:hover:not(:disabled):not(:focus) {
+    border-color: var(--color-text-muted);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.compact-select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' fill='%236b7280' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10l-5 5z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  padding-right: 24px;
+}
+
+/* Compact button for toolbars - matches compact input height */
+.compact-btn {
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  font-weight: var(--font-weight-medium);
+  line-height: 18px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  height: var(--control-h-md);
+  min-height: var(--control-h-md);
+  background: var(--card-bg);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  box-sizing: border-box;
+
+  app-icon {
+    font-size: var(--icon-sm);
+    line-height: 1;
+  }
+
+  &:hover:not(:disabled) {
+    color: var(--color-primary);
+    border-color: var(--color-primary);
+  }
+
+  &.active {
+    color: var(--color-primary);
+    border-color: var(--color-primary);
+    background: var(--color-primary-overlay-light);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+/* Compact filter row - horizontal layout for filter controls */
+.compact-filters {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+
+  .filter-label {
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
 }
 
 /* ========================================

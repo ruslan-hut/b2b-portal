@@ -5,6 +5,8 @@ import { CrmService, CrmAssignableUser } from '../../services/crm.service';
 import { CrmTask, CrmTaskStatus, CrmTaskPriority } from '../../models/crm-task.model';
 import { AuthService } from '../../../../core/services/auth.service';
 import { PageTitleService } from '../../../../core/services/page-title.service';
+import { ConfirmDialogService } from '../../../../core/services/confirm-dialog.service';
+import { formatDateShort } from '../../../../core/utils/date-format';
 
 @Component({
     selector: 'app-my-tasks',
@@ -39,7 +41,8 @@ export class MyTasksComponent implements OnInit, OnDestroy {
     private authService: AuthService,
     public router: Router,
     private cdr: ChangeDetectorRef,
-    private pageTitleService: PageTitleService
+    private pageTitleService: PageTitleService,
+    private confirmDialog: ConfirmDialogService
   ) {}
 
   ngOnInit(): void {
@@ -204,26 +207,12 @@ export class MyTasksComponent implements OnInit, OnDestroy {
   }
 
   formatDate(dateString: string): string {
-    if (!dateString) return '-';
-    const date = new Date(dateString);
-    return date.toLocaleDateString(undefined, {
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    return formatDateShort(dateString);
   }
 
   formatDueDate(dateString: string | undefined): string {
     if (!dateString) return 'No due date';
-    const date = new Date(dateString);
-    return date.toLocaleDateString(undefined, {
-      weekday: 'short',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    return formatDateShort(dateString);
   }
 
   isAssignedToMe(task: CrmTask): boolean {
@@ -253,8 +242,8 @@ export class MyTasksComponent implements OnInit, OnDestroy {
     );
   }
 
-  deleteTask(task: CrmTask): void {
-    if (!confirm('Are you sure you want to delete this task?')) return;
+  async deleteTask(task: CrmTask): Promise<void> {
+    if (!await this.confirmDialog.ask({ message: 'Are you sure you want to delete this task?', danger: true })) return;
 
     this.subscriptions.add(
       this.crmService.deleteTask(task.uid).subscribe({

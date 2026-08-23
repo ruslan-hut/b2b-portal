@@ -1,0 +1,9 @@
+:host {
+  display: block;
+}
+
+/* A single-field page: cap the card so the input does not run the full width
+   of a 1900px canvas. */
+.gen-main {
+  max-width: 760px;
+}

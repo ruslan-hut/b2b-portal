@@ -54,7 +54,7 @@
     transition: all 0.3s ease;
     animation: fadeInUp 0.3s ease;
 
-    .material-icons {
+    app-icon {
       font-size: 28px;
       color: var(--color-text-inverse);
     }
@@ -70,17 +70,19 @@
   }
 }
 
-// Floating Show More Button
-.btn-floating-show-more {
+// Load More Bar - horizontal bar with text
+.btn-load-more-bar {
   position: fixed;
   bottom: calc(var(--spacing-lg) + env(safe-area-inset-bottom, 0));
-  left: var(--spacing-lg);
+  left: 50%;
+  transform: translateX(-50%);
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 56px;
-  height: 56px;
-  padding: 0;
+  gap: var(--spacing-xs);
+  min-width: 220px;
+  height: 48px;
+  padding: 0 var(--spacing-xl);
   background: var(--gradient-primary);
   color: var(--color-text-inverse);
   border: none;
@@ -91,8 +93,15 @@
   z-index: 100;
   animation: floatIn 0.3s ease;
 
-  .material-icons {
-    font-size: 28px;
+  &__text {
+    font-size: var(--text-md, 0.95rem);
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    white-space: nowrap;
+  }
+
+  app-icon {
+    font-size: 22px;
   }
 
   .spinner {
@@ -100,12 +109,12 @@
   }
 
   &:hover:not(:disabled) {
-    transform: translateY(-2px);
+    transform: translateX(-50%) translateY(-2px);
     box-shadow: var(--shadow-primary-lg);
   }
 
   &:active:not(:disabled) {
-    transform: translateY(0);
+    transform: translateX(-50%) translateY(0);
   }
 
   &:disabled {
@@ -114,13 +123,23 @@
   }
 
   @media (max-width: 768px) {
+    // Align to the left and leave room on the right for the scroll-to-top FAB
     left: var(--spacing-md);
+    right: calc(var(--spacing-md) + var(--spacing-3xl) + var(--spacing-sm));
     bottom: calc(var(--spacing-md-lg) + env(safe-area-inset-bottom, 0));
-    width: var(--spacing-3xl);
-    height: var(--spacing-3xl);
+    transform: none;
+    min-width: 0;
+    width: auto;
+    max-width: none;
+    height: 46px;
+    padding: 0 var(--spacing-lg);
 
-    .material-icons {
-      font-size: 24px;
+    &:hover:not(:disabled) {
+      transform: translateY(-2px);
+    }
+
+    &:active:not(:disabled) {
+      transform: translateY(0);
     }
   }
 }

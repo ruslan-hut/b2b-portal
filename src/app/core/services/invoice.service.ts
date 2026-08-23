@@ -17,8 +17,12 @@ export interface InvoiceType {
   url: string;
   method: 'GET' | 'POST';
   headers?: Record<string, string>;
+  auth_username?: string;
+  auth_password?: string;
   active: boolean;
   store_uid?: string | null;
+  default_language: string;
+  success_stage_uid?: string | null;
   created_at?: string;
   last_update?: string;
 }
@@ -26,9 +30,11 @@ export interface InvoiceType {
 export interface Invoice {
   uid: string;
   order_uid: string;
+  order_number?: string;
   type_uid: string;
   response_type: 'link' | 'file';
   response_data?: string;
+  response_urls?: string[];
   file_name?: string;
   mime_type?: string;
   file_size?: number;
@@ -81,8 +87,12 @@ export interface InvoiceTypeUpsertRequest {
   url: string;
   method: 'GET' | 'POST';
   headers?: Record<string, string>;
+  auth_username?: string;
+  auth_password?: string;
   active: boolean;
   store_uid?: string | null;
+  default_language: string;
+  success_stage_uid?: string | null;
 }
 
 @Injectable({
@@ -161,12 +171,20 @@ export class InvoiceService {
   /**
    * Test invoice type configuration
    */
-  testType(url: string, method: 'GET' | 'POST', headers?: Record<string, string>): Observable<InvoiceTestResponse> {
+  testType(
+    url: string,
+    method: 'GET' | 'POST',
+    headers?: Record<string, string>,
+    authUsername?: string,
+    authPassword?: string
+  ): Observable<InvoiceTestResponse> {
     return this.http.post<any>(`${this.apiUrl}/admin/invoice/types/test`, {
       data: {
         url,
         method,
-        headers: headers || {}
+        headers: headers || {},
+        auth_username: authUsername || '',
+        auth_password: authPassword || ''
       }
     }).pipe(
       map((response: any) => response.data || response)
@@ -215,12 +233,16 @@ export class InvoiceService {
   /**
    * Request invoice for an order
    */
-  requestInvoice(orderUid: string, typeUid: string): Observable<InvoiceRequestResponse> {
+  requestInvoice(orderUid: string, typeUid: string, invoiceContent?: string): Observable<InvoiceRequestResponse> {
+    const payload: any = {
+      order_uid: orderUid,
+      type_uid: typeUid
+    };
+    if (invoiceContent) {
+      payload.invoice_content = invoiceContent;
+    }
     return this.http.post<any>(`${this.apiUrl}/admin/orders/invoice/request`, {
-      data: {
-        order_uid: orderUid,
-        type_uid: typeUid
-      }
+      data: payload
     });
   }
 
@@ -271,12 +293,29 @@ export class InvoiceService {
   }
 
   /**
-   * Open invoice - either opens link or downloads file
+   * Returns all link URLs for an invoice (multi-document responses include
+   * additional URLs in response_urls). Falls back to response_data when
+   * response_urls is empty.
+   */
+  invoiceLinks(invoice: Invoice): string[] {
+    if (invoice.response_urls && invoice.response_urls.length > 0) {
+      return invoice.response_urls;
+    }
+    if (invoice.response_data) {
+      return [invoice.response_data];
+    }
+    return [];
+  }
+
+  /**
+   * Open invoice - either opens link(s) or downloads file
    */
   openInvoice(invoice: Invoice): void {
-    if (invoice.response_type === 'link' && invoice.response_data) {
-      // Open link in new tab
-      window.open(invoice.response_data, '_blank');
+    if (invoice.response_type === 'link') {
+      const links = this.invoiceLinks(invoice);
+      for (const url of links) {
+        window.open(url, '_blank');
+      }
     } else if (invoice.response_type === 'file') {
       // Download file
       this.downloadInvoice(invoice.uid).subscribe({

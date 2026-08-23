@@ -5,6 +5,10 @@
   <title>B2B Portal</title>
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- SVG first: it is resolution-independent and carries its own
+       prefers-color-scheme rule, so the mark stays legible on a dark tab
+       strip. The .ico is the fallback and has a white halo baked in. -->
+  <link rel="icon" type="image/svg+xml" href="assets/favicon/favicon.svg">
   <link rel="icon" type="image/x-icon" href="assets/favicon/favicon.ico">
   <link rel="apple-touch-icon" sizes="180x180" href="assets/favicon/apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="192x192" href="assets/favicon/icon-192.png">
@@ -14,15 +18,25 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="B2B Portal">
-  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 
-  <!-- Typography System: Montserrat + Commissioner with Ukrainian Cyrillic -->
+  <!-- Typography. The stylesheet between the markers is GENERATED: set-env.js
+       rewrites it from the THEME's entry in scripts/brand-fonts.js, so a brand
+       that names its own face actually loads it. Edit the registry, not this.
+       Committed with the stock pairing so a plain `ng serve` works. -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <!-- fonts:start -->
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300..900&family=Commissioner:wght@100..900&display=swap&subset=latin,cyrillic" rel="stylesheet">
+  <!-- fonts:end -->
 </head>
 <body>
   <app-root></app-root>
   <noscript>Please enable JavaScript to continue using this application.</noscript>
+
+  <!-- Live theme overrides. In <body>, not <head>, on purpose: the Angular CLI
+       appends the compiled stylesheet to the end of <head> at build time, so a
+       link placed there would lose the cascade. See the file's own header and
+       docs/development/theming-contract.md. -->
+  <link rel="stylesheet" href="assets/theme-overrides.css">
 </body>
 </html>

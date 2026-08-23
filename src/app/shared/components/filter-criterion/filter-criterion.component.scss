@@ -1,0 +1,217 @@
+/* The divider belongs on the host, not on .crit: .crit is the component's only
+   child, so a :last-child rule there would match every instance and no divider
+   would ever render. Siblings are what need separating. */
+:host {
+  display: block;
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+:host(:last-of-type) {
+  border-bottom: none;
+}
+
+.crit__head {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  width: 100%;
+  min-height: var(--control-h-md);
+  padding: var(--spacing-xs) 0;
+  background: transparent;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  color: var(--color-text-primary);
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  font-weight: var(--font-weight-medium);
+  transition: color 0.15s ease;
+
+  &:hover {
+    color: var(--color-primary);
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+    border-radius: var(--radius-control);
+  }
+}
+
+.crit__icon {
+  font-size: var(--icon-sm);
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+}
+
+.crit__label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.crit__badge {
+  flex-shrink: 0;
+  padding: 1px var(--spacing-sm);
+  border-radius: var(--radius-pill);
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-semibold);
+  line-height: 16px;
+  background: var(--color-primary-container);
+  color: var(--color-on-primary-container);
+
+  // Exclusion is the destructive-sounding direction; it reads as a warning so a
+  // rail scanned at a glance never hides an inverted criterion.
+  &--exclude {
+    background: var(--color-error-container);
+    color: var(--color-on-error-container);
+  }
+
+  &--empty {
+    background: transparent;
+    color: var(--color-text-muted);
+    padding: 0;
+  }
+}
+
+.crit__clear {
+  flex-shrink: 0;
+  font-size: var(--icon-sm);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  border-radius: var(--radius-control);
+  transition: color 0.15s ease;
+
+  &:hover {
+    color: var(--color-danger);
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+  }
+}
+
+.crit__chevron {
+  flex-shrink: 0;
+  font-size: var(--icon-sm);
+  color: var(--color-text-muted);
+}
+
+.crit__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  padding: 0 0 var(--spacing-sm);
+}
+
+/* ---------- Include / Exclude segmented toggle ---------- */
+.crit__mode {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px;
+  padding: 2px;
+  background: var(--color-surface-variant);
+  border-radius: var(--radius-control);
+}
+
+.crit__mode-btn {
+  min-height: var(--control-h-xs);
+  padding: 2px var(--spacing-sm);
+  border: none;
+  border-radius: calc(var(--radius-control) - 2px);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+
+  &:hover:not(.is-on) {
+    color: var(--color-text-primary);
+  }
+
+  &.is-on {
+    background: var(--card-bg);
+    color: var(--color-text-primary);
+    font-weight: var(--font-weight-semibold);
+    box-shadow: var(--elevation-1);
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+  }
+}
+
+.crit__search {
+  // The rail is narrow; the standard input padding is enough here.
+  width: 100%;
+}
+
+.crit__list {
+  display: flex;
+  flex-direction: column;
+  // Long lists (clients, countries) scroll inside the criterion rather than
+  // pushing the rest of the rail off screen.
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.crit__option {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  min-height: var(--touch-target-min);
+  padding: var(--spacing-xs) var(--spacing-xs);
+  border-radius: var(--radius-control);
+  cursor: pointer;
+  font-size: var(--text-sm);
+  color: var(--color-text-primary);
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: var(--color-surface-variant);
+  }
+
+  input[type='checkbox'] {
+    flex-shrink: 0;
+    width: 14px;
+    height: 14px;
+    margin: 0;
+    accent-color: var(--color-primary);
+    cursor: pointer;
+  }
+}
+
+.crit__option-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.crit__option-hint {
+  flex-shrink: 0;
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+.crit__empty {
+  margin: 0;
+  padding: var(--spacing-sm) var(--spacing-xs);
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+.crit__note {
+  margin: 0;
+  padding: 0 var(--spacing-xs);
+  font-size: var(--text-xs);
+  line-height: 16px;
+  color: var(--color-text-muted);
+}

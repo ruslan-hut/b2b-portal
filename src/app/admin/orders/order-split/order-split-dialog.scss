@@ -1,0 +1,289 @@
+@use '../../../../styles/mixins' as *;
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-md);
+  background: var(--overlay-bg-light);
+  z-index: var(--z-modal);
+  @include modal-backdrop;
+}
+
+.modal-content {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 560px;
+  max-height: 90vh;
+  overflow: hidden;
+  background: var(--card-bg);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  @include modal-content;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-md);
+  border-bottom: 1px solid var(--color-border-light);
+
+  h3 {
+    margin: 0;
+    color: var(--color-text-primary);
+  }
+}
+
+.btn-close-modal {
+  @include icon-button(28px);
+}
+
+.modal-body {
+  flex: 1;
+  padding: var(--spacing-md);
+  overflow-y: auto;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md);
+  border-top: 1px solid var(--color-border-light);
+}
+
+.split-hint,
+.split-note {
+  margin: 0 0 var(--spacing-sm);
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+.split-source {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md-sm);
+  margin-bottom: var(--spacing-md);
+  background: var(--color-background-secondary);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+
+  strong {
+    color: var(--color-text-primary);
+  }
+}
+
+/* Mode picker: two mutually exclusive ways to size the parts. */
+.split-modes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-xs);
+  margin-bottom: var(--spacing-md);
+}
+
+.split-mode {
+  @include button-typography;
+  height: var(--control-h-md);
+  padding: 0 var(--spacing-sm);
+  background: var(--card-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: border-color 0.2s ease, color 0.2s ease, background-color 0.2s ease;
+
+  &:hover:not(.selected) {
+    border-color: var(--color-text-muted);
+  }
+
+  &.selected {
+    border-color: var(--color-primary);
+    background: var(--color-primary-overlay-light);
+    color: var(--color-primary);
+  }
+}
+
+.split-params {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+}
+
+.split-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+
+  input {
+    @include compact-input;
+    width: 120px;
+  }
+}
+
+.split-parts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-md);
+}
+
+.split-part {
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+
+  &__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    background: var(--color-background-secondary);
+    font-size: var(--text-sm);
+  }
+
+  &__title {
+    color: var(--color-text-secondary);
+  }
+
+  // Per-part invoicing identity: who sells this part and who is billed for it.
+  &__billing {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-xs) var(--spacing-sm);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-bottom: 1px solid var(--color-border-light);
+  }
+
+  &__select {
+    display: flex;
+    flex: 1 1 180px;
+    min-width: 0;
+    flex-direction: column;
+    gap: 2px;
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+
+    select {
+      width: 100%;
+      padding: 2px var(--spacing-xs);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      background: var(--color-background);
+      color: var(--color-text-primary);
+      font-size: var(--text-sm);
+
+      // A payer that would move the VAT rate stays visible and unpickable, so
+      // the operator can read why instead of hunting for a missing branch.
+      option:disabled {
+        color: var(--color-text-muted);
+      }
+    }
+  }
+
+  // What the part resolved to, echoed back from the preview.
+  &__resolved {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--spacing-xs);
+    margin: 0;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    font-size: var(--text-sm);
+    color: var(--color-text-secondary);
+  }
+
+  &__vat {
+    margin-left: auto;
+    font-variant-numeric: tabular-nums;
+    color: var(--color-text-muted);
+  }
+
+  &__warning {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    margin: 0;
+    padding: 0 var(--spacing-sm) var(--spacing-xs);
+    font-size: var(--text-xs);
+    color: var(--color-warning, var(--color-text-muted));
+  }
+
+  &__lines {
+    margin: 0;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    list-style: none;
+
+    li {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-xs);
+      font-size: var(--text-sm);
+      color: var(--color-text-primary);
+    }
+  }
+
+  &__sku {
+    flex: 1 1 auto;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__qty {
+    color: var(--color-text-muted);
+  }
+
+  &__divided {
+    @include badge-typography;
+    padding: 0 var(--spacing-xs);
+    border: 1px solid var(--color-warning, var(--color-border));
+    border-radius: 999px;
+    color: var(--color-warning, var(--color-text-muted));
+  }
+
+  &__amount {
+    min-width: 90px;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+.split-warning,
+.split-error {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  margin-top: var(--spacing-sm);
+  font-size: var(--text-sm);
+}
+
+.split-warning {
+  color: var(--color-warning, var(--color-text-muted));
+}
+
+.split-error {
+  color: var(--color-danger);
+}
+
+.spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--color-border);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

@@ -1,0 +1,170 @@
+<div class="adm-page">
+
+  <header class="adm-bar">
+    <div class="adm-bar__crumbs">
+      <button
+        type="button"
+        class="adm-crumb-back"
+        (click)="cancel()"
+        [attr.aria-label]="'admin.tags.title' | translate"
+      >
+        <app-icon name="arrow_back"></app-icon>
+      </button>
+      <a class="adm-crumb" (click)="cancel()" (keydown.enter)="cancel()" tabindex="0">
+        {{ 'admin.tags.title' | translate }}
+      </a>
+      <span class="adm-crumb-sep">/</span>
+      <span class="adm-crumb adm-crumb--active">
+        {{ (isNew ? 'admin.tags.newTag' : 'admin.tags.editTag') | translate }}
+      </span>
+    </div>
+    <div class="adm-bar__actions">
+      <button type="button" class="adm-btn adm-btn--ghost" (click)="cancel()" [disabled]="saving">
+        <app-icon name="close"></app-icon>
+        {{ 'common.cancel' | translate }}
+      </button>
+      <button
+        type="button"
+        class="adm-btn adm-btn--primary"
+        (click)="save()"
+        [disabled]="form.invalid || saving || loading"
+      >
+        <app-icon [name]="saving ? 'sync' : 'check'"></app-icon>
+        {{ (saving ? 'common.saving' : (isNew ? 'admin.tags.newTag' : 'common.save')) | translate }}
+      </button>
+    </div>
+  </header>
+
+  @if (loading) {
+    <div class="adm-loading">{{ 'admin.tags.loadingTags' | translate }}</div>
+  }
+
+  @if (!loading) {
+    <div class="adm-grid">
+
+      <!-- Sidebar: live preview -->
+      <aside class="adm-side">
+        <div class="adm-id-card tag-preview-card">
+          <span
+            class="tag-preview-chip"
+            [style.background-color]="form.value.color"
+            [style.color]="textColorFor(form.value.color)"
+          >
+            {{ form.value.name || ('admin.tags.preview' | translate) }}
+          </span>
+          <div class="adm-id-name">{{ form.value.name || ('admin.tags.preview' | translate) }}</div>
+          <div class="adm-id-username">{{ (form.value.color || '').toUpperCase() }}</div>
+        </div>
+
+        @if (storeUid) {
+          <div class="adm-meta">
+            <div class="adm-meta__title">{{ 'admin.tags.store' | translate }}</div>
+            <div class="adm-meta__row adm-meta__row--mono">
+              <span class="adm-meta__label">UID</span>
+              <span class="adm-meta__value adm-uid" [copyOnClick]="storeUid">
+                <span class="adm-uid__text">{{ storeUid }}</span>
+              </span>
+            </div>
+          </div>
+        }
+      </aside>
+
+      <!-- Main form -->
+      <form class="adm-main" [formGroup]="form" (ngSubmit)="save()" autocomplete="off">
+
+        @if (error) {
+          <div class="adm-error" role="alert">{{ error }}</div>
+        }
+
+        <!-- 01 — Identity -->
+        <section class="adm-section">
+          <header class="adm-section__head">
+            <div>
+              <h2 class="adm-section__title">{{ 'admin.tags.tagName' | translate }}</h2>
+              <p class="adm-section__sub">{{ 'admin.tags.sortOrderHint' | translate }}</p>
+            </div>
+          </header>
+
+          <div class="adm-fields">
+            <label class="adm-field adm-field--span2">
+              <span class="adm-field__label">
+                {{ 'admin.tags.tagName' | translate }} <em>*</em>
+              </span>
+              <input
+                type="text"
+                class="adm-input"
+                formControlName="name"
+                maxlength="64"
+                spellcheck="false"
+                autocomplete="off"
+              />
+            </label>
+
+            <label class="adm-toggle adm-field--span2">
+              <input type="checkbox" formControlName="sorting_enabled" />
+              <span class="adm-toggle__track"><span class="adm-toggle__dot"></span></span>
+              <span class="adm-toggle__text">
+                {{ 'admin.tags.sortingEnabled' | translate }}:
+                <strong>{{ (sortingEnabled ? 'common.enabled' : 'common.disabled') | translate }}</strong>
+              </span>
+            </label>
+
+            @if (sortingEnabled) {
+              <label class="adm-field">
+                <span class="adm-field__label">{{ 'admin.tags.sortOrder' | translate }}</span>
+                <input
+                  type="number"
+                  class="adm-input"
+                  formControlName="sort_order"
+                  min="0"
+                  step="1"
+                  autocomplete="off"
+                />
+              </label>
+            } @else {
+              <p class="adm-field adm-field--span2 adm-field__hint">
+                {{ 'admin.tags.sortingDisabledHint' | translate }}
+              </p>
+            }
+          </div>
+        </section>
+
+        <!-- 02 — Appearance -->
+        <section class="adm-section">
+          <header class="adm-section__head">
+            <div>
+              <h2 class="adm-section__title">{{ 'admin.tags.color' | translate }}</h2>
+              <p class="adm-section__sub">{{ 'admin.tags.preview' | translate }}</p>
+            </div>
+          </header>
+
+          <div class="adm-fields">
+            <label class="adm-field adm-field--span2">
+              <span class="adm-field__label">
+                {{ 'admin.tags.color' | translate }} <em>*</em>
+              </span>
+              <div class="tag-color-row">
+                <input type="color" class="tag-color-picker" formControlName="color" />
+                <input
+                  type="text"
+                  class="adm-input adm-input--mono tag-color-hex"
+                  formControlName="color"
+                  spellcheck="false"
+                  autocomplete="off"
+                />
+                <span
+                  class="tag-preview-chip"
+                  [style.background-color]="form.value.color"
+                  [style.color]="textColorFor(form.value.color)"
+                >
+                  {{ form.value.name || ('admin.tags.preview' | translate) }}
+                </span>
+              </div>
+            </label>
+          </div>
+        </section>
+
+      </form>
+    </div>
+  }
+</div>

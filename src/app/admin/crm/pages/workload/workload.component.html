@@ -1,104 +1,104 @@
-<div class="workload-container">
-  <app-action-bar>
-    <div actionBarLeft>
-      <button class="btn-filter" (click)="toggleFilters()" [class.active]="isFiltersExpanded">
-        <span class="material-icons">filter_list</span>
-        <span class="btn-text">Filters</span>
-        <span class="material-icons toggle-icon">{{ isFiltersExpanded ? 'expand_less' : 'expand_more' }}</span>
+<div class="workload-container adm-page">
+  <header class="adm-bar">
+    <div class="adm-bar__crumbs">
+      <app-crm-nav></app-crm-nav>
+    </div>
+    <div class="adm-bar__actions">
+      <button
+        type="button"
+        class="adm-btn adm-btn--ghost"
+        (click)="toggleFilters()"
+        [class.is-active]="isFiltersExpanded"
+        [attr.aria-expanded]="isFiltersExpanded"
+      >
+        <app-icon name="filter_list"></app-icon>
+        {{ 'common.filters' | translate }}
       </button>
     </div>
-    <div actionBarRight>
-      <a routerLink="/admin/crm" [routerLinkActiveOptions]="{exact: true}" routerLinkActive="active" class="btn-nav">
-        <span class="material-icons">view_kanban</span>
-        <span class="btn-text">Pipeline</span>
-      </a>
-      <a routerLink="/admin/crm/dashboard" routerLinkActive="active" class="btn-nav">
-        <span class="material-icons">dashboard</span>
-        <span class="btn-text">Dashboard</span>
-      </a>
-      <a routerLink="/admin/crm/workload" routerLinkActive="active" class="btn-nav">
-        <span class="material-icons">bar_chart</span>
-        <span class="btn-text">Workload</span>
-      </a>
-      <a routerLink="/admin/crm/my-tasks" routerLinkActive="active" class="btn-nav">
-        <span class="material-icons">task_alt</span>
-        <span class="btn-text">My Tasks</span>
-      </a>
-      <a routerLink="/admin/crm/settings" routerLinkActive="active" class="btn-nav">
-        <span class="material-icons">settings</span>
-        <span class="btn-text">Settings</span>
-      </a>
+  </header>
+
+  @if (isFiltersExpanded) {
+    <div class="adm-grid adm-grid--full">
+      <section class="adm-section wl-filters">
+        <app-dashboard-filters
+          scope="workload"
+          [showCurrency]="false"
+          (filtersChange)="onFiltersChange($event)"
+        ></app-dashboard-filters>
+      </section>
     </div>
-  </app-action-bar>
+  }
 
-  <div class="filters" [class.expanded]="isFiltersExpanded">
-    <app-dashboard-filters (filtersChange)="onFiltersChange($any($event))"></app-dashboard-filters>
-  </div>
+  @if (error) {
+    <div class="adm-grid adm-grid--full">
+      <div class="adm-error" role="alert">
+        {{ error }}
+        <button type="button" class="adm-btn adm-btn--mini" (click)="loadWorkload()">{{ 'common.retry' | translate }}</button>
+      </div>
+    </div>
+  }
 
-  <div *ngIf="error" class="error-message">
-    {{ error }}
-    <button class="btn-retry" (click)="loadWorkload()">Retry</button>
-  </div>
+  @if (loading) {
+    <div class="adm-loading">{{ 'admin.crm.loadingWorkload' | translate }}</div>
+  }
 
-  <div *ngIf="loading" class="loading-container">
-    <div class="spinner"></div>
-    <p>Loading workload data...</p>
-  </div>
-
-  <div class="workload-content" *ngIf="!loading && !error">
+  @if (!loading && !error) {
+    <div class="workload-content">
     <!-- Summary Cards -->
     <div class="summary-cards">
       <div class="summary-card">
         <div class="card-value">{{ workloadStats.length }}</div>
-        <div class="card-label">Team Members</div>
+        <div class="card-label">{{ 'admin.crm.teamMembers' | translate }}</div>
       </div>
       <div class="summary-card">
         <div class="card-value">{{ totalOrders }}</div>
-        <div class="card-label">Total Assigned Orders</div>
+        <div class="card-label">{{ 'admin.crm.totalAssignedOrders' | translate }}</div>
       </div>
       <div class="summary-card">
         <div class="card-value">{{ totalPendingTasks }}</div>
-        <div class="card-label">Total Pending Tasks</div>
+        <div class="card-label">{{ 'admin.crm.totalPendingTasks' | translate }}</div>
       </div>
       <div class="summary-card" [class.warning]="totalOverdueTasks > 0">
         <div class="card-value">{{ totalOverdueTasks }}</div>
-        <div class="card-label">Total Overdue Tasks</div>
+        <div class="card-label">{{ 'admin.crm.totalOverdueTasks' | translate }}</div>
       </div>
     </div>
 
     <!-- Workload Table -->
-    <div class="workload-table-container" *ngIf="workloadStats.length > 0">
-      <table class="workload-table">
+    @if (workloadStats.length > 0) {
+      <div class="workload-table-container">
+        <table class="workload-table">
         <thead>
           <tr>
             <th (click)="toggleSort('name')" class="sortable">
-              Team Member
-              <span class="sort-icon" [innerHTML]="getSortIcon('name')"></span>
+              {{ 'admin.crm.teamMember' | translate }}
+              <span class="sort-icon">{{ getSortIcon('name') }}</span>
             </th>
             <th (click)="toggleSort('orders')" class="sortable text-center">
-              Assigned Orders
-              <span class="sort-icon" [innerHTML]="getSortIcon('orders')"></span>
+              {{ 'admin.crm.assignedOrders' | translate }}
+              <span class="sort-icon">{{ getSortIcon('orders') }}</span>
             </th>
             <th (click)="toggleSort('tasks')" class="sortable text-center">
-              Pending Tasks
-              <span class="sort-icon" [innerHTML]="getSortIcon('tasks')"></span>
+              {{ 'admin.crm.pendingTasks' | translate }}
+              <span class="sort-icon">{{ getSortIcon('tasks') }}</span>
             </th>
             <th (click)="toggleSort('overdue')" class="sortable text-center">
-              Overdue
-              <span class="sort-icon" [innerHTML]="getSortIcon('overdue')"></span>
+              {{ 'common.overdue' | translate }}
+              <span class="sort-icon">{{ getSortIcon('overdue') }}</span>
             </th>
-            <th class="text-center">Completed Today</th>
-            <th>Workload</th>
+            <th class="text-center">{{ 'admin.crm.completedToday' | translate }}</th>
+            <th>{{ 'admin.crm.workload' | translate }}</th>
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let user of workloadStats" [class.has-overdue]="user.overdue_tasks > 0">
+          @for (user of workloadStats; track user.user_uid) {
+            <tr [class.has-overdue]="user.overdue_tasks > 0">
             <td class="user-cell">
               <div class="user-info">
                 <div class="user-avatar" [style.background-color]="getWorkloadColor(user)">
                   {{ (user.user_name || '?').charAt(0) }}
                 </div>
-                <span class="user-name">{{ user.user_name || 'Unknown' }}</span>
+                <span class="user-name">{{ user.user_name || ('admin.crm.unknown' | translate) }}</span>
               </div>
             </td>
             <td class="text-center">
@@ -118,7 +118,7 @@
             <td class="workload-cell">
               <div class="workload-bars">
                 <div class="bar-row">
-                  <div class="bar-label">Orders</div>
+                  <div class="bar-label">{{ 'admin.crm.orders' | translate }}</div>
                   <div class="bar-container">
                     <div
                       class="bar orders"
@@ -127,7 +127,7 @@
                   </div>
                 </div>
                 <div class="bar-row">
-                  <div class="bar-label">Tasks</div>
+                  <div class="bar-label">{{ 'admin.crm.tasks' | translate }}</div>
                   <div class="bar-container">
                     <div
                       class="bar tasks"
@@ -138,14 +138,17 @@
               </div>
             </td>
           </tr>
+          }
         </tbody>
       </table>
-    </div>
-
-    <div class="empty-state" *ngIf="workloadStats.length === 0">
-      <div class="empty-icon">&#128101;</div>
-      <h2>No team members found</h2>
-      <p>No users with assigned orders or tasks</p>
-    </div>
+      </div>
+    } @else {
+      <div class="adm-section wl-empty">
+        <div class="wl-empty__icon">&#128101;</div>
+        <h2 class="wl-empty__title">{{ 'admin.crm.noTeamMembers' | translate }}</h2>
+        <p>{{ 'admin.crm.noUsersWithAssignments' | translate }}</p>
+      </div>
+    }
   </div>
+  }
 </div>

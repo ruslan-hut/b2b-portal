@@ -3,6 +3,11 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { InvoiceService, InvoiceType, Invoice, InvoiceTypeUpsertRequest, InvoiceSettings } from '../../core/services/invoice.service';
 import { AdminService } from '../../core/services/admin.service';
+import { ConfirmDialogService } from '../../core/services/confirm-dialog.service';
+import { NotificationService } from '../../core/services/notification.service';
+import { CrmService } from '../crm/services/crm.service';
+import { CrmStage } from '../crm/models/crm-stage.model';
+import { formatDateTime } from '../../core/utils/date-format';
 import { PageTitleService } from '../../core/services/page-title.service';
 
 type TabType = 'types' | 'history';
@@ -51,21 +56,31 @@ export class InvoiceComponent implements OnInit, OnDestroy {
   // Stores
   stores: any[] = [];
 
+  // CRM stages (for the optional "move order to stage on success" setting)
+  stages: CrmStage[] = [];
+
   // General
   error: string | null = null;
 
   constructor(
     private invoiceService: InvoiceService,
     private adminService: AdminService,
+    private crmService: CrmService,
     private fb: FormBuilder,
     private cdr: ChangeDetectorRef,
-    private pageTitleService: PageTitleService
+    private pageTitleService: PageTitleService,
+    private confirmDialog: ConfirmDialogService,
+    private notifications: NotificationService
   ) {
     this.typeForm = this.fb.group({
       name: ['', [Validators.required, Validators.maxLength(255)]],
       url: ['', [Validators.required, Validators.pattern(/^https?:\/\/.+/)]],
       method: ['POST', Validators.required],
+      auth_username: ['', [Validators.maxLength(255)]],
+      auth_password: ['', [Validators.maxLength(255)]],
       store_uid: [null],
+      default_language: ['uk', [Validators.required, Validators.maxLength(10), Validators.pattern(/^[a-z]{2,10}$/)]],
+      success_stage_uid: [null],
       active: [true]
     });
   }
@@ -74,6 +89,7 @@ export class InvoiceComponent implements OnInit, OnDestroy {
     this.pageTitleService.setTitle('Invoice');
     this.loadSettings();
     this.loadStores();
+    this.loadStages();
     this.loadTypes();
   }
 
@@ -147,6 +163,20 @@ export class InvoiceComponent implements OnInit, OnDestroy {
     );
   }
 
+  loadStages(): void {
+    this.subscriptions.add(
+      this.crmService.getStages().subscribe({
+        next: (stages) => {
+          this.stages = stages || [];
+          this.cdr.detectChanges();
+        },
+        error: (err) => {
+          console.error('Failed to load CRM stages:', err);
+        }
+      })
+    );
+  }
+
   // Invoice Types
   loadTypes(): void {
     this.typesLoading = true;
@@ -175,7 +205,11 @@ export class InvoiceComponent implements OnInit, OnDestroy {
       name: '',
       url: '',
       method: 'POST',
+      auth_username: '',
+      auth_password: '',
       store_uid: null,
+      default_language: 'uk',
+      success_stage_uid: null,
       active: true
     });
     this.headers = [];
@@ -190,7 +224,11 @@ export class InvoiceComponent implements OnInit, OnDestroy {
       name: type.name,
       url: type.url,
       method: type.method,
+      auth_username: type.auth_username || '',
+      auth_password: type.auth_password || '',
       store_uid: type.store_uid || null,
+      default_language: type.default_language || 'uk',
+      success_stage_uid: type.success_stage_uid || null,
       active: type.active
     });
     // Convert headers object to array
@@ -220,7 +258,11 @@ export class InvoiceComponent implements OnInit, OnDestroy {
       url: formValue.url,
       method: formValue.method,
       headers: this.getHeadersObject(),
+      auth_username: formValue.auth_username || '',
+      auth_password: formValue.auth_password || '',
       store_uid: formValue.store_uid || null,
+      default_language: (formValue.default_language || 'uk').toLowerCase(),
+      success_stage_uid: formValue.success_stage_uid || null,
       active: formValue.active
     };
 
@@ -242,8 +284,8 @@ export class InvoiceComponent implements OnInit, OnDestroy {
     );
   }
 
-  deleteType(type: InvoiceType): void {
-    if (!confirm(`Are you sure you want to delete type "${type.name}"?`)) return;
+  async deleteType(type: InvoiceType): Promise<void> {
+    if (!await this.confirmDialog.ask({ message: `Are you sure you want to delete type "${type.name}"?`, danger: true })) return;
 
     this.subscriptions.add(
       this.invoiceService.deleteTypes([type.uid]).subscribe({
@@ -283,7 +325,7 @@ export class InvoiceComponent implements OnInit, OnDestroy {
     this.testResult = null;
 
     this.subscriptions.add(
-      this.invoiceService.testType(formValue.url, formValue.method, this.getHeadersObject()).subscribe({
+      this.invoiceService.testType(formValue.url, formValue.method, this.getHeadersObject(), formValue.auth_username, formValue.auth_password).subscribe({
         next: (result) => {
           this.testResult = {
             success: result.success,
@@ -354,8 +396,8 @@ export class InvoiceComponent implements OnInit, OnDestroy {
     this.invoiceService.openInvoice(invoice);
   }
 
-  deleteInvoice(invoice: Invoice): void {
-    if (!confirm(`Are you sure you want to delete this invoice record?`)) return;
+  async deleteInvoice(invoice: Invoice): Promise<void> {
+    if (!await this.confirmDialog.ask({ message: `Are you sure you want to delete this invoice record?`, danger: true })) return;
 
     this.subscriptions.add(
       this.invoiceService.deleteInvoices([invoice.uid]).subscribe({
@@ -371,18 +413,18 @@ export class InvoiceComponent implements OnInit, OnDestroy {
     );
   }
 
-  cleanupInvoices(): void {
-    if (!confirm('Are you sure you want to cleanup old invoice records? This action cannot be undone.')) return;
+  async cleanupInvoices(): Promise<void> {
+    if (!await this.confirmDialog.ask({ message: 'Are you sure you want to cleanup old invoice records? This action cannot be undone.', danger: true })) return;
 
     this.subscriptions.add(
       this.invoiceService.cleanupInvoices(90).subscribe({
         next: (response) => {
-          alert(`Cleanup completed. Deleted ${response.data || 0} invoice records.`);
+          this.notifications.success(`Cleanup completed. Deleted ${response.data || 0} invoice records.`);
           this.loadInvoices();
         },
         error: (err) => {
           console.error('Failed to cleanup invoices:', err);
-          alert('Failed to cleanup invoices');
+          this.notifications.error('Failed to cleanup invoices');
         }
       })
     );
@@ -406,13 +448,19 @@ export class InvoiceComponent implements OnInit, OnDestroy {
     return store?.name || storeUID;
   }
 
+  getStageName(stageUID: string | null | undefined): string {
+    if (!stageUID) return '—';
+    const stage = this.stages.find(s => s.uid === stageUID);
+    return stage?.name || stageUID;
+  }
+
   getTypeName(typeUID: string): string {
     const type = this.invoiceTypes.find(t => t.uid === typeUID);
     return type?.name || typeUID;
   }
 
   formatDate(dateString: string): string {
-    return new Date(dateString).toLocaleString();
+    return formatDateTime(dateString);
   }
 
   getInvoiceStatusClass(invoice: Invoice): string {

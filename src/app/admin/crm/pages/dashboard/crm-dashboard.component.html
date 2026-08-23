@@ -1,210 +1,276 @@
-<div class="dashboard-container">
-  <app-action-bar>
-    <div actionBarLeft>
-      <button class="btn-filter" (click)="toggleFilters()" [class.active]="isFiltersExpanded">
-        <span class="material-icons">filter_list</span>
-        <span class="btn-text">Filters</span>
-        <span class="material-icons toggle-icon">{{ isFiltersExpanded ? 'expand_less' : 'expand_more' }}</span>
+<div class="dashboard-container adm-page">
+  <header class="adm-bar">
+    <div class="adm-bar__crumbs">
+      <app-crm-nav></app-crm-nav>
+    </div>
+    <div class="adm-bar__actions">
+      <button
+        type="button"
+        class="adm-btn adm-btn--ghost"
+        (click)="toggleFilters()"
+        [class.is-active]="isFiltersExpanded"
+        [attr.aria-expanded]="isFiltersExpanded"
+      >
+        <app-icon name="filter_list" size="sm"></app-icon>
+        {{ 'common.filters' | translate }}
       </button>
     </div>
-    <div actionBarRight>
-      <a routerLink="/admin/crm" [routerLinkActiveOptions]="{exact: true}" routerLinkActive="active" class="btn-nav">
-        <span class="material-icons">view_kanban</span>
-        <span class="btn-text">Pipeline</span>
-      </a>
-      <a routerLink="/admin/crm/dashboard" routerLinkActive="active" class="btn-nav">
-        <span class="material-icons">dashboard</span>
-        <span class="btn-text">Dashboard</span>
-      </a>
-      <a routerLink="/admin/crm/workload" routerLinkActive="active" class="btn-nav">
-        <span class="material-icons">bar_chart</span>
-        <span class="btn-text">Workload</span>
-      </a>
-      <a routerLink="/admin/crm/my-tasks" routerLinkActive="active" class="btn-nav">
-        <span class="material-icons">task_alt</span>
-        <span class="btn-text">My Tasks</span>
-      </a>
-      <a routerLink="/admin/crm/settings" routerLinkActive="active" class="btn-nav">
-        <span class="material-icons">settings</span>
-        <span class="btn-text">Settings</span>
-      </a>
+  </header>
+
+  @if (isFiltersExpanded) {
+    <div class="adm-grid adm-grid--full">
+      <section class="adm-section crm-dash-filters">
+        <app-dashboard-filters
+          scope="dashboard"
+          [showCurrency]="true"
+          (filtersChange)="onFiltersChange($event)"
+        ></app-dashboard-filters>
+      </section>
     </div>
-  </app-action-bar>
+  }
 
-  <div class="filters" [class.expanded]="isFiltersExpanded">
-    <app-dashboard-filters (filtersChange)="onFiltersChange($any($event))"></app-dashboard-filters>
-  </div>
-
-  <div *ngIf="error" class="error-message">
-    {{ error }}
-    <button class="btn-retry" (click)="loadDashboard()">Retry</button>
-  </div>
-
-  <div *ngIf="loading" class="loading-container">
-    <div class="spinner"></div>
-    <p>Loading dashboard...</p>
-  </div>
-
-  <div class="dashboard-content" *ngIf="!loading && !error">
-    <!-- Summary Cards -->
-    <div class="summary-cards">
-      <div class="summary-card">
-        <div class="card-icon orders">&#128230;</div>
-        <div class="card-content">
-          <div class="card-value">{{ formatNumber(totalOrdersInPipeline) }}</div>
-          <div class="card-label">Orders in Pipeline</div>
-        </div>
-      </div>
-      <div class="summary-card">
-        <div class="card-icon value">&#128176;</div>
-        <div class="card-content">
-          <div class="card-value">{{ formatCurrency(totalPipelineValue) }}</div>
-          <div class="card-label">Total Pipeline Value</div>
-        </div>
-      </div>
-      <div class="summary-card">
-        <div class="card-icon tasks">&#10003;</div>
-        <div class="card-content">
-          <div class="card-value">{{ formatNumber(totalActiveTasks) }}</div>
-          <div class="card-label">Active Tasks</div>
-        </div>
-      </div>
-      <div class="summary-card" [class.warning]="taskStats.total_overdue > 0">
-        <div class="card-icon overdue">&#9888;</div>
-        <div class="card-content">
-          <div class="card-value">{{ formatNumber(taskStats.total_overdue) }}</div>
-          <div class="card-label">Overdue Tasks</div>
-        </div>
+  @if (error) {
+    <div class="adm-grid adm-grid--full">
+      <div class="adm-error" role="alert">
+        {{ error }}
+        <button type="button" class="adm-btn adm-btn--mini" (click)="loadDashboard()">{{ 'common.retry' | translate }}</button>
       </div>
     </div>
+  }
 
-    <div class="dashboard-grid">
-      <!-- Pipeline Stats Section -->
-      <div class="dashboard-section pipeline-section">
-        <div class="section-header">
-          <h2>Pipeline Overview</h2>
-          <a routerLink="/admin/crm" class="btn-link">View Board &rarr;</a>
-        </div>
-        <div class="pipeline-chart" *ngIf="pipelineStats.length > 0">
-          <div class="pipeline-stage" *ngFor="let stage of pipelineStats">
-            <div class="stage-info">
-              <span class="stage-color" [style.background-color]="stage.stage_color"></span>
-              <span class="stage-name">{{ stage.stage_name }}</span>
-              <span class="stage-count">{{ stage.order_count }}</span>
-            </div>
-            <div class="stage-bar-container">
-              <div
-                class="stage-bar"
-                [style.width.%]="getBarWidth(stage.order_count)"
-                [style.background-color]="stage.stage_color"
-              ></div>
-            </div>
-            <div class="stage-meta">
-              <span class="stage-value">${{ formatCurrency(stage.total_value) }}</span>
-              <span class="stage-avg" *ngIf="stage.avg_days_in_stage > 0">
-                Avg: {{ formatAvgDays(stage.avg_days_in_stage) }}
-              </span>
-            </div>
+  @if (loading) {
+    <div class="adm-loading">{{ 'admin.crm.loadingDashboard' | translate }}</div>
+  }
+
+  @if (!loading && !error) {
+    <div class="adm-grid adm-grid--full">
+      <!-- The headline row. Money first: it is the largest fact the filters
+           produce, and the reason the period selector exists. Colour is spent
+           on one tile only — overdue, and only while there is something
+           overdue. -->
+      <div class="crm-kpis">
+        <div class="crm-kpi crm-kpi--wide">
+          <div class="crm-kpi__label">
+            <app-icon name="payments" size="sm"></app-icon>
+            {{ 'admin.crm.totalPipelineValue' | translate }}
+          </div>
+          <div class="crm-kpi__value">
+            {{ formatMoney(totalPipelineValue) }}
+            @if (currencyCode) {
+              <span class="crm-kpi__unit">{{ currencyCode }}</span>
+            }
           </div>
         </div>
-        <div class="empty-state" *ngIf="pipelineStats.length === 0">
-          <p>No pipeline data available</p>
+
+        <div class="crm-kpi">
+          <div class="crm-kpi__label">
+            <app-icon name="inventory_2" size="sm"></app-icon>
+            {{ 'admin.crm.ordersInPipeline' | translate }}
+          </div>
+          <div class="crm-kpi__value">{{ formatNumber(totalOrdersInPipeline) }}</div>
+        </div>
+
+        <div class="crm-kpi">
+          <div class="crm-kpi__label">
+            <app-icon name="check_circle" size="sm"></app-icon>
+            {{ 'admin.crm.activeTasks' | translate }}
+          </div>
+          <div class="crm-kpi__value">{{ formatNumber(totalActiveTasks) }}</div>
+        </div>
+
+        <div class="crm-kpi" [class.crm-kpi--alert]="taskStats.total_overdue > 0">
+          <div class="crm-kpi__label">
+            <app-icon name="warning" size="sm"></app-icon>
+            {{ 'admin.crm.overdueTasks' | translate }}
+          </div>
+          <div class="crm-kpi__value">{{ formatNumber(taskStats.total_overdue) }}</div>
         </div>
       </div>
 
-      <!-- Task Stats Section -->
-      <div class="dashboard-section task-section">
-        <div class="section-header">
-          <h2>Task Overview</h2>
-          <a routerLink="/admin/crm/my-tasks" class="btn-link">View Tasks &rarr;</a>
-        </div>
-        <div class="task-stats-grid">
-          <div class="task-stat">
-            <div class="stat-value pending">{{ taskStats.total_pending }}</div>
-            <div class="stat-label">Pending</div>
-          </div>
-          <div class="task-stat">
-            <div class="stat-value in-progress">{{ taskStats.total_in_progress }}</div>
-            <div class="stat-label">In Progress</div>
-          </div>
-          <div class="task-stat">
-            <div class="stat-value overdue" [class.highlight]="taskStats.total_overdue > 0">
-              {{ taskStats.total_overdue }}
+      <div class="crm-cols">
+        <!-- Pipeline: the tallest content and the page's subject, so it holds
+             the wide column on its own. -->
+        <section class="adm-section pipeline-section">
+          <header class="adm-section__head">
+            <div>
+              <h2 class="adm-section__title">{{ 'admin.crm.pipelineOverview' | translate }}</h2>
+              <p class="adm-section__sub">
+                {{ 'admin.crm.pipelineOverviewSub' | translate }}
+                @if (currencyCode) {
+                  · {{ 'admin.crm.amountsIn' | translate: { currency: currencyCode } }}
+                }
+              </p>
             </div>
-            <div class="stat-label">Overdue</div>
-          </div>
-          <div class="task-stat">
-            <div class="stat-value completed">{{ taskStats.completed_today }}</div>
-            <div class="stat-label">Completed Today</div>
-          </div>
-          <div class="task-stat full-width">
-            <div class="stat-value week">{{ taskStats.completed_week }}</div>
-            <div class="stat-label">Completed This Week</div>
-          </div>
-        </div>
-      </div>
+            <a routerLink="/admin/crm" class="adm-section__link">
+              {{ 'admin.crm.viewBoard' | translate }}
+              <app-icon name="arrow_forward" size="sm"></app-icon>
+            </a>
+          </header>
 
-      <!-- Team Workload Section -->
-      <div class="dashboard-section workload-section">
-        <div class="section-header">
-          <h2>Team Workload</h2>
-          <span class="section-badge">{{ totalTeamMembers }} members</span>
-        </div>
-        <div class="workload-list" *ngIf="workloadStats.length > 0">
-          <div class="workload-item" *ngFor="let user of workloadStats">
-            <div class="user-info">
-              <div class="user-avatar">{{ (user.user_name || '?').charAt(0) }}</div>
-              <div class="user-name">{{ user.user_name || 'Unknown' }}</div>
-            </div>
-            <div class="workload-bars">
-              <div class="workload-bar-container">
-                <div
-                  class="workload-bar orders"
-                  [style.width.%]="getWorkloadBarWidth(user)"
-                ></div>
+          @if (pipelineStats.length > 0) {
+            @if (activePipelineStats.length > 0) {
+              <div class="pipeline-chart">
+                @for (stage of activePipelineStats; track stage.stage_uid) {
+                  <div class="pipeline-stage">
+                    <div class="stage-info">
+                      <span class="stage-color" [style.background-color]="stage.stage_color" aria-hidden="true"></span>
+                      <span class="stage-name">{{ stage.stage_name }}</span>
+                      <span class="stage-count">{{ stage.order_count }}</span>
+                      <span class="stage-value">{{ formatMoney(stage.total_value) }}</span>
+                    </div>
+                    <div class="stage-bar-container">
+                      <div
+                        class="stage-bar"
+                        [style.width.%]="getBarWidth(stage)"
+                        [style.background-color]="stage.stage_color"
+                      ></div>
+                    </div>
+                    @if (stage.avg_days_in_stage > 0) {
+                      <div class="stage-meta">
+                        {{ 'admin.crm.avg' | translate }}: {{ formatAvgDays(stage.avg_days_in_stage) }}
+                      </div>
+                    }
+                  </div>
+                }
               </div>
-            </div>
-            <div class="workload-stats">
-              <span class="stat orders" title="Assigned orders">
-                <span class="icon">&#128230;</span> {{ user.assigned_orders }}
-              </span>
-              <span class="stat tasks" title="Pending tasks">
-                <span class="icon">&#10003;</span> {{ user.pending_tasks }}
-              </span>
-              <span class="stat overdue" *ngIf="user.overdue_tasks > 0" title="Overdue tasks">
-                <span class="icon">&#9888;</span> {{ user.overdue_tasks }}
-              </span>
-            </div>
-          </div>
-        </div>
-        <div class="empty-state" *ngIf="workloadStats.length === 0">
-          <p>No team workload data available</p>
-        </div>
-      </div>
+            }
 
-      <!-- Recent Activity Section -->
-      <div class="dashboard-section activity-section">
-        <div class="section-header">
-          <h2>Recent Activity</h2>
-        </div>
-        <div class="activity-list" *ngIf="recentActivity.length > 0">
-          <div class="activity-item" *ngFor="let activity of recentActivity">
-            <div class="activity-icon" [innerHTML]="getActivityIcon(activity.activity_type)"></div>
-            <div class="activity-content">
-              <div class="activity-description">{{ activity.content }}</div>
-              <div class="activity-meta">
-                <span class="activity-user" *ngIf="activity.user_name">
-                  {{ activity.user_name }}
-                </span>
-                <span class="activity-time">{{ formatActivityDate(activity.created_at) }}</span>
+            @if (finalPipelineStats.length > 0) {
+              <div class="final-stages">
+                <div class="final-stages-header">{{ 'admin.crm.finalStages' | translate }}</div>
+                <div class="final-stages-list">
+                  @for (stage of finalPipelineStats; track stage.stage_uid) {
+                    <div class="final-stage">
+                      <span class="stage-color" [style.background-color]="stage.stage_color" aria-hidden="true"></span>
+                      <span class="stage-name">{{ stage.stage_name }}</span>
+                      <span class="stage-count">{{ stage.order_count }}</span>
+                      <span class="stage-value">{{ formatMoney(stage.total_value) }}</span>
+                    </div>
+                  }
+                </div>
               </div>
-            </div>
-          </div>
-        </div>
-        <div class="empty-state" *ngIf="recentActivity.length === 0">
-          <p>No recent activity</p>
+            }
+          } @else {
+            <div class="empty-state">{{ 'admin.crm.noPipelineData' | translate }}</div>
+          }
+        </section>
+
+        <div class="crm-stack">
+          <!-- Tasks: five counts of the same thing. They read as a column, so
+               they are a column — the KPI row above already carries the two
+               that deserve a large numeral. -->
+          <section class="adm-section task-section">
+            <header class="adm-section__head">
+              <div>
+                <h2 class="adm-section__title">{{ 'admin.crm.taskOverview' | translate }}</h2>
+                <p class="adm-section__sub">{{ 'admin.crm.taskOverviewSub' | translate }}</p>
+              </div>
+              <a routerLink="/admin/crm/my-tasks" class="adm-section__link">
+                {{ 'admin.crm.viewTasks' | translate }}
+                <app-icon name="arrow_forward" size="sm"></app-icon>
+              </a>
+            </header>
+            <dl class="crm-stats">
+              <div class="crm-stat">
+                <dt>{{ 'common.pending' | translate }}</dt>
+                <dd>{{ formatNumber(taskStats.total_pending) }}</dd>
+              </div>
+              <div class="crm-stat">
+                <dt>{{ 'common.inProgress' | translate }}</dt>
+                <dd>{{ formatNumber(taskStats.total_in_progress) }}</dd>
+              </div>
+              <div class="crm-stat" [class.crm-stat--alert]="taskStats.total_overdue > 0">
+                <dt>{{ 'common.overdue' | translate }}</dt>
+                <dd>{{ formatNumber(taskStats.total_overdue) }}</dd>
+              </div>
+              <div class="crm-stat">
+                <dt>{{ 'admin.crm.completedToday' | translate }}</dt>
+                <dd>{{ formatNumber(taskStats.completed_today) }}</dd>
+              </div>
+              <div class="crm-stat">
+                <dt>{{ 'admin.crm.completedThisWeek' | translate }}</dt>
+                <dd>{{ formatNumber(taskStats.completed_week) }}</dd>
+              </div>
+            </dl>
+          </section>
+
+          <section class="adm-section workload-section">
+            <header class="adm-section__head">
+              <div>
+                <h2 class="adm-section__title">{{ 'admin.crm.teamWorkload' | translate }}</h2>
+                <p class="adm-section__sub">
+                  {{ totalTeamMembers }} {{ 'admin.crm.members' | translate }} · {{ 'admin.crm.teamWorkloadSub' | translate }}
+                </p>
+              </div>
+              <a routerLink="/admin/crm/workload" class="adm-section__link">
+                {{ 'admin.crm.workload' | translate }}
+                <app-icon name="arrow_forward" size="sm"></app-icon>
+              </a>
+            </header>
+            @if (workloadStats.length > 0) {
+              <div class="workload-list">
+                @for (user of workloadStats; track user.user_uid) {
+                  <div class="workload-item">
+                    <div class="user-info">
+                      <div class="user-avatar" aria-hidden="true">{{ (user.user_name || '?').charAt(0) }}</div>
+                      <div class="user-name">{{ user.user_name || ('admin.crm.unknown' | translate) }}</div>
+                    </div>
+                    <div class="workload-bar-container">
+                      <div class="workload-bar" [style.width.%]="getWorkloadBarWidth(user)"></div>
+                    </div>
+                    <div class="workload-stats">
+                      <span class="stat" [title]="'admin.crm.assignedOrders' | translate">
+                        <app-icon name="inventory_2" size="sm"></app-icon>{{ user.assigned_orders }}
+                      </span>
+                      <span class="stat" [title]="'admin.crm.pendingTasks' | translate">
+                        <app-icon name="check_circle" size="sm"></app-icon>{{ user.pending_tasks }}
+                      </span>
+                      @if (user.overdue_tasks > 0) {
+                        <span class="stat stat--alert" [title]="'admin.crm.overdueTasks' | translate">
+                          <app-icon name="warning" size="sm"></app-icon>{{ user.overdue_tasks }}
+                        </span>
+                      }
+                    </div>
+                  </div>
+                }
+              </div>
+            } @else {
+              <div class="empty-state">{{ 'admin.crm.noWorkloadData' | translate }}</div>
+            }
+          </section>
+
+          <section class="adm-section activity-section">
+            <header class="adm-section__head">
+              <div>
+                <h2 class="adm-section__title">{{ 'admin.crm.recentActivity' | translate }}</h2>
+                <p class="adm-section__sub">{{ 'admin.crm.recentActivitySub' | translate }}</p>
+              </div>
+            </header>
+            @if (recentActivity.length > 0) {
+              <div class="activity-list">
+                @for (activity of recentActivity; track activity.uid) {
+                  <div class="activity-item">
+                    <div class="activity-icon">
+                      <app-icon [name]="getActivityIcon(activity.activity_type)" size="sm"></app-icon>
+                    </div>
+                    <div class="activity-content">
+                      <div class="activity-description">{{ activity.content }}</div>
+                      <div class="activity-meta">
+                        @if (activity.user_name) {
+                          <span class="activity-user">{{ activity.user_name }}</span>
+                        }
+                        <span>{{ formatActivityDate(activity.created_at) }}</span>
+                      </div>
+                    </div>
+                  </div>
+                }
+              </div>
+            } @else {
+              <div class="empty-state">{{ 'admin.crm.noRecentActivity' | translate }}</div>
+            }
+          </section>
         </div>
       </div>
     </div>
-  </div>
+  }
 </div>

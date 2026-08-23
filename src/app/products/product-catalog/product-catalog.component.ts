@@ -6,7 +6,6 @@ import { ProductImageCacheService } from '../../core/services/product-image-cach
 import { Product } from '../../core/models/product.model';
 import { OrderItem, CartAddress, Order } from '../../core/models/order.model';
 import { Currency } from '../../core/models/currency.model';
-import { Client } from '../../core/models/user.model';
 import { TranslationService } from '../../core/services/translation.service';
 import { CurrencyService } from '../../core/services/currency.service';
 import { AuthService } from '../../core/services/auth.service';
@@ -27,6 +26,7 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
   products: Product[] = [];
   filteredProducts: Product[] = [];
   loading = false;
+  loadError = false;
   searchQuery = '';
   cartItems: OrderItem[] = [];
 
@@ -42,12 +42,10 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
   selectedCategory: string = '';
 
   // Pagination
-  readonly pageSize = 100;
+  readonly pageSize = 50;
   currentPage = 1;
   totalProducts = 0;
   totalPages = 0;
-  hasMoreProducts = false;
-  loadingMore = false;
 
   // Description expansion tracking
   expandedDescriptions: Set<string> = new Set();
@@ -75,13 +73,21 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
   currentAddress: CartAddress | null = null;
   selectedAddressUid: string | undefined;
 
+  // Whether to show numeric stock quantity to clients
+  showQuantity: boolean = true;
+
+  // Staff (admin/manager) users browse the catalog in read-only preview mode:
+  // prices come from the user's assigned store/price type and all cart
+  // controls are hidden.
+  isPreviewMode = false;
+
+  // Set when a staff user has no store or price type assigned, so the
+  // backend cannot resolve a catalog context for them.
+  previewConfigMissing = false;
+
   // Scroll to top button visibility
   showScrollToTop: boolean = false;
   private scrollThreshold: number = 300;
-
-  // Floating "Show more" button visibility (shows when near bottom)
-  showFloatingShowMore: boolean = false;
-  private bottomThreshold: number = 200; // pixels from bottom to trigger
 
   // Search debouncing
   private searchSubject = new Subject<string>();
@@ -106,6 +112,18 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    // Staff users get a read-only preview of the client catalog
+    this.isPreviewMode = this.authService.entityTypeValue === 'user';
+
+    if (this.isPreviewMode) {
+      // App settings are cached in localStorage and only refreshed at login,
+      // so a store/price type assigned mid-session would wrongly show the
+      // "configuration missing" banner. Refresh them when entering preview.
+      this.appSettingsService.loadSettings().subscribe({
+        error: () => { /* banner falls back to cached settings */ }
+      });
+    }
+
     // Load categories for filter dropdown
     this.loadCategories();
 
@@ -174,6 +192,9 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
             this.currencyName = settings.currency.name;
           }
 
+          // Set show_quantity from store settings
+          this.showQuantity = settings.store?.show_quantity ?? true;
+
           // Set discount and VAT rate for clients
           if (settings.entity_type === 'client') {
             // Use effective VAT rate from AppSettings (already calculated by backend)
@@ -191,6 +212,10 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
           } else {
             this.currentDiscount = 0;
             this.currentVatRate = 0;
+            // Staff preview needs a store + price type on the user account;
+            // without them the backend rejects catalog requests.
+            this.previewConfigMissing = this.isPreviewMode &&
+              (!settings.store || !settings.price_type);
           }
         } else {
           // No settings available
@@ -239,21 +264,6 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
   @HostListener('window:scroll', [])
   onWindowScroll(): void {
     this.showScrollToTop = window.scrollY > this.scrollThreshold;
-
-    // Check if near bottom of page to show floating "Show more" button (mobile only)
-    // On desktop, button is always visible when there's more data
-    const isMobile = window.innerWidth <= 768;
-
-    if (isMobile) {
-      const scrollTop = window.scrollY;
-      const windowHeight = window.innerHeight;
-      const documentHeight = document.documentElement.scrollHeight;
-      const distanceFromBottom = documentHeight - (scrollTop + windowHeight);
-      this.showFloatingShowMore = this.hasMoreProducts && distanceFromBottom < this.bottomThreshold;
-    } else {
-      // Desktop: always show if there's more products
-      this.showFloatingShowMore = this.hasMoreProducts;
-    }
   }
 
   scrollToTop(): void {
@@ -266,7 +276,8 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
   loadCategories(): void {
     this.productService.getFrontendCategories().subscribe({
       next: (categories) => {
-        this.allCategories = categories.sort((a, b) => a.name.localeCompare(b.name));
+        // Already sorted by ProductService, which is where the ordering rule lives.
+        this.allCategories = categories;
         this.cdr.markForCheck();
       },
       error: (error) => {
@@ -276,11 +287,14 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Load products with pagination (resets to first page)
+   * Load a single page of products, replacing (not appending) the current set
+   * so the DOM stays bounded to one page. Defaults to page 1 — every filter/
+   * search/language change calls it with no argument to reset to the first page.
    */
-  loadProducts(): void {
+  loadProducts(page: number = 1): void {
     this.loading = true;
-    this.currentPage = 1;
+    this.loadError = false;
+    this.currentPage = page;
     this.products = [];
     this.cdr.markForCheck();
 
@@ -296,25 +310,20 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
     const orderTotal = currentOrder?.originalTotalWithVat || currentOrder?.totalAmount || 0;
     const orderTotalCents = orderTotal > 0 ? Math.round(orderTotal * 100) : undefined;
 
-    this.productService.getFrontendProductsPaginated(0, this.pageSize, category, search, orderTotalCents).subscribe({
+    const offset = (page - 1) * this.pageSize;
+    this.productService.getFrontendProductsPaginated(offset, this.pageSize, category, search, orderTotalCents).subscribe({
       next: (response) => {
         this.products = this.sortProductsByCategoryAndName(response.products);
         this.totalProducts = response.pagination.total;
         this.totalPages = response.pagination.totalPages;
-        this.hasMoreProducts = response.pagination.hasMore;
         this.currentPage = response.pagination.page;
 
-        // Filter to show only available products in bulk view
-        this.filteredProducts = this.products.filter(p => p.inStock);
+        // Backend already restricts the list to products visible to this client
+        // (priced for client's price type and in stock at client's store), so we
+        // display whatever the backend returned without further filtering.
+        this.filteredProducts = this.products;
         this.groupProductsByCategory(this.filteredProducts);
         this.loading = false;
-
-        // On desktop, show "Show more" button immediately if there's more data
-        const isMobile = window.innerWidth <= 768;
-        if (!isMobile) {
-          this.showFloatingShowMore = this.hasMoreProducts;
-        }
-
         this.cdr.markForCheck();
 
         // Set first product as selected by default in bulk view
@@ -328,63 +337,23 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
       error: (error) => {
         console.error('Error loading products:', error);
         this.loading = false;
+        this.loadError = true;
         this.cdr.markForCheck();
       }
     });
   }
 
   /**
-   * Load more products (next page)
+   * Navigate to a specific page. Replaces the rendered set (server-side
+   * pagination) so the DOM never grows past one page, and scrolls back to the
+   * top so the user starts at the beginning of the new page.
    */
-  loadMoreProducts(): void {
-    if (this.loadingMore || !this.hasMoreProducts) {
+  goToPage(page: number): void {
+    if (page === this.currentPage || page < 1 || (this.totalPages > 0 && page > this.totalPages)) {
       return;
     }
-
-    this.loadingMore = true;
-    this.cdr.markForCheck();
-
-    const offset = this.currentPage * this.pageSize;
-    const category = this.selectedCategory || undefined;
-    const search = this.searchQuery.trim() || undefined;
-
-    // Get current order total for accurate discount calculation
-    // Use GROSS (with VAT) for consistency with loadProducts()
-    const currentOrder = this.orderService.currentDraftOrderValue;
-    const orderTotal = currentOrder?.originalTotalWithVat || currentOrder?.totalAmount || 0;
-    const orderTotalCents = orderTotal > 0 ? Math.round(orderTotal * 100) : undefined;
-
-    this.productService.getFrontendProductsPaginated(offset, this.pageSize, category, search, orderTotalCents).subscribe({
-      next: (response) => {
-        // Append new products to existing list
-        const newProducts = this.sortProductsByCategoryAndName(response.products);
-        this.products = [...this.products, ...newProducts];
-        this.totalProducts = response.pagination.total;
-        this.totalPages = response.pagination.totalPages;
-        this.hasMoreProducts = response.pagination.hasMore;
-        this.currentPage = response.pagination.page;
-
-        // Re-apply filters
-        this.filteredProducts = this.products.filter(p => p.inStock);
-        this.groupProductsByCategory(this.filteredProducts);
-        this.loadingMore = false;
-
-        // Hide floating button if no more products
-        if (!this.hasMoreProducts) {
-          this.showFloatingShowMore = false;
-        }
-
-        this.cdr.markForCheck();
-
-        // Load product images for new products
-        this.loadProductImages(newProducts);
-      },
-      error: (error) => {
-        console.error('Error loading more products:', error);
-        this.loadingMore = false;
-        this.cdr.markForCheck();
-      }
-    });
+    this.loadProducts(page);
+    this.scrollToTop();
   }
 
   /**
@@ -404,31 +373,11 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
     }
   }
 
+  // Backend orders products by (min tag sort_order, then product sort_order),
+  // with untagged products last. The frontend trusts that order — re-sorting
+  // here would collapse tag identity to a boolean and break tag priority.
   sortProductsByCategoryAndName(products: Product[]): Product[] {
-    return products.sort((a, b) => {
-      // First sort by category
-      // const categoryCompare = a.category.localeCompare(b.category);
-      // if (categoryCompare !== 0) {
-      //   return categoryCompare;
-      // }
-
-      // Within same category: sort by isNew first (new products first)
-      const aIsNew = a.isNew ? 1 : 0;
-      const bIsNew = b.isNew ? 1 : 0;
-      if (aIsNew !== bIsNew) {
-        return bIsNew - aIsNew; // New products first
-      }
-
-      // Then sort by sortOrder (lower numbers first)
-      const aSortOrder = a.sortOrder ?? 999999;
-      const bSortOrder = b.sortOrder ?? 999999;
-      if (aSortOrder !== bSortOrder) {
-        return aSortOrder - bSortOrder;
-      }
-
-      // Finally sort by name
-      return a.name.localeCompare(b.name);
-    });
+    return products;
   }
 
   groupProductsByCategory(products: Product[]): void {
@@ -463,18 +412,17 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
   }
 
   applyFilters(): void {
-    let filtered = [...this.products];
-
-    // Filter to show only available products in bulk view
-    if (this.viewMode === 'bulk') {
-      filtered = filtered.filter(p => p.inStock);
-    }
-
-    this.filteredProducts = this.sortProductsByCategoryAndName(filtered);
+    // Backend is the single source of truth for what's shown in the catalog.
+    this.filteredProducts = this.sortProductsByCategoryAndName([...this.products]);
     this.groupProductsByCategory(this.filteredProducts);
   }
 
   addToCart(product: Product): void {
+    // Read-only preview for staff: never touch the cart
+    if (this.isPreviewMode) {
+      return;
+    }
+
     // No stock validation here - validation happens only on order confirmation
     const orderItem: OrderItem = {
       productId: product.id,
@@ -485,27 +433,32 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
       sortOrder: product.sortOrder
     };
 
-    // Add to local cart
+    // Add to local cart for an immediate response, then let the server's merged
+    // cart replace it.
     this.orderService.addToCart(orderItem);
 
-    // Save to backend - backend calculates discount/VAT and updates local cart
-    // Pass current address UID if available
-    this.orderService.saveDraftCart(this.selectedAddressUid).subscribe({
+    // A line change, not a whole-cart save: if this account is also adding
+    // products in another session, both survive.
+    this.orderService.changeCartItem(product.id, 'increment', 1, this.selectedAddressUid).subscribe({
       next: () => {
         // Cart updated with backend calculations
       },
       error: (err) => {
-        console.error('Failed to save cart:', err);
+        console.error('Failed to add to cart:', err);
       }
     });
   }
 
   removeFromCart(productId: string): void {
+    // Read-only preview for staff: never touch the cart
+    if (this.isPreviewMode) {
+      return;
+    }
+
     // Remove from local state
     this.orderService.removeFromCart(productId);
 
-    // Persist to backend - sends complete cart state
-    this.orderService.saveDraftCart(this.selectedAddressUid).subscribe({
+    this.orderService.changeCartItem(productId, 'remove', 0, this.selectedAddressUid).subscribe({
       next: () => {
         // Cart updated with backend calculations
       },
@@ -516,6 +469,11 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
   }
 
   updateQuantity(productId: string, quantity: number): void {
+    // Read-only preview for staff: never touch the cart
+    if (this.isPreviewMode) {
+      return;
+    }
+
     if (quantity <= 0) {
       this.removeFromCart(productId);
       return;
@@ -524,8 +482,8 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
     // No stock validation here - validation happens only on order confirmation
     this.orderService.updateCartItemQuantity(productId, quantity);
 
-    // Persist to backend - sends complete cart state
-    this.orderService.saveDraftCart(this.selectedAddressUid).subscribe({
+    // 'set', not 'increment': the user typed an absolute quantity for this line.
+    this.orderService.changeCartItem(productId, 'set', quantity, this.selectedAddressUid).subscribe({
       next: () => {
         // Cart updated with backend calculations
       },
@@ -566,7 +524,8 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
   }
 
   setBulkQuantity(product: Product, quantity: number): void {
-    this.updateQuantityAndCart(product.id, product, quantity);
+    // Bound to the input event, so this arrives once per digit: let it settle.
+    this.updateQuantityAndCart(product.id, product, quantity, true);
   }
 
   isInCart(productId: string): boolean {
@@ -712,7 +671,12 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
     /**
      * Update quantity and automatically update cart (for mobile view)
      */
-    updateQuantityAndCart(productId: string, product: Product, quantity: number): void {
+    updateQuantityAndCart(productId: string, product: Product, quantity: number, settle = false): void {
+        // Read-only preview for staff: never touch the cart
+        if (this.isPreviewMode) {
+            return;
+        }
+
         // Cap quantity at available stock
         const maxQty = product.availableQuantity ?? 0;
         const cappedQuantity = Math.min(quantity, maxQty);
@@ -742,9 +706,9 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
                 this.orderService.addToCart(orderItem);
             }
 
-            // Save to backend - backend calculates discount/VAT
-            // Pass current address UID if available
-            this.orderService.saveDraftCart(this.selectedAddressUid).subscribe({
+            // One line, absolute quantity: merged into the current cart rather than
+            // replacing it, so another session's products are not dropped.
+            this.orderService.changeCartItem(productId, 'set', cappedQuantity, this.selectedAddressUid, undefined, settle).subscribe({
                 next: () => {
                     // Cart updated with backend calculations
                 },
@@ -760,7 +724,8 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
      */
     onMobileQuantityChange(productId: string, product: Product, value: number): void {
         const quantity = Math.max(0, value || 0);
-        this.updateQuantityAndCart(productId, product, quantity);
+        // Also an input-event binding: one call per digit typed.
+        this.updateQuantityAndCart(productId, product, quantity, true);
     }
 
     /**
@@ -854,6 +819,18 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
    */
   hasDiscount(): boolean {
     return this.currentDiscount > 0;
+  }
+
+  /**
+   * Get the VAT rate that applies to the displayed price.
+   * Prefers the product's own rate (from the frontend endpoint),
+   * falling back to the client's effective rate from settings.
+   */
+  getVatRate(product: Product): number {
+    if (product.vatRate !== undefined) {
+      return product.vatRate;
+    }
+    return this.currentVatRate;
   }
 
   /**

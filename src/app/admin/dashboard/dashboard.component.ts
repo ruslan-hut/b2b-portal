@@ -1,6 +1,7 @@
 import { Component, OnInit, OnDestroy, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
 import { Subscription } from 'rxjs';
 import { AdminService, DashboardStats, DiscountScale } from '../../core/services/admin.service';
+import { AuthService } from '../../core/services/auth.service';
 import { PageTitleService } from '../../core/services/page-title.service';
 
 interface Store {
@@ -25,17 +26,25 @@ export class DashboardComponent implements OnInit, OnDestroy {
   stores: Store[] = [];
   selectedStoreUID: string | null = null;
   loadingStores = false;
+  // True when a store-scoped manager is logged in: store filter is locked.
+  storeLocked = false;
   discountScales: DiscountScale[] = [];
   loadingDiscountScales = false;
 
   constructor(
     private adminService: AdminService,
+    private authService: AuthService,
     private cdr: ChangeDetectorRef,
     private pageTitleService: PageTitleService
   ) {}
 
   ngOnInit(): void {
     this.pageTitleService.setTitle('Dashboard');
+    // Store-scoped managers are locked to their own store.
+    this.storeLocked = this.authService.isStoreScopedManager();
+    if (this.storeLocked) {
+      this.selectedStoreUID = this.authService.scopedStoreUid;
+    }
     this.loadStores();
     this.loadDashboardStats();
   }
@@ -151,5 +160,14 @@ export class DashboardComponent implements OnInit, OnDestroy {
     }
     return Object.values(this.stats.orders_by_status).reduce((sum, count) => sum + count, 0);
   }
+
+  getProductStatusCount(status: string): number {
+    return this.stats?.products_by_status[status] || 0;
+  }
+
+  displayValue(value: number): string {
+    return value === 0 ? '-' : String(value);
+  }
+
 }
 

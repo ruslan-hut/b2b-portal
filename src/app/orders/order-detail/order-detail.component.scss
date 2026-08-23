@@ -1,98 +1,107 @@
+/* Every amount on this page is rendered by money()/moneyWithCurrency(), so the
+   figures already share one format; tabular numerals make them share one width
+   too and the mobile totals stack up on their decimals. */
+.collapsed-total,
+.detail-value,
+.total-value {
+  font-variant-numeric: tabular-nums;
+}
+
 .order-detail-container {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 40px 20px;
+  padding: var(--spacing-md) var(--spacing-lg);
 
   .detail-header {
     display: flex;
     flex-direction: column;
-    gap: 12px;
-    margin-bottom: 30px;
+    margin-bottom: var(--spacing-md);
 
     .header-actions {
       display: flex;
-      align-items: center;
+      align-items: stretch;
       justify-content: space-between;
-      gap: 12px;
+      min-height: 40px;
     }
 
     .btn-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
       padding: 8px 16px;
-      border: 2px solid var(--color-border);
-      background: var(--card-bg);
-      border-radius: var(--radius-md);
+      border: none;
+      background: transparent;
       cursor: pointer;
+      font-family: var(--font-body);
       font-size: 14px;
-      font-weight: 600;
-      color: var(--color-text-primary);
-      transition: all 0.3s ease;
+      font-weight: var(--font-weight-medium);
+      color: var(--color-text-secondary);
+      transition: color 0.15s ease;
 
       &:hover {
-        background-color: var(--color-background-secondary);
-        border-color: var(--color-border-hover);
+        color: var(--color-primary);
       }
     }
 
     .btn-export {
-      display: flex;
+      display: inline-flex;
       align-items: center;
       gap: 6px;
-      padding: 8px 12px;
-      border: 1px solid var(--color-primary);
-      background: var(--card-bg);
-      color: var(--color-primary);
-      border-radius: var(--radius-md);
+      padding: 8px 16px;
+      border: none;
+      background: transparent;
+      color: var(--color-text-secondary);
       cursor: pointer;
-      font-size: 13px;
-      font-weight: 600;
-      transition: all 0.2s ease;
+      font-family: var(--font-body);
+      font-size: 14px;
+      font-weight: var(--font-weight-medium);
+      transition: color 0.15s ease;
 
-      .material-icons {
+      app-icon {
         font-size: 18px;
+        line-height: 1;
       }
 
       &:hover {
-        background: var(--color-primary);
-        color: var(--color-text-inverse);
-      }
-
-      &:active {
-        background: var(--color-primary-dark);
+        color: var(--color-primary);
       }
     }
   }
 
   .section {
     background: var(--card-bg);
-    border-radius: var(--radius-lg);
-    padding: 24px;
-    margin-bottom: 20px;
-    box-shadow: var(--shadow-md);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+    box-shadow: var(--shadow-sm);
 
     h3 {
       margin-top: 0;
-      margin-bottom: 16px;
-      font-size: 20px;
-      font-weight: 700;
-      color: var(--color-text-primary);
+      margin-bottom: var(--spacing-sm-md);
+      font-size: 12px;
+      font-weight: var(--font-weight-semibold);
+      color: var(--color-text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
   }
 
   // Combined order details card (desktop only)
   .order-details-combined {
     background: var(--card-bg);
-    border-radius: var(--radius-lg);
-    padding: 24px;
-    margin-bottom: 20px;
-    box-shadow: var(--shadow-md);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+    box-shadow: var(--shadow-sm);
 
     // Subsections within the combined card
     .order-info-subsection,
+    .billing-info-subsection,
     .delivery-info-subsection,
     .items-subsection,
     .totals-subsection {
-      padding-bottom: 24px;
-      margin-bottom: 24px;
+      padding-bottom: var(--spacing-md);
+      margin-bottom: var(--spacing-md);
       border-bottom: 1px solid var(--color-border-light);
 
       &:last-child {
@@ -103,10 +112,12 @@
 
       h3 {
         margin-top: 0;
-        margin-bottom: 16px;
-        font-size: 20px;
-        font-weight: 700;
-        color: var(--color-text-primary);
+        margin-bottom: var(--spacing-sm-md);
+        font-size: 12px;
+        font-weight: var(--font-weight-semibold);
+        color: var(--color-text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
       }
     }
 
@@ -121,7 +132,7 @@
   .info-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    gap: 16px;
+    gap: var(--spacing-md);
 
     div {
       font-size: 14px;
@@ -132,20 +143,27 @@
         color: var(--color-text-secondary);
         margin-right: 8px;
       }
+
+      /* A field the branch record simply doesn't carry — stated, not blank, so
+         it reads as "no VAT number" rather than as a failed lookup. */
+      .value-missing {
+        color: var(--color-text-muted);
+        font-style: italic;
+      }
     }
   }
 
   .items-table {
     width: 100%;
     border-collapse: collapse;
-    margin-top: 16px;
+    margin-top: var(--spacing-md);
 
     thead {
       background: var(--table-header-bg);
       color: var(--table-header-text);
 
       th {
-        padding: 12px;
+        padding: var(--spacing-md-sm);
         text-align: left;
         font-weight: 600;
         font-size: 14px;
@@ -162,10 +180,19 @@
       }
 
       td {
-        padding: 12px;
+        padding: var(--spacing-md-sm);
         font-size: 14px;
         color: var(--color-text-primary);
       }
+    }
+
+    /* Money and counts: right-aligned with tabular figures, so a column of
+       amounts lines up on its decimals and reads as comparable numbers. */
+    th.num,
+    td.num {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
     }
 
     .no-data {
@@ -179,60 +206,22 @@
   .status-badge {
     display: inline-block;
     padding: 6px 12px;
-    border-radius: 20px;
+    border-radius: var(--radius-2xl);
     font-size: 12px;
     font-weight: 600;
     text-transform: uppercase;
     vertical-align: middle;
     margin-left: 4px;
 
-    &.status-draft {
-      background-color: var(--status-draft-bg);
-      color: var(--status-draft-text);
-    }
+    // Client phases. There are only six, and they are fixed — unlike the CRM
+    // stage names this badge used to carry.
+    &.phase-placed     { background-color: var(--phase-placed-bg);     color: var(--phase-placed-text); }
+    &.phase-confirmed  { background-color: var(--phase-confirmed-bg);  color: var(--phase-confirmed-text); }
+    &.phase-processing { background-color: var(--phase-processing-bg); color: var(--phase-processing-text); }
+    &.phase-shipped    { background-color: var(--phase-shipped-bg);    color: var(--phase-shipped-text); }
+    &.phase-delivered  { background-color: var(--phase-delivered-bg);  color: var(--phase-delivered-text); }
+    &.phase-cancelled  { background-color: var(--phase-cancelled-bg);  color: var(--phase-cancelled-text); }
 
-    &.status-new {
-      background-color: var(--status-new-bg);
-      color: var(--status-new-text);
-    }
-
-    &.status-processing {
-      background-color: var(--status-processing-bg);
-      color: var(--status-processing-text);
-    }
-
-    &.status-confirmed {
-      background-color: var(--status-confirmed-bg);
-      color: var(--status-confirmed-text);
-    }
-
-    &.status-cancelled {
-      background-color: var(--status-cancelled-bg);
-      color: var(--status-cancelled-text);
-    }
-
-    // Custom CRM stage styles
-    &.status-custom-default {
-      background-color: var(--status-custom-default-bg);
-      color: var(--status-custom-default-text);
-    }
-
-    &.status-custom-processing {
-      background-color: var(--status-custom-processing-bg);
-      color: var(--status-custom-processing-text);
-    }
-
-    &.status-custom-confirmed {
-      background-color: var(--status-custom-confirmed-bg);
-      color: var(--status-custom-confirmed-text);
-    }
-
-    &.status-custom-cancelled {
-      background-color: var(--status-custom-cancelled-bg);
-      color: var(--status-custom-cancelled-text);
-    }
-
-    // Handle long custom stage names
     max-width: 100%;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -243,11 +232,153 @@
     }
   }
 
+  /* Progress track: five fixed phases laid out as equal columns, with the
+     connector drawn between adjacent dots rather than as one bar behind them,
+     so the filled portion always ends exactly at the current dot. */
+  .progress-track {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 1fr;
+    list-style: none;
+    margin: 0;
+    padding: var(--spacing-sm) 0 0;
+  }
+
+  .progress-step {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 4px;
+    /* Grid items default to min-width:auto, which lets a long label push its
+       column wider than 1fr and shove the dots out of step with the words
+       underneath. Ukrainian ("Комплектується") does this at any width. */
+    min-width: 0;
+    padding-inline: var(--spacing-xs);
+
+    &__dot {
+      position: relative;
+      z-index: 1;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--color-border);
+      transition: background-color 0.15s ease;
+    }
+
+    /* Connector to the previous dot. Owned by the right-hand step so it fills
+       only once that step is reached. */
+    &:not(:first-child)::before {
+      content: '';
+      position: absolute;
+      top: 6px;
+      right: 50%;
+      left: -50%;
+      height: 2px;
+      background: var(--color-border);
+    }
+
+    &.is-reached {
+      .progress-step__dot { background: var(--color-primary); }
+      &::before { background: var(--color-primary); }
+
+      .progress-step__label { color: var(--color-text-primary); }
+    }
+
+    &.is-current .progress-step__label {
+      color: var(--color-primary);
+      font-weight: var(--font-weight-semibold);
+    }
+
+    &__label {
+      font-size: 12px;
+      color: var(--color-text-muted);
+      line-height: 1.3;
+      overflow-wrap: anywhere;
+    }
+
+    &__date {
+      font-size: 11px;
+      color: var(--color-text-muted);
+      font-variant-numeric: tabular-nums;
+    }
+  }
+
+  /* Five labels will not fit across a phone, and the longest of them is a single
+     unbreakable word, so the track turns on its side rather than compressing:
+     the dot column runs down the left and each phase gets a full-width line. */
+  @media (max-width: 560px) {
+    .progress-track {
+      grid-auto-flow: row;
+      grid-auto-columns: auto;
+      padding-top: var(--spacing-xs);
+    }
+
+    .progress-step {
+      display: grid;
+      grid-template-columns: 14px 1fr auto;
+      align-items: center;
+      column-gap: var(--spacing-sm);
+      text-align: left;
+      padding: 6px var(--spacing-xs);
+
+      /* Runs from the previous dot's centre to this one's, so the filled part of
+         the line still stops exactly at the current phase. */
+      &:not(:first-child)::before {
+        top: -50%;
+        bottom: 50%;
+        left: calc(var(--spacing-xs) + 6px);
+        right: auto;
+        width: 2px;
+        height: auto;
+      }
+
+      &__label {
+        font-size: 13px;
+      }
+    }
+  }
+
+  /* Base definition; the mobile block below only tightens the spacing. Was
+     previously mobile-only, when the only user was the mobile history cards. */
+  .no-data-card {
+    text-align: center;
+    padding: 24px 12px;
+    color: var(--color-text-muted);
+    font-style: italic;
+    background: var(--color-background-secondary);
+    border-radius: var(--radius-md);
+    font-size: 13px;
+  }
+
+  .progress-cancelled {
+    display: flex;
+    align-items: baseline;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm) var(--spacing-md-sm);
+    border-left: 3px solid var(--color-danger);
+    border-radius: var(--radius-md);
+    background: var(--color-danger-light);
+
+    &__label {
+      font-size: 14px;
+      font-weight: var(--font-weight-medium);
+      color: var(--color-danger);
+    }
+
+    &__date {
+      font-size: 12px;
+      color: var(--color-text-secondary);
+      font-variant-numeric: tabular-nums;
+    }
+  }
+
   .loading, .error {
-    padding: 20px;
+    padding: var(--spacing-md-lg);
     background: var(--card-bg);
     border-radius: var(--radius-lg);
-    margin-bottom: 20px;
+    margin-bottom: var(--spacing-md-lg);
     text-align: center;
     font-size: 16px;
   }
@@ -300,8 +431,8 @@
 
     .final-total-row {
       border-top: 2px solid var(--table-header-bg);
-      margin-top: 8px;
-      padding-top: 12px;
+      margin-top: var(--spacing-sm);
+      padding-top: var(--spacing-md-sm);
 
       .total-label {
         font-weight: 600;
@@ -323,14 +454,12 @@
 }
 
 // Mobile card layouts - hidden by default
-.items-cards-mobile,
-.history-cards-mobile {
+.items-cards-mobile {
   display: none;
 }
 
 // Desktop tables - shown by default
-.items-table-desktop,
-.history-table-desktop {
+.items-table-desktop {
   display: table;
 }
 
@@ -339,40 +468,28 @@
     padding: 16px 12px;
 
     .detail-header {
-      gap: 8px;
-      margin-bottom: 12px;
-
-      .header-actions {
-        gap: 8px;
-      }
+      margin-bottom: var(--spacing-sm);
 
       .btn-back {
-        flex: 1;
-        min-height: 44px;
-        padding: 8px 14px;
+        padding: 8px 12px;
         font-size: 13px;
       }
 
       .btn-export {
-        min-height: 44px;
         padding: 8px 12px;
-        font-size: 12px;
+        font-size: 13px;
 
-        .material-icons {
-          font-size: 16px;
+        .btn-export-text {
+          display: none;
         }
       }
     }
 
     .section {
-      padding: 12px;
+      padding: var(--spacing-md-sm);
       margin-bottom: 10px;
       border-radius: var(--radius-md);
 
-      h3 {
-        font-size: 15px;
-        margin-bottom: 10px;
-      }
     }
 
     // On mobile, break up the combined card into separate sections
@@ -383,20 +500,16 @@
       box-shadow: none;
 
       .order-info-subsection,
+      .billing-info-subsection,
       .delivery-info-subsection,
       .items-subsection,
       .totals-subsection {
         background: var(--card-bg);
         border-radius: var(--radius-md);
-        padding: 12px;
-        margin-bottom: 10px;
-        box-shadow: var(--shadow-md);
+        padding: var(--spacing-md-sm);
+        margin-bottom: var(--spacing-sm);
+        box-shadow: var(--shadow-sm);
         border-bottom: none;
-
-        h3 {
-          font-size: 15px;
-          margin-bottom: 10px;
-        }
       }
 
       .totals-subsection {
@@ -430,18 +543,16 @@
     }
 
     // Hide desktop tables
-    .items-table-desktop,
-    .history-table-desktop {
+    .items-table-desktop {
       display: none;
     }
 
     // Show mobile cards
-    .items-cards-mobile,
-    .history-cards-mobile {
+    .items-cards-mobile {
       display: flex;
       flex-direction: column;
-      gap: 6px;
-      margin-top: 8px;
+      gap: var(--spacing-xs);
+      margin-top: var(--spacing-sm);
     }
 
     // Order item cards - collapsible
@@ -466,8 +577,8 @@
       .item-card-collapsed {
         display: flex;
         align-items: center;
-        padding: 8px 12px;
-        gap: 8px;
+        padding: var(--spacing-sm) var(--spacing-md-sm);
+        gap: var(--spacing-sm);
 
         .collapsed-main {
           flex: 1;
@@ -528,7 +639,7 @@
 
       // Expanded details
       .item-card-expanded {
-        padding: 8px 12px;
+        padding: var(--spacing-sm) var(--spacing-md-sm);
         background: var(--color-background-secondary);
         border-top: 1px solid var(--color-border);
 
@@ -564,56 +675,14 @@
         .discount-row {
           background: var(--color-success-light);
           margin: 2px -12px;
-          padding: 4px 12px;
+          padding: var(--spacing-xs) var(--spacing-md-sm);
         }
 
         .total-row {
           border-top: 1px solid var(--color-border);
           margin-top: 6px;
-          padding-top: 8px;
+          padding-top: var(--spacing-sm);
         }
-      }
-    }
-
-    // History cards - compact
-    .history-card {
-      background: var(--card-bg);
-      border-radius: var(--radius-md);
-      padding: 8px 12px;
-      border: 1px solid var(--color-border);
-      border-left: 3px solid var(--color-primary);
-
-      .history-card-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 6px;
-
-        .history-date {
-          font-size: 12px;
-          color: var(--color-text-secondary);
-          font-weight: 500;
-        }
-
-        .status-badge {
-          font-size: 10px;
-          padding: 3px 8px;
-        }
-      }
-
-      .history-user {
-        font-size: 13px;
-        font-weight: 500;
-        color: var(--color-text-primary);
-        margin-bottom: 4px;
-      }
-
-      .history-comment {
-        font-size: 12px;
-        color: var(--color-text-secondary);
-        line-height: 1.4;
-        padding-top: 6px;
-        border-top: 1px solid var(--color-border-light);
       }
     }
 
@@ -633,9 +702,9 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 6px;
+      gap: var(--spacing-xs);
       width: 100%;
-      padding: 12px 16px;
+      padding: var(--spacing-md-sm) var(--spacing-md);
       margin-top: 6px;
       background: var(--color-background-secondary);
       border: 1px dashed var(--color-primary);
@@ -644,10 +713,10 @@
       font-size: 14px;
       font-weight: 600;
       cursor: pointer;
-      min-height: 44px;
+      min-height: 48px;
       transition: all 0.2s ease;
 
-      .material-icons {
+      app-icon {
         font-size: 20px;
       }
 
@@ -693,7 +762,7 @@
     // Status badge mobile size
     .status-badge {
       font-size: 10px;
-      padding: 4px 8px;
+      padding: var(--spacing-xs) var(--spacing-sm);
     }
   }
 }
@@ -704,7 +773,7 @@
     padding: 12px 10px;
 
     .section {
-      padding: 8px;
+      padding: var(--spacing-sm);
     }
 
     .item-card {
@@ -748,23 +817,6 @@
       }
     }
 
-    .history-card {
-      padding: 8px 10px;
-
-      .history-card-header {
-        .history-date {
-          font-size: 11px;
-        }
-      }
-
-      .history-user {
-        font-size: 12px;
-      }
-
-      .history-comment {
-        font-size: 11px;
-      }
-    }
   }
 }
 

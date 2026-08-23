@@ -7,12 +7,12 @@ const routes: Routes = [
   {
     path: 'history',
     component: OrderHistoryComponent,
-    data: { title: 'Order History' }
+    data: { title: 'orders.title' }
   },
   {
     path: 'detail/:id',
     component: OrderDetailComponent,
-    data: { title: 'Order Details' }
+    data: { title: 'orders.orderDetails' }
   },
   {
     path: '',

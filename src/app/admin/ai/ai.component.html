@@ -1,0 +1,293 @@
+<div class="adm-page">
+
+  <header class="adm-bar">
+    <div class="adm-bar__crumbs">
+      <button
+        type="button"
+        class="adm-crumb-back"
+        routerLink="/admin/settings"
+        [attr.aria-label]="'common.back' | translate"
+      >
+        <app-icon name="arrow_back"></app-icon>
+      </button>
+      <a class="adm-crumb" routerLink="/admin/settings">{{ 'admin.settings.title' | translate }}</a>
+      <span class="adm-crumb-sep">/</span>
+      <span class="adm-crumb adm-crumb--active">{{ 'admin.settings.ai' | translate }}</span>
+    </div>
+  </header>
+
+  <div class="adm-grid adm-grid--full">
+
+    <p class="ai-intro">{{ 'admin.ai.intro' | translate }}</p>
+
+    @if (error) {
+      <div class="adm-error" role="alert">{{ error }}</div>
+    }
+
+    @if (loading) {
+      <div class="adm-loading">{{ 'common.loading' | translate }}</div>
+    } @else if (settings) {
+
+      <!-- Connection -->
+      <div class="adm-section">
+        <div class="ai-status">
+          <span class="ai-status__dot" [class]="'is-' + statusState" aria-hidden="true"></span>
+          <span class="ai-status__label">{{ statusLabel }}</span>
+          @if (settings.has_api_key) {
+            <code class="ai-status__model">{{ settings.model }}</code>
+          }
+          <button type="button" class="adm-btn adm-btn--ghost ai-status__test"
+                  [disabled]="testing || !settings.has_api_key" (click)="test()">
+            <app-icon name="network_check"></app-icon>
+            {{ (testing ? 'admin.ai.testing' : 'admin.ai.test') | translate }}
+          </button>
+        </div>
+
+        @if (testResult) {
+          <p class="ai-test" [class.is-ok]="testResult.ok" role="status">
+            <app-icon [name]="testResult.ok ? 'check_circle' : 'error'"></app-icon>
+            <span>{{ testResult.message }}</span>
+            @if (testResult.ok && testResult.latency_ms) {
+              <span class="ai-test__latency">{{ testResult.latency_ms }} ms</span>
+            }
+          </p>
+        }
+
+        <div class="adm-fields">
+          <label class="adm-field adm-field--span2">
+            <span class="adm-field__label">{{ 'admin.ai.apiKey' | translate }}</span>
+            @if (replacingKey) {
+              <div class="ai-key">
+                <input type="password" class="adm-input" [(ngModel)]="newApiKey" name="apiKey"
+                       autocomplete="off" placeholder="sk-ant-…" />
+                <button type="button" class="adm-btn adm-btn--primary" [disabled]="saving || !newApiKey.trim()"
+                        (click)="saveApiKey()">{{ 'common.save' | translate }}</button>
+                <button type="button" class="adm-btn adm-btn--ghost"
+                        (click)="replacingKey = false; newApiKey = ''">{{ 'common.cancel' | translate }}</button>
+              </div>
+            } @else {
+              <div class="ai-key">
+                <code class="ai-key__masked">{{ settings.api_key_masked || ('admin.ai.noKey' | translate) }}</code>
+                <button type="button" class="adm-btn adm-btn--ghost" (click)="replacingKey = true">
+                  {{ (settings.has_api_key ? 'admin.ai.replaceKey' : 'admin.ai.addKey') | translate }}
+                </button>
+                @if (settings.has_api_key) {
+                  <button type="button" class="adm-btn adm-btn--ghost adm-btn--danger"
+                          (click)="clearApiKey()">{{ 'common.delete' | translate }}</button>
+                }
+              </div>
+            }
+            <span class="adm-field__hint">{{ 'admin.ai.apiKeyHint' | translate }}</span>
+          </label>
+
+          <label class="adm-field">
+            <span class="adm-field__label">{{ 'admin.ai.model' | translate }}</span>
+            <select class="adm-input" [ngModel]="settings.model" name="model"
+                    (ngModelChange)="changeModel($event)" [disabled]="saving">
+              @for (option of settings.models; track option.id) {
+                <option [value]="option.id">{{ option.label }}</option>
+              }
+            </select>
+          </label>
+
+          <label class="adm-field">
+            <span class="adm-field__label">{{ 'admin.ai.monthlyCap' | translate }}</span>
+            <input type="number" class="adm-input" min="0" step="100000"
+                   [ngModel]="settings.monthly_token_cap" name="cap"
+                   (change)="saveCap($any($event.target).value)" [disabled]="saving" />
+            <span class="adm-field__hint">{{ 'admin.ai.monthlyCapHint' | translate }}</span>
+          </label>
+        </div>
+
+        <div class="ai-toggle">
+          <button type="button" class="ai-switch" [class.is-on]="settings.enabled"
+                  [disabled]="saving" (click)="toggleEnabled()"
+                  [attr.aria-pressed]="settings.enabled">
+            <span class="ai-switch__track" aria-hidden="true"><span class="ai-switch__knob"></span></span>
+            <span class="ai-switch__text">{{ 'admin.ai.enabled' | translate }}</span>
+          </button>
+          <span class="adm-field__hint">{{ 'admin.ai.enabledHint' | translate }}</span>
+        </div>
+
+        @if (settings.monthly_token_cap > 0) {
+          <div class="ai-budget">
+            <div class="ai-budget__bar" aria-hidden="true">
+              <span class="ai-budget__fill" [style.width.%]="capPercent"></span>
+            </div>
+            <span class="ai-budget__text">
+              {{ 'admin.ai.budgetUsed' | translate:{ used: formatNumber(usedTokens), cap: formatNumber(settings.monthly_token_cap), percent: capPercent } }}
+            </span>
+          </div>
+        }
+      </div>
+
+      <!-- Glossary -->
+      <div class="adm-section">
+        <h2 class="adm-section__title">{{ 'admin.ai.glossary' | translate }}</h2>
+        <p class="ai-hint">{{ 'admin.ai.glossaryHint' | translate }}</p>
+
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th scope="col">{{ 'admin.ai.term' | translate }}</th>
+              <th scope="col">{{ 'admin.ai.rule' | translate }}</th>
+              <th scope="col">{{ 'admin.ai.language' | translate }}</th>
+              <th scope="col">{{ 'admin.ai.translationCol' | translate }}</th>
+              <th scope="col">{{ 'admin.ai.notes' | translate }}</th>
+              <th scope="col" class="actions-col">{{ 'common.actions' | translate }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (term of glossary; track trackByUID($index, term); let i = $index) {
+              <tr>
+                <td>
+                  <input type="text" class="adm-input ai-term" [(ngModel)]="term.term"
+                         (change)="saveTerm(term)" [name]="'term' + i" />
+                </td>
+                <td>
+                  <button type="button" class="ai-rule" [class.is-never]="term.do_not_translate"
+                          (click)="term.do_not_translate = !term.do_not_translate; onRuleChange(term)">
+                    {{ (term.do_not_translate ? 'admin.ai.ruleNever' : 'admin.ai.rulePinned') | translate }}
+                  </button>
+                </td>
+                <td>
+                  <input type="text" class="adm-input ai-lang" [(ngModel)]="term.language"
+                         (change)="saveTerm(term)" [name]="'lang' + i"
+                         [disabled]="term.do_not_translate" [attr.list]="'ai-languages'" />
+                </td>
+                <td>
+                  <input type="text" class="adm-input" [(ngModel)]="term.translation"
+                         (change)="saveTerm(term)" [name]="'tr' + i"
+                         [disabled]="term.do_not_translate" />
+                </td>
+                <td>
+                  <input type="text" class="adm-input" [(ngModel)]="term.notes"
+                         (change)="saveTerm(term)" [name]="'notes' + i" />
+                </td>
+                <td class="actions-col">
+                  <button type="button" class="adm-icon-btn adm-icon-btn--danger" (click)="removeTerm(term)"
+                          [attr.aria-label]="'common.delete' | translate">
+                    <app-icon name="delete"></app-icon>
+                  </button>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="6" class="ai-empty">{{ 'admin.ai.glossaryEmpty' | translate }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+
+        <datalist id="ai-languages">
+          @for (code of languages; track code) {
+            <option [value]="code"></option>
+          }
+        </datalist>
+
+        <div class="ai-paste">
+          <button type="button" class="adm-btn adm-btn--ghost" (click)="togglePaste()">
+            <app-icon name="content_paste"></app-icon>
+            {{ (showPaste ? 'admin.ai.pasteHide' : 'admin.ai.pasteShow') | translate }}
+          </button>
+
+          @if (showPaste) {
+            <p class="ai-hint">{{ 'admin.ai.pasteHint' | translate }}</p>
+
+            <textarea
+              class="adm-input ai-paste__source"
+              rows="8"
+              [(ngModel)]="pasteSource"
+              name="pasteSource"
+              [placeholder]="'admin.ai.pastePlaceholder' | translate"
+            ></textarea>
+
+            <div class="ai-paste__actions">
+              <button type="button" class="adm-btn adm-btn--ghost"
+                      [disabled]="!pasteSource.trim()" (click)="previewPaste()">
+                {{ 'admin.ai.pastePreview' | translate }}
+              </button>
+
+              @if (pasteParsed && pastePreview.length) {
+                <span class="ai-paste__count">
+                  {{ 'admin.ai.pasteSummary' | translate:{ never: pasteNeverCount, pinned: pastePinnedCount } }}
+                </span>
+                <button type="button" class="adm-btn adm-btn--primary" [disabled]="saving" (click)="applyPaste()">
+                  {{ 'admin.ai.pasteAdd' | translate:{ count: pastePreview.length } }}
+                </button>
+              }
+            </div>
+
+            @if (pastePreview.length) {
+              <ul class="ai-paste__preview">
+                @for (term of pastePreview; track $index) {
+                  <li>
+                    <span class="ai-rule" [class.is-never]="term.do_not_translate">
+                      {{ (term.do_not_translate ? 'admin.ai.ruleNever' : 'admin.ai.rulePinned') | translate }}
+                    </span>
+                    <strong>{{ term.term }}</strong>
+                    @if (!term.do_not_translate) {
+                      <span class="ai-paste__arrow">{{ term.language | uppercase }} · {{ term.translation }}</span>
+                    } @else if (term.notes) {
+                      <span class="ai-paste__note">{{ term.notes }}</span>
+                    }
+                  </li>
+                }
+              </ul>
+            }
+          }
+        </div>
+
+        <div class="ai-add">
+          <input type="text" class="adm-input ai-add__term" [(ngModel)]="newTerm.term" name="newTerm"
+                 [placeholder]="'admin.ai.termPlaceholder' | translate" />
+          <button type="button" class="ai-rule" [class.is-never]="newTerm.do_not_translate"
+                  (click)="newTerm.do_not_translate = !newTerm.do_not_translate">
+            {{ (newTerm.do_not_translate ? 'admin.ai.ruleNever' : 'admin.ai.rulePinned') | translate }}
+          </button>
+          <input type="text" class="adm-input ai-add__lang" [(ngModel)]="newTerm.language" name="newLang"
+                 [disabled]="newTerm.do_not_translate" placeholder="pl" list="ai-languages" />
+          <input type="text" class="adm-input ai-add__translation" [(ngModel)]="newTerm.translation"
+                 name="newTranslation" [disabled]="newTerm.do_not_translate"
+                 [placeholder]="'admin.ai.translationCol' | translate" />
+          <button type="button" class="adm-btn adm-btn--primary" [disabled]="saving || !newTerm.term.trim()"
+                  (click)="addTerm()">
+            <app-icon name="add"></app-icon>
+            {{ 'admin.ai.addTerm' | translate }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Usage -->
+      <div class="adm-section">
+        <h2 class="adm-section__title">{{ 'admin.ai.usage' | translate }}</h2>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th scope="col">{{ 'admin.ai.operation' | translate }}</th>
+              <th scope="col">{{ 'admin.ai.calls' | translate }}</th>
+              <th scope="col">{{ 'admin.ai.inputTokens' | translate }}</th>
+              <th scope="col">{{ 'admin.ai.outputTokens' | translate }}</th>
+              <th scope="col">{{ 'admin.ai.totalTokens' | translate }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of usage; track trackByOperation($index, row)) {
+              <tr>
+                <td>{{ 'admin.ai.op_' + row.operation | translate }}</td>
+                <td>{{ formatNumber(row.calls) }}</td>
+                <td>{{ formatNumber(row.input_tokens) }}</td>
+                <td>{{ formatNumber(row.output_tokens) }}</td>
+                <td class="ai-total">{{ formatNumber(row.total_tokens) }}</td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="5" class="ai-empty">{{ 'admin.ai.usageEmpty' | translate }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+</div>

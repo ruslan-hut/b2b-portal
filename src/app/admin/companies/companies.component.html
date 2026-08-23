@@ -1,0 +1,181 @@
+<div class="companies-container">
+  @if (loading) {
+    <div class="loading">{{ 'common.loading' | translate }}</div>
+  }
+  @if (error) {
+    <div class="error">{{ error }}</div>
+  }
+
+  @if (!loading && !error) {
+    <!-- Desktop Table View -->
+    <div class="companies-table desktop-only">
+      <table role="table" [attr.aria-label]="'Companies table'">
+        <thead>
+          <tr>
+            <th scope="col">{{ 'admin.companies.name' | translate }}</th>
+            <th scope="col">{{ 'admin.companies.business_registration_number' | translate }}</th>
+            <th scope="col">{{ 'admin.companies.vat_number' | translate }}</th>
+            <th scope="col">{{ 'admin.companies.country' | translate }} / {{ 'admin.companies.city' | translate }}</th>
+            <th scope="col">{{ 'admin.companies.contact_person' | translate }}</th>
+            <th scope="col">{{ 'admin.companies.shipping_provider' | translate }}</th>
+            <th scope="col">{{ 'common.status' | translate }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (company of companies; track company.uid) {
+            <tr
+              class="clickable-row"
+              (click)="openDetails(company)"
+              (keydown.enter)="openDetails(company)"
+              (keydown.space)="openDetails(company); $event.preventDefault()"
+              tabindex="0"
+              role="button"
+              [attr.aria-label]="'View company ' + company.name"
+            >
+              <td>{{ company.name }}</td>
+              <td>{{ company.business_registration_number || '-' }}</td>
+              <td>{{ company.vat_number || '-' }}</td>
+              <td>{{ countryCity(company) }}</td>
+              <td>
+                {{ contactPerson(company) }}
+                @if (company.contact_phone) {
+                  <span class="contact-phone">{{ company.contact_phone }}</span>
+                }
+              </td>
+              <td>
+                @if (company.has_shipping_provider) {
+                  <app-icon name="local_shipping" class="shipping-icon connected" [attr.aria-label]="'admin.companies.has_shipping_provider' | translate" [attr.title]="'admin.companies.has_shipping_provider' | translate" role="img"></app-icon>
+                } @else {
+                  <span class="shipping-icon none"
+                        [attr.aria-label]="'admin.companies.no_shipping_provider' | translate"
+                        [attr.title]="'admin.companies.no_shipping_provider' | translate"
+                        role="img">–</span>
+                }
+              </td>
+              <td>
+                <span class="status-icon" [class.status-active]="company.active" [class.status-inactive]="!company.active" [attr.aria-label]="company.active ? ('common.active' | translate) : ('common.inactive' | translate)" role="status">
+                  ●
+                </span>
+              </td>
+            </tr>
+          }
+          @if (companies.length === 0) {
+            <tr>
+              <td colspan="7" class="no-data">{{ 'admin.companies.noCompanies' | translate }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Mobile Card View -->
+    <div class="companies-cards mobile-only">
+      @for (company of companies; track company.uid) {
+        <div
+          class="company-card"
+          (click)="openDetails(company)"
+          (keydown.enter)="openDetails(company)"
+          role="button"
+          tabindex="0"
+          [attr.aria-label]="'View company ' + company.name"
+        >
+          <div class="card-title">
+            <span class="company-name">{{ company.name }}</span>
+            <span class="card-title-icons">
+              @if (company.has_shipping_provider) {
+                <app-icon name="local_shipping" class="shipping-icon connected" [attr.aria-label]="'admin.companies.has_shipping_provider' | translate" role="img"></app-icon>
+              }
+              <span class="status-icon" [class.status-active]="company.active" [class.status-inactive]="!company.active" role="status">●</span>
+            </span>
+          </div>
+          <div class="card-subtitle">{{ countryCity(company) }}</div>
+          <div class="card-row">
+            <span class="label">{{ 'admin.companies.vat_number' | translate }}:</span>
+            <span class="value">{{ company.vat_number || '-' }}</span>
+          </div>
+          <div class="card-row">
+            <span class="label">{{ 'admin.companies.contact_person' | translate }}:</span>
+            <span class="value">{{ contactPerson(company) }}</span>
+          </div>
+        </div>
+      }
+      @if (companies.length === 0) {
+        <div class="no-data-card">{{ 'admin.companies.noCompanies' | translate }}</div>
+      }
+    </div>
+
+    <!-- Pagination -->
+    <app-pagination
+      [currentPage]="currentPage"
+      [totalPages]="totalPages"
+      [total]="total"
+      [pageSize]="pageSize"
+      [itemLabel]="'admin.companies.companiesCount' | translate"
+      (pageChange)="goToPage($event)">
+    </app-pagination>
+  }
+
+  <!-- Read-only details modal -->
+  @if (selectedCompany; as company) {
+    <div class="modal-overlay" (click)="closeDetails()">
+      <div class="modal-content" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h2>{{ 'admin.companies.details' | translate }}</h2>
+          <button class="btn-close" (click)="closeDetails()" [attr.aria-label]="'common.close' | translate">
+            <app-icon name="close"></app-icon>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="detail-row">
+            <span class="label">{{ 'admin.companies.name' | translate }}</span>
+            <span class="value">{{ company.name }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">UID</span>
+            <span class="value value-mono">{{ company.uid }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">{{ 'admin.companies.business_registration_number' | translate }}</span>
+            <span class="value">{{ company.business_registration_number || '-' }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">{{ 'admin.companies.vat_number' | translate }}</span>
+            <span class="value">{{ company.vat_number || '-' }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">{{ 'admin.companies.country' | translate }}</span>
+            <span class="value">{{ company.country_code || '-' }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">{{ 'admin.companies.zipcode' | translate }}</span>
+            <span class="value">{{ company.zipcode || '-' }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">{{ 'admin.companies.city' | translate }}</span>
+            <span class="value">{{ company.city || '-' }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">{{ 'admin.companies.address' | translate }}</span>
+            <span class="value">{{ company.address_text || '-' }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">{{ 'admin.companies.contact_person' | translate }}</span>
+            <span class="value">{{ contactPerson(company) }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">{{ 'admin.companies.phone' | translate }}</span>
+            <span class="value">{{ company.contact_phone || '-' }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">{{ 'admin.companies.active' | translate }}</span>
+            <span class="value">{{ (company.active ? 'common.active' : 'common.inactive') | translate }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">{{ 'common.lastUpdate' | translate }}</span>
+            <span class="value">{{ formatDateTime(company.last_update) }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+</div>

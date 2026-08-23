@@ -1,0 +1,127 @@
+// Chrome for the Client API guide. Mirrors the reference page (/api-docs): the
+// two are one destination as far as an integrator is concerned.
+
+.guide {
+  min-height: 100vh;
+  background: var(--color-background);
+  padding-bottom: 80px;
+
+  &__bar {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 12px 24px;
+    background: var(--header-bg);
+    border-bottom: 1px solid var(--color-border);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  &__home {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    color: var(--color-text-primary);
+    text-decoration: none;
+  }
+
+  &__title {
+    font-family: var(--font-heading);
+    font-size: 14px;
+    color: var(--color-text-secondary);
+  }
+
+  &__actions {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  &__lang {
+    display: flex;
+    border: 1px solid var(--color-border);
+    border-radius: 999px;
+    overflow: hidden;
+
+    button {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      letter-spacing: 0.06em;
+      padding: 5px 11px;
+      border: 0;
+      background: transparent;
+      color: var(--color-text-secondary);
+      cursor: pointer;
+
+      &.is-active {
+        background: var(--color-primary);
+        color: var(--color-on-primary);
+      }
+    }
+  }
+
+  &__ref {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13.5px;
+    color: var(--color-primary-dark);
+    text-decoration: none;
+  }
+
+  &__hero {
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 48px 24px 30px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  &__eyebrow {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--color-primary);
+  }
+
+  &__h1 {
+    font-family: var(--font-heading);
+    font-weight: 800;
+    font-size: clamp(1.9rem, 4.5vw, 2.8rem);
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    margin: 0;
+    color: var(--color-text-primary);
+    text-wrap: balance;
+  }
+
+  &__lede {
+    margin: 0;
+    max-width: 62ch;
+    font-family: var(--font-body);
+    font-size: 1.05rem;
+    line-height: 1.6;
+    color: var(--color-text-secondary);
+  }
+
+  &__facts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 26px;
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    color: var(--color-text-secondary);
+
+    b { color: var(--color-text-primary); font-weight: 600; word-break: break-all; }
+  }
+
+  &__body {
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 40px 24px 0;
+  }
+}

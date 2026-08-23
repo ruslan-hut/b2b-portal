@@ -1,224 +1,276 @@
-<div class="orders-container">
-  <app-action-bar>
-    <div actionBarLeft>
-      <button class="btn-filter" (click)="toggleFilters()" [class.active]="isFiltersExpanded" [attr.aria-label]="'Toggle filters'" [attr.aria-expanded]="isFiltersExpanded">
-        <span class="material-icons" aria-hidden="true">filter_list</span>
-        <span class="btn-text">Filters</span>
-        <span class="material-icons toggle-icon" aria-hidden="true">{{ isFiltersExpanded ? 'expand_less' : 'expand_more' }}</span>
+<div class="adm-page">
+
+  <header class="adm-bar">
+    <div class="adm-bar__crumbs">
+      <span class="adm-crumb adm-crumb--active">{{ 'admin.orders.allOrders' | translate }}</span>
+    </div>
+    <div class="adm-bar__actions">
+      <button
+        type="button"
+        class="adm-btn adm-btn--ghost"
+        (click)="filters.toggle()"
+        [class.is-active]="filters.expanded"
+        [attr.aria-expanded]="filters.expanded"
+      >
+        <app-icon name="filter_list"></app-icon>
+        {{ 'common.filters' | translate }}
+      </button>
+      <button type="button" class="adm-btn adm-btn--primary" (click)="createOrder()" [attr.aria-label]="'admin.orders.newOrder' | translate">
+        <app-icon name="add"></app-icon>
+        {{ 'admin.orders.newOrder' | translate }}
       </button>
     </div>
-    <div actionBarRight></div>
-  </app-action-bar>
+  </header>
 
-  <div class="filters" [class.expanded]="isFiltersExpanded">
-    <div class="filter-group">
-      <label for="orders-status-filter">Status:</label>
-      <select id="orders-status-filter" [(ngModel)]="statusFilter" (change)="onFilterChange()" [attr.aria-label]="'Filter orders by status'">
-        @for (option of statusOptions; track option) {
-          <option [value]="option.value">
-            {{ option.label }}
-          </option>
-        }
-      </select>
-    </div>
-    <div class="filter-group">
-      <label for="orders-store-filter">Store:</label>
-      <select id="orders-store-filter" [(ngModel)]="storeFilter" (change)="onFilterChange()" [attr.aria-label]="'Filter orders by store'">
-        @for (option of storeOptions; track option) {
-          <option [value]="option.value">
-            {{ option.label }}
-          </option>
-        }
-      </select>
-    </div>
-    <div class="filter-group">
-      <label for="orders-price-type-filter">Price Type:</label>
-      <select id="orders-price-type-filter" [(ngModel)]="priceTypeFilter" (change)="onFilterChange()" [attr.aria-label]="'Filter orders by price type'">
-        @for (option of priceTypeOptions; track option) {
-          <option [value]="option.value">
-            {{ option.label }}
-          </option>
-        }
-      </select>
-    </div>
-    <div class="filter-group">
-      <label for="orders-search">Search:</label>
-      <input
-        type="text"
-        id="orders-search"
-        [(ngModel)]="searchTerm"
-        (input)="onSearchChange()"
-        placeholder="Search by order number or client"
-        [attr.aria-label]="'Search orders by order number or client name'"
-        />
-    </div>
-  </div>
+  <app-menu-bar [items]="menuItems"></app-menu-bar>
 
-  @if (loading) {
-    <div class="loading">Loading orders...</div>
-  }
-  @if (error) {
-    <div class="error">{{ error }}</div>
-  }
+  <div class="adm-grid adm-grid--full">
 
-  @if (!loading && !error) {
-    <!-- Desktop Table View -->
-    <div class="orders-table desktop-only">
-      <table role="table" [attr.aria-label]="'Orders table'">
-        <thead>
-          <tr>
-            <th scope="col" id="col-created">Created</th>
-            <th scope="col" id="col-number">Order Number</th>
-            <th scope="col" id="col-status">Status</th>
-            <th scope="col" id="col-client">Client Name</th>
-            <th scope="col" id="col-store">Store</th>
-            <th scope="col" id="col-price-type">Price Type</th>
-            <th scope="col" id="col-discount" [attr.aria-describedby]="'discount-help'">Discount</th>
-            <th scope="col" id="col-vat-rate" [attr.aria-describedby]="'vat-rate-help'">VAT Rate</th>
-            <th scope="col" id="col-total" [attr.aria-describedby]="'total-help'">Total (Gross)</th>
-            <th scope="col" id="col-currency">Currency</th>
-            @if (isAdmin) {
-              <th scope="col" id="col-actions">Actions</th>
+    @if (filters.expanded) {
+      <section class="adm-section ord-filters">
+        <div class="adm-fields">
+          <label class="adm-field">
+            <span class="adm-field__label">{{ 'admin.orders.stage' | translate }}</span>
+            <select class="adm-input" [(ngModel)]="stageFilter" (change)="onFilterChange()" [disabled]="showDrafts">
+              @for (option of stageOptions; track option) {
+                <option [value]="option.value">{{ option.label }}</option>
+              }
+            </select>
+          </label>
+
+          <div class="adm-field">
+            <span class="adm-field__label">{{ 'admin.orders.drafts' | translate }}</span>
+            <label class="ord-check">
+              <input type="checkbox" [(ngModel)]="showDrafts" (change)="onFilterChange()" />
+              <span>{{ 'admin.orders.showDrafts' | translate }}</span>
+            </label>
+          </div>
+
+          @if (!storeLocked) {
+            <label class="adm-field">
+              <span class="adm-field__label">{{ 'common.store' | translate }}</span>
+              <select class="adm-input" [(ngModel)]="storeFilter" (change)="onFilterChange()">
+                @for (option of storeOptions; track option) {
+                  <option [value]="option.value">{{ option.label }}</option>
+                }
+              </select>
+            </label>
+          }
+
+          <label class="adm-field">
+            <span class="adm-field__label">{{ 'common.manager' | translate }}</span>
+            <select class="adm-input" [(ngModel)]="managerFilter" (change)="onFilterChange()">
+              @for (option of managerOptions; track option) {
+                <option [value]="option.value">{{ option.label }}</option>
+              }
+            </select>
+          </label>
+
+          <label class="adm-field">
+            <span class="adm-field__label">{{ 'common.search' | translate }}</span>
+            <input
+              type="text"
+              class="adm-input"
+              [(ngModel)]="searchTerm"
+              (input)="onSearchChange()"
+              [placeholder]="'admin.orders.searchPlaceholder' | translate"
+            />
+          </label>
+        </div>
+      </section>
+    }
+
+    @if (loading) {
+      <div class="adm-loading">{{ 'admin.orders.loadingOrders' | translate }}</div>
+    } @else if (error) {
+      <div class="adm-error" role="alert">{{ error }}</div>
+    } @else if (filteredOrders.length === 0) {
+      <div class="adm-section ord-empty">{{ 'orders.noOrders' | translate }}</div>
+    } @else {
+
+      <!-- Desktop table -->
+      <div class="ord-table-wrap desktop-only">
+        <table class="data-table" [attr.aria-label]="'admin.orders.allOrders' | translate">
+          <thead>
+            <tr>
+              <th>{{ 'common.created' | translate }}</th>
+              <th>{{ 'orders.orderNumber' | translate }}</th>
+              <th>{{ 'common.status' | translate }}</th>
+              <th>{{ 'admin.orders.clientName' | translate }}</th>
+              <th>{{ 'common.store' | translate }}</th>
+              <th class="num">{{ 'common.discount' | translate }}</th>
+              <th class="num">{{ 'common.vatRate' | translate }}</th>
+              <th class="num">{{ 'orders.totalGross' | translate }}</th>
+              <th>{{ 'common.currency' | translate }}</th>
+              <th>{{ 'invoice.title' | translate }}</th>
+              <th class="mark-col">{{ 'admin.orders.shipments' | translate }}</th>
+              @if (isAdmin) { <th class="actions-col"></th> }
+            </tr>
+          </thead>
+          <tbody>
+            @for (order of filteredOrders; track order) {
+              <tr
+                class="ord-row"
+                (click)="viewOrderDetail(order)"
+                (keydown.enter)="viewOrderDetail(order)"
+                (keydown.space)="viewOrderDetail(order); $event.preventDefault()"
+                tabindex="0"
+                role="button"
+                [attr.aria-label]="'View order ' + (order.number || order.uid)"
+              >
+                <td>{{ formatDate(order.created_at) }}</td>
+                <!-- The ERP number trails the Comex one because the list search
+                     matches it: a row that came back for a number it never
+                     shows looks like a bad result. -->
+                <td class="mono">
+                  <span class="ord-number">{{ order.number || order.uid }}</span>
+                  @if (order.erp_number) {
+                    <span class="ord-erp-number__sep" aria-hidden="true">·</span
+                    ><span class="ord-erp-number">{{ order.erp_number }}</span>
+                  }
+                </td>
+                <td>
+                  <span
+                    class="ord-status"
+                    [ngClass]="getStatusClass(order.status)"
+                    [style.color]="getStageColor(order.status)"
+                    [style.border-color]="getStageColor(order.status)"
+                    role="status"
+                  >
+                    <span class="ord-status__dot" aria-hidden="true"></span>
+                    {{ order.status }}
+                  </span>
+                </td>
+                <td>{{ getClientName(order.client_uid) }}</td>
+                <td>{{ getStoreName(order.store_uid) }}</td>
+                <td class="num">{{ order.discount_percent !== undefined ? order.discount_percent + '%' : '—' }}</td>
+                <td class="num">{{ order.vat_rate !== undefined ? order.vat_rate + '%' : '—' }}</td>
+                <td class="num">{{ (order.total / 100).toFixed(2) }}</td>
+                <td>{{ order.currency_code }}</td>
+                <td>
+                  @if (getInvoiceTypes(order.uid).length > 0) {
+                    <span class="ord-marks">
+                      @for (type of getInvoiceTypes(order.uid); track type) {
+                        <span class="ord-chip">{{ type }}</span>
+                      }
+                    </span>
+                  } @else {
+                    <span class="ord-mark-empty" aria-hidden="true">—</span>
+                  }
+                </td>
+                <td class="mark-col">
+                  @if (hasShipment(order.uid)) {
+                    <app-icon name="local_shipping" class="ord-mark" role="img" [title]="'admin.orders.hasShipment' | translate" [attr.aria-label]="'admin.orders.hasShipment' | translate"></app-icon>
+                  }
+                </td>
+                @if (isAdmin) {
+                  <td class="actions-col" (click)="$event.stopPropagation()">
+                    <button
+                      type="button"
+                      class="adm-icon-btn adm-icon-btn--danger"
+                      (click)="deleteOrder(order)"
+                      [title]="'common.delete' | translate"
+                      [attr.aria-label]="'Delete order ' + (order.number || order.uid)"
+                    >
+                      <app-icon name="delete"></app-icon>
+                    </button>
+                  </td>
+                }
+              </tr>
             }
-          </tr>
-        </thead>
-        <tbody>
-          @for (order of filteredOrders; track order) {
-            <tr
-              class="clickable-row"
-              (click)="viewOrderDetail(order)"
-              (keydown.enter)="viewOrderDetail(order)"
-              (keydown.space)="viewOrderDetail(order); $event.preventDefault()"
-              tabindex="0"
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Mobile cards -->
+      <div class="ord-cards mobile-only">
+        @for (order of filteredOrders; track order) {
+          <article class="ord-card" [class.is-expanded]="cards.isExpanded(order.uid)">
+            <header
+              class="ord-card__head"
+              (click)="cards.toggle(order.uid)"
+              (keydown.enter)="cards.toggle(order.uid)"
+              (keydown.space)="cards.toggle(order.uid); $event.preventDefault()"
               role="button"
-              [attr.aria-label]="'View order ' + (order.number || order.uid)">
-              <td headers="col-created">{{ formatDate(order.created_at) }}</td>
-              <td headers="col-number">{{ order.number || order.uid }}</td>
-              <td headers="col-status">
-                <span [class]="getStatusClass(order.status)" [attr.aria-label]="'Status: ' + order.status" role="status">
-                  <span class="status-icon" aria-hidden="true">●</span>
+              tabindex="0"
+              [attr.aria-expanded]="cards.isExpanded(order.uid)"
+            >
+              <div class="ord-card__title">
+                <span class="ord-card__number mono">
+                  <span class="ord-number">{{ order.number || order.uid }}</span>
+                  @if (order.erp_number) {
+                    <span class="ord-erp-number__sep" aria-hidden="true">·</span
+                    ><span class="ord-erp-number">{{ order.erp_number }}</span>
+                  }
+                </span>
+                <span
+                  class="ord-status"
+                  [ngClass]="getStatusClass(order.status)"
+                  [style.color]="getStageColor(order.status)"
+                  [style.border-color]="getStageColor(order.status)"
+                  role="status"
+                >
+                  <span class="ord-status__dot" aria-hidden="true"></span>
                   {{ order.status }}
                 </span>
-              </td>
-              <td headers="col-client">{{ getClientName(order.client_uid) }}</td>
-              <td headers="col-store">{{ getStoreName(order.store_uid) }}</td>
-              <td headers="col-price-type">{{ getPriceTypeName(order.price_type_uid) }}</td>
-              <td headers="col-discount">{{ order.discount_percent !== undefined ? order.discount_percent + '%' : '-' }}</td>
-              <td headers="col-vat-rate">{{ order.vat_rate !== undefined ? order.vat_rate + '%' : '-' }}</td>
-              <td headers="col-total">{{ (order.total/100).toFixed(2) }}</td>
-              <td headers="col-currency">{{ order.currency_code }}</td>
-              @if (isAdmin) {
-                <td headers="col-actions" class="actions" (click)="$event.stopPropagation()">
-                  <button class="btn-delete" (click)="deleteOrder(order)" [attr.aria-label]="'Delete order ' + (order.number || order.uid)">Delete</button>
-                </td>
+              </div>
+              <div class="ord-card__sub">{{ getClientName(order.client_uid) }}</div>
+              @if (getInvoiceTypes(order.uid).length > 0 || hasShipment(order.uid)) {
+                <div class="ord-marks">
+                  @for (type of getInvoiceTypes(order.uid); track type) {
+                    <span class="ord-chip">{{ type }}</span>
+                  }
+                  @if (hasShipment(order.uid)) {
+                    <app-icon name="local_shipping" class="ord-mark" role="img" [attr.aria-label]="'admin.orders.hasShipment' | translate"></app-icon>
+                  }
+                </div>
               }
-            </tr>
-          }
-          @if (filteredOrders.length === 0) {
-            <tr>
-              <td [attr.colspan]="isAdmin ? 11 : 10" class="no-data">No orders found</td>
-            </tr>
-          }
-        </tbody>
-      </table>
-      <!-- Screen reader only help text -->
-      <p id="discount-help" class="sr-only">Client discount percentage applied to this order (0-100%)</p>
-      <p id="vat-rate-help" class="sr-only">VAT rate percentage used for this order (0-100%)</p>
-      <p id="total-help" class="sr-only">Order total including VAT (gross amount)</p>
-    </div>
-
-    <!-- Mobile Card View -->
-    <div class="orders-cards mobile-only">
-      @for (order of filteredOrders; track order) {
-        <div class="order-card" [class.expanded]="isCardExpanded(order.uid)">
-          <div
-            class="card-header"
-            (click)="toggleCardExpanded(order.uid)"
-            (keydown.enter)="toggleCardExpanded(order.uid)"
-            (keydown.space)="toggleCardExpanded(order.uid); $event.preventDefault()"
-            role="button"
-            tabindex="0"
-            [attr.aria-expanded]="isCardExpanded(order.uid)"
-            [attr.aria-label]="'Expand details for order ' + (order.number || order.uid)"
-          >
-            <div class="card-title">
-              <span class="order-number">{{ order.number || order.uid }}</span>
-              <span class="status-badge" [class]="getStatusClass(order.status)" [attr.aria-label]="'Status: ' + order.status" role="status">
-                <span class="status-icon" aria-hidden="true">●</span>
-                {{ order.status }}
-              </span>
+            </header>
+            <div class="ord-card__summary">
+              <div class="ord-card__row">
+                <span class="ord-card__label">{{ 'common.total' | translate }}</span>
+                <span class="ord-card__value">{{ (order.total / 100).toFixed(2) }} {{ order.currency_code }}</span>
+              </div>
+              <div class="ord-card__row">
+                <span class="ord-card__label">{{ 'common.created' | translate }}</span>
+                <span class="ord-card__value">{{ formatDate(order.created_at).split(' ')[0] }}</span>
+              </div>
+              <app-icon [name]="cards.isExpanded(order.uid) ? 'expand_less' : 'expand_more'" class="ord-card__expand"></app-icon>
             </div>
-            <div class="card-subtitle">{{ getClientName(order.client_uid) }}</div>
-          </div>
-          <div class="card-summary">
-            <div class="summary-item">
-              <span class="label">Total:</span>
-              <span class="value">{{ (order.total/100).toFixed(2) }} {{ order.currency_code }}</span>
-            </div>
-            <div class="summary-item">
-              <span class="value date">{{ formatDate(order.created_at).split(' ')[0] }}</span>
-            </div>
-            <span class="material-icons expand-icon" aria-hidden="true">{{ isCardExpanded(order.uid) ? 'expand_less' : 'expand_more' }}</span>
-          </div>
-          @if (isCardExpanded(order.uid)) {
-            <div class="card-details">
-              <div class="detail-row">
-                <span class="label">Store:</span>
-                <span class="value">{{ getStoreName(order.store_uid) }}</span>
+            @if (cards.isExpanded(order.uid)) {
+              <div class="ord-card__details">
+                <div class="ord-card__row">
+                  <span class="ord-card__label">{{ 'common.store' | translate }}</span>
+                  <span class="ord-card__value">{{ getStoreName(order.store_uid) }}</span>
+                </div>
+                <div class="ord-card__row">
+                  <span class="ord-card__label">{{ 'common.discount' | translate }}</span>
+                  <span class="ord-card__value">{{ order.discount_percent !== undefined ? order.discount_percent + '%' : '—' }}</span>
+                </div>
+                <div class="ord-card__row">
+                  <span class="ord-card__label">{{ 'common.vatRate' | translate }}</span>
+                  <span class="ord-card__value">{{ order.vat_rate !== undefined ? order.vat_rate + '%' : '—' }}</span>
+                </div>
+                <div class="ord-card__actions">
+                  <button type="button" class="adm-btn adm-btn--ghost" (click)="viewOrderDetail(order); $event.stopPropagation()">
+                    <app-icon name="visibility"></app-icon>
+                    {{ 'orders.viewDetails' | translate }}
+                  </button>
+                </div>
               </div>
-              <div class="detail-row">
-                <span class="label">Price Type:</span>
-                <span class="value">{{ getPriceTypeName(order.price_type_uid) }}</span>
-              </div>
-              <div class="detail-row">
-                <span class="label">Discount:</span>
-                <span class="value">{{ order.discount_percent !== undefined ? order.discount_percent + '%' : '-' }}</span>
-              </div>
-              <div class="detail-row">
-                <span class="label">VAT Rate:</span>
-                <span class="value">{{ order.vat_rate !== undefined ? order.vat_rate + '%' : '-' }}</span>
-              </div>
-              <div class="card-actions">
-                <button class="btn-view" (click)="viewOrderDetail(order); $event.stopPropagation()" [attr.aria-label]="'View details for order ' + (order.number || order.uid)">
-                  <span class="material-icons" aria-hidden="true">visibility</span>
-                  View Details
-                </button>
-              </div>
-            </div>
-          }
-        </div>
-      }
-      @if (filteredOrders.length === 0) {
-        <div class="no-data-card">No orders found</div>
-      }
-    </div>
-
-    <!-- Pagination -->
-    @if (totalPages > 1) {
-      <div class="pagination">
-        <div class="pagination-info" role="status" [attr.aria-live]="'polite'">
-          <span>Page {{ currentPage }} of {{ totalPages }} ({{ total }} total orders)</span>
-        </div>
-        <nav class="pagination-controls" [attr.aria-label]="'Pagination navigation'">
-          <button
-            class="pagination-btn prev"
-            [disabled]="currentPage === 1"
-            (click)="goToPage(currentPage - 1)"
-            [attr.aria-label]="'Go to previous page'"
-            [attr.title]="'Previous page'">
-            Previous
-          </button>
-          <button
-            class="pagination-btn next"
-            [disabled]="currentPage === totalPages"
-            (click)="goToPage(currentPage + 1)"
-            [attr.aria-label]="'Go to next page'"
-            [attr.title]="'Next page'">
-            Next
-          </button>
-        </nav>
+            }
+          </article>
+        }
       </div>
-    }
-  }
 
+      <app-pagination
+        [currentPage]="currentPage"
+        [totalPages]="totalPages"
+        [total]="total"
+        [pageSize]="pageSize"
+        [itemLabel]="'admin.orders.totalOrders' | translate"
+        (pageChange)="goToPage($event)"
+      ></app-pagination>
+    }
+  </div>
 </div>

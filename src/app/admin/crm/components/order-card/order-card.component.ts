@@ -1,35 +1,34 @@
-import { Component, Input, Output, EventEmitter, ChangeDetectionStrategy } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input, output } from '@angular/core';
 import { CrmBoardOrder } from '../../models/crm-board.model';
+import { formatDate } from '../../../../core/utils/date-format';
+import { PriceFormattingService } from '../../../../core/services/price-formatting.service';
 
 @Component({
-    selector: 'app-order-card',
-    templateUrl: './order-card.component.html',
-    styleUrls: ['./order-card.component.scss'],
-    standalone: false,
-    changeDetection: ChangeDetectionStrategy.OnPush
+  selector: 'app-order-card',
+  templateUrl: './order-card.component.html',
+  styleUrls: ['./order-card.component.scss'],
+  standalone: false,
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class OrderCardComponent {
-  @Input() order!: CrmBoardOrder;
-  @Input() stageColor: string = '#6366f1';
+  private readonly priceFormatting = inject(PriceFormattingService);
 
-  @Output() openDetails = new EventEmitter<void>();
+  readonly order = input.required<CrmBoardOrder>();
+  readonly stageColor = input<string>('#6366f1');
+  readonly highlight = input<boolean>(false);
+
+  readonly openDetails = output<void>();
 
   onOpenDetailsClick(event: Event): void {
     event.stopPropagation();
     this.openDetails.emit();
   }
 
-  formatDate(dateString: string): string {
-    if (!dateString) return '-';
-    const date = new Date(dateString);
-    return date.toLocaleDateString();
+  formatOrderDate(dateString: string): string {
+    return formatDate(dateString);
   }
 
   formatPrice(amount: number, currencyCode: string): string {
-    return (amount / 100).toLocaleString(undefined, {
-      style: 'currency',
-      currency: currencyCode || 'USD',
-      minimumFractionDigits: 2
-    });
+    return this.priceFormatting.formatPriceWithCurrency(amount, currencyCode);
   }
 }

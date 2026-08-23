@@ -4,6 +4,7 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ShipmentRoutingModule } from './shipment-routing.module';
 import { SettingsComponent } from './settings/settings.component';
 import { CarriersComponent } from './carriers/carriers.component';
+import { CarrierEditComponent } from './carriers/carrier-edit/carrier-edit.component';
 import { BoxesComponent } from './boxes/boxes.component';
 import { SharedModule } from '../../shared/shared.module';
 
@@ -11,6 +12,7 @@ import { SharedModule } from '../../shared/shared.module';
   declarations: [
     SettingsComponent,
     CarriersComponent,
+    CarrierEditComponent,
     BoxesComponent
   ],
   imports: [

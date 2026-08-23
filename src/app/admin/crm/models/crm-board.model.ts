@@ -11,6 +11,15 @@ export interface CrmOrderData {
   total: number;
   currency_code: string;
   created_at: string;
+  last_update?: string;
+  is_edited?: boolean;
+  discount_override?: boolean;
+  // ERP-assigned company the order belongs to (GUID + display name).
+  company_uid?: string;
+  company_name?: string;
+  // Document number the ERP assigns once it has processed the order. ERP-owned
+  // and read-only — nothing in the CRM writes it back.
+  erp_number?: string;
 }
 
 // Client data as returned by backend
@@ -39,8 +48,13 @@ export interface CrmBoardOrder {
   total: number;
   currency_code: string;
   created_at: string;
+  last_update?: string;
   assigned_user_uid?: string;
   assigned_user_name?: string;
+  is_edited?: boolean;
+  discount_override?: boolean;
+  company_name?: string;
+  erp_number?: string;
 }
 
 // Raw column from backend

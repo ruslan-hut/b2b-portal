@@ -3,7 +3,13 @@
     <app-chat-list
       [chats]="(chats$ | async) || []"
       [activeChat]="activeChat ? { platform: activeChat.platform, userId: activeChat.userId } : null"
+      [hasMoreChats]="chatService.hasMoreChats"
+      [showUnreadOnly]="chatService.unreadOnly"
+      [loadingUnread]="chatService.loadingUnread"
       (selectChat)="onSelectChat($event)"
+      (loadMore)="onLoadMoreChats()"
+      (toggleUnread)="onToggleUnread()"
+      (markAllRead)="onMarkAllRead()"
     ></app-chat-list>
   </aside>
   <section class="chat-main">
@@ -13,9 +19,12 @@
       [loading]="loading"
       [typingIndicator]="typingIndicator"
       [wsConnected]="wsConnected"
+      [errorMessage]="sendFileError"
       (loadMore)="onLoadMore()"
       (sendMessage)="onSendMessage($event)"
+      (sendFiles)="onSendFiles($event)"
       (goBack)="onGoBack()"
+      (dismissError)="sendFileError = ''"
     ></app-chat-window>
   </section>
 </div>

@@ -1,6 +1,6 @@
 @if (!activeChat) {
   <div class="empty-state">
-    <span class="material-icons">forum</span>
+    <app-icon name="forum"></app-icon>
     <p>{{ 'chat.selectChat' | translate }}</p>
   </div>
 } @else {
@@ -8,13 +8,13 @@
     <!-- Header -->
     <div class="chat-header">
       <button class="back-btn" (click)="onBack()">
-        <span class="material-icons">arrow_back</span>
+        <app-icon name="arrow_back"></app-icon>
       </button>
       <div class="platform-icon" [ngClass]="getPlatformClass(activeChat.platform)">
-        <span class="material-icons">{{ getPlatformIcon(activeChat.platform) }}</span>
+        <app-icon [name]="getPlatformIcon(activeChat.platform)"></app-icon>
       </div>
       <div class="header-info">
-        <span class="header-name">{{ activeChat.userName || activeChat.userId }}</span>
+        <span class="header-name">{{ activeChat.userName || activeChat.messengerName || activeChat.userId }}</span>
         <span class="header-platform">{{ activeChat.platform }}</span>
       </div>
     </div>
@@ -22,7 +22,7 @@
     <!-- Reconnecting banner -->
     @if (!wsConnected) {
       <div class="reconnecting-banner">
-        <span class="material-icons">wifi_off</span>
+        <app-icon name="wifi_off"></app-icon>
         {{ 'chat.reconnecting' | translate }}
       </div>
     }
@@ -31,7 +31,7 @@
     <div class="messages-container" #messagesContainer (scroll)="onScroll()">
       @if (loading) {
         <div class="loading-indicator">
-          <span class="material-icons spin">refresh</span>
+          <app-icon name="refresh" class="spin"></app-icon>
         </div>
       }
 
@@ -43,7 +43,29 @@
           <div class="message" [class.outgoing]="msg.direction === 'outgoing'" [class.incoming]="msg.direction === 'incoming'">
             <div class="message-bubble">
               <div class="message-sender">{{ msg.sender }}</div>
-              <div class="message-text">{{ msg.text }}</div>
+              @if (msg.text) {
+                <div class="message-text">{{ msg.text }}</div>
+              }
+              @if (msg.attachments?.length) {
+                <div class="message-attachments">
+                  @for (att of msg.attachments; track att.fileId) {
+                    @if (isImage(att)) {
+                      <a [href]="getFileUrl(att)" target="_blank" class="attachment-image">
+                        <img [src]="getFileUrl(att)" [alt]="att.filename" loading="lazy" />
+                      </a>
+                    } @else {
+                      <a [href]="getFileUrl(att)" target="_blank" class="attachment-file" download>
+                        <app-icon [name]="getFileIcon(att)"></app-icon>
+                        <div class="attachment-info">
+                          <span class="attachment-name">{{ att.filename }}</span>
+                          <span class="attachment-size">{{ formatFileSize(att.size) }}</span>
+                        </div>
+                        <app-icon name="download"></app-icon>
+                      </a>
+                    }
+                  }
+                </div>
+              }
               <div class="message-time">{{ formatTime(msg.created_at) }}</div>
             </div>
           </div>
@@ -61,7 +83,17 @@
       }
     </div>
 
+    @if (errorMessage) {
+      <div class="send-error-banner">
+        <app-icon name="error_outline"></app-icon>
+        <span>{{ errorMessage }}</span>
+        <button class="dismiss-btn" (click)="dismissError.emit()">
+          <app-icon name="close"></app-icon>
+        </button>
+      </div>
+    }
+
     <!-- Input -->
-    <app-message-input (send)="onSend($event)"></app-message-input>
+    <app-message-input (send)="onSend($event)" (sendFiles)="onSendFiles($event)"></app-message-input>
   </div>
 }

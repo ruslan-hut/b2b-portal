@@ -4,12 +4,7 @@ import { Observable, of, BehaviorSubject, from } from 'rxjs';
 import { map, catchError, tap, switchMap } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 import { ProductImageResponse, ProductImagesMap, CachedProductImage } from '../models/product-image.model';
-
-interface ApiResponse<T> {
-  success: boolean;
-  message?: string;
-  data: T;
-}
+import { ApiResponse } from '../models/api.model';
 
 const DB_NAME = 'ProductImageCache';
 const DB_VERSION = 1;
@@ -23,8 +18,12 @@ export class ProductImageCacheService {
   private db: IDBDatabase | null = null;
   private dbReady = new BehaviorSubject<boolean>(false);
 
-  // In-memory cache of blob URLs for quick access
+  // In-memory cache of blob URLs for quick access. Bounded: each entry holds a
+  // live URL.createObjectURL() reference that pins the underlying blob in memory
+  // until revoked, so an unbounded map leaks memory across a long browsing
+  // session (hundreds/thousands of products via "load more").
   private blobUrlCache = new Map<string, string>();
+  private static readonly MAX_BLOB_URLS = 500;
 
   // Placeholder image for products without images
   private readonly placeholderUrl = 'assets/images/product-placeholder.svg';
@@ -131,7 +130,7 @@ export class ProductImageCacheService {
             // Merge cached and API results
             apiImages.forEach((image, uid) => {
               const blobUrl = this.createBlobUrl(image.file_data);
-              this.blobUrlCache.set(uid, blobUrl);
+              this.setBlobUrl(uid, blobUrl);
               cachedMap.set(uid, blobUrl);
             });
             return cachedMap;
@@ -315,7 +314,7 @@ export class ProductImageCacheService {
 
     // Create new blob URL from base64 data
     const blobUrl = this.createBlobUrl(cached.fileData);
-    this.blobUrlCache.set(cached.productUid, blobUrl);
+    this.setBlobUrl(cached.productUid, blobUrl);
     return blobUrl;
   }
 
@@ -349,6 +348,27 @@ export class ProductImageCacheService {
     } catch (error) {
       console.error('Error creating blob URL from base64:', error);
       return this.placeholderUrl;
+    }
+  }
+
+  /**
+   * Insert a blob URL into the bounded cache, evicting the least-recently-used
+   * entries (and revoking their object URLs) once the cap is exceeded. Re-inserting
+   * an existing key refreshes its recency via the Map's insertion order.
+   */
+  private setBlobUrl(productUid: string, url: string): void {
+    if (this.blobUrlCache.has(productUid)) {
+      this.blobUrlCache.delete(productUid);
+    }
+    this.blobUrlCache.set(productUid, url);
+
+    while (this.blobUrlCache.size > ProductImageCacheService.MAX_BLOB_URLS) {
+      const oldest = this.blobUrlCache.keys().next().value;
+      if (oldest === undefined) {
+        break;
+      }
+      this.revokeBlobUrl(oldest);
+      this.blobUrlCache.delete(oldest);
     }
   }
 

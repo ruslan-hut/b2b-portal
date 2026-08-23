@@ -1,6 +1,14 @@
+:host {
+  display: block;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+}
+
 .admin-container {
   display: flex;
-  min-height: 100vh;
+  height: 100%;
+  overflow: hidden;
   background-color: var(--admin-bg);
 }
 
@@ -11,7 +19,7 @@
   @media (max-width: 768px) {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: var(--spacing-md-sm);
     position: fixed;
     top: 0;
     left: 0;
@@ -37,7 +45,7 @@
   border: none;
   color: var(--admin-nav-text);
   cursor: pointer;
-  padding: 8px;
+  padding: var(--spacing-sm);
   border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
@@ -45,10 +53,10 @@
   transition: background-color 0.2s;
 
   &:hover {
-    background-color: rgba(255, 255, 255, 0.1);
+    background-color: var(--overlay-highlight-xs);
   }
 
-  .material-icons {
+  app-icon {
     font-size: 24px;
   }
 }
@@ -58,7 +66,7 @@
   border: none;
   color: var(--admin-nav-text);
   cursor: pointer;
-  padding: 8px;
+  padding: var(--spacing-sm);
   border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
@@ -66,10 +74,10 @@
   transition: background-color 0.2s;
 
   &:hover {
-    background-color: rgba(255, 255, 255, 0.1);
+    background-color: var(--overlay-highlight-xs);
   }
 
-  .material-icons {
+  app-icon {
     font-size: 24px;
   }
 }
@@ -121,13 +129,13 @@
         a {
           display: flex;
           align-items: center;
-          gap: 12px;
-          padding: 16px 20px;
+          gap: var(--spacing-md-sm);
+          padding: var(--spacing-md) var(--spacing-md-lg);
           color: var(--admin-nav-text);
           text-decoration: none;
           transition: background-color 0.2s;
 
-          .material-icons {
+          app-icon {
             font-size: 24px;
           }
 
@@ -146,7 +154,7 @@
 }
 
 .admin-nav {
-  width: 250px;
+  width: 220px;
   background-color: var(--admin-nav-bg);
   color: var(--admin-nav-text);
   padding: 0;
@@ -154,11 +162,12 @@
   flex-direction: column;
   transition: width 0.3s ease;
   overflow: hidden;
+  min-height: 0;
   position: relative;
   z-index: 100;
 
   &.collapsed {
-    width: 60px;
+    width: 56px;
   }
 
   // On mobile, hide the desktop sidebar completely
@@ -168,12 +177,12 @@
 }
 
 .nav-header {
-  padding: var(--spacing-md);
+  padding: var(--spacing-sm-md) var(--spacing-md);
   border-bottom: 1px solid var(--admin-nav-hover);
   transition: padding 0.3s ease;
 
   .admin-nav.collapsed & {
-    padding: var(--spacing-md) var(--spacing-sm-md);
+    padding: var(--spacing-sm-md) var(--spacing-sm);
   }
 }
 
@@ -184,7 +193,7 @@
 
   h2 {
     margin: 0;
-    font-size: 1.5rem;
+    font-size: 1.125rem;
     font-weight: 600;
     white-space: nowrap;
     transition: opacity 0.2s ease;
@@ -201,12 +210,14 @@
   border: none;
   color: var(--admin-nav-text);
   cursor: pointer;
-  padding: var(--spacing-sm) var(--spacing-sm-md);
+  padding: 0;
   border-radius: var(--radius-sm);
   transition: background-color 0.2s;
   flex-shrink: 0;
-  min-width: 36px;
-  height: 36px;
+  min-width: 28px;
+  width: 28px;
+  height: 28px;
+  min-height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -215,8 +226,8 @@
     background-color: var(--admin-nav-active);
   }
 
-  .material-icons {
-    font-size: 24px;
+  app-icon {
+    font-size: var(--icon-lg);
     transition: transform 0.3s ease;
   }
 }
@@ -227,6 +238,7 @@
   padding: 0;
   margin: 0;
   flex: 1;
+  overflow-y: auto;
 
   li {
     border-bottom: 1px solid var(--admin-nav-hover);
@@ -234,22 +246,24 @@
     a {
       display: flex;
       align-items: center;
-      padding: var(--spacing-md) var(--spacing-md-lg);
+      padding: var(--spacing-sm-md) var(--spacing-md);
       color: var(--admin-nav-text);
       text-decoration: none;
+      font-size: var(--text-md);
       transition: all 0.2s ease;
       white-space: nowrap;
+      min-height: 36px;
 
       .admin-nav.collapsed & {
-        padding: var(--spacing-md);
+        padding: var(--spacing-sm-md);
         justify-content: center;
       }
 
-      .material-icons {
-        font-size: 24px;
+      app-icon {
+        font-size: var(--icon-lg);
         margin-right: var(--spacing-sm-md);
         flex-shrink: 0;
-        min-width: 24px;
+        min-width: 20px;
         text-align: center;
         vertical-align: middle;
 
@@ -279,12 +293,62 @@
 }
 
 .nav-footer {
-  padding: var(--spacing-md);
+  padding: var(--spacing-sm-md) var(--spacing-md);
   border-top: 1px solid var(--admin-nav-hover);
   margin-top: auto;
 
   .admin-nav.collapsed & {
-    padding: var(--spacing-sm-md);
+    padding: var(--spacing-sm);
+  }
+}
+
+.settings-btn {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: var(--spacing-sm) var(--spacing-md-sm);
+  margin-bottom: var(--spacing-xs);
+  background: none;
+  color: var(--admin-nav-text);
+  border: 1px solid var(--admin-nav-hover);
+  border-radius: var(--radius-control);
+  cursor: pointer;
+  font-size: var(--text-md);
+  min-height: var(--control-h-md);
+  text-decoration: none;
+  transition: background-color 0.2s, border-color 0.2s;
+  white-space: nowrap;
+
+  .admin-nav.collapsed & {
+    padding: var(--spacing-sm);
+    justify-content: center;
+  }
+
+  app-icon {
+    font-size: var(--icon-md);
+    margin-right: var(--spacing-sm);
+    flex-shrink: 0;
+
+    .admin-nav.collapsed & {
+      margin-right: 0;
+    }
+  }
+
+  .text {
+    .admin-nav.collapsed & {
+      display: none;
+    }
+  }
+
+  &:hover {
+    background-color: var(--admin-nav-hover);
+    border-color: var(--admin-nav-active);
+  }
+
+  &.active {
+    background-color: var(--admin-nav-active);
+    border-color: var(--admin-nav-active);
+    font-weight: 600;
   }
 }
 
@@ -292,24 +356,25 @@
   display: flex;
   align-items: center;
   width: 100%;
-  padding: var(--spacing-sm-md) var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-md-sm);
   background-color: var(--color-danger);
   color: var(--color-text-inverse);
   border: none;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-control);
   cursor: pointer;
-  font-size: 0.95rem;
+  font-size: var(--text-md);
+  min-height: var(--control-h-md);
   transition: background-color 0.2s;
   white-space: nowrap;
 
   .admin-nav.collapsed & {
-    padding: var(--spacing-sm-md);
+    padding: var(--spacing-sm);
     justify-content: center;
   }
 
-  .material-icons {
-    font-size: 20px;
-    margin-right: var(--spacing-sm-md);
+  app-icon {
+    font-size: var(--icon-md);
+    margin-right: var(--spacing-sm);
     flex-shrink: 0;
 
     .admin-nav.collapsed & {
@@ -332,13 +397,13 @@
 .sidebar-unread-badge {
   margin-left: auto;
   background-color: var(--color-danger);
-  color: #fff;
+  color: var(--color-text-inverse);
   font-size: 11px;
   font-weight: 700;
   line-height: 18px;
   min-width: 18px;
   padding: 0 5px;
-  border-radius: 9px;
+  border-radius: var(--radius-md);
   text-align: center;
   flex-shrink: 0;
 
@@ -366,22 +431,34 @@
 .mobile-unread-badge {
   margin-left: auto;
   background-color: var(--color-danger);
-  color: #fff;
+  color: var(--color-text-inverse);
   font-size: 11px;
   font-weight: 700;
   line-height: 18px;
   min-width: 18px;
   padding: 0 5px;
-  border-radius: 9px;
+  border-radius: var(--radius-md);
   text-align: center;
   flex-shrink: 0;
 }
 
 .admin-content {
   flex: 1;
-  padding: var(--spacing-sm-md) var(--spacing-xl) var(--spacing-xl);
+  display: flex;
+  flex-direction: column;
+  padding: var(--spacing-sm) var(--spacing-md-lg) var(--spacing-md-lg);
   overflow-y: auto;
+  min-height: 0;
   transition: margin-left 0.3s ease;
+
+  /* Migrated pages (.adm-page) own a sticky top bar that must sit flush
+     with the scroll container — drop the container's top padding for them.
+     Desktop only: mobile keeps padding-top to clear the fixed mobile header. */
+  @media (min-width: 769px) {
+    &:has(.adm-page) {
+      padding-top: 0;
+    }
+  }
 
   &.expanded {
     // Content expands when menu is collapsed
@@ -391,7 +468,6 @@
     padding: var(--spacing-sm) var(--spacing-md) var(--spacing-md);
     padding-top: 64px; // Account for mobile header (56px + 8px)
     margin-left: 0;
-    min-height: 100vh;
     width: 100%;
   }
 }

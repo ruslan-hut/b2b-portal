@@ -1,0 +1,385 @@
+/* ============================================================
+   Admin Page Shell
+   Reference: DESIGN_POLICY.md §2
+   ============================================================ */
+
+.adm-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+
+  /* Absorb .admin-content's side + bottom padding so the bar spans edge to
+     edge and the page can fill the height. The top padding is removed on
+     the container itself via `.admin-content:has(.adm-page)` (see
+     admin.component.scss) so the sticky bar sits flush with no gap. */
+  margin: 0 calc(-1 * var(--spacing-md-lg)) calc(-1 * var(--spacing-md-lg));
+
+  @media (max-width: 768px) {
+    margin: 0 calc(-1 * var(--spacing-md)) calc(-1 * var(--spacing-md));
+  }
+}
+
+/* ---------- Sticky top bar ---------- */
+.adm-bar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--adm-bar-bg);
+  border-bottom: 1px solid var(--color-border);
+  min-width: 0;
+  /* A constant height whether or not the page has a primary action, so the bar
+     does not resize between pages and anything sticking beneath it can offset
+     by a known amount. */
+  min-height: var(--control-h-lg);
+
+  &__crumbs {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  &__actions {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    flex: 0 0 auto;
+  }
+}
+
+/* Current-state chip in the bar. Carries the record's own state colour via an
+   inline --stage-color, and is a button when acting on that state is the point
+   (a CRM stage opens the stage change).
+
+   The colour goes in a dot and a tint, never in the label: stage colours are
+   picked by an admin in CRM settings, so a pale one used as text would fall
+   under contrast at any weight. Same split the stage list in the modals uses. */
+.adm-bar__state {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  flex: 0 0 auto;
+  height: var(--control-h-md);
+  max-width: 220px;
+  padding: 0 var(--spacing-sm-md);
+  border: 1px solid;
+  border-color: color-mix(in srgb, var(--stage-color, var(--color-primary)) 40%, var(--color-border));
+  border-radius: var(--radius-control);
+  background: color-mix(in srgb, var(--stage-color, var(--color-primary)) 10%, var(--adm-bar-control-bg));
+  color: var(--color-text-primary);
+  font-family: inherit;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  letter-spacing: .01em;
+  cursor: pointer;
+  transition: background-color .15s ease, border-color .15s ease;
+
+  &__dot {
+    width: 8px;
+    height: 8px;
+    flex: 0 0 auto;
+    border-radius: 50%;
+    background: var(--stage-color, var(--color-primary));
+    /* A stage colour close to the theme's own surface lightness (a pale yellow
+       on light, a navy on dark) leaves the dot at ~1.3:1 against the tint it
+       created. The neutral hairline keeps it a dot in every configuration. */
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-text-primary) 40%, transparent);
+  }
+
+  &__name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  app-icon {
+    font-size: var(--icon-sm);
+    opacity: .55;
+    flex: 0 0 auto;
+  }
+
+  &:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--stage-color, var(--color-primary)) 20%, var(--adm-bar-control-bg));
+    border-color: color-mix(in srgb, var(--stage-color, var(--color-primary)) 70%, var(--color-border));
+  }
+
+  &:disabled { cursor: default; }
+
+  /* Bar buttons drop their labels here, so the chip yields width too rather
+     than pushing the actions off the edge. */
+  @media (max-width: 768px) {
+    max-width: 120px;
+    padding: 0 var(--spacing-sm);
+  }
+}
+
+.adm-crumb-back {
+  width: var(--control-h-md);
+  height: var(--control-h-md);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-border);
+  background: var(--adm-bar-control-bg);
+  border-radius: var(--radius-control);
+  cursor: pointer;
+  color: var(--color-text-secondary);
+  transition: border-color .15s ease, color .15s ease, background-color .15s ease;
+
+  app-icon { font-size: var(--icon-md); }
+
+  &:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+  }
+}
+
+.adm-crumb {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  text-decoration: none;
+  letter-spacing: .01em;
+  white-space: nowrap;
+
+  &--active {
+    color: var(--color-text-primary);
+    font-weight: 600;
+    cursor: default;
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &:not(.adm-crumb--active):hover {
+    color: var(--color-primary);
+  }
+}
+
+.adm-crumb-back {
+  flex: 0 0 auto;
+}
+
+/* Below 600px the parent crumb + separator are hidden to keep the active
+   page name + back button on one line. */
+@media (max-width: 600px) {
+  .adm-bar .adm-crumb:not(.adm-crumb--active),
+  .adm-bar .adm-crumb-sep {
+    display: none;
+  }
+
+  /* When the bar also carries tabs, the active crumb goes too: the tabs
+     already name the zone and say which of its views is open, so the crumb is
+     the one thing in the bar saying nothing twice. Keeping it cost the tabs
+     their width — on a phone the strip collapsed to a single scrolling word. */
+  .adm-bar__crumbs:has(.adm-bar__tabs) .adm-crumb--active {
+    display: none;
+  }
+}
+
+.adm-crumb-sep {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  opacity: .5;
+}
+
+/* ---------- Tab set inside the bar ---------- */
+/* A page that switches between sibling views (webhooks, telegram, invoices)
+   carries its tabs in the crumbs slot, after the trail: the trail says where
+   the page sits under Settings, the tabs say which of its views is open. They
+   belong in the bar and not in a row of their own — a second row is a second
+   bar, which is what §2.1 exists to prevent.
+
+   The active crumb gives up its flex-grow when tabs follow it, so the tabs sit
+   beside the page name instead of being shoved against the actions. */
+.adm-bar__crumbs:has(.adm-bar__tabs) .adm-crumb--active {
+  flex: 0 1 auto;
+}
+
+.adm-bar__tabs {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  margin-left: var(--spacing-xs);
+  min-width: 0;
+  overflow-x: auto;
+  /* Scrolls, but without a bar: a scrollbar under a four-item tab strip is
+     taller than the gap it sits in and reads as a rule under the bar
+     (DESIGN_POLICY, Menu Bar — mobile behaviour). */
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar { display: none; }
+}
+
+.adm-bar__tab {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  height: var(--control-h-md);
+  padding: 0 var(--spacing-sm-md);
+  border: none;
+  border-radius: var(--radius-control);
+  /* Bar ground, not --card-bg / --color-background-secondary: these sit on the
+     bar, and in dark those two are the same colour as the canvas (§2.1). */
+  background: transparent;
+  font-family: inherit;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color .15s ease, color .15s ease;
+
+  app-icon { font-size: var(--icon-sm); }
+
+  &:hover {
+    color: var(--color-text-primary);
+    background: var(--adm-bar-control-bg);
+  }
+
+  &.is-active {
+    color: var(--color-primary);
+    background: var(--color-primary-container, var(--adm-bar-control-bg));
+  }
+}
+
+/* ---------- Loading row ---------- */
+.adm-loading {
+  padding: var(--spacing-lg);
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: var(--text-md);
+}
+
+/* ---------- Two-column grid ---------- */
+.adm-grid {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  gap: var(--spacing-md-lg);
+  padding: var(--spacing-md-lg);
+  align-items: start;
+
+  @media (max-width: 960px) {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-md);
+    padding: var(--spacing-md);
+  }
+
+  &--full {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.adm-side {
+  position: sticky;
+  /* Bar height (its min-height + vertical padding + border) plus the grid's own
+     top padding, so the spine parks exactly where it started rather than
+     tucking under the bar by a few pixels. */
+  top: calc(var(--control-h-lg) + var(--spacing-md) + 1px + var(--spacing-md-lg));
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+
+  @media (max-width: 960px) {
+    position: static;
+  }
+}
+
+.adm-main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  min-width: 0;
+}
+
+/* ---------- Numbered section ---------- */
+.adm-section {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md) var(--spacing-md-lg);
+
+  &--danger {
+    border-color: var(--color-danger);
+  }
+
+  &__head {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--spacing-md-sm);
+    padding-bottom: var(--spacing-sm-md);
+    margin-bottom: var(--spacing-md);
+    border-bottom: 1px solid var(--color-border-light);
+
+    /* A collapsed section is head-only. The rule would then underline nothing
+       and the margin would leave the card half empty. */
+    &:last-child {
+      padding-bottom: 0;
+      margin-bottom: 0;
+      border-bottom: none;
+    }
+  }
+
+  /* With a link in the head, the title block has to be allowed to shrink and
+     the link to drop below it — otherwise a narrow column wraps the subtitle
+     around the link and the two read as one paragraph. */
+  &__head:has(.adm-section__link) {
+    flex-wrap: wrap;
+
+    > :first-child {
+      flex: 1 1 220px;
+      min-width: 0;
+    }
+  }
+
+  &__title {
+    margin: 0;
+    font-size: var(--text-lg);
+    font-weight: 600;
+    color: var(--color-text-primary);
+    line-height: 1.2;
+  }
+
+  &__sub {
+    margin: 2px 0 0;
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+  }
+
+  /* "Take me to the full thing" — a section that shows a summary of a page
+     that exists elsewhere links to it from its own head, right-aligned.
+     It is navigation, not an action, so it stays a link and never borrows a
+     .adm-btn: the bar owns the buttons on a page. */
+  &__link {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    margin-left: auto;
+    flex: 0 0 auto;
+    align-self: center;
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--color-primary);
+    text-decoration: none;
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+
+    &:hover { text-decoration: underline; }
+
+    &:focus-visible {
+      outline: none;
+      box-shadow: var(--focus-ring);
+    }
+  }
+}
+

@@ -1,6 +1,6 @@
 import { Injectable, OnDestroy } from '@angular/core';
 import { BehaviorSubject, Subject, Observable } from 'rxjs';
-import { environment } from '../../../../environments/environment';
+import { ChatSettingsService } from './chat-settings.service';
 import { WsEvent } from '../models/chat.model';
 
 @Injectable({
@@ -19,18 +19,20 @@ export class ChatWebsocketService implements OnDestroy {
   messages$: Observable<WsEvent> = this.messagesSubject.asObservable();
   connected$: Observable<boolean> = this.connectedSubject.asObservable();
 
+  constructor(private chatSettingsService: ChatSettingsService) {}
+
   connect(): void {
     if (this.ws && (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CONNECTING)) {
       return;
     }
 
-    const token = environment.chatWsToken;
-    if (!token) {
+    const config = this.chatSettingsService.getConfig();
+    if (!config || !config.base_url || !config.auth_token) {
       return;
     }
 
     this.intentionalClose = false;
-    const wsUrl = this.buildWsUrl(token);
+    const wsUrl = this.buildWsUrl(config.base_url, config.ws_endpoint || '/crm/ws', config.auth_token);
 
     this.ws = new WebSocket(wsUrl);
 
@@ -62,6 +64,11 @@ export class ChatWebsocketService implements OnDestroy {
     };
   }
 
+  reconnect(): void {
+    this.disconnect();
+    this.connect();
+  }
+
   send(event: object): void {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify(event));
@@ -85,11 +92,11 @@ export class ChatWebsocketService implements OnDestroy {
     this.connectedSubject.complete();
   }
 
-  private buildWsUrl(token: string): string {
-    const base = environment.chatWsUrl
+  private buildWsUrl(baseUrl: string, wsEndpoint: string, token: string): string {
+    const base = baseUrl
       .replace(/^https:\/\//, 'wss://')
       .replace(/^http:\/\//, 'ws://');
-    return `${base}/crm/ws?token=${encodeURIComponent(token)}`;
+    return `${base}${wsEndpoint}?token=${encodeURIComponent(token)}`;
   }
 
   private scheduleReconnect(): void {

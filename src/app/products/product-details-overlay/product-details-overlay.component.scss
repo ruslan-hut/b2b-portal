@@ -4,21 +4,21 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.7);
+  background: var(--overlay-bg);
   backdrop-filter: blur(4px);
   z-index: 10001;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 20px;
+  padding: var(--spacing-md-lg);
   animation: fadeIn 0.3s ease;
   overflow-y: auto;
 }
 
 .overlay-content {
   background: var(--card-bg);
-  border-radius: 16px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-xl);
   max-width: 900px;
   width: 100%;
   max-height: 90vh;
@@ -61,7 +61,7 @@
     border-radius: 50%;
     transition: all 0.2s ease;
 
-    .material-icons {
+    app-icon {
       font-size: 24px;
     }
 
@@ -73,11 +73,11 @@
 }
 
 .overlay-body {
-  padding: 24px;
+  padding: var(--spacing-lg);
   overflow-y: auto;
   flex: 1;
   display: flex;
-  gap: 32px;
+  gap: var(--spacing-xl);
   min-height: 0;
 }
 
@@ -88,7 +88,7 @@
   flex-direction: column;
   align-items: flex-start;
   justify-content: flex-start;
-  gap: 20px;
+  gap: var(--spacing-md-lg);
 
   .product-image-large {
     width: 100%;
@@ -96,8 +96,8 @@
     height: auto;
     aspect-ratio: 1 / 1;
     object-fit: cover;
-    border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md-lg);
     background: var(--color-background-secondary);
   }
 
@@ -105,15 +105,15 @@
     width: 100%;
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: var(--spacing-md);
 
     .product-sku {
       font-size: 14px;
       color: var(--color-text-muted);
       font-family: monospace;
-      padding: 8px 12px;
+      padding: var(--spacing-sm) var(--spacing-md-sm);
       background: var(--color-background-secondary);
-      border-radius: 6px;
+      border-radius: var(--radius-sm-md);
     }
 
     .product-price-section {
@@ -129,10 +129,10 @@
       .price-display {
         display: flex;
         align-items: baseline;
-        gap: 8px;
-        padding: 12px;
+        gap: var(--spacing-sm);
+        padding: var(--spacing-md-sm);
         background: var(--color-background-secondary);
-        border-radius: 8px;
+        border-radius: var(--radius-md);
 
         .price-amount {
           font-size: 24px;
@@ -146,6 +146,11 @@
           font-weight: 600;
         }
 
+        .price-vat {
+          font-size: 13px;
+          color: var(--color-text-secondary);
+        }
+
         .price-not-available {
           font-size: 14px;
           color: var(--color-text-muted);
@@ -154,47 +159,50 @@
       }
     }
 
-    .product-status-section {
-      .section-label {
-        font-size: 12px;
-        font-weight: 600;
-        color: var(--color-text-secondary);
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        margin: 0 0 8px 0;
+  }
+
+  .product-status-section {
+    width: 100%;
+
+    .section-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--color-text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin: 0 0 8px 0;
+    }
+
+    .stock-status {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-md-sm);
+      padding: var(--spacing-md-sm);
+      background: var(--color-background-secondary);
+      border-radius: var(--radius-md);
+
+      .status-dot {
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        display: inline-block;
+        flex-shrink: 0;
+
+        &.available {
+          background-color: var(--color-success);
+          box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-success) 20%, transparent);
+        }
+
+        &.unavailable {
+          background-color: var(--color-danger);
+          box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-danger) 20%, transparent);
+        }
       }
 
-      .stock-status {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        padding: 12px;
-        background: var(--color-background-secondary);
-        border-radius: 8px;
-
-        .status-dot {
-          width: 14px;
-          height: 14px;
-          border-radius: 50%;
-          display: inline-block;
-          flex-shrink: 0;
-
-          &.available {
-            background-color: var(--color-success);
-            box-shadow: 0 0 0 3px rgba(var(--color-success-rgb), 0.2);
-          }
-
-          &.unavailable {
-            background-color: var(--color-danger);
-            box-shadow: 0 0 0 3px rgba(var(--color-danger-rgb), 0.2);
-          }
-        }
-
-        .status-text {
-          font-size: 14px;
-          font-weight: 600;
-          color: var(--color-text-primary);
-        }
+      .status-text {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--color-text-primary);
       }
     }
   }
@@ -205,7 +213,7 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: var(--spacing-lg);
 
   .product-category-badge {
     color: var(--color-primary);
@@ -213,7 +221,7 @@
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 1px;
-    margin-bottom: 8px;
+    margin-bottom: var(--spacing-sm);
   }
 
   .product-name {
@@ -238,43 +246,77 @@
       font-size: 15px;
       color: var(--color-text-secondary);
       line-height: 1.6;
-      padding: 24px;
+      padding: var(--spacing-lg);
       background: var(--color-background-secondary);
-      border-radius: 8px;
-      white-space: pre-wrap;
+      border-radius: var(--radius-md);
       word-wrap: break-word;
 
-      // Ensure list items have proper spacing
-      ul, ol {
-        padding-left: 24px;
-        margin: 12px 0;
-      }
-
-      li {
-        margin: 8px 0;
-      }
-
-      p {
-        margin: 12px 0;
-
-        &:first-child {
-          margin-top: 0;
+      // ::ng-deep is load-bearing: the description arrives through [innerHTML],
+      // so emulated encapsulation never stamps _ngcontent on it and plain
+      // descendant selectors miss entirely. Without it the global `*` reset
+      // zeroes list padding and the markers hang outside the tinted panel.
+      ::ng-deep {
+        ul, ol {
+          padding-left: 24px;
+          margin: 12px 0;
         }
 
-        &:last-child {
-          margin-bottom: 0;
+        ul { list-style: disc; }
+        ol { list-style: decimal; }
+
+        li {
+          margin: 8px 0;
+        }
+
+        p {
+          margin: 12px 0;
+
+          &:first-child {
+            margin-top: 0;
+          }
+
+          &:last-child {
+            margin-bottom: 0;
+          }
         }
       }
     }
   }
 
 
+  .product-certification-section {
+    .certification-any {
+      font-size: 15px;
+      color: var(--color-text-secondary);
+      margin: 0 0 var(--spacing-sm) 0;
+    }
+
+    .certification-countries {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--spacing-sm);
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    .certification-country {
+      padding: 4px var(--spacing-md);
+      border-radius: var(--radius-2xl);
+      background: var(--color-background-secondary);
+      color: var(--color-text-primary);
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+  }
+
   .product-active-section {
     .active-status {
       .active-badge {
         display: inline-block;
-        padding: 8px 16px;
-        border-radius: 20px;
+        padding: var(--spacing-sm) var(--spacing-md);
+        border-radius: var(--radius-2xl);
         font-size: 14px;
         font-weight: 600;
 
@@ -314,7 +356,7 @@
 
 @media (max-width: 768px) {
   .overlay-backdrop {
-    padding: 8px;
+    padding: var(--spacing-sm);
   }
 
   .overlay-content {
@@ -324,8 +366,8 @@
 
   .overlay-body {
     flex-direction: column;
-    gap: 20px;
-    padding: 20px;
+    gap: var(--spacing-md-lg);
+    padding: var(--spacing-md-lg);
   }
 
   .product-image-section {
@@ -352,7 +394,7 @@
   .original-price {
     font-size: 0.9em;
     color: var(--color-text-muted);
-    margin-bottom: 4px;
+    margin-bottom: var(--spacing-xs);
 
     .strikethrough {
       text-decoration: line-through;
@@ -370,7 +412,7 @@
   }
 
   .savings-info {
-    margin-top: 8px;
+    margin-top: var(--spacing-sm);
     font-size: 0.9em;
     color: var(--color-success);
     font-weight: 600;

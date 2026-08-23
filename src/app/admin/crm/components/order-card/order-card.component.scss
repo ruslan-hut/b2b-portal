@@ -12,11 +12,30 @@
 
   &:hover {
     border-color: var(--accent-color, var(--color-primary));
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    box-shadow: var(--shadow-sm-lg);
   }
 
   &:active {
     cursor: grabbing;
+  }
+
+  &.order-changed {
+    animation: order-glow 2s ease-out;
+  }
+}
+
+@keyframes order-glow {
+  0% {
+    box-shadow: 0 0 8px 2px color-mix(in srgb, var(--color-primary) 60%, transparent);
+    border-color: var(--color-primary);
+  }
+  50% {
+    box-shadow: 0 0 12px 4px color-mix(in srgb, var(--color-primary) 30%, transparent);
+    border-color: var(--color-primary);
+  }
+  100% {
+    box-shadow: none;
+    border-color: var(--color-border);
   }
 }
 
@@ -34,9 +53,61 @@
 // First line: Order number and date
 .first-line {
   .order-number {
+    // Truncate as one unit so a long ERP number never shoves the date off the
+    // line. Deliberately NOT display:flex — the badges below are inline-flex
+    // and lean on vertical-align, which a flex parent silently ignores. As a
+    // flex item this span is already blockified, so ellipsis works without
+    // changing the formatting context its children were written for. The Comex
+    // number is leftmost, so it is the last thing to be cut.
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     font-weight: 600;
     font-size: 13px;
     color: var(--color-text-primary);
+
+    // Monospaced and muted so the two numbers never read as one identifier.
+    .erp-number {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--color-text-muted);
+    }
+
+    .erp-number__sep {
+      margin: 0 4px;
+      opacity: .5;
+    }
+
+    .erp-edited-badge {
+      display: inline-flex;
+      align-items: center;
+      font-size: 16px;
+      color: var(--color-warning);
+      margin-left: 4px;
+    }
+
+    // Manual-discount mark: a small "stamped" chip, deliberately distinct
+    // from the bare amber ERP pencil — info-blue, boxed, a fixed override.
+    .discount-override-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      vertical-align: middle;
+      min-width: 16px;
+      height: 16px;
+      padding: 0 3px;
+      margin-left: 4px;
+      border-radius: 5px;
+      background: var(--color-info-light);
+      color: var(--color-info-dark);
+      border: 1px solid color-mix(in srgb, var(--color-info) 45%, transparent);
+      font-size: 10px;
+      font-weight: 800;
+      line-height: 1;
+      letter-spacing: -0.03em;
+    }
   }
 
   .created-date {
@@ -68,7 +139,7 @@
   border-top: 1px solid var(--color-border);
 
   .order-total {
-    font-size: 15px;
+    font-size: var(--text-md);
     font-weight: 600;
     color: var(--color-text-primary);
   }
@@ -76,7 +147,7 @@
   .manager-info {
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: var(--spacing-xs);
 
     .manager-icon {
       font-size: 12px;

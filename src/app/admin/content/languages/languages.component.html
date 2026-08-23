@@ -1,0 +1,130 @@
+<div class="adm-page">
+
+  <header class="adm-bar">
+    <div class="adm-bar__crumbs">
+      <span class="adm-crumb adm-crumb--active">{{ 'admin.content.title' | translate }}</span>
+
+      <nav class="adm-bar__tabs" [attr.aria-label]="'admin.content.title' | translate">
+        <a
+          class="adm-bar__tab"
+          routerLink="/admin/content"
+          routerLinkActive="is-active"
+          [routerLinkActiveOptions]="{ exact: true }"
+        >{{ 'admin.content.tabPages' | translate }}</a>
+        <a
+          class="adm-bar__tab"
+          routerLink="/admin/content/files"
+          routerLinkActive="is-active"
+        >{{ 'admin.contentFiles.title' | translate }}</a>
+        <a
+          class="adm-bar__tab"
+          routerLink="/admin/content/languages"
+          routerLinkActive="is-active"
+        >{{ 'admin.contentLanguages.title' | translate }}</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="adm-grid adm-grid--full">
+
+    <p class="cl-intro">{{ 'admin.contentLanguages.intro' | translate }}</p>
+
+    @if (error) {
+      <div class="adm-error" role="alert">{{ error }}</div>
+    }
+
+    @if (loading) {
+      <div class="adm-loading">{{ 'admin.contentLanguages.loading' | translate }}</div>
+    } @else {
+      <div class="adm-section adm-section--table">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th scope="col">{{ 'admin.contentLanguages.code' | translate }}</th>
+              <th scope="col">{{ 'admin.contentLanguages.name' | translate }}</th>
+              <th scope="col">{{ 'admin.contentLanguages.active' | translate }}</th>
+              <th scope="col" class="actions-col">{{ 'common.actions' | translate }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (language of languages; track trackByCode($index, language); let i = $index) {
+              <tr [class.is-inactive]="!language.active">
+                <td><code class="cl-code">{{ language.code }}</code></td>
+                <td>
+                  <input
+                    type="text"
+                    class="adm-input cl-name"
+                    [(ngModel)]="language.name"
+                    (change)="save()"
+                    [name]="'name' + i"
+                  />
+                </td>
+                <td>
+                  <button
+                    type="button"
+                    class="cl-toggle"
+                    [class.is-active]="language.active"
+                    (click)="toggleActive(language)"
+                  >
+                    {{ (language.active ? 'admin.contentLanguages.on' : 'admin.contentLanguages.off') | translate }}
+                  </button>
+                </td>
+                <td class="actions-col">
+                  <button type="button" class="adm-icon-btn" (click)="move(i, -1)" [disabled]="i === 0"
+                          [attr.aria-label]="'admin.content.moveUp' | translate">
+                    <app-icon name="arrow_upward"></app-icon>
+                  </button>
+                  <button type="button" class="adm-icon-btn" (click)="move(i, 1)"
+                          [disabled]="i === languages.length - 1"
+                          [attr.aria-label]="'admin.content.moveDown' | translate">
+                    <app-icon name="arrow_downward"></app-icon>
+                  </button>
+                  <button type="button" class="adm-icon-btn adm-icon-btn--danger" (click)="remove(language)"
+                          [attr.aria-label]="'common.delete' | translate">
+                    <app-icon name="delete"></app-icon>
+                  </button>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="4" class="cl-empty">{{ 'admin.contentLanguages.empty' | translate }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <div class="adm-section cl-add">
+        <header class="adm-section__head">
+          <div>
+            <h2 class="adm-section__title">{{ 'admin.contentLanguages.addTitle' | translate }}</h2>
+            <p class="adm-section__sub">{{ 'admin.contentLanguages.addHint' | translate }}</p>
+          </div>
+        </header>
+        <div class="cl-add__row">
+          <input
+            type="text"
+            class="adm-input cl-add__code"
+            [(ngModel)]="newCode"
+            name="newCode"
+            placeholder="cz"
+            maxlength="10"
+            [attr.aria-label]="'admin.contentLanguages.code' | translate"
+          />
+          <input
+            type="text"
+            class="adm-input cl-add__name"
+            [(ngModel)]="newName"
+            name="newName"
+            placeholder="Čeština"
+            [attr.aria-label]="'admin.contentLanguages.name' | translate"
+          />
+          <button type="button" class="adm-btn adm-btn--primary" [disabled]="saving" (click)="add()">
+            <app-icon name="add"></app-icon>
+            {{ 'admin.contentLanguages.add' | translate }}
+          </button>
+        </div>
+      </div>
+    }
+  </div>
+</div>

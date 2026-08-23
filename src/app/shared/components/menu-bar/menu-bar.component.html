@@ -1,0 +1,12 @@
+<nav class="menu-bar" role="navigation">
+  @for (item of items; track item.route) {
+    <a [routerLink]="item.route"
+       [routerLinkActiveOptions]="{ exact: item.exactMatch ?? false }"
+       routerLinkActive="active"
+       class="menu-item"
+       [attr.aria-label]="item.label">
+      <app-icon [name]="item.icon"></app-icon>
+      <span class="menu-label">{{ item.label }}</span>
+    </a>
+  }
+</nav>

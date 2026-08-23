@@ -1,0 +1,123 @@
+/* ============================================================
+   Admin Data Table
+   Reference: DESIGN_POLICY.md §9.1
+
+   Promoted from the ten admin components that each carried their own
+   copy. Those local copies are component-scoped, so Angular's emulated
+   encapsulation gives them higher specificity and they keep winning —
+   this partial is what a page gets when it *doesn't* paste a copy.
+   ============================================================ */
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-md);
+
+  thead {
+    background: var(--table-header-bg);
+    color: var(--table-header-text);
+
+    th {
+      padding: var(--spacing-sm) var(--spacing-md-sm);
+      text-align: left;
+      font-weight: 600;
+      font-size: var(--text-xs);
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      white-space: nowrap;
+
+      &:first-child { border-top-left-radius: var(--radius-md); }
+      &:last-child  { border-top-right-radius: var(--radius-md); }
+
+      &.num { text-align: right; }
+    }
+  }
+
+  tbody {
+    tr {
+      border-bottom: 1px solid var(--color-border-subtle);
+      transition: background-color .12s ease;
+
+      &:last-child { border-bottom: none; }
+      &:hover { background-color: var(--table-row-hover-bg); }
+    }
+
+    td {
+      padding: var(--spacing-sm) var(--spacing-md-sm);
+      color: var(--color-text-primary);
+      vertical-align: middle;
+
+      &.num  { text-align: right; font-variant-numeric: tabular-nums; }
+      &.mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: var(--text-xs); }
+    }
+  }
+}
+
+/* A table inside a section card runs edge to edge: the card already draws
+   the border and the padding would otherwise be doubled. */
+.adm-section--table {
+  padding: 0;
+  overflow: hidden;
+
+  .data-table thead th:first-child,
+  .data-table thead th:last-child { border-radius: 0; }
+}
+
+/* Action columns size to their buttons and never wrap them onto two rows. */
+.actions-col {
+  width: 1%;
+  white-space: nowrap;
+  text-align: right;
+}
+
+td.actions-col {
+  display: table-cell;
+
+  /* Row actions stay quiet until the row is under the cursor or holds
+     focus — a table of forty rows should not read as eighty buttons. */
+  .adm-icon-btn {
+    opacity: .55;
+    transition: opacity .12s ease, border-color .15s ease, color .15s ease;
+  }
+}
+
+.data-table tbody tr:hover td.actions-col .adm-icon-btn,
+td.actions-col .adm-icon-btn:focus-visible,
+td.actions-col:hover .adm-icon-btn {
+  opacity: 1;
+}
+
+@media (hover: none) {
+  td.actions-col .adm-icon-btn { opacity: 1; }
+}
+
+/* ---------- Desktop / mobile switch ----------
+
+   One list, two renderings: a table above 768px, a card stack below. Exactly
+   one may be on screen.
+
+   Hiding is !important on purpose. Angular compiles a component's own
+   `.foo { display: … }` to `.foo[_ngcontent-x]` — specificity 0-2-0, which
+   outranks a bare utility class at 0-1-0. Without !important, any card stack
+   that sets its own display outlives the switch and the page renders the same
+   list twice; that is exactly what /admin/content, its media library and the
+   sessions page were doing.
+
+   The *shown* state is deliberately NOT !important, and .desktop-only is given
+   no display at all. An element keeps whatever display it already has, so a
+   <table class="desktop-only"> stays a table instead of being flattened to a
+   block. The flex column below is only a fallback for the card stacks that
+   declare flex-direction and gap but no display of their own.
+
+   Pages on a different breakpoint must not borrow these names — see
+   partners/page, which switches at 900px and owns .pp-desktop-only /
+   .pp-mobile-only instead. */
+.mobile-only { display: flex; flex-direction: column; }
+
+@media (max-width: 768px) {
+  .desktop-only { display: none !important; }
+}
+
+@media (min-width: 769px) {
+  .mobile-only { display: none !important; }
+}

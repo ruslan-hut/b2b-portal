@@ -1,5 +1,8 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { ChatSummary, Platform } from '../../models/chat.model';
+import { ChatSettingsService } from '../../services/chat-settings.service';
+import { ChatService } from '../../services/chat.service';
+import { formatDate } from '../../../../core/utils/date-format';
 
 @Component({
   selector: 'app-chat-list',
@@ -10,7 +13,22 @@ import { ChatSummary, Platform } from '../../models/chat.model';
 export class ChatListComponent {
   @Input() chats: ChatSummary[] = [];
   @Input() activeChat: { platform: Platform; userId: string } | null = null;
+  @Input() hasMoreChats = false;
+  @Input() showUnreadOnly = false;
+  @Input() loadingUnread = false;
   @Output() selectChat = new EventEmitter<{ platform: Platform; userId: string }>();
+  @Output() loadMore = new EventEmitter<void>();
+  @Output() toggleUnread = new EventEmitter<void>();
+  @Output() markAllRead = new EventEmitter<void>();
+
+  constructor(
+    private chatSettingsService: ChatSettingsService,
+    private chatService: ChatService
+  ) {}
+
+  get hasUnread(): boolean {
+    return this.chats.some(c => c.unread > 0);
+  }
 
   isActive(chat: ChatSummary): boolean {
     return this.activeChat !== null
@@ -23,11 +41,7 @@ export class ChatListComponent {
   }
 
   getPlatformIcon(platform: Platform): string {
-    switch (platform) {
-      case 'telegram': return 'send';
-      case 'instagram': return 'camera_alt';
-      case 'whatsapp': return 'phone';
-    }
+    return this.chatSettingsService.getPlatformIcon(platform);
   }
 
   getPlatformClass(platform: Platform): string {
@@ -50,6 +64,6 @@ export class ChatListComponent {
       return 'yesterday';
     }
 
-    return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    return formatDate(date);
   }
 }

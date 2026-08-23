@@ -24,14 +24,34 @@ const routes: Routes = [
     canActivate: [authGuard]
   },
   {
+    path: 'partners',
+    loadChildren: () => import('./partners/partners.module').then(m => m.PartnersModule),
+    canActivate: [authGuard],
+    data: { title: 'partners.title' }
+  },
+  {
     path: 'profile',
     loadChildren: () => import('./profile/profile.module').then(m => m.ProfileModule),
     canActivate: [authGuard],
-    data: { title: 'Profile' }
+    data: { title: 'navigation.profile' }
   },
   {
     path: 'admin',
     loadChildren: () => import('./admin/admin.module').then(m => m.AdminModule)
+  },
+  {
+    // Public: the Client API contract holds no secrets and integrators need
+    // it before they hold a key.
+    path: 'api-docs',
+    loadChildren: () => import('./api-docs/api-docs.module').then(m => m.ApiDocsModule),
+    data: { title: 'Client API' }
+  },
+  {
+    // Public for the same reason as /api-docs, and linked from the profile so a
+    // client without API access can still read what the feature is.
+    path: 'api-guide',
+    loadChildren: () => import('./api-guide/api-guide.module').then(m => m.ApiGuideModule),
+    data: { title: 'Client API' }
   },
   {
     path: '**',

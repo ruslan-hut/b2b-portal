@@ -1,7 +1,9 @@
 .bulk-detail-section {
   width: 380px;
   position: sticky;
-  top: var(--spacing-md-lg);
+  // Clear the 50px sticky app header (+ small gap) so the card isn't pinned
+  // partly behind it.
+  top: calc(50px + var(--spacing-md));
   height: fit-content;
 }
 
@@ -79,6 +81,13 @@
       font-size: 13px;
       color: var(--color-text-muted);
       font-family: monospace;
+      margin-bottom: var(--spacing-xs);
+    }
+
+    .detail-barcode {
+      font-size: 13px;
+      color: var(--color-text-muted);
+      font-family: monospace;
       margin-bottom: var(--spacing-md);
     }
 
@@ -120,6 +129,11 @@
         font-size: 14px;
         color: var(--color-text-secondary);
       }
+
+      .detail-vat {
+        font-size: 13px;
+        color: var(--color-text-secondary);
+      }
     }
 
     .detail-stock {
@@ -143,12 +157,12 @@
 
           &.available {
             background-color: var(--color-success);
-            box-shadow: 0 0 0 2px rgba(var(--color-success-rgb), 0.2);
+            box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-success) 20%, transparent);
           }
 
           &.unavailable {
             background-color: var(--color-danger);
-            box-shadow: 0 0 0 2px rgba(var(--color-danger-rgb), 0.2);
+            box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-danger) 20%, transparent);
           }
         }
       }

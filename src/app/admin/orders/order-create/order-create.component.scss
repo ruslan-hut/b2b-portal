@@ -1,0 +1,72 @@
+:host {
+  display: block;
+}
+
+.oc-main {
+  max-width: 640px;
+}
+
+.oc-client-name {
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.oc-client-email {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+/* ---------- Client autocomplete ---------- */
+.oc-autocomplete {
+  position: relative;
+  width: 100%;
+
+  &__status,
+  &__empty {
+    padding: var(--spacing-sm) var(--spacing-sm-md);
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+  }
+
+  &__list {
+    list-style: none;
+    margin: 4px 0 0;
+    padding: 4px;
+    max-height: 280px;
+    overflow-y: auto;
+    background: var(--card-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-control);
+    box-shadow: var(--dropdown-shadow);
+  }
+
+  &__item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: var(--spacing-sm) var(--spacing-sm-md);
+    border-radius: var(--radius-control);
+    cursor: pointer;
+
+    &.is-highlighted { background: var(--color-background-secondary); }
+  }
+}
+
+/* ---------- Selected client ---------- */
+.oc-selected {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+  padding: var(--spacing-sm-md) var(--spacing-md);
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-control);
+  background: var(--color-primary-container, var(--color-background-secondary));
+
+  &__info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+}

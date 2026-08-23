@@ -7,6 +7,15 @@
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: var(--spacing-lg);
   margin-bottom: var(--spacing-2xl);
+
+  // Staggered entrance for product cards
+  app-product-card {
+    @for $i from 1 through 16 {
+      &:nth-child(#{$i}) .product-card {
+        animation-delay: #{($i - 1) * 40}ms;
+      }
+    }
+  }
 }
 
 .empty-state {

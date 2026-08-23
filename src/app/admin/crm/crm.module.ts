@@ -15,10 +15,12 @@ import { MyTasksComponent } from './pages/my-tasks/my-tasks.component';
 import { CrmDashboardComponent } from './pages/dashboard/crm-dashboard.component';
 import { WorkloadComponent } from './pages/workload/workload.component';
 import { SharedModule } from '../../shared/shared.module';
+import { CrmNavComponent } from './components/crm-nav/crm-nav.component';
 
 @NgModule({
   declarations: [
     CrmComponent,
+    CrmNavComponent,
     PipelineBoardComponent,
     OrderCardComponent,
     AssignmentModalComponent,

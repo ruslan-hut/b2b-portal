@@ -1,0 +1,109 @@
+<div class="adm-page">
+
+  <header class="adm-bar">
+    <div class="adm-bar__crumbs">
+      <button type="button" class="adm-crumb-back" (click)="cancel()" [attr.aria-label]="'common.back' | translate">
+        <app-icon name="arrow_back"></app-icon>
+      </button>
+      <a class="adm-crumb" (click)="cancel()" (keydown.enter)="cancel()" tabindex="0">
+        {{ 'admin.orders.allOrders' | translate }}
+      </a>
+      <span class="adm-crumb-sep">/</span>
+      <span class="adm-crumb adm-crumb--active">{{ 'admin.orders.create.title' | translate }}</span>
+    </div>
+    <div class="adm-bar__actions">
+      <button type="button" class="adm-btn adm-btn--ghost" (click)="cancel()" [disabled]="saving">
+        <app-icon name="close"></app-icon>
+        {{ 'common.cancel' | translate }}
+      </button>
+      <button
+        type="button"
+        class="adm-btn adm-btn--primary"
+        (click)="createDraft()"
+        [disabled]="!selectedClient || saving"
+      >
+        <app-icon [name]="saving ? 'sync' : 'check'"></app-icon>
+        {{ (saving ? 'common.saving' : 'admin.orders.create.createDraft') | translate }}
+      </button>
+    </div>
+  </header>
+
+  <div class="adm-grid adm-grid--full">
+    <div class="adm-main oc-main">
+
+      <section class="adm-section">
+        <header class="adm-section__head">
+          <div>
+            <h2 class="adm-section__title">{{ 'admin.orders.create.selectClient' | translate }}</h2>
+            <p class="adm-section__sub">{{ 'admin.orders.create.searchClient' | translate }}</p>
+          </div>
+        </header>
+
+        <div class="adm-fields">
+          @if (!selectedClient) {
+            <label class="adm-field adm-field--span2">
+              <span class="adm-field__label">{{ 'admin.orders.create.searchClient' | translate }}</span>
+              <div class="oc-autocomplete">
+                <input
+                  #searchInput
+                  type="text"
+                  class="adm-input"
+                  autocomplete="off"
+                  [(ngModel)]="searchQuery"
+                  (input)="onSearchInput()"
+                  (keydown)="onSearchKeydown($event)"
+                  [placeholder]="'admin.orders.create.searchPlaceholder' | translate"
+                />
+                @if (searching) {
+                  <div class="oc-autocomplete__status">{{ 'common.searching' | translate }}</div>
+                }
+                @if (!searching && filteredClients.length > 0) {
+                  <ul class="oc-autocomplete__list" role="listbox">
+                    @for (client of filteredClients; track client.uid; let i = $index) {
+                      <li
+                        class="oc-autocomplete__item"
+                        role="option"
+                        [class.is-highlighted]="i === highlightIndex"
+                        (click)="selectClient(client)"
+                        (mouseenter)="highlightIndex = i"
+                      >
+                        <span class="oc-client-name">{{ client.name }}</span>
+                        @if (client.email) {
+                          <span class="oc-client-email">{{ client.email }}</span>
+                        }
+                      </li>
+                    }
+                  </ul>
+                }
+                @if (!searching && searchQuery.trim() && filteredClients.length === 0) {
+                  <div class="oc-autocomplete__empty">{{ 'admin.orders.create.noClientsFound' | translate }}</div>
+                }
+              </div>
+            </label>
+          }
+
+          @if (selectedClient) {
+            <div class="adm-field adm-field--span2">
+              <span class="adm-field__label">{{ 'admin.orders.create.selectClient' | translate }}</span>
+              <div class="oc-selected">
+                <div class="oc-selected__info">
+                  <span class="oc-client-name">{{ selectedClient.name }}</span>
+                  @if (selectedClient.email) {
+                    <span class="oc-client-email">{{ selectedClient.email }}</span>
+                  }
+                </div>
+                <button type="button" class="adm-btn adm-btn--mini" (click)="clearSelection()">
+                  {{ 'common.change' | translate }}
+                </button>
+              </div>
+            </div>
+          }
+
+          @if (error) {
+            <div class="adm-error adm-field--span2" role="alert">{{ error }}</div>
+          }
+        </div>
+      </section>
+    </div>
+  </div>
+</div>

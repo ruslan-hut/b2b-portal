@@ -1,211 +1,265 @@
-<div class="settings-container">
-  <app-action-bar>
-    <div class="page-title" actionBarLeft>
-      <h1>Shipment Settings</h1>
-    </div>
-    <div actionBarRight>
-      <a routerLink="../carriers" class="btn btn-secondary">
-        <span class="material-icons">local_shipping</span>
-        <span class="btn-text">Manage Carriers</span>
-      </a>
-      <a routerLink="../boxes" class="btn btn-secondary">
-        <span class="material-icons">inventory_2</span>
-        <span class="btn-text">Manage Boxes</span>
-      </a>
-      <button class="btn-icon" (click)="refresh()" [disabled]="loading" title="Refresh">
-        <span class="material-icons">refresh</span>
+<div class="adm-page">
+
+  <header class="adm-bar">
+    <div class="adm-bar__crumbs">
+      <button
+        type="button"
+        class="adm-crumb-back"
+        routerLink="/admin/settings"
+        [attr.aria-label]="'common.back' | translate"
+      >
+        <app-icon name="arrow_back"></app-icon>
       </button>
+      <a class="adm-crumb" routerLink="/admin/settings">{{ 'admin.settings.title' | translate }}</a>
+      <span class="adm-crumb-sep">/</span>
+      <span class="adm-crumb adm-crumb--active">{{ 'admin.settings.shipment' | translate }}</span>
     </div>
-  </app-action-bar>
-
-  <!-- Error Message -->
-  @if (error) {
-    <div class="error-message">
-      {{ error }}
+    <div class="adm-bar__actions">
+      <a
+        [routerLink]="['../carriers']"
+        [queryParams]="{ store: selectedStore || null }"
+        queryParamsHandling="merge"
+        class="adm-btn adm-btn--ghost"
+        [title]="'admin.shipment.manageCarriers' | translate"
+      >
+        <app-icon name="local_shipping"></app-icon>
+        {{ 'admin.shipment.manageCarriers' | translate }}
+      </a>
+      <a
+        [routerLink]="['../boxes']"
+        [queryParams]="{ store: selectedStore || null }"
+        queryParamsHandling="merge"
+        class="adm-btn adm-btn--ghost"
+        [title]="'admin.shipment.manageBoxes' | translate"
+      >
+        <app-icon name="inventory_2"></app-icon>
+        {{ 'admin.shipment.manageBoxes' | translate }}
+      </a>
+      <button
+        type="button"
+        class="adm-icon-btn"
+        (click)="refresh()"
+        [disabled]="loading"
+        [title]="'common.refresh' | translate"
+        [attr.aria-label]="'common.refresh' | translate"
+      >
+        <app-icon name="refresh"></app-icon>
+      </button>
+      @if (settings) {
+        <button type="button" class="adm-btn adm-btn--primary" (click)="saveSettings()" [disabled]="saving">
+          <app-icon [name]="saving ? 'sync' : 'check'"></app-icon>
+          {{ (saving ? 'common.saving' : 'admin.shipment.saveSettings') | translate }}
+        </button>
+      }
     </div>
-  }
+  </header>
 
-  <!-- Success Message -->
-  @if (successMessage) {
-    <div class="success-message">
-      {{ successMessage }}
-    </div>
-  }
-
-  <!-- Loading Indicator -->
   @if (loading) {
-    <div class="loading">
-      Loading...
-    </div>
+    <div class="adm-loading">{{ 'common.loading' | translate }}</div>
   }
 
   @if (!loading && settings) {
-    <!-- Service Status Card -->
-    <div class="settings-card status-card">
-      <div class="card-header">
-        <h2>Service Status</h2>
-        <span class="status-indicator" [class.connected]="settings.service_running && settings.active_carrier_count > 0">
-          <span class="material-icons">{{ settings.service_running && settings.active_carrier_count > 0 ? 'check_circle' : 'cancel' }}</span>
-          {{ settings.service_running && settings.active_carrier_count > 0 ? 'Active' : 'Inactive' }}
-        </span>
-      </div>
-      <div class="card-body">
-        <div class="status-grid">
-          <div class="status-item">
-            <span class="status-label">Service Enabled</span>
-            <span class="status-value">{{ settings.enabled ? 'Yes' : 'No' }}</span>
-          </div>
-          <div class="status-item">
-            <span class="status-label">Active Carriers</span>
-            <span class="status-value">{{ settings.active_carrier_count }}</span>
-          </div>
-          <div class="status-item">
-            <span class="status-label">Auto Track Updates</span>
-            <span class="status-value">{{ settings.auto_track_updates ? 'Yes' : 'No' }}</span>
-          </div>
-          <div class="status-item">
-            <span class="status-label">Last Updated</span>
-            <span class="status-value">{{ formatDate(settings.last_update) }}</span>
-          </div>
-        </div>
-        <div class="status-actions">
-          <button
-            class="btn btn-primary"
-            (click)="restartService()"
-            [disabled]="restarting"
-            title="Restart shipment service with current settings"
-          >
-            @if (restarting) {
-              <span class="material-icons spinning">sync</span>
-              Restarting...
-            } @else {
-              <span class="material-icons">restart_alt</span>
-              Restart Service
-            }
-          </button>
-        </div>
-      </div>
-    </div>
+    <div class="adm-grid adm-grid--full">
+      <div class="adm-main ship-main">
 
-    <!-- Settings Form Card -->
-    <div class="settings-card">
-      <div class="card-header">
-        <h2>Service Configuration</h2>
-      </div>
-      <div class="card-body">
-        <form (ngSubmit)="saveSettings()">
-          <!-- Enabled Toggle -->
-          <div class="form-group">
-            <label>Service Enabled</label>
-            <div class="toggle-container">
-              <label class="toggle">
-                <input type="checkbox" [(ngModel)]="enabled" name="enabled" />
-                <span class="toggle-slider"></span>
+        @if (error) {
+          <div class="adm-error" role="alert">{{ error }}</div>
+        }
+        @if (successMessage) {
+          <div class="adm-success">{{ successMessage }}</div>
+        }
+
+        @if (!storeLocked) {
+          <section class="adm-section ship-store">
+            <div class="adm-fields">
+              <label class="adm-field">
+                <span class="adm-field__label">{{ 'common.store' | translate }}</span>
+                <select
+                  class="adm-input"
+                  [(ngModel)]="selectedStore"
+                  (change)="onStoreChange()"
+                  [attr.aria-label]="'admin.shipment.selectStore' | translate"
+                >
+                  @for (store of stores; track store.value) {
+                    <option [value]="store.value">
+                      @if (!store.value) { {{ store.label | translate }} } @else { {{ store.label }} }
+                    </option>
+                  }
+                </select>
               </label>
-              <span class="toggle-label">{{ enabled ? 'Shipment service is enabled' : 'Shipment service is disabled' }}</span>
             </div>
-            <span class="form-hint">Enable or disable the entire shipment service</span>
-          </div>
+          </section>
+        }
 
-          <!-- Default Carrier -->
-          <div class="form-group">
-            <label for="defaultCarrier">Default Carrier</label>
-            <select id="defaultCarrier" [(ngModel)]="defaultCarrierUid" name="defaultCarrier">
-              <option [ngValue]="null">-- No default --</option>
-              @for (carrier of carriers; track carrier.uid) {
-                <option [value]="carrier.uid">{{ carrier.name }} ({{ getCarrierTypeName(carrier.carrier_type) }})</option>
-              }
-            </select>
-            <span class="form-hint">The default carrier used when creating shipments</span>
-          </div>
-
-          <!-- Auto Track Updates Toggle -->
-          <div class="form-group">
-            <label>Auto Track Updates</label>
-            <div class="toggle-container">
-              <label class="toggle">
-                <input type="checkbox" [(ngModel)]="autoTrackUpdates" name="autoTrackUpdates" />
-                <span class="toggle-slider"></span>
-              </label>
-              <span class="toggle-label">{{ autoTrackUpdates ? 'Automatically update tracking' : 'Manual tracking only' }}</span>
+        <!-- Service status -->
+        <section class="adm-section">
+          <header class="adm-section__head ship-status-head">
+            <div>
+              <h2 class="adm-section__title">{{ 'admin.shipment.serviceStatus' | translate }}</h2>
+              <p class="adm-section__sub">{{ 'admin.shipment.serviceConfiguration' | translate }}</p>
             </div>
-            <span class="form-hint">Automatically poll carriers for tracking updates</span>
+            <span class="ship-status" [class.is-active]="settings.service_running && settings.active_carrier_count > 0">
+              <app-icon [name]="settings.service_running && settings.active_carrier_count > 0 ? 'check_circle' : 'cancel'"></app-icon>
+              {{ (settings.service_running && settings.active_carrier_count > 0 ? 'common.active' : 'common.inactive') | translate }}
+            </span>
+          </header>
+
+          <div class="adm-meta ship-status-meta">
+            <div class="adm-meta__row">
+              <span class="adm-meta__label">{{ 'admin.shipment.serviceEnabled' | translate }}</span>
+              <span class="adm-meta__value">{{ (settings.enabled ? 'common.yes' : 'common.no') | translate }}</span>
+            </div>
+            <div class="adm-meta__row">
+              <span class="adm-meta__label">{{ 'admin.shipment.activeCarriers' | translate }}</span>
+              <span class="adm-meta__value">{{ settings.active_carrier_count }}</span>
+            </div>
+            <div class="adm-meta__row">
+              <span class="adm-meta__label">{{ 'admin.shipment.autoTrackUpdates' | translate }}</span>
+              <span class="adm-meta__value">{{ (settings.auto_track_updates ? 'common.yes' : 'common.no') | translate }}</span>
+            </div>
+            <div class="adm-meta__row">
+              <span class="adm-meta__label">{{ 'common.lastUpdate' | translate }}</span>
+              <span class="adm-meta__value">{{ formatDate(settings.last_update) }}</span>
+            </div>
           </div>
 
-          <!-- Tracking Poll Interval -->
-          <div class="form-group">
-            <label for="pollInterval">Tracking Poll Interval</label>
-            <select id="pollInterval" [(ngModel)]="trackingPollIntervalMinutes" name="pollInterval" [disabled]="!autoTrackUpdates">
-              @for (option of pollIntervalOptions; track option.value) {
-                <option [value]="option.value">{{ option.label }}</option>
-              }
-            </select>
-            <span class="form-hint">How often to check for tracking updates</span>
-          </div>
-
-          <!-- Save Button -->
-          <div class="form-actions">
-            <button type="submit" class="btn btn-primary" [disabled]="saving">
-              @if (saving) {
-                <span class="material-icons spinning">sync</span>
-                Saving...
-              } @else {
-                <span class="material-icons">save</span>
-                Save Settings
-              }
+          <div class="ship-actions">
+            <button
+              type="button"
+              class="adm-btn adm-btn--ghost"
+              (click)="restartService()"
+              [disabled]="restarting"
+              [title]="'admin.shipment.restartHint' | translate"
+            >
+              <app-icon [name]="restarting ? 'sync' : 'restart_alt'" [class.ship-spin]="restarting"></app-icon>
+              {{ (restarting ? 'admin.shipment.restarting' : 'admin.shipment.restartService') | translate }}
             </button>
           </div>
-        </form>
+        </section>
+
+        <!-- Configuration -->
+        <section class="adm-section">
+          <header class="adm-section__head">
+            <div>
+              <h2 class="adm-section__title">{{ 'admin.shipment.serviceConfiguration' | translate }}</h2>
+              <p class="adm-section__sub">{{ 'admin.shipment.enableDisableHint' | translate }}</p>
+            </div>
+          </header>
+
+          <div class="adm-fields">
+            <label class="adm-toggle adm-field--span2">
+              <input type="checkbox" [(ngModel)]="enabled" name="enabled" />
+              <span class="adm-toggle__track"><span class="adm-toggle__dot"></span></span>
+              <span class="adm-toggle__text">
+                {{ 'admin.shipment.serviceEnabled' | translate }}:
+                <strong>{{ (enabled ? 'admin.shipment.serviceIsEnabled' : 'admin.shipment.serviceIsDisabled') | translate }}</strong>
+                <span class="adm-toggle__hint">{{ 'admin.shipment.enableDisableHint' | translate }}</span>
+              </span>
+            </label>
+
+            <label class="adm-field adm-field--span2">
+              <span class="adm-field__label">{{ 'admin.shipment.defaultCarrier' | translate }}</span>
+              <select class="adm-input" [(ngModel)]="defaultCarrierUid" name="defaultCarrier">
+                <option [ngValue]="null">-- {{ 'admin.shipment.noDefault' | translate }} --</option>
+                @for (carrier of carriers; track carrier.uid) {
+                  <option [value]="carrier.uid">{{ carrier.name }} ({{ getCarrierTypeName(carrier.carrier_type) }})</option>
+                }
+              </select>
+              <span class="ship-hint">{{ 'admin.shipment.defaultCarrierHint' | translate }}</span>
+            </label>
+
+            <label class="adm-toggle adm-field--span2">
+              <input type="checkbox" [(ngModel)]="autoTrackUpdates" name="autoTrackUpdates" />
+              <span class="adm-toggle__track"><span class="adm-toggle__dot"></span></span>
+              <span class="adm-toggle__text">
+                {{ 'admin.shipment.autoTrackUpdates' | translate }}:
+                <strong>{{ (autoTrackUpdates ? 'admin.shipment.autoTrackEnabled' : 'admin.shipment.manualTrackingOnly') | translate }}</strong>
+                <span class="adm-toggle__hint">{{ 'admin.shipment.autoTrackHint' | translate }}</span>
+              </span>
+            </label>
+
+            <label class="adm-field">
+              <span class="adm-field__label">{{ 'admin.shipment.trackingPollInterval' | translate }}</span>
+              <select
+                class="adm-input"
+                [(ngModel)]="trackingPollIntervalMinutes"
+                name="pollInterval"
+                [disabled]="!autoTrackUpdates"
+              >
+                @for (option of pollIntervalOptions; track option.value) {
+                  <option [value]="option.value">{{ option.label }}</option>
+                }
+              </select>
+              <span class="ship-hint">{{ 'admin.shipment.trackingPollIntervalHint' | translate }}</span>
+            </label>
+
+            <label class="adm-field adm-field--span2">
+              <span class="adm-field__label">{{ 'admin.shipment.pickupBookingStage' | translate }}</span>
+              <select
+                class="adm-input"
+                [(ngModel)]="pickupBookingStageUid"
+                name="pickupBookingStage"
+              >
+                <option [ngValue]="null">{{ 'admin.shipment.pickupBookingStageNone' | translate }}</option>
+                @for (stage of stages; track stage.uid) {
+                  <option [ngValue]="stage.uid">{{ stage.name }}</option>
+                }
+              </select>
+              <span class="ship-hint">{{ 'admin.shipment.pickupBookingStageHint' | translate }}</span>
+            </label>
+          </div>
+        </section>
+
+        <!-- Active carriers -->
+        <section class="adm-section">
+          <header class="adm-section__head ship-carriers-head">
+            <div>
+              <h2 class="adm-section__title">{{ 'admin.shipment.activeCarriers' | translate }}</h2>
+              <p class="adm-section__sub">{{ settings.active_carrier_count }} {{ 'admin.shipment.activeCarriers' | translate }}</p>
+            </div>
+            <a
+              [routerLink]="['../carriers']"
+              [queryParams]="{ store: selectedStore || null }"
+              queryParamsHandling="merge"
+              class="adm-btn adm-btn--mini"
+            >
+              <app-icon name="settings"></app-icon>
+              {{ 'admin.shipment.manageCarriers' | translate }}
+            </a>
+          </header>
+
+          @if (carriers.length > 0) {
+            <div class="ship-carriers">
+              @for (carrier of carriers; track carrier.uid) {
+                <div class="ship-carrier">
+                  <app-icon name="local_shipping" class="ship-carrier__icon"></app-icon>
+                  <div class="ship-carrier__info">
+                    <div class="ship-carrier__name">{{ carrier.name }}</div>
+                    <div class="ship-carrier__type">{{ getCarrierTypeName(carrier.carrier_type) }}</div>
+                  </div>
+                  <span class="adm-role-chip" [attr.data-role]="carrier.active ? 'manager' : 'client'">
+                    {{ (carrier.active ? 'common.active' : 'common.inactive') | translate }}
+                  </span>
+                </div>
+              }
+            </div>
+          } @else {
+            <div class="ship-empty">
+              <app-icon name="local_shipping" class="ship-empty__icon"></app-icon>
+              <p class="ship-empty__text">{{ 'admin.shipment.noActiveCarriers' | translate }}</p>
+              <a
+                [routerLink]="['../carriers']"
+                [queryParams]="{ store: selectedStore || null }"
+                queryParamsHandling="merge"
+                class="adm-btn adm-btn--primary"
+              >
+                <app-icon name="add"></app-icon>
+                {{ 'admin.shipment.carriers.addCarrier' | translate }}
+              </a>
+            </div>
+          }
+        </section>
       </div>
     </div>
-
-    <!-- Active Carriers Card -->
-    @if (carriers.length > 0) {
-      <div class="settings-card">
-        <div class="card-header">
-          <h2>Active Carriers</h2>
-        </div>
-        <div class="card-body">
-          <div class="carriers-list">
-            @for (carrier of carriers; track carrier.uid) {
-              <div class="carrier-item">
-                <div class="carrier-icon">
-                  <span class="material-icons">local_shipping</span>
-                </div>
-                <div class="carrier-info">
-                  <div class="carrier-name">{{ carrier.name }}</div>
-                  <div class="carrier-type">{{ getCarrierTypeName(carrier.carrier_type) }}</div>
-                </div>
-                <div class="carrier-status" [class.active]="carrier.active">
-                  {{ carrier.active ? 'Active' : 'Inactive' }}
-                </div>
-              </div>
-            }
-          </div>
-          <div class="carriers-footer">
-            <a routerLink="../carriers" class="btn btn-secondary btn-sm">
-              <span class="material-icons">settings</span>
-              Manage Carriers
-            </a>
-          </div>
-        </div>
-      </div>
-    } @else {
-      <div class="settings-card">
-        <div class="card-header">
-          <h2>Active Carriers</h2>
-        </div>
-        <div class="card-body">
-          <div class="empty-state">
-            <span class="material-icons">local_shipping</span>
-            <p>No active carriers configured</p>
-            <a routerLink="../carriers" class="btn btn-primary">
-              <span class="material-icons">add</span>
-              Add Carrier
-            </a>
-          </div>
-        </div>
-      </div>
-    }
   }
 </div>

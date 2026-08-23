@@ -4,6 +4,7 @@ import { Subscription } from 'rxjs';
 import { CrmService } from '../../services/crm.service';
 import { CrmWorkloadStats, CrmDashboardFilters } from '../../models/crm-dashboard.model';
 import { PageTitleService } from '../../../../core/services/page-title.service';
+import { CrmFiltersEmit } from '../../components/dashboard-filters/dashboard-filters.component';
 
 @Component({
     selector: 'app-workload',
@@ -53,20 +54,20 @@ export class WorkloadComponent implements OnInit, OnDestroy {
           this.workloadStats = stats;
           this.sortWorkload();
           this.loading = false;
-          this.cdr.detectChanges();
+          this.cdr.markForCheck();
         },
         error: (err) => {
           console.error('Failed to load workload:', err);
           this.error = 'Failed to load workload data';
           this.loading = false;
-          this.cdr.detectChanges();
+          this.cdr.markForCheck();
         }
       })
     );
   }
 
-  onFiltersChange(filters: CrmDashboardFilters): void {
-    this.currentFilters = filters;
+  onFiltersChange(event: CrmFiltersEmit): void {
+    this.currentFilters = event.filters;
     this.loadWorkload();
   }
 
@@ -99,17 +100,17 @@ export class WorkloadComponent implements OnInit, OnDestroy {
       this.sortAsc = column === 'name';
     }
     this.sortWorkload();
-    this.cdr.detectChanges();
+    this.cdr.markForCheck();
   }
 
   getSortIcon(column: string): string {
     if (this.sortBy !== column) return '';
-    return this.sortAsc ? '&#9650;' : '&#9660;';
+    return this.sortAsc ? '▲' : '▼';
   }
 
   toggleFilters(): void {
     this.isFiltersExpanded = !this.isFiltersExpanded;
-    this.cdr.detectChanges();
+    this.cdr.markForCheck();
   }
 
   // Stats calculations
@@ -152,9 +153,11 @@ export class WorkloadComponent implements OnInit, OnDestroy {
   getWorkloadColor(stats: CrmWorkloadStats): string {
     const level = this.getWorkloadLevel(stats);
     switch (level) {
-      case 'low': return '#10b981';
-      case 'medium': return '#f59e0b';
-      case 'high': return '#ef4444';
+      // Token references, not literals: this string is bound straight into a
+      // style attribute, so var() resolves against the active theme.
+      case 'low': return 'var(--priority-low-color)';
+      case 'medium': return 'var(--priority-medium-color)';
+      case 'high': return 'var(--priority-high-color)';
     }
   }
 }

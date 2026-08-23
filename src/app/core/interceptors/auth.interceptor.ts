@@ -1,108 +1,147 @@
-import { Injectable } from '@angular/core';
+import { inject } from '@angular/core';
 import {
-  HttpRequest,
-  HttpHandler,
+  HttpErrorResponse,
   HttpEvent,
-  HttpInterceptor,
-  HttpErrorResponse
+  HttpHandlerFn,
+  HttpInterceptorFn,
+  HttpRequest
 } from '@angular/common/http';
-import { Observable, throwError, BehaviorSubject } from 'rxjs';
-import { catchError, filter, take, switchMap } from 'rxjs/operators';
-import { AuthService } from '../services/auth.service';
+import { Observable, throwError } from 'rxjs';
+import { catchError, finalize, map, shareReplay, switchMap, take } from 'rxjs/operators';
 import { Router } from '@angular/router';
-import {environment} from "../../../environments/environment";
+import { AuthService } from '../services/auth.service';
+import { Maintenance } from '../services/maintenance';
+import { ChatSettingsService } from '../../admin/chat/services/chat-settings.service';
 
-@Injectable()
-export class AuthInterceptor implements HttpInterceptor {
-  private isRefreshing = false;
-  private refreshTokenSubject: BehaviorSubject<any> = new BehaviorSubject<any>(null);
+// Single in-flight token refresh shared across concurrent 401s. Every waiting
+// request subscribes to the SAME observable, so they all receive the refreshed
+// token on success OR the error on failure — the latter is critical: the old
+// BehaviorSubject approach never signalled failure, leaving concurrent requests
+// hanging forever (spinners that never resolve). Reset to null when the refresh
+// settles so the next 401 triggers a fresh refresh.
+let refreshInFlight$: Observable<string> | null = null;
 
-  constructor(
-    private authService: AuthService,
-    private router: Router
-  ) {}
+function addToken(
+  request: HttpRequest<unknown>,
+  token: string,
+  chatBaseUrl: string | null
+): HttpRequest<unknown> {
+  // Don't add token to login/refresh endpoints or external chat service requests.
+  // SECURITY: startsWith() for chatBaseUrl, not includes() — substring match
+  // could allow URL spoofing (e.g. attacker.com?q=chatBaseUrl).
+  if (
+    request.url.includes('/auth/login') ||
+    request.url.includes('/auth/refresh') ||
+    (chatBaseUrl && request.url.startsWith(chatBaseUrl))
+  ) {
+    return request;
+  }
 
-  intercept(request: HttpRequest<unknown>, next: HttpHandler): Observable<HttpEvent<unknown>> {
-    // Add auth token to request if available
-    const token = this.authService.getAccessToken();
-    if (token) {
-      request = this.addToken(request, token);
-    }
+  return request.clone({
+    setHeaders: { Authorization: `Bearer ${token}` }
+  });
+}
 
-    return next.handle(request).pipe(
-      catchError(error => {
-        if (error instanceof HttpErrorResponse && error.status === 401) {
-          return this.handle401Error(request, next, error);
-        }
-        return throwError(() => error);
-      })
+function isAuthorizationError(error: HttpErrorResponse): boolean {
+  const message = error?.error?.message;
+  if (!message) return false;
+  const lower = String(message).toLowerCase();
+  return (
+    lower.includes('not a client') ||
+    lower.includes('not authenticated or not a client') ||
+    lower.includes('access denied') ||
+    lower.includes('forbidden')
+  );
+}
+
+function handle401(
+  request: HttpRequest<unknown>,
+  next: HttpHandlerFn,
+  error: HttpErrorResponse,
+  authService: AuthService,
+  router: Router,
+  chatBaseUrl: string | null
+): Observable<HttpEvent<unknown>> {
+  if (request.url.includes('/auth/login') || request.url.includes('/auth/refresh')) {
+    router.navigate(['/auth/login']);
+    return throwError(() => error);
+  }
+
+  if (isAuthorizationError(error)) {
+    return throwError(() => error);
+  }
+
+  if (!refreshInFlight$) {
+    refreshInFlight$ = authService.refreshToken().pipe(
+      map((response: any) => response.data.access_token as string),
+      catchError(err => {
+        // Redirect once; the error is replayed to every waiting request below,
+        // so none are left hanging.
+        router.navigate(['/auth/login']);
+        return throwError(() => err);
+      }),
+      // Clear the shared refresh once it settles so a later 401 refreshes anew.
+      finalize(() => { refreshInFlight$ = null; }),
+      shareReplay(1)
     );
   }
 
-  private addToken(request: HttpRequest<any>, token: string): HttpRequest<any> {
-    // Don't add token to login and refresh endpoints
-    if (request.url.includes('/auth/login') || request.url.includes('/auth/refresh') || request.url.includes(environment.chatWsUrl)) {
-      return request;
-    }
+  return refreshInFlight$.pipe(
+    take(1),
+    switchMap(token => next(addToken(request, token, chatBaseUrl)))
+  );
+}
 
-    return request.clone({
-      setHeaders: {
-        Authorization: `Bearer ${token}`
-      }
+// Both codes mean "this session must stop": MAINTENANCE takes the whole
+// platform down, CLIENT_ACCESS_DENIED cuts off clients only. In either case a
+// client is signed out; staff stay logged in.
+function isMaintenanceError(error: HttpErrorResponse): boolean {
+  const code = error?.error?.error?.code;
+  return error.status === 503 && (code === 'MAINTENANCE' || code === 'CLIENT_ACCESS_DENIED');
+}
+
+function handleMaintenance(
+  error: HttpErrorResponse,
+  authService: AuthService,
+  router: Router,
+  maintenance: Maintenance
+): void {
+  // Refresh status so banner reflects reality without waiting for the next poll.
+  maintenance.refresh().subscribe();
+
+  // Clients are signed out; managers stay logged in and rely on the banner.
+  if (authService.entityTypeValue === 'client') {
+    authService.logout().subscribe({
+      complete: () => router.navigate(['/auth/login']),
+      error: () => router.navigate(['/auth/login'])
     });
   }
-
-  private handle401Error(request: HttpRequest<any>, next: HttpHandler, error: HttpErrorResponse): Observable<HttpEvent<any>> {
-    // Don't try to refresh on login or refresh endpoints
-    if (request.url.includes('/auth/login') || request.url.includes('/auth/refresh')) {
-      this.router.navigate(['/auth/login']);
-      return throwError(() => error);
-    }
-
-    // Check if this is an authorization error (not authentication)
-    // Authorization errors (like "not a client") should not trigger token refresh
-    // Only authentication errors (token expired/revoked) should trigger refresh
-    if (error?.error?.message) {
-      const errorMessage = error.error.message.toLowerCase();
-      // If error is about authorization/permissions (not token), don't refresh
-      if (errorMessage.includes('not a client') || 
-          errorMessage.includes('not authenticated or not a client') ||
-          errorMessage.includes('access denied') ||
-          errorMessage.includes('forbidden')) {
-        // This is an authorization error, not authentication - don't refresh token
-        return throwError(() => error);
-      }
-    }
-
-    if (!this.isRefreshing) {
-      this.isRefreshing = true;
-      this.refreshTokenSubject.next(null);
-
-      return this.authService.refreshToken().pipe(
-        switchMap((response: any) => {
-          this.isRefreshing = false;
-          const newToken = response.data.access_token;
-          // Ensure token is stored before notifying other requests
-          this.refreshTokenSubject.next(newToken);
-          // Use the new token from the response (already stored by handleLoginSuccess)
-          return next.handle(this.addToken(request, newToken));
-        }),
-        catchError((err) => {
-          this.isRefreshing = false;
-          // Redirect to login if refresh fails
-          this.router.navigate(['/auth/login']);
-          return throwError(() => err);
-        })
-      );
-    } else {
-      // Wait for refresh to complete
-      return this.refreshTokenSubject.pipe(
-        filter(token => token != null),
-        take(1),
-        switchMap(token => {
-          return next.handle(this.addToken(request, token));
-        })
-      );
-    }
-  }
 }
+
+export const authInterceptor: HttpInterceptorFn = (request, next) => {
+  const authService = inject(AuthService);
+  const router = inject(Router);
+  const maintenance = inject(Maintenance);
+  const chatSettings = inject(ChatSettingsService);
+  const chatBaseUrl = chatSettings.getBaseUrl();
+
+  const token = authService.getAccessToken();
+  if (token) {
+    request = addToken(request, token, chatBaseUrl);
+  }
+
+  return next(request).pipe(
+    catchError(error => {
+      if (error instanceof HttpErrorResponse) {
+        if (isMaintenanceError(error)) {
+          handleMaintenance(error, authService, router, maintenance);
+          return throwError(() => error);
+        }
+        if (error.status === 401) {
+          return handle401(request, next, error, authService, router, chatBaseUrl);
+        }
+      }
+      return throwError(() => error);
+    })
+  );
+};

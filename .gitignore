@@ -13,6 +13,7 @@ yarn-error.log
 
 # IDEs and editors
 .idea/
+.claude/
 .project
 .classpath
 .c9/
@@ -44,6 +45,9 @@ Thumbs.db
 .env.local
 .env.*.local
 
+# Local environment configuration (not shared)
+src/environments/environment.local.ts
+
 # Log files
 *.log
 lerna-debug.log*
@@ -68,5 +72,3 @@ Thumbs.db
 *.swp
 *.swo
 *~
-/src/environments/environment.prod.ts
-/src/environments/environment.local.ts

@@ -1,137 +1,405 @@
-<div class="order-detail-container">
-  <div class="detail-header">
-    <button class="btn-back" (click)="goBack()">
-      <span class="material-icons">arrow_back</span>
-      <span class="btn-text">Back</span>
-    </button>
-    <h2>Order Details</h2>
-    @if (canEdit && !checkingEditPermission) {
-      <button class="btn-edit-order" (click)="editOrder()">
-        <span class="material-icons">edit</span>
-        <span class="btn-text">Edit Order</span>
+<div class="order-detail-container adm-page">
+  <header class="adm-bar">
+    <div class="adm-bar__crumbs">
+      <button
+        type="button"
+        class="adm-crumb-back"
+        (click)="goBack()"
+        [attr.aria-label]="'common.back' | translate"
+      >
+        <app-icon name="arrow_back"></app-icon>
       </button>
-    }
-    @if (client) {
-      <button class="btn-view-client" (click)="viewClientProfile()">
-        <span class="material-icons">person</span>
-        <span class="btn-text">View Client</span>
+      <a class="adm-crumb" (click)="goBack()" (keydown.enter)="goBack()" tabindex="0">
+        {{ backLabel | translate }}
+      </a>
+      <span class="adm-crumb-sep">/</span>
+      <span class="adm-crumb adm-crumb--active">{{ 'orders.orderDetails' | translate }}</span>
+    </div>
+    <div class="adm-bar__actions">
+      <!-- The stage is both the order's state and the way to change it, so it
+           renders as one control instead of a label here and a button there. -->
+      @if (currentStage && !shipmentLoading) {
+        <button
+          type="button"
+          class="adm-bar__state"
+          [style.--stage-color]="currentStage.color || null"
+          (click)="openStageChangeModal()"
+          [title]="'crm.changeStage' | translate"
+        >
+          <span class="adm-bar__state__dot" aria-hidden="true"></span>
+          <span class="adm-bar__state__name">{{ currentStage.name }}</span>
+          <app-icon name="swap_horiz"></app-icon>
+        </button>
+      }
+      @if (canEdit && !checkingEditPermission) {
+        <button
+          type="button"
+          class="adm-btn"
+          [class.adm-btn--primary]="primaryAction === 'edit'"
+          [class.adm-btn--ghost]="primaryAction !== 'edit'"
+          (click)="editOrder()"
+          [title]="'admin.orders.editOrder' | translate"
+        >
+          <app-icon name="edit"></app-icon>
+          {{ 'admin.orders.editOrder' | translate }}
+        </button>
+      }
+      <button
+        type="button"
+        class="adm-btn adm-btn--ghost"
+        [disabled]="!canSplit"
+        (click)="openSplitDialog()"
+        [title]="splitBlockedTooltip()"
+      >
+        <app-icon name="call_split"></app-icon>
+        {{ 'admin.orders.splitOrder' | translate }}
       </button>
-    }
-    @if (canRequestInvoice && !invoiceLoading) {
-      <button class="btn-invoice" (click)="openInvoiceModal()" [disabled]="invoiceRequesting">
-        <span class="material-icons">receipt_long</span>
-        <span class="btn-text">{{ 'invoice.request' | translate }}</span>
-      </button>
-    }
-    @if (canCreateShipment && !shipmentLoading) {
-      <button class="btn-shipment" (click)="openCreateShipmentModal()" [disabled]="creatingShipment">
-        <span class="material-icons">local_shipping</span>
-        <span class="btn-text">Create Shipment</span>
-      </button>
-    }
-  </div>
+      @if (canRequestInvoice && !invoiceLoading) {
+        <button type="button" class="adm-btn adm-btn--ghost" (click)="openInvoiceModal()" [disabled]="invoiceRequesting" [title]="'invoice.request' | translate">
+          <app-icon name="receipt_long"></app-icon>
+          {{ 'invoice.request' | translate }}
+        </button>
+      }
+      <!-- Navigation shortcut and the admin escape hatch: both rare next to the
+           actions above, so they keep their icon and give up their label. -->
+      @if (client) {
+        <button
+          type="button"
+          class="adm-btn adm-btn--ghost adm-btn--icon"
+          (click)="viewClientProfile()"
+          [title]="'admin.orders.viewClient' | translate"
+          [attr.aria-label]="'admin.orders.viewClient' | translate"
+        >
+          <app-icon name="person"></app-icon>
+        </button>
+      }
+      @if (isAdmin && currentStage && !shipmentLoading) {
+        <button
+          type="button"
+          class="adm-btn adm-btn--ghost adm-btn--icon"
+          (click)="openForceMoveModal()"
+          [title]="'crm.forceMoveHint' | translate"
+          [attr.aria-label]="'crm.move' | translate"
+        >
+          <app-icon name="drive_file_move"></app-icon>
+        </button>
+      }
+      @if (canCreateShipment && !shipmentLoading) {
+        <button type="button" class="adm-btn adm-btn--primary" (click)="openCreateShipmentModal()" [disabled]="creatingShipment" [title]="'admin.orders.createShipment' | translate">
+          <app-icon name="local_shipping"></app-icon>
+          {{ 'admin.orders.createShipment' | translate }}
+        </button>
+      }
+    </div>
+  </header>
 
   @if (loading) {
-    <div class="loading">Loading order details...</div>
+    <div class="adm-loading">{{ 'admin.orders.loadingOrderDetails' | translate }}</div>
   }
   @if (error) {
-    <div class="error">{{ error }}</div>
+    <div class="adm-grid adm-grid--full"><div class="adm-error" role="alert">{{ error }}</div></div>
   }
 
   @if (!loading && !error && order) {
-    <div class="detail-content">
-      <!-- Combined order details card (desktop: single card, mobile: separate sections) -->
-      <div class="section order-details-combined">
-        <!-- Order Information -->
-        <div class="order-info-subsection">
-          <h3>Order Information</h3>
-          <div class="info-grid">
-            <div><strong>Order:</strong> {{ order.number || order.uid }}</div>
-            <div><strong>Status: </strong> <span [class]="getStatusClass(order.status)">{{ order.status }}</span></div>
-            <div><strong>Created:</strong> {{ formatDate(order.created_at) }}</div>
-            <div><strong>Updated:</strong> {{ formatDate(order.last_update || order.created_at) }}</div>
-            @if (order.comment) {
-              <div><strong>Comment:</strong> {{ order.comment }}</div>
+    <div class="adm-grid">
+      <!-- The spine: what the order *is*. Identity, what it comes to, and where
+           it goes — the three things you check while working the lines beside
+           them, so they stay put instead of scrolling away past 65 rows. -->
+      <aside class="adm-side">
+        <div class="section">
+          <div class="adm-record">
+            <div class="adm-record__head">
+              <h2 class="adm-record__id" [title]="fullOrderNumber">{{ displayOrderNumber }}</h2>
+              @if (order.status) {
+                <span class="adm-record__status" [ngClass]="getStatusClass(order.status)">{{ order.status }}</span>
+              }
+            </div>
+            <!-- The other number this order answers to. Directly under the
+                 heading because it is identity, not a fact about the order:
+                 when a manager is on the phone to the ERP side, this is what
+                 gets read out. -->
+            @if (order.erp_number) {
+              <div class="adm-record__id-alt" [title]="'admin.orders.erpNumber' | translate">
+                <span>{{ 'admin.orders.erpNumberAbbr' | translate }}</span>
+                <span class="adm-record__id-alt-value">{{ order.erp_number }}</span>
+              </div>
+            }
+            @if (order.company_name) {
+              <div class="adm-record__name">{{ order.company_name }}</div>
+            }
+            <div class="adm-record__meta">
+              <span>{{ 'common.created' | translate }} {{ formatDate(order.created_at) }}</span>
+              <span class="adm-record__sep" aria-hidden="true">·</span>
+              <span>{{ 'common.updated' | translate }} {{ formatDate(order.last_update || order.created_at) }}</span>
+            </div>
+            <!-- Both say "this order's numbers were touched by hand somewhere",
+                 so they sit together on one row instead of stacking. -->
+            @if (order.is_edited || order.discount_override) {
+              <div class="adm-record__flags">
+                @if (order.is_edited) {
+                  <div class="erp-edited-indicator">
+                    <span class="erp-edited-icon">&#9998;</span>
+                    {{ 'admin.orders.editedByERP' | translate }}
+                  </div>
+                }
+                @if (order.discount_override) {
+                  <div class="discount-override-indicator"
+                       [title]="'admin.orders.discountOverrideHint' | translate">
+                    <span class="discount-override-icon">%</span>
+                    {{ 'admin.orders.discountOverride' | translate }}
+                  </div>
+                }
+              </div>
             }
           </div>
         </div>
 
-        <!-- Client Information -->
-        <div class="client-info-subsection">
-          <h3>Client Information</h3>
-          @if (client) {
-            <div>
-              <div class="info-grid">
-                <div><strong>Name:</strong> {{ client.name }}</div>
-                <div><strong>Email:</strong> {{ client.email }}</div>
-                <div><strong>Phone:</strong> {{ client.phone }}</div>
-                <div><strong>Discount:</strong> {{ client.discount || 0 }}%</div>
-                <div><strong>VAT Rate:</strong> {{ client.vat_rate !== undefined ? client.vat_rate + '%' : '-' }}</div>
-                <div><strong>VAT Number:</strong> {{ client.vat_number || '-' }}</div>
+        <!-- Order Totals. A summary of the lines in the main column, so it sits
+             beside them rather than 700px below the last one. -->
+        <div class="section totals-section">
+          <h3>{{ 'orders.orderTotals' | translate }}</h3>
+          <div class="totals-breakdown">
+            @if (order.discount_percent && order.discount_percent > 0 && order.original_total) {
+              <div class="total-row">
+                <span class="total-label">{{ 'admin.orders.originalTotal' | translate }}:</span>
+                <span class="total-value">{{ formatMoney(order.original_total) }}</span>
               </div>
+            }
+            @if (order.discount_percent && order.discount_percent > 0 && order.discount_amount) {
+              <div class="total-row discount-row">
+                <span class="total-label">{{ 'orders.discount' | translate }} ({{ order.discount_percent }}%):</span>
+                <span class="total-value discount-value">-{{ formatMoney(order.discount_amount) }}</span>
+              </div>
+            }
+            <div class="total-row subtotal-row">
+              <span class="total-label">{{ 'orders.subtotalNet' | translate }}:</span>
+              <span class="total-value">{{ order.subtotal !== undefined ? formatMoney(order.subtotal) : '—' }}</span>
             </div>
-          } @else {
-            <div class="no-data">Client information not available</div>
-          }
+            @if (order.total_vat && order.total_vat > 0) {
+              <div class="total-row vat-row">
+                <span class="total-label">{{ 'orders.vat' | translate }}@if (order.vat_rate) {
+                  <span> ({{ order.vat_rate }}%)</span>
+                }:</span>
+                <span class="total-value">{{ formatMoney(order.total_vat) }}</span>
+              </div>
+            }
+            @if ((order.delivery_cost && order.delivery_cost > 0) || stageAllowsShipment) {
+              <div class="total-row delivery-cost-row">
+                <span class="total-label">{{ 'orders.deliveryCost' | translate }}:</span>
+                <span class="total-value">
+                  {{ formatMoney(order.delivery_cost) }}
+                  @if (stageAllowsShipment) {
+                    <button class="btn-icon-sm edit-btn"
+                            type="button"
+                            (click)="openDeliveryCostModal()"
+                            [title]="'orders.editDeliveryCost' | translate"
+                            [attr.aria-label]="'orders.editDeliveryCost' | translate">
+                      <app-icon name="edit"></app-icon>
+                    </button>
+                  }
+                </span>
+              </div>
+            }
+            <div class="total-row final-total-row">
+              <span class="total-label">{{ 'orders.totalGross' | translate }}:</span>
+              <span class="total-value final-total">{{ formatMoney(order.total) }} {{ order.currency_code }}</span>
+            </div>
+          </div>
         </div>
 
         <!-- Delivery Address -->
-        <div class="shipping-info-subsection">
-          <h3>Delivery Address</h3>
+        <div class="section">
+          <h3>{{ 'orders.deliveryAddress' | translate }}</h3>
           @if (hasDeliveryAddress()) {
-            <div class="info-grid">
+            <div class="adm-pairs">
               @if (order.address_text) {
-                <div>
-                  <strong>Street:</strong> {{ order.address_text }}
+                <div class="adm-pair adm-pair--span2">
+                  <span class="adm-pair__label">{{ 'orders.street' | translate }}</span>
+                  <span class="adm-pair__value">{{ order.address_text }}</span>
                 </div>
               }
               @if (order.city) {
-                <div>
-                  <strong>City:</strong> {{ order.city }}
+                <div class="adm-pair">
+                  <span class="adm-pair__label">{{ 'orders.city' | translate }}</span>
+                  <span class="adm-pair__value">{{ order.city }}</span>
                 </div>
               }
               @if (order.zipcode) {
-                <div>
-                  <strong>Zip Code:</strong> {{ order.zipcode }}
+                <div class="adm-pair">
+                  <span class="adm-pair__label">{{ 'orders.zipCode' | translate }}</span>
+                  <span class="adm-pair__value">{{ order.zipcode }}</span>
                 </div>
               }
               @if (order.country_code) {
-                <div>
-                  <strong>Country:</strong> {{ order.country_code }}
+                <div class="adm-pair">
+                  <span class="adm-pair__label">{{ 'orders.country' | translate }}</span>
+                  <span class="adm-pair__value">{{ order.country_code }}</span>
                 </div>
               }
             </div>
           } @else {
-            <p class="no-data">No address provided</p>
+            <p class="no-data">{{ 'orders.noAddressProvided' | translate }}</p>
+          }
+        </div>
+      </aside>
+
+      <div class="adm-main">
+        <!-- An instruction from the customer, addressed to whoever works this
+             order, so it leads the working column rather than trailing the
+             identity block. -->
+        @if (order.comment) {
+          <div class="section">
+            <div class="order-comment">
+              <span class="order-comment-label">{{ 'orders.comment' | translate }}</span>
+              <p class="order-comment-text">{{ order.comment }}</p>
+            </div>
+          </div>
+        }
+
+        <!-- The team's own note to the warehouse. Deliberately styled apart from
+             the customer's comment above so the two are never confused: this one
+             is never shown to the client. -->
+        @if (order.internal_comment) {
+          <div class="section">
+            <div class="order-comment order-comment--internal">
+              <span class="order-comment-label">{{ 'admin.orders.internalComment' | translate }}</span>
+              <p class="order-comment-text">{{ order.internal_comment }}</p>
+            </div>
+          </div>
+        }
+
+        <!-- Client Information -->
+        <div class="section">
+          <h3>{{ 'admin.orders.clientInformation' | translate }}</h3>
+          @if (client) {
+            <div class="adm-pairs">
+              <div class="adm-pair adm-pair--span2">
+                <span class="adm-pair__label">{{ 'common.name' | translate }}</span>
+                <span class="adm-pair__value">{{ client.name }}</span>
+              </div>
+              <div class="adm-pair">
+                <span class="adm-pair__label">{{ 'common.email' | translate }}</span>
+                <span class="adm-pair__value">{{ client.email }}</span>
+              </div>
+              <div class="adm-pair">
+                <span class="adm-pair__label">{{ 'common.phone' | translate }}</span>
+                <span class="adm-pair__value">{{ client.phone }}</span>
+              </div>
+              <div class="adm-pair">
+                <span class="adm-pair__label">{{ 'orders.vatNumber' | translate }}</span>
+                <span class="adm-pair__value" [class.adm-pair__value--muted]="!client.vat_number">
+                  {{ client.vat_number || '—' }}
+                </span>
+              </div>
+            </div>
+          } @else {
+            <div class="no-data">{{ 'admin.orders.clientNotAvailable' | translate }}</div>
+          }
+
+          <!-- Branch billing. Shown when the order is billed to a branch — these
+               are the details that reach the invoice instead of the client's — and
+               also when it is not, provided the payer can still be changed, so the
+               action is findable on an order billed to the client by mistake. -->
+          @if (order.branch_uid || canChangeBranch) {
+            <div class="billed-to">
+              <div class="billed-to__head">
+                <div class="billed-to__label">
+                  {{ (order.branch_uid ? 'admin.orders.billedToBranch' : 'admin.orders.billedToClient') | translate }}
+                </div>
+                @if (canChangeBranch) {
+                  <button class="billed-to__change"
+                          type="button"
+                          (click)="openBranchModal()"
+                          [title]="'admin.orders.changeBilledBranch' | translate"
+                          [attr.aria-label]="'admin.orders.changeBilledBranch' | translate">
+                    <app-icon name="edit"></app-icon>
+                  </button>
+                }
+              </div>
+              @if (!order.branch_uid) {
+                <div class="adm-pair adm-pair--span2">
+                  <span class="adm-pair__label">{{ 'common.name' | translate }}</span>
+                  <span class="adm-pair__value">{{ client?.name || '—' }}</span>
+                </div>
+              }
+              @if (order.branch_uid) {
+              <div class="adm-pairs">
+                <div class="adm-pair adm-pair--span2">
+                  <span class="adm-pair__label">{{ 'common.name' | translate }}</span>
+                  <span class="adm-pair__value">{{ order.branch_name }}</span>
+                </div>
+                <div class="adm-pair">
+                  <span class="adm-pair__label">{{ 'orders.vatNumber' | translate }}</span>
+                  <span class="adm-pair__value" [class.adm-pair__value--muted]="!order.branch_vat_number">
+                    {{ order.branch_vat_number || ('admin.orders.branchNoVatNumber' | translate) }}
+                  </span>
+                </div>
+                <div class="adm-pair">
+                  <span class="adm-pair__label">{{ 'admin.clients.businessRegistrationNumber' | translate }}</span>
+                  <span class="adm-pair__value" [class.adm-pair__value--muted]="!order.branch_business_registration_number">
+                    {{ order.branch_business_registration_number || '—' }}
+                  </span>
+                </div>
+              </div>
+              }
+              @if (order.branch_override) {
+                <!-- A footnote on the record, not a heading above it: it
+                     qualifies the values, so it reads after them. Re-pointing
+                     the delivery address will not move this order. -->
+                <div class="billed-to__pinned">
+                  <app-icon name="info_outline"></app-icon>
+                  <span>{{ 'admin.orders.branchPinned' | translate }}</span>
+                </div>
+              }
+            </div>
           }
         </div>
 
         <!-- Order Items -->
-        <div class="items-subsection">
-          <h3>Order Items ({{ items.length }})</h3>
+        <div class="section">
+          <h3>{{ 'orders.orderItems' | translate }} ({{ items.length }})</h3>
+
+          <!-- What every line shares is stated once here instead of printed
+               down a column: on a 0% VAT order the two price columns held the
+               same number 65 times, and one discount rate held 35% 65 times. -->
+          <div class="items-terms desktop-only">
+            <span>{{ 'orders.vatRateValue' | translate:{ rate: order.vat_rate || 0 } }}</span>
+            @if (uniformDiscount) {
+              <span class="items-terms__sep" aria-hidden="true">·</span>
+              <span>{{ 'orders.discountAllItems' | translate:{ rate: uniformDiscount } }}</span>
+            }
+          </div>
 
           <!-- Desktop Table -->
-          <table class="items-table desktop-only">
+          <table class="items-table items-table--data desktop-only">
             <thead>
               <tr>
-                <th>SKU</th>
-                <th>Product Name</th>
-                <th>Quantity</th>
-                <th>Available</th>
-                <th title="Base unit price without discount or VAT">Base Price</th>
-                <th title="Base price with VAT (before discount)">Price + VAT</th>
-                <th title="Discount percentage applied to this item">Discount (%)</th>
-                <th title="Unit price after discount, with VAT">Price w/ Discount + VAT</th>
-                <th title="Total including VAT for this item">Total</th>
+                <th class="col-idx">#</th>
+                <th>{{ 'orders.sku' | translate }}</th>
+                <th>{{ 'orders.productName' | translate }}</th>
+                <th class="numeric">{{ 'orders.quantity' | translate }}</th>
+                <th class="numeric">{{ 'admin.orders.available' | translate }}</th>
+                <th class="numeric" [title]="'admin.orders.basePriceTooltip' | translate">{{ 'orders.basePrice' | translate }}</th>
+                @if (itemsHaveVat) {
+                  <th class="numeric" [title]="'admin.orders.priceWithVatTooltip' | translate">{{ 'orders.priceWithVat' | translate }}</th>
+                }
+                @if (showItemDiscountColumn) {
+                  <th class="numeric" [title]="'admin.orders.discountPercentTooltip' | translate">{{ 'orders.discount' | translate }} (%)</th>
+                }
+                @if (itemsHaveDiscount) {
+                  <th class="numeric" [title]="'admin.orders.priceWithDiscountVatTooltip' | translate">{{ 'admin.orders.priceWithDiscountVat' | translate }}</th>
+                }
+                <th class="numeric" [title]="'admin.orders.totalWithVatTooltip' | translate">{{ 'common.total' | translate }}</th>
               </tr>
             </thead>
             <tbody>
-              @for (item of items; track item) {
+              @for (item of visibleItemsDesktop; track item) {
                 <tr>
+                  <td class="col-idx">{{ item.line_number || '' }}</td>
                   <td>{{ item.product_sku || '-' }}</td>
                   <td>{{ getProductName(item.product_uid) }}</td>
-                  <td>{{ item.quantity }}</td>
-                  <td>
+                  <td class="numeric">{{ item.quantity }}</td>
+                  <td class="numeric">
                     @if (getInventoryQuantity(item.product_uid) !== null) {
                       <span [class.stock-sufficient]="isStockSufficient(item.quantity, item.product_uid)"
                             [class.stock-insufficient]="isStockInsufficient(item.quantity, item.product_uid)">
@@ -141,16 +409,37 @@
                       <span class="stock-unknown">-</span>
                     }
                   </td>
-                  <td>{{ (item.price/100).toFixed(2) }}</td>
-                  <td>{{ (item.price_with_vat/100).toFixed(2) }}</td>
-                  <td>{{ item.discount !== undefined ? item.discount + '%' : '-' }}</td>
-                  <td>{{ (item.price_after_discount_with_vat/100).toFixed(2) }}</td>
-                  <td>{{ (item.total/100).toFixed(2) }}</td>
+                  <td class="numeric">{{ formatMoney(item.price) }}</td>
+                  @if (itemsHaveVat) {
+                    <td class="numeric">{{ formatMoney(item.price_with_vat) }}</td>
+                  }
+                  @if (showItemDiscountColumn) {
+                    <td class="numeric">{{ item.discount !== undefined ? item.discount + '%' : '-' }}</td>
+                  }
+                  @if (itemsHaveDiscount) {
+                    <td class="numeric">{{ formatMoney(item.price_after_discount_with_vat) }}</td>
+                  }
+                  <td class="numeric">{{ formatMoney(item.total) }}</td>
+                </tr>
+              }
+              @if (hasMoreItemsDesktop) {
+                <tr class="items-toggle-row">
+                  <td [attr.colspan]="itemColumnCount">
+                    <button class="btn-show-more" (click)="toggleShowAllItemsDesktop()">
+                      @if (showAllItemsDesktop) {
+                        <app-icon name="expand_less"></app-icon>
+                        <span>{{ 'orders.showLess' | translate }}</span>
+                      } @else {
+                        <app-icon name="expand_more"></app-icon>
+                        <span>{{ 'orders.showMore' | translate }} {{ hiddenItemsCountDesktop }}</span>
+                      }
+                    </button>
+                  </td>
                 </tr>
               }
               @if (items.length === 0) {
                 <tr>
-                  <td colspan="9" class="no-data">No items found for this order</td>
+                  <td [attr.colspan]="itemColumnCount" class="no-data">{{ 'orders.noItems' | translate }}</td>
                 </tr>
               }
             </tbody>
@@ -162,16 +451,16 @@
               <div class="item-card">
                 <div class="item-card-header">
                   <span class="item-name">{{ getProductName(item.product_uid) }}</span>
-                  <span class="item-total">{{ (item.total/100).toFixed(2) }}</span>
+                  <span class="item-total">{{ formatMoney(item.total) }}</span>
                 </div>
-                <div class="item-card-sku">SKU: {{ item.product_sku || '-' }}</div>
+                <div class="item-card-sku">{{ 'orders.sku' | translate }}: {{ item.product_sku || '-' }}</div>
                 <div class="item-card-details">
                   <div class="detail-item">
-                    <span class="label">Qty:</span>
+                    <span class="label">{{ 'admin.orders.qty' | translate }}:</span>
                     <span class="value">{{ item.quantity }}</span>
                   </div>
                   <div class="detail-item">
-                    <span class="label">Avail:</span>
+                    <span class="label">{{ 'admin.orders.avail' | translate }}:</span>
                     @if (getInventoryQuantity(item.product_uid) !== null) {
                       <span class="value" [class.stock-sufficient]="isStockSufficient(item.quantity, item.product_uid)"
                                           [class.stock-insufficient]="isStockInsufficient(item.quantity, item.product_uid)">
@@ -182,16 +471,16 @@
                     }
                   </div>
                   <div class="detail-item">
-                    <span class="label">Base:</span>
-                    <span class="value">{{ (item.price/100).toFixed(2) }}</span>
+                    <span class="label">{{ 'admin.orders.base' | translate }}:</span>
+                    <span class="value">{{ formatMoney(item.price) }}</span>
                   </div>
                   <div class="detail-item">
-                    <span class="label">+VAT:</span>
-                    <span class="value">{{ (item.price_with_vat/100).toFixed(2) }}</span>
+                    <span class="label">{{ 'admin.orders.plusVat' | translate }}:</span>
+                    <span class="value">{{ formatMoney(item.price_with_vat) }}</span>
                   </div>
                   @if (item.discount) {
                     <div class="detail-item discount">
-                      <span class="label">Disc:</span>
+                      <span class="label">{{ 'admin.orders.disc' | translate }}:</span>
                       <span class="value">-{{ item.discount }}%</span>
                     </div>
                   }
@@ -201,55 +490,53 @@
             @if (hasMoreItems) {
               <button class="btn-show-more" (click)="toggleShowAllItems()">
                 @if (showAllItems) {
-                  <span class="material-icons">expand_less</span>
-                  <span>Show less</span>
+                  <app-icon name="expand_less"></app-icon>
+                  <span>{{ 'orders.showLess' | translate }}</span>
                 } @else {
-                  <span class="material-icons">expand_more</span>
-                  <span>Show {{ hiddenItemsCount }} more items</span>
+                  <app-icon name="expand_more"></app-icon>
+                  <span>{{ 'orders.showMore' | translate }} {{ hiddenItemsCount }}</span>
                 }
               </button>
             }
             @if (items.length === 0) {
-              <div class="no-data-card">No items found for this order</div>
+              <div class="no-data-card">{{ 'orders.noItems' | translate }}</div>
             }
           </div>
         </div>
 
-        <!-- Order Totals -->
-        <div class="totals-subsection">
-          <h3>Order Totals</h3>
-          <div class="totals-breakdown">
-            @if (order.discount_percent && order.discount_percent > 0 && order.original_total) {
-              <div class="total-row">
-                <span class="total-label">Original Total:</span>
-                <span class="total-value">{{ (order.original_total/100).toFixed(2) }}</span>
-              </div>
-            }
-            @if (order.discount_percent && order.discount_percent > 0 && order.discount_amount) {
-              <div class="total-row discount-row">
-                <span class="total-label">Discount ({{ order.discount_percent }}%):</span>
-                <span class="total-value discount-value">-{{ (order.discount_amount/100).toFixed(2) }}</span>
-              </div>
-            }
-            <div class="total-row subtotal-row">
-              <span class="total-label">Subtotal (Net):</span>
-              <span class="total-value">{{ order.subtotal !== undefined ? (order.subtotal/100).toFixed(2) : '-' }}</span>
-            </div>
-            @if (order.total_vat && order.total_vat > 0) {
-              <div class="total-row vat-row">
-                <span class="total-label">VAT@if (order.vat_rate) {
-                  <span> ({{ order.vat_rate }}%)</span>
-                }:</span>
-                <span class="total-value">{{ (order.total_vat/100).toFixed(2) }}</span>
-              </div>
-            }
-            <div class="total-row final-total-row">
-              <span class="total-label">Total (Gross):</span>
-              <span class="total-value final-total">{{ (order.total/100).toFixed(2) }}</span>
+        <!-- Packed Boxes (from ERP) -->
+        @if (hasOrderBoxes) {
+          <div class="section">
+            <h3>{{ 'orders.packedBoxes' | translate }} ({{ orderBoxes.length }})</h3>
+            <div class="items-table-wrapper">
+              <table class="items-table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>{{ 'orders.boxDimensions' | translate }} (cm)</th>
+                    <th class="numeric">{{ 'orders.boxWeight' | translate }} (kg)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (box of orderBoxes; track box.box_number) {
+                    <tr>
+                      <td>{{ box.box_number }}</td>
+                      <td>{{ box.length_cm }} × {{ box.width_cm }} × {{ box.height_cm }}</td>
+                      <td class="numeric">{{ box.weight_kg.toFixed(3) }}</td>
+                    </tr>
+                  }
+                </tbody>
+                <tfoot>
+                  <tr>
+                    <td colspan="2">{{ 'orders.totalWeight' | translate }}</td>
+                    <td class="numeric">{{ orderBoxesTotalWeight.toFixed(3) }} kg</td>
+                  </tr>
+                </tfoot>
+              </table>
             </div>
           </div>
-        </div>
-      </div>
+        }
+
       <!-- Generated Invoices section -->
       @if (orderInvoices.length > 0) {
         <div class="section invoices-section">
@@ -273,7 +560,12 @@
                   <td>{{ getInvoiceTypeName(inv.type_uid) }}</td>
                   <td>
                     @if (inv.error) {
-                      <span class="invoice-status-error" [title]="inv.error">{{ 'common.error' | translate }}</span>
+                      <span class="inv-err">
+                        <span class="inv-err__text" [class.is-expanded]="isInvoiceErrorExpanded(inv.uid)">{{ 'common.error' | translate }}: {{ inv.error }}</span>
+                        <button type="button" class="inv-err__toggle" (click)="toggleInvoiceError(inv.uid)">
+                          {{ (isInvoiceErrorExpanded(inv.uid) ? 'orders.showLess' : 'orders.showMore') | translate }}
+                        </button>
+                      </span>
                     } @else if (inv.response_type === 'link') {
                       <span class="invoice-status-link">{{ 'invoice.link' | translate }}</span>
                     } @else {
@@ -283,9 +575,20 @@
                   <td>{{ getRequestedByName(inv.requested_by) }}</td>
                   <td>
                     @if (!inv.error) {
-                      <button class="btn-open-invoice" (click)="openInvoice(inv)">
-                        <span class="material-icons">{{ inv.response_type === 'link' ? 'open_in_new' : 'download' }}</span>
-                      </button>
+                      @if (inv.response_type === 'link' && invoiceLinks(inv).length > 1) {
+                        <div class="invoice-links">
+                          @for (url of invoiceLinks(inv); track url; let i = $index) {
+                            <button class="btn-open-invoice" (click)="openInvoiceURL(url)" [title]="url">
+                              <app-icon name="open_in_new"></app-icon>
+                              <span>{{ i + 1 }}/{{ invoiceLinks(inv).length }}</span>
+                            </button>
+                          }
+                        </div>
+                      } @else {
+                        <button class="btn-open-invoice" (click)="openInvoice(inv)">
+                          <app-icon [name]="inv.response_type === 'link' ? 'open_in_new' : 'download'"></app-icon>
+                        </button>
+                      }
                     }
                   </td>
                 </tr>
@@ -303,7 +606,12 @@
                 </div>
                 <div class="invoice-card-status">
                   @if (inv.error) {
-                    <span class="invoice-status-error">{{ 'common.error' | translate }}: {{ inv.error }}</span>
+                    <span class="inv-err">
+                      <span class="inv-err__text" [class.is-expanded]="isInvoiceErrorExpanded(inv.uid)">{{ 'common.error' | translate }}: {{ inv.error }}</span>
+                      <button type="button" class="inv-err__toggle" (click)="toggleInvoiceError(inv.uid)">
+                        {{ (isInvoiceErrorExpanded(inv.uid) ? 'orders.showLess' : 'orders.showMore') | translate }}
+                      </button>
+                    </span>
                   } @else if (inv.response_type === 'link') {
                     <span class="invoice-status-link">{{ 'invoice.link' | translate }}</span>
                   } @else {
@@ -315,10 +623,21 @@
                   <span>{{ getRequestedByName(inv.requested_by) }}</span>
                 </div>
                 @if (!inv.error) {
-                  <button class="btn-open-invoice-mobile" (click)="openInvoice(inv)">
-                    <span class="material-icons">{{ inv.response_type === 'link' ? 'open_in_new' : 'download' }}</span>
-                    <span>{{ inv.response_type === 'link' ? ('common.open' | translate) : ('common.download' | translate) }}</span>
-                  </button>
+                  @if (inv.response_type === 'link' && invoiceLinks(inv).length > 1) {
+                    <div class="invoice-links-mobile">
+                      @for (url of invoiceLinks(inv); track url; let i = $index) {
+                        <button class="btn-open-invoice-mobile" (click)="openInvoiceURL(url)">
+                          <app-icon name="open_in_new"></app-icon>
+                          <span>{{ ('common.open' | translate) }} {{ i + 1 }}/{{ invoiceLinks(inv).length }}</span>
+                        </button>
+                      }
+                    </div>
+                  } @else {
+                    <button class="btn-open-invoice-mobile" (click)="openInvoice(inv)">
+                      <app-icon [name]="inv.response_type === 'link' ? 'open_in_new' : 'download'"></app-icon>
+                      <span>{{ inv.response_type === 'link' ? ('common.open' | translate) : ('common.download' | translate) }}</span>
+                    </button>
+                  }
                 }
               </div>
             }
@@ -329,16 +648,16 @@
       <!-- Shipments section -->
       @if (orderShipments.length > 0 || shipmentServiceEnabled) {
         <div class="section shipments-section">
-          <h3>Shipments</h3>
+          <h3>{{ 'admin.orders.shipments' | translate }}</h3>
 
           @if (orderShipments.length === 0) {
             <div class="no-shipments">
-              <span class="material-icons">local_shipping</span>
-              <p>No shipments created yet</p>
+              <app-icon name="local_shipping"></app-icon>
+              <p>{{ 'admin.orders.noShipmentsYet' | translate }}</p>
               @if (canCreateShipment) {
                 <button class="btn-create-shipment" (click)="openCreateShipmentModal()">
-                  <span class="material-icons">add</span>
-                  Create Shipment
+                  <app-icon name="add"></app-icon>
+                  {{ 'admin.orders.createShipment' | translate }}
                 </button>
               }
             </div>
@@ -351,64 +670,116 @@
                       <div class="shipment-title">
                         <span class="carrier-name">{{ getCarrierName(shipment.carrier_uid) }}</span>
                         @if (shipment.carrier_shipment_id) {
-                          <span class="shipment-number">#{{ shipment.carrier_shipment_id }}</span>
+                          @if (shipment.tracking_url) {
+                            <a
+                              class="shipment-number tracking-link"
+                              [href]="shipment.tracking_url"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              [title]="'admin.orders.openCarrierTracking' | translate">
+                              #{{ shipment.carrier_shipment_id }}
+                              <app-icon name="open_in_new"></app-icon>
+                            </a>
+                          } @else {
+                            <span class="shipment-number">#{{ shipment.carrier_shipment_id }}</span>
+                          }
                         }
-                        <button
-                          class="btn-track-icon"
-                          (click)="refreshShipmentTracking(shipment)"
-                          [disabled]="trackingShipmentUid === shipment.uid"
-                          title="Refresh tracking info">
-                          <span class="material-icons" [class.spinning]="trackingShipmentUid === shipment.uid">sync</span>
-                        </button>
+                        @for (action of shipment.actions || []; track action.key) {
+                          <button
+                            [class]="shipmentActionClass(action)"
+                            (click)="handleShipmentAction(shipment, action)"
+                            [disabled]="isShipmentActionBusy(shipment, action.key)"
+                            [title]="action.label_key ? (action.label_key | translate) : ''">
+                            <app-icon [name]="action.icon || 'settings'" [class.spinning]="isShipmentActionBusy(shipment, action.key)"></app-icon>
+                          </button>
+                        }
                       </div>
-                      @if (shipment.tracking_number) {
-                        <div class="tracking-number">
-                          Track:
-                          <a
-                            [href]="shipment.tracking_url || ('https://mojdhl.pl/tracking?AWB=' + shipment.tracking_number)"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            class="tracking-link"
-                            title="Open carrier tracking page">
-                            {{ shipment.tracking_number }}
-                            <span class="material-icons">open_in_new</span>
-                          </a>
-                        </div>
-                      }
                     </div>
                     <span class="shipment-status">{{ shipment.status }}</span>
                   </div>
+                  <!-- Consolidated: this AWB also carries other orders. Named
+                       and linked, because a tracking number that silently covers
+                       three orders is the kind of thing an operator must be able
+                       to see from the order they are looking at. -->
+                  @if (shipmentCompanionOrders(shipment).length > 0) {
+                    <div class="consolidated-badge">
+                      <app-icon name="link"></app-icon>
+                      <span>
+                        {{ 'admin.orders.consolidatedWith' | translate }}
+                        @for (companion of shipmentCompanionOrders(shipment); track companion.order_uid; let last = $last) {
+                          <a class="consolidated-link"
+                             [routerLink]="['/admin/orders', companion.order_uid]">{{ companion.number || companion.order_uid }}</a>@if (!last) {<span class="consolidated-sep">,</span>}
+                        }
+                      </span>
+                    </div>
+                  }
                   <div class="shipment-details">
                     <div class="detail-row">
-                      <span class="label">Receiver:</span>
+                      <span class="label">{{ 'admin.orders.receiver' | translate }}:</span>
                       <span class="value">{{ shipment.receiver_name }}, {{ shipment.receiver_city }}</span>
                     </div>
+                    @if (shipment.carrier_price_total) {
+                      <div class="detail-row">
+                        <span class="label">{{ 'admin.orders.carrierCost' | translate }}:</span>
+                        <span class="value">{{ formatPrice(shipment.carrier_price_total) }} {{ getCarrierCurrency(shipment.carrier_uid) }} @if (shipment.carrier_fuel_surcharge) { <span style="color: var(--color-text-muted)">({{ 'admin.orders.fuel' | translate }}: {{ formatPrice(shipment.carrier_fuel_surcharge) }})</span> }</span>
+                      </div>
+                    }
+                    @if (shipment.insurance_amount) {
+                      <div class="detail-row">
+                        <span class="label">{{ 'admin.orders.insuranceMode' | translate }}:</span>
+                        <span class="value">{{ formatMoney(shipment.insurance_amount) }} PLN</span>
+                      </div>
+                    }
                     @if (shipment.shipped_at) {
                       <div class="detail-row">
-                        <span class="label">Shipped:</span>
+                        <span class="label">{{ 'orders.shipped' | translate }}:</span>
                         <span class="value">{{ formatShipmentDate(shipment.shipped_at) }}</span>
                       </div>
                     }
                     @if (shipment.delivered_at) {
                       <div class="detail-row">
-                        <span class="label">Delivered:</span>
+                        <span class="label">{{ 'orders.delivered' | translate }}:</span>
                         <span class="value">{{ formatShipmentDate(shipment.delivered_at) }}</span>
                       </div>
                     }
-                    @if (shipment.error_message) {
-                      <div class="detail-row error">
-                        <span class="label">Error:</span>
-                        <span class="value">{{ shipment.error_message }}</span>
+                    @if (shipmentErrorMessage(shipment); as err) {
+                      <div class="shipment-notice is-error">
+                        <app-icon name="error_outline" class="notice-icon"></app-icon>
+                        <div class="notice-body">
+                          <div class="notice-title">{{ 'common.error' | translate }}</div>
+                          <p class="notice-text">{{ err.summary }}</p>
+                          @if (err.details) {
+                            <details class="notice-details">
+                              <summary>{{ 'admin.orders.technicalDetails' | translate }}</summary>
+                              <pre>{{ err.details }}</pre>
+                            </details>
+                          }
+                        </div>
+                      </div>
+                    }
+                    @if (carrierRejectedReason(shipment); as reason) {
+                      <div class="shipment-notice is-warning">
+                        <app-icon name="report_problem" class="notice-icon"></app-icon>
+                        <div class="notice-body">
+                          <div class="notice-title">{{ 'admin.orders.carrierCancelRejectedTitle' | translate }}</div>
+                          <p class="notice-text">{{ 'admin.orders.carrierCancelRejected' | translate }} {{ reason.summary }}</p>
+                          @if (reason.details) {
+                            <details class="notice-details">
+                              <summary>{{ 'admin.orders.technicalDetails' | translate }}</summary>
+                              <pre>{{ reason.details }}</pre>
+                            </details>
+                          }
+                        </div>
                       </div>
                     }
                   </div>
 
                   <!-- Tracking events timeline -->
-                  @if (shipment.events && shipment.events.length > 0) {
+                  @if (shipmentTimelineEvents(shipment).length > 0) {
                     <div class="tracking-timeline">
-                      <h4>Tracking Events</h4>
+                      <h4>{{ 'admin.orders.trackingEvents' | translate }}</h4>
                       <div class="timeline">
-                        @for (event of shipment.events; track event.uid) {
+                        @for (event of visibleShipmentEvents(shipment); track event.uid) {
                           <div class="timeline-item">
                             <div class="timeline-marker"></div>
                             <div class="timeline-content">
@@ -419,24 +790,25 @@
                               @if (event.event_description) {
                                 <div class="event-description">{{ event.event_description }}</div>
                               }
-                              @if (event.terminal_city) {
-                                <div class="event-location">{{ event.terminal_name || '' }} {{ event.terminal_city }}</div>
+                              @if (eventLocation(event)) {
+                                <div class="event-location">{{ eventLocation(event) }}</div>
                               }
                             </div>
                           </div>
                         }
                       </div>
+                      @if (isShipmentEventsCollapsible(shipment)) {
+                        <button type="button" class="timeline-toggle" (click)="toggleShipmentEvents(shipment.uid)">
+                          @if (isShipmentEventsExpanded(shipment.uid)) {
+                            {{ 'admin.orders.showLessEvents' | translate }}
+                          } @else {
+                            {{ 'admin.orders.showAllEvents' | translate }} ({{ shipmentTimelineEvents(shipment).length }})
+                          }
+                        </button>
+                      }
                     </div>
                   }
 
-                  @if (shipment.label_format) {
-                    <div class="shipment-actions">
-                      <button class="btn-label" (click)="downloadLabel(shipment)" title="Download Label">
-                        <span class="material-icons">print</span>
-                        <span class="btn-text">Label</span>
-                      </button>
-                    </div>
-                  }
                 </div>
               }
             </div>
@@ -446,30 +818,30 @@
 
       <!-- Status history section -->
       <div class="section history-section">
-        <h3>Status History</h3>
+        <h3>{{ 'orders.statusHistory' | translate }}</h3>
 
         <!-- Desktop Table -->
         <table class="items-table history-table desktop-only">
           <thead>
             <tr>
-              <th>Date</th>
-              <th>User</th>
-              <th>Status</th>
-              <th>Comment</th>
+              <th>{{ 'common.date' | translate }}</th>
+              <th>{{ 'orders.user' | translate }}</th>
+              <th>{{ 'common.status' | translate }}</th>
+              <th>{{ 'orders.comment' | translate }}</th>
             </tr>
           </thead>
           <tbody>
             @for (h of history; track h) {
               <tr>
                 <td>{{ formatDate(h.created_at) }}</td>
-                <td>{{ (h.user_firstname || '') + ' ' + (h.user_lastname || '') }}</td>
+                <td>{{ historyActor(h) || ('admin.orders.system' | translate) }}</td>
                 <td>{{ h.status }}</td>
                 <td>{{ h.comment || '-' }}</td>
               </tr>
             }
             @if (history.length === 0 && !historyLoading) {
               <tr>
-                <td colspan="4" class="no-data">No history entries</td>
+                <td colspan="4" class="no-data">{{ 'orders.noHistory' | translate }}</td>
               </tr>
             }
           </tbody>
@@ -483,20 +855,27 @@
                 <span class="history-status" [class]="getStatusClass(h.status)">{{ h.status }}</span>
                 <span class="history-date">{{ formatDate(h.created_at) }}</span>
               </div>
-              <div class="history-card-user">{{ (h.user_firstname || '') + ' ' + (h.user_lastname || '') || 'System' }}</div>
+              <div class="history-card-user">{{ historyActor(h) || ('admin.orders.system' | translate) }}</div>
               @if (h.comment) {
                 <div class="history-card-comment">{{ h.comment }}</div>
               }
             </div>
           }
           @if (history.length === 0 && !historyLoading) {
-            <div class="no-data-card">No history entries</div>
+            <div class="no-data-card">{{ 'orders.noHistory' | translate }}</div>
           }
         </div>
       </div>
     </div>
+    </div>
   }
 </div>
+
+@if (showScrollTop) {
+  <button class="btn-scroll-top" (click)="scrollToTop()" [attr.aria-label]="'common.scrollToTop' | translate">
+    <app-icon name="arrow_upward"></app-icon>
+  </button>
+}
 
 <!-- Invoice Type Selection Modal -->
 @if (showInvoiceModal) {
@@ -505,7 +884,7 @@
       <div class="modal-header">
         <h3>{{ 'invoice.selectType' | translate }}</h3>
         <button class="btn-close-modal" (click)="closeInvoiceModal()">
-          <span class="material-icons">close</span>
+          <app-icon name="close"></app-icon>
         </button>
       </div>
       <div class="modal-body">
@@ -528,8 +907,190 @@
             <span class="spinner"></span>
             <span>{{ 'invoice.requesting' | translate }}</span>
           } @else {
-            <span class="material-icons">receipt_long</span>
+            <app-icon name="receipt_long"></app-icon>
             <span>{{ 'invoice.request' | translate }}</span>
+          }
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Invoice Request Progress / Error Modal -->
+@if (invoiceRequesting || invoiceRequestError) {
+  <div class="modal-overlay invoice-progress-overlay" (click)="invoiceRequestError ? dismissInvoiceRequestModal() : null">
+    <div class="modal-content invoice-progress-modal" (click)="$event.stopPropagation()">
+      @if (invoiceRequesting) {
+        <div class="invoice-progress-body">
+          <div class="progress-spinner"></div>
+          <h3>{{ 'invoice.requestingTitle' | translate }}</h3>
+          <p>{{ 'invoice.requestingHint' | translate }}</p>
+        </div>
+      } @else {
+        <div class="invoice-progress-body invoice-progress-body--error">
+          <app-icon name="error_outline" class="error-icon"></app-icon>
+          <h3>{{ 'invoice.requestFailedTitle' | translate }}</h3>
+          <p class="error-text">{{ invoiceRequestError }}</p>
+          <button class="btn-request" (click)="dismissInvoiceRequestModal()">
+            <span>{{ 'common.close' | translate }}</span>
+          </button>
+        </div>
+      }
+    </div>
+  </div>
+}
+
+<!-- Stage Change Modal -->
+@if (showStageChangeModal) {
+  <div class="modal-overlay" (click)="closeStageChangeModal()">
+    <div class="modal-content stage-change-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>{{ 'crm.changeStage' | translate }}</h3>
+        <button class="btn-close-modal" (click)="closeStageChangeModal()">
+          <app-icon name="close"></app-icon>
+        </button>
+      </div>
+      <div class="modal-body">
+        @if (currentStage) {
+          <div class="current-stage-info">
+            <span class="current-stage-label">{{ 'crm.currentStage' | translate }}:</span>
+            <span class="stage-chip"
+                  [style.background-color]="currentStage.color + '22'"
+                  [style.color]="currentStage.color"
+                  [style.border-color]="currentStage.color">
+              {{ currentStage.name }}
+            </span>
+          </div>
+        }
+        @if (transitionsLoading) {
+          <div class="stage-modal-loading">
+            <div class="spinner"></div>
+            <p>{{ 'crm.loadingStages' | translate }}</p>
+          </div>
+        } @else if (availableTransitions.length === 0 && !stageChangeError) {
+          <div class="no-transitions">
+            <app-icon name="block"></app-icon>
+            <p>{{ 'crm.noTransitions' | translate }}</p>
+          </div>
+        } @else if (availableTransitions.length > 0) {
+          <div class="stage-options-label">{{ 'crm.selectTargetStage' | translate }}:</div>
+          <div class="stage-options">
+            @for (stage of availableTransitions; track stage.uid) {
+              <label class="stage-option" [class.selected]="selectedTargetStageUid === stage.uid">
+                <input type="radio" name="targetStage"
+                       [value]="stage.uid"
+                       [(ngModel)]="selectedTargetStageUid">
+                <span class="stage-color-dot"
+                      [style.background-color]="stage.color"></span>
+                <span class="stage-name">{{ stage.name }}</span>
+                @if (stage.is_final) {
+                  <span class="stage-badge-final">{{ 'crm.stageFinal' | translate }}</span>
+                }
+              </label>
+            }
+          </div>
+        }
+        @if (stageChangeError) {
+          <div class="stage-change-error">
+            <app-icon name="error_outline"></app-icon>
+            {{ stageChangeError }}
+          </div>
+        }
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" (click)="closeStageChangeModal()" [disabled]="changingStage">
+          {{ 'common.cancel' | translate }}
+        </button>
+        <button class="btn-confirm-stage"
+                (click)="confirmStageChange()"
+                [disabled]="!selectedTargetStageUid || changingStage || transitionsLoading">
+          @if (changingStage) {
+            <span class="spinner"></span>
+            <span>{{ 'crm.movingStage' | translate }}</span>
+          } @else {
+            <app-icon name="check"></app-icon>
+            <span>{{ 'common.confirm' | translate }}</span>
+          }
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Admin Force-Move Modal (bypasses pipeline transitions) -->
+@if (showForceMoveModal && isAdmin) {
+  <div class="modal-overlay" (click)="closeForceMoveModal()">
+    <div class="modal-content stage-change-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>{{ 'crm.move' | translate }}</h3>
+        <button class="btn-close-modal" (click)="closeForceMoveModal()">
+          <app-icon name="close"></app-icon>
+        </button>
+      </div>
+      <div class="modal-body">
+        @if (currentStage) {
+          <div class="current-stage-info">
+            <span class="current-stage-label">{{ 'crm.currentStage' | translate }}:</span>
+            <span class="stage-chip"
+                  [style.background-color]="currentStage.color + '22'"
+                  [style.color]="currentStage.color"
+                  [style.border-color]="currentStage.color">
+              {{ currentStage.name }}
+            </span>
+          </div>
+        }
+        <div class="force-move-hint">
+          <app-icon name="info"></app-icon>
+          <span>{{ 'crm.forceMoveHint' | translate }}</span>
+        </div>
+        @if (forceMoveStagesLoading) {
+          <div class="stage-modal-loading">
+            <div class="spinner"></div>
+            <p>{{ 'crm.loadingStages' | translate }}</p>
+          </div>
+        } @else if (allStages.length === 0 && !forceMoveError) {
+          <div class="no-transitions">
+            <app-icon name="block"></app-icon>
+            <p>{{ 'crm.noStages' | translate }}</p>
+          </div>
+        } @else if (allStages.length > 0) {
+          <div class="stage-options-label">{{ 'crm.selectTargetStage' | translate }}:</div>
+          <div class="stage-options">
+            @for (stage of allStages; track stage.uid) {
+              <label class="stage-option" [class.selected]="selectedForceMoveStageUid === stage.uid">
+                <input type="radio" name="forceMoveStage"
+                       [value]="stage.uid"
+                       [(ngModel)]="selectedForceMoveStageUid">
+                <span class="stage-color-dot"
+                      [style.background-color]="stage.color"></span>
+                <span class="stage-name">{{ stage.name }}</span>
+                @if (stage.is_final) {
+                  <span class="stage-badge-final">{{ 'crm.stageFinal' | translate }}</span>
+                }
+              </label>
+            }
+          </div>
+        }
+        @if (forceMoveError) {
+          <div class="stage-change-error">
+            <app-icon name="error_outline"></app-icon>
+            {{ forceMoveError }}
+          </div>
+        }
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" (click)="closeForceMoveModal()" [disabled]="forceMoving">
+          {{ 'common.cancel' | translate }}
+        </button>
+        <button class="btn-confirm-stage"
+                (click)="confirmForceMove()"
+                [disabled]="!selectedForceMoveStageUid || forceMoving || forceMoveStagesLoading">
+          @if (forceMoving) {
+            <span class="spinner"></span>
+            <span>{{ 'crm.movingStage' | translate }}</span>
+          } @else {
+            <app-icon name="check"></app-icon>
+            <span>{{ 'common.confirm' | translate }}</span>
           }
         </button>
       </div>
@@ -542,82 +1103,689 @@
   <div class="modal-overlay" (click)="closeCreateShipmentModal()">
     <div class="modal-content shipment-modal" (click)="$event.stopPropagation()">
       <div class="modal-header">
-        <h3>Create Shipment</h3>
+        <h3>{{ 'admin.orders.createShipment' | translate }}</h3>
         <button class="btn-close-modal" (click)="closeCreateShipmentModal()">
-          <span class="material-icons">close</span>
+          <app-icon name="close"></app-icon>
         </button>
       </div>
       <div class="modal-body">
         <div class="form-group">
-          <label>Carrier</label>
-          <select [(ngModel)]="selectedCarrierUid">
-            <option value="">-- Select carrier --</option>
+          <label>{{ 'admin.orders.carrier' | translate }}</label>
+          <select [(ngModel)]="selectedCarrierUid" (ngModelChange)="onShipmentCarrierChanged(); clearPriceResult()">
+            <option value="">-- {{ 'admin.orders.selectCarrier' | translate }} --</option>
             @for (carrier of shipmentCarriers; track carrier.uid) {
               <option [value]="carrier.uid">{{ carrier.name }}</option>
             }
           </select>
         </div>
 
-        <!-- Box Selection -->
-        <div class="form-group">
-          <label>Box Template (Optional)</label>
-          <select [(ngModel)]="selectedBoxUID" (change)="onBoxSelected()">
-            <option [value]="null">-- Manual entry --</option>
-            @for (box of availableBoxes; track box.uid) {
-              <option [value]="box.uid">
-                {{ box.name }} ({{ box.length_cm }}×{{ box.width_cm }}×{{ box.height_cm }} cm)
-              </option>
+        <!-- Everything the order itself records about the destination, in one
+             place and clearly marked as reference. It is not what the carrier
+             is told: the recipient fields below decide that. Shown before a
+             carrier is picked too — the delivery address is order data, and
+             gating it on the carrier hid it behind a choice it doesn't depend on. -->
+        <div class="order-data">
+          <button type="button" class="order-data-header"
+                  [attr.aria-expanded]="orderDataExpanded"
+                  aria-controls="order-data-body"
+                  (click)="toggleOrderData()">
+            <app-icon [name]="orderDataExpanded ? 'expand_less' : 'expand_more'"></app-icon>
+            <span>{{ 'admin.orders.orderData' | translate }}</span>
+          </button>
+          @if (orderDataExpanded) {
+            <div class="order-data-body" id="order-data-body">
+              <div class="order-data-row">
+                <span class="order-data-label">{{ 'admin.orders.receiver' | translate }}</span>
+                <span class="order-data-value">{{ orderReceiverName || ('admin.orders.missing' | translate) }}</span>
+              </div>
+              <div class="order-data-row">
+                <span class="order-data-label">{{ 'common.phone' | translate }}</span>
+                <span class="order-data-value">{{ orderReceiverPhone || ('admin.orders.missing' | translate) }}</span>
+              </div>
+              @if (orderDeliveryAddress) {
+                <div class="order-data-row">
+                  <span class="order-data-label">{{ 'orders.deliveryAddress' | translate }}</span>
+                  <span class="order-data-value">{{ orderDeliveryAddress }}</span>
+                </div>
+              }
+              <!-- Says what the card is for every carrier, not only the ones
+                   with a recipient book — the misreading it prevents is the
+                   same either way. Needs a carrier to name, though. -->
+              @if (selectedCarrierUid) {
+                <div class="order-data-note">
+                  <app-icon name="info_outline"></app-icon>
+                  {{ 'admin.orders.orderDataReferenceNote' | translate }}
+                </div>
+              }
+            </div>
+          }
+        </div>
+
+        <!-- Several orders on one AWB. Collapsed by default and loaded on first
+             expand: most shipments carry one order, and the common case should
+             not pay for the rare one. -->
+        <div class="consolidation">
+          <button type="button" class="consolidation-header"
+                  [attr.aria-expanded]="consolidationExpanded"
+                  aria-controls="consolidation-body"
+                  (click)="toggleConsolidation()">
+            <app-icon [name]="consolidationExpanded ? 'expand_less' : 'expand_more'"></app-icon>
+            <span>{{ 'admin.orders.shipTogetherWith' | translate }}</span>
+            @if (selectedConsolidationCount > 0) {
+              <span class="consolidation-count">{{ selectedConsolidationCount }}</span>
             }
-          </select>
+          </button>
+
+          <!-- The body keeps its id whether or not it is open, so the header's
+               aria-controls always points at something real. -->
+          <div class="consolidation-body" id="consolidation-body" [hidden]="!consolidationExpanded">
+            @if (consolidationExpanded) {
+              @if (consolidationLoading) {
+                <div class="consolidation-state">
+                  <span class="spinner"></span>
+                  <span>{{ 'common.loading' | translate }}</span>
+                </div>
+              } @else if (consolidationError) {
+                <div class="consolidation-state consolidation-error" role="alert">
+                  <app-icon name="error_outline"></app-icon>
+                  <span>{{ consolidationError }}</span>
+                </div>
+              } @else if (consolidationCandidates.length === 0) {
+                <div class="consolidation-state">
+                  {{ 'admin.orders.noConsolidationCandidates' | translate }}
+                </div>
+              } @else {
+                <p class="consolidation-hint">{{ 'admin.orders.consolidationHint' | translate }}</p>
+
+                <ul class="consolidation-list">
+                  @for (candidate of consolidationCandidates; track candidate.order_uid) {
+                    <li class="consolidation-item" [class.ineligible]="!candidate.eligible">
+                      <label class="consolidation-label">
+                        <!-- aria-disabled rather than disabled: a disabled input
+                             leaves the tab order, and the reason underneath is
+                             the whole point of listing a blocked order. -->
+                        <input type="checkbox"
+                               [checked]="isConsolidationSelected(candidate.order_uid)"
+                               [attr.aria-disabled]="!candidate.eligible || null"
+                               (change)="toggleConsolidationOrder(candidate, $event)">
+                        <span class="consolidation-order">
+                          <span class="consolidation-number">{{ candidate.number || candidate.order_uid }}</span>
+                          <span class="consolidation-meta">
+                            {{ formatMoney(candidate.total) }} {{ candidate.currency_code }}
+                            &middot;
+                            {{ 'admin.orders.consolidationMeta' | translate: {
+                                boxes: candidate.box_count,
+                                weight: formatWeight(candidate.weight_kg)
+                            } }}
+                          </span>
+                          @if (!candidate.eligible) {
+                            <span class="consolidation-reason">
+                              <app-icon name="info_outline"></app-icon>
+                              <span>{{ consolidationReasonText(candidate) }}</span>
+                            </span>
+                          }
+                        </span>
+                      </label>
+                    </li>
+                  }
+                </ul>
+
+                <!-- What would actually be booked, answered by the server rather
+                     than summed here: the operator checks this against the parcel
+                     before the carrier is called, so it has to be the same
+                     arithmetic the booking will do. -->
+                @if (selectedConsolidationCount > 0) {
+                  @if (consolidationChecking || !consolidationCheck) {
+                    <div class="consolidation-summary">
+                      <span class="spinner"></span>
+                      <span>{{ 'admin.orders.consolidationChecking' | translate }}</span>
+                    </div>
+                  } @else if (!consolidationCheck.eligible) {
+                    <div class="consolidation-summary consolidation-blocked" role="alert">
+                      <app-icon name="warning_amber"></app-icon>
+                      <span>{{ consolidationReasonText(consolidationCheck) || ('admin.orders.consolidationBlocked' | translate) }}</span>
+                    </div>
+                  } @else {
+                    <div class="consolidation-summary">
+                      <app-icon name="inventory_2"></app-icon>
+                      <span>
+                        {{ 'admin.orders.consolidationSummary' | translate: {
+                            orders: consolidationCheck.orders.length,
+                            boxes: consolidationCheck.total_boxes,
+                            weight: formatWeight(consolidationCheck.total_weight_kg)
+                        } }}
+                      </span>
+                    </div>
+                  }
+                }
+
+                @if (priceStale) {
+                  <p class="consolidation-stale">{{ 'admin.orders.consolidationPriceStale' | translate }}</p>
+                }
+              }
+            }
+          </div>
         </div>
 
-        <!-- Dimensions (auto-filled from box or manual entry) -->
-        <div class="form-row">
-          <div class="form-group">
-            <label>Length (cm)</label>
-            <input type="number" [(ngModel)]="shipmentLength" min="1" step="1" [disabled]="selectedBoxUID !== null">
+        @if (hasRecipientBook) {
+          <div class="recipient-book">
+            <div class="form-group">
+              <label>{{ 'admin.orders.savedRecipient' | translate }}</label>
+              <div class="recipient-picker">
+                <select [ngModel]="selectedRecipientUid"
+                        (ngModelChange)="applyRecipient($event)"
+                        [disabled]="recipientsLoading || shipmentRecipients.length === 0">
+                  @if (shipmentRecipients.length === 0) {
+                    <option value="">-- {{ 'admin.orders.noSavedRecipients' | translate }} --</option>
+                  }
+                  @for (r of shipmentRecipients; track r.uid) {
+                    <option [value]="r.uid">
+                      {{ r.title }}{{ r.is_default ? ' ★' : '' }}
+                    </option>
+                  }
+                </select>
+                @if (recipientsLoading) { <span class="spinner"></span> }
+                <!-- The hint sits on the wrapper, the name on the button: an
+                     icon button's title is its accessible name, and a sentence
+                     makes a poor one. -->
+                <span class="btn-icon-hint" [title]="'admin.orders.editRecipientHint' | translate">
+                  <button type="button" class="btn-icon"
+                          [attr.aria-label]="'admin.orders.editRecipient' | translate"
+                          [disabled]="!selectedRecipientUid || recipientEditing"
+                          (click)="editRecipient()">
+                    <app-icon name="edit"></app-icon>
+                  </button>
+                </span>
+                <!-- With nothing saved the dialog already opens on a blank
+                     recipient, so this could only discard what is being typed. -->
+                <span class="btn-icon-hint" [title]="'admin.orders.newRecipientHint' | translate">
+                  <button type="button" class="btn-icon"
+                          [attr.aria-label]="'admin.orders.newRecipient' | translate"
+                          [disabled]="shipmentRecipients.length === 0"
+                          (click)="startNewRecipient()">
+                    <app-icon name="person_add"></app-icon>
+                  </button>
+                </span>
+              </div>
+            </div>
+            @if (!recipientEditing && selectedRecipient) {
+              <div class="recipient-summary">
+                <app-icon name="local_shipping"></app-icon>
+                <span>{{ selectedRecipient.name }}</span>
+                @if (selectedRecipient.phone) { <span>· {{ selectedRecipient.phone }}</span> }
+              </div>
+            }
+            @if (recipientError) {
+              <div class="form-error">{{ recipientError }}</div>
+            }
           </div>
-          <div class="form-group">
-            <label>Width (cm)</label>
-            <input type="number" [(ngModel)]="shipmentWidth" min="1" step="1" [disabled]="selectedBoxUID !== null">
-          </div>
-          <div class="form-group">
-            <label>Height (cm)</label>
-            <input type="number" [(ngModel)]="shipmentHeight" min="1" step="1" [disabled]="selectedBoxUID !== null">
-          </div>
-        </div>
+        }
 
-        <div class="form-row">
-          <div class="form-group">
-            <label>Weight (kg)</label>
-            <input type="number" [(ngModel)]="shipmentWeight" min="0.1" step="0.1">
+        @if (carrierOptions) {
+          @for (sel of carrierOptions.selectors; track sel.key) {
+            @if (isSelectorVisible(sel) && isSelectorEditable(sel)) {
+              <div class="form-group" [class.invalid]="isSelectorInvalid(sel)">
+                <label>
+                  {{ resolveLabel(sel) }}
+                  @if (sel.type === 'lookup' && isLookupResolved(sel)) {
+                    <app-icon name="check_circle" class="lookup-check" [title]="'common.resolved' | translate"></app-icon>
+                  }
+                </label>
+                @switch (sel.type) {
+                  @case ('select') {
+                    <select [ngModel]="selectorValues[sel.key] || ''"
+                            (ngModelChange)="onSelectorChanged(sel.key, $event)">
+                      @for (opt of visibleChoices(sel); track opt.value) {
+                        <option [value]="opt.value">{{ resolveLabel(opt) }}</option>
+                      }
+                    </select>
+                  }
+                  @case ('text') {
+                    <input type="text"
+                           [ngModel]="selectorValues[sel.key] || ''"
+                           (ngModelChange)="onSelectorChanged(sel.key, $event)"
+                           [placeholder]="sel.placeholder || ''"
+                           [attr.maxlength]="sel.max_length || null">
+                  }
+                  @case ('number') {
+                    <input type="number"
+                           [ngModel]="selectorValues[sel.key] || ''"
+                           (ngModelChange)="onSelectorChanged(sel.key, $event)"
+                           [placeholder]="sel.placeholder || ''">
+                  }
+                  @case ('lookup') {
+                    <div class="lookup-field" [class.resolved]="isLookupResolved(sel)">
+                      <input type="text"
+                             autocomplete="off"
+                             [ngModel]="selectorValues[sel.key] || ''"
+                             (ngModelChange)="onLookupInput(sel, $event)"
+                             (focus)="lookupOpen[sel.key] = true"
+                             (blur)="closeLookupDropdown(sel)"
+                             [placeholder]="sel.placeholder || ''"
+                             [attr.maxlength]="sel.max_length || null"
+                             [disabled]="isLookupDisabled(sel)">
+                      @if (lookupLoading[sel.key]) {
+                        <span class="lookup-spinner spinner"></span>
+                      }
+                      @if (lookupOpen[sel.key] && (lookupResults[sel.key]?.length || 0) > 0) {
+                        <ul class="lookup-results">
+                          @for (opt of lookupResults[sel.key]; track opt.value + opt.ref) {
+                            <li (mousedown)="selectLookupOption(sel, opt)">
+                              <span class="lookup-opt-label">{{ opt.label }}</span>
+                              @if (opt.sub) { <span class="lookup-opt-sub">{{ opt.sub }}</span> }
+                            </li>
+                          }
+                        </ul>
+                      }
+                    </div>
+                  }
+                }
+              </div>
+            }
+          }
+          @if (hasRecipientBook && recipientEditing) {
+            <div class="recipient-actions">
+              <button type="button" class="btn-secondary"
+                      [disabled]="savingRecipient"
+                      (click)="saveRecipient(false)">
+                {{ (selectedRecipientUid ? 'admin.orders.updateRecipient' : 'admin.orders.saveRecipient') | translate }}
+              </button>
+              <button type="button" class="btn-secondary"
+                      [disabled]="savingRecipient"
+                      (click)="saveRecipient(true)">
+                {{ 'admin.orders.saveRecipientDefault' | translate }}
+              </button>
+              @if (selectedRecipientUid) {
+                <button type="button" class="btn-secondary danger"
+                        [disabled]="savingRecipient"
+                        (click)="deleteRecipient()">
+                  {{ 'admin.orders.deleteRecipient' | translate }}
+                </button>
+              }
+            </div>
+          }
+          <!-- Sits with the fields that fix it, and only when something is
+               actually wrong — the carrier rejects a waybill with no contact. -->
+          @if (hasRecipientWarning) {
+            <div class="recipient-warning" role="alert">
+              <app-icon name="error_outline"></app-icon>
+              <div>
+                <div class="recipient-warning-lines">
+                  @if (recipientNameWarning) {
+                    <div>{{ 'admin.orders.receiver' | translate }}: {{ 'admin.orders.missing' | translate }}</div>
+                  }
+                  @if (recipientPhoneWarning) {
+                    <div>{{ 'common.phone' | translate }}: {{ recipientPhone || ('admin.orders.missing' | translate) }}</div>
+                  }
+                </div>
+                <div class="recipient-warning-hint">{{ 'admin.orders.receiverIncompleteHint' | translate }}</div>
+              </div>
+            </div>
+          }
+        }
+
+        @if (hasOrderBoxes) {
+          <!-- Boxes come from ERP: dimensions and weight are read-only, carrier will receive one parcel per box. -->
+          <div class="erp-boxes-summary">
+            <label>{{ 'orders.packedBoxes' | translate }}</label>
+            <div class="erp-boxes-summary-text">
+              {{ orderBoxes.length }} {{ 'orders.boxesTotal' | translate }} · {{ orderBoxesTotalWeight.toFixed(3) }} kg
+            </div>
+            <ul class="erp-boxes-list">
+              @for (box of orderBoxes; track box.box_number) {
+                <li>
+                  #{{ box.box_number }} — {{ box.length_cm }}×{{ box.width_cm }}×{{ box.height_cm }} cm, {{ box.weight_kg.toFixed(3) }} kg
+                </li>
+              }
+            </ul>
           </div>
+        } @else {
+          <!-- Box Selection -->
           <div class="form-group">
-            <label>Pieces</label>
-            <input type="number" [(ngModel)]="shipmentPieces" min="1" step="1">
+            <label>{{ 'admin.orders.boxTemplate' | translate }}</label>
+            <select [(ngModel)]="selectedBoxUID" (change)="onBoxSelected(); clearPriceResult()">
+              <option [value]="null">-- {{ 'admin.orders.manualEntry' | translate }} --</option>
+              @for (box of availableBoxes; track box.uid) {
+                <option [value]="box.uid">
+                  {{ box.name }} ({{ box.length_cm }}×{{ box.width_cm }}×{{ box.height_cm }} cm)
+                </option>
+              }
+            </select>
           </div>
-        </div>
-        @if (order && hasDeliveryAddress()) {
-          <div class="delivery-preview">
-            <label>Delivery Address</label>
-            <div class="address-text">
-              {{ order.address_text }}, {{ order.city }}, {{ order.zipcode }} {{ order.country_code }}
+
+          <!-- Dimensions (auto-filled from box or manual entry) -->
+          <div class="form-row">
+            <div class="form-group">
+              <label>{{ 'admin.orders.lengthCm' | translate }}</label>
+              <input type="number" [(ngModel)]="shipmentLength" (ngModelChange)="clearPriceResult()" min="1" step="1" [disabled]="selectedBoxUID !== null">
+            </div>
+            <div class="form-group">
+              <label>{{ 'admin.orders.widthCm' | translate }}</label>
+              <input type="number" [(ngModel)]="shipmentWidth" (ngModelChange)="clearPriceResult()" min="1" step="1" [disabled]="selectedBoxUID !== null">
+            </div>
+            <div class="form-group">
+              <label>{{ 'admin.orders.heightCm' | translate }}</label>
+              <input type="number" [(ngModel)]="shipmentHeight" (ngModelChange)="clearPriceResult()" min="1" step="1" [disabled]="selectedBoxUID !== null">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>{{ 'admin.orders.weightKg' | translate }}</label>
+              <input type="number" [(ngModel)]="shipmentWeight" (ngModelChange)="clearPriceResult()" min="0.1" step="0.1">
+            </div>
+            <div class="form-group">
+              <label>{{ 'admin.orders.pieces' | translate }}</label>
+              <input type="number" [(ngModel)]="shipmentPieces" (ngModelChange)="clearPriceResult()" min="1" step="1">
+            </div>
+          </div>
+        }
+        @if (priceResult) {
+          <div class="price-preview">
+            <span class="price-label">{{ 'admin.orders.estimatedPrice' | translate }}:</span>
+            <span class="price-value">{{ formatPrice(priceResult.total_price) }} {{ priceResult.currency || getCarrierCurrency(selectedCarrierUid) }}</span>
+            @if (priceResult.fuel_surcharge) {
+              <span class="price-fuel">({{ 'admin.orders.fuel' | translate }}: {{ formatPrice(priceResult.fuel_surcharge) }})</span>
+            }
+            @if (priceResult.estimated_delivery_date) {
+              <span class="price-eta">
+                <app-icon name="event"></app-icon>
+                {{ 'admin.orders.estimatedDelivery' | translate }}: {{ priceResult.estimated_delivery_date }}
+              </span>
+            }
+          </div>
+        }
+        @if (priceError) {
+          <div class="price-error">{{ priceError }}</div>
+        }
+        @if (createShipmentError) {
+          <div class="price-error">{{ createShipmentError }}</div>
+        }
+        <!-- Why the buttons below are disabled. Without this the operator sees a
+             dead Create button and no field to blame — especially when the
+             offending field sits inside a collapsed saved recipient. -->
+        @if (selectedCarrierUid && selectorIssues.length) {
+          <div class="selector-issues" role="alert">
+            <app-icon name="error_outline"></app-icon>
+            <div>
+              <div class="selector-issues-title">{{ 'admin.orders.createBlocked' | translate }}</div>
+              <ul class="selector-issues-list">
+                @for (issue of selectorIssues; track issue.key) {
+                  <li>
+                    {{ issue.label }}:
+                    @if (issue.reason === 'missing') {
+                      {{ 'admin.orders.fieldRequired' | translate }}
+                    } @else {
+                      {{ 'admin.orders.fieldUnresolved' | translate }}
+                    }
+                  </li>
+                }
+              </ul>
+              @if (hasHiddenSelectorIssue) {
+                <div class="selector-issues-hint">
+                  {{ 'admin.orders.createBlockedHiddenHint' | translate }}
+                  <button type="button" class="link-btn" (click)="editRecipient()">
+                    {{ 'admin.orders.editRecipient' | translate }}
+                  </button>
+                </div>
+              }
             </div>
           </div>
         }
       </div>
       <div class="modal-footer">
-        <button class="btn-cancel" (click)="closeCreateShipmentModal()">Cancel</button>
-        <button class="btn-create" (click)="createShipment()" [disabled]="!selectedCarrierUid || creatingShipment">
+        <button class="btn-cancel" (click)="closeCreateShipmentModal()">{{ 'common.cancel' | translate }}</button>
+        <button class="btn-calculate" (click)="calculatePrice()" [disabled]="!selectedCarrierUid || calculatingPrice || creatingShipment || !areSelectorsValid">
+          @if (calculatingPrice) {
+            <span class="spinner"></span>
+            <span>{{ 'admin.orders.calculating' | translate }}</span>
+          } @else {
+            <app-icon name="calculate"></app-icon>
+            <span>{{ 'admin.orders.calculatePrice' | translate }}</span>
+          }
+        </button>
+        <button class="btn-create" (click)="createShipment()" [disabled]="!selectedCarrierUid || creatingShipment || !areSelectorsValid">
           @if (creatingShipment) {
             <span class="spinner"></span>
-            <span>Creating...</span>
+            <span>{{ 'admin.orders.creating' | translate }}</span>
           } @else {
-            <span class="material-icons">local_shipping</span>
-            <span>Create Shipment</span>
+            <app-icon name="local_shipping"></app-icon>
+            <span>{{ 'admin.orders.createShipment' | translate }}</span>
           }
         </button>
       </div>
     </div>
   </div>
+}
+
+<!-- Change Billed Branch Modal.
+     Available at stages where the order can no longer be edited, because that is
+     when the wrong payer surfaces: invoicing has no stage gate of its own. The
+     preview panel is not decoration — branch substitution is total, so picking a
+     branch without a VAT number can move the order's total, and the operator has
+     to see that before committing. -->
+@if (showBranchModal) {
+  <div class="modal-overlay" (click)="closeBranchModal()">
+    <div class="modal-content branch-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>{{ 'admin.orders.changeBilledBranch' | translate }}</h3>
+        <button class="btn-close-modal" (click)="closeBranchModal()" [disabled]="savingBranch">
+          <app-icon name="close"></app-icon>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        @if (loadingBranchOptions) {
+          <div class="branch-loading">
+            <span class="spinner"></span>
+            <span>{{ 'common.loading' | translate }}</span>
+          </div>
+        } @else {
+          <p class="branch-intro">{{ 'admin.orders.changeBilledBranchIntro' | translate }}</p>
+
+          <!-- Plain buttons with aria-pressed, not a radiogroup: these do not
+               only record a choice, each one fetches a preview. A radiogroup
+               would also promise arrow-key navigation that is not implemented,
+               and take Tab away from the individual options. -->
+          <div class="branch-options">
+            <!-- Billing the client directly is a first-class choice, not the
+                 absence of one: an order wrongly attached to a branch has to be
+                 movable back to the parent. -->
+            <button type="button"
+                    class="branch-option"
+                    [class.branch-option--selected]="selectedBranchUid === ''"
+                    [attr.aria-pressed]="selectedBranchUid === ''"
+                    [disabled]="savingBranch"
+                    (click)="selectBranch('')">
+              <span class="branch-option__name">{{ 'admin.orders.billDirectlyToClient' | translate }}</span>
+              <span class="branch-option__meta">{{ client?.name }}</span>
+              @if (!order?.branch_uid) {
+                <span class="branch-option__tag">{{ 'admin.orders.branchCurrent' | translate }}</span>
+              }
+            </button>
+
+            @for (branch of branchOptions; track branch.uid) {
+              <button type="button"
+                      class="branch-option"
+                      [class.branch-option--selected]="selectedBranchUid === branch.uid"
+                      [attr.aria-pressed]="selectedBranchUid === branch.uid"
+                      [disabled]="savingBranch || !branch.active"
+                      (click)="selectBranch(branch.uid)">
+                <span class="branch-option__name">{{ branch.name }}</span>
+                <span class="branch-option__meta">
+                  <!-- An empty VAT number is stated, never dashed: it means the
+                       branch is not VAT-registered, which changes the rate. -->
+                  {{ branch.vat_number || ('admin.orders.branchNoVatNumber' | translate) }}
+                </span>
+                @if (branch.uid === order?.branch_uid) {
+                  <span class="branch-option__tag">{{ 'admin.orders.branchCurrent' | translate }}</span>
+                } @else if (!branch.active) {
+                  <span class="branch-option__tag">{{ 'common.inactive' | translate }}</span>
+                }
+              </button>
+            }
+          </div>
+
+          @if (!branchOptions.length) {
+            <!-- An empty screen is an invitation to act: say where branches come
+                 from, since nobody can create one here. -->
+            <div class="branch-empty">{{ 'admin.orders.branchNoneForClient' | translate }}</div>
+          }
+
+          @if (previewingBranch) {
+            <div class="branch-loading">
+              <span class="spinner"></span>
+              <span>{{ 'admin.orders.branchPreviewLoading' | translate }}</span>
+            </div>
+          }
+
+          @if (branchPreview; as preview) {
+            <div class="branch-preview" [class.branch-preview--changed]="branchChangeMovesTotal">
+              <div class="branch-preview__title">{{ 'admin.orders.branchPreviewTitle' | translate }}</div>
+
+              <div class="branch-preview__row">
+                <span class="branch-preview__label">{{ 'orders.vat' | translate }}</span>
+                <span class="branch-preview__value">
+                  <span class="branch-preview__was">{{ preview.current_vat_rate }}%</span>
+                  <span class="branch-preview__arrow" aria-hidden="true">→</span>
+                  <span class="branch-preview__now">{{ preview.new_vat_rate }}%</span>
+                </span>
+              </div>
+
+              <div class="branch-preview__row">
+                <span class="branch-preview__label">{{ 'orders.totalGross' | translate }}</span>
+                <span class="branch-preview__value">
+                  <span class="branch-preview__was">{{ formatMoney(preview.current_total) }}</span>
+                  <span class="branch-preview__arrow" aria-hidden="true">→</span>
+                  <span class="branch-preview__now">{{ formatMoney(preview.new_total) }} {{ preview.currency_code }}</span>
+                  <!-- The signed difference is what the decision turns on, so it
+                       is stated rather than left to be worked out. -->
+                  @if (branchChangeMovesTotal) {
+                    <span class="branch-preview__delta">{{ branchTotalDelta }}</span>
+                  }
+                </span>
+              </div>
+
+            </div>
+
+            <!-- Outside the ledger on purpose. The panel above answers "what
+                 changes"; these say what stays as it is — documents already
+                 issued name whoever is billed now and are not reissued here.
+                 Warned, never blocked: correcting the payer is why someone came. -->
+            @if (preview.business_registration_missing || preview.has_invoice || preview.has_shipment) {
+              <div class="branch-notes">
+                @if (preview.business_registration_missing) {
+                  <div class="branch-warning">
+                    <app-icon name="warning"></app-icon>
+                    <span>{{ 'admin.orders.branchNoBusinessRegistration' | translate }}</span>
+                  </div>
+                }
+
+                @if (preview.has_invoice) {
+                  <div class="branch-warning">
+                    <app-icon name="warning"></app-icon>
+                    <span>{{ 'admin.orders.branchInvoiceExists' | translate }}</span>
+                  </div>
+                }
+
+                @if (preview.has_shipment) {
+                  <div class="branch-warning">
+                    <app-icon name="warning"></app-icon>
+                    <span>{{ 'admin.orders.branchShipmentExists' | translate }}</span>
+                  </div>
+                }
+              </div>
+            }
+          }
+        }
+
+        @if (branchError) {
+          <div class="stage-change-error">
+            <app-icon name="error_outline"></app-icon>
+            {{ branchError }}
+          </div>
+        }
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-cancel" (click)="closeBranchModal()" [disabled]="savingBranch">
+          {{ 'common.cancel' | translate }}
+        </button>
+        <button class="btn-confirm-stage"
+                (click)="saveBranchChange()"
+                [disabled]="savingBranch || previewingBranch || selectedBranchUid === null || !branchPreview">
+          @if (savingBranch) {
+            <span class="spinner"></span>
+            <span>{{ 'common.saving' | translate }}</span>
+          } @else {
+            <app-icon name="check"></app-icon>
+            <span>{{ 'common.save' | translate }}</span>
+          }
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Edit Delivery Cost Modal -->
+@if (showDeliveryCostModal) {
+  <div class="modal-overlay" (click)="closeDeliveryCostModal()">
+    <div class="modal-content delivery-cost-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>{{ 'orders.editDeliveryCost' | translate }}</h3>
+        <button class="btn-close-modal" (click)="closeDeliveryCostModal()" [disabled]="savingDeliveryCost">
+          <app-icon name="close"></app-icon>
+        </button>
+      </div>
+      <div class="modal-body">
+        <label class="delivery-cost-label" for="delivery-cost-input">
+          {{ 'orders.deliveryCost' | translate }}
+          @if (order?.currency_code) {
+            <span class="currency-suffix">({{ order!.currency_code }})</span>
+          }
+        </label>
+        <input id="delivery-cost-input"
+               type="number"
+               step="0.01"
+               min="0"
+               [(ngModel)]="deliveryCostInput"
+               class="delivery-cost-input"
+               [disabled]="savingDeliveryCost"
+               (keyup.enter)="saveDeliveryCost()">
+        @if (deliveryCostError) {
+          <div class="stage-change-error">
+            <app-icon name="error_outline"></app-icon>
+            {{ deliveryCostError }}
+          </div>
+        }
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" (click)="closeDeliveryCostModal()" [disabled]="savingDeliveryCost">
+          {{ 'common.cancel' | translate }}
+        </button>
+        <button class="btn-confirm-stage"
+                (click)="saveDeliveryCost()"
+                [disabled]="savingDeliveryCost || deliveryCostInput === null || deliveryCostInput < 0">
+          @if (savingDeliveryCost) {
+            <span class="spinner"></span>
+            <span>{{ 'common.saving' | translate }}</span>
+          } @else {
+            <app-icon name="check"></app-icon>
+            <span>{{ 'common.save' | translate }}</span>
+          }
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Order splitting: moves some of this order's goods onto new orders -->
+@if (showSplitDialog && order) {
+  <app-order-split-dialog
+    [orderUid]="order.uid"
+    [orderNumber]="order.number || ''"
+    [orderTotal]="order.total"
+    (closed)="closeSplitDialog()"
+    (split)="onOrderSplit($event)"
+  ></app-order-split-dialog>
 }

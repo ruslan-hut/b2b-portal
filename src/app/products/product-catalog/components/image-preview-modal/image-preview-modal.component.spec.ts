@@ -14,9 +14,9 @@ describe('ImagePreviewModalComponent', () => {
     fixture = TestBed.createComponent(ImagePreviewModalComponent);
     component = fixture.componentInstance;
 
-    // Set required inputs
-    component.imageUrl = 'test-image.jpg';
-    component.altText = 'Test Product';
+    // Set required signal inputs via componentRef
+    fixture.componentRef.setInput('imageUrl', 'test-image.jpg');
+    fixture.componentRef.setInput('altText', 'Test Product');
   });
 
   it('should create', () => {

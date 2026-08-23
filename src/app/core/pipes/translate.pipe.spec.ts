@@ -1,6 +1,7 @@
 import { TranslatePipe } from './translate.pipe';
 import { TranslationService } from '../services/translation.service';
 import { ChangeDetectorRef } from '@angular/core';
+import { of } from 'rxjs';
 
 describe('TranslatePipe', () => {
   let pipe: TranslatePipe;
@@ -8,19 +9,21 @@ describe('TranslatePipe', () => {
   let changeDetectorRef: jasmine.SpyObj<ChangeDetectorRef>;
 
   beforeEach(() => {
-    const translationServiceSpy = jasmine.createSpyObj('TranslationService', ['instant']);
+    // The pipe reads areTranslationsLoaded()/getCurrentLanguage() in its
+    // constructor and on every transform, and re-subscribes on translations$.
+    const translationServiceSpy = jasmine.createSpyObj(
+      'TranslationService',
+      ['instant', 'areTranslationsLoaded', 'getCurrentLanguage'],
+      { translations$: of({}) }
+    );
+    translationServiceSpy.areTranslationsLoaded.and.returnValue(true);
+    translationServiceSpy.getCurrentLanguage.and.returnValue('en');
+
     const changeDetectorRefSpy = jasmine.createSpyObj('ChangeDetectorRef', ['markForCheck']);
-    
+
     translationService = translationServiceSpy;
     changeDetectorRef = changeDetectorRefSpy;
-    
-    // Mock currentLanguage$ observable
-    Object.defineProperty(translationService, 'currentLanguage$', {
-      get: () => ({
-        subscribe: () => ({ unsubscribe: () => {} })
-      })
-    });
-    
+
     pipe = new TranslatePipe(translationService, changeDetectorRef);
   });
 

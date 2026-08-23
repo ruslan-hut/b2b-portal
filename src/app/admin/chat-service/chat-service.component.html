@@ -1,0 +1,251 @@
+<div class="adm-page">
+
+  <header class="adm-bar">
+    <div class="adm-bar__crumbs">
+      <button
+        type="button"
+        class="adm-crumb-back"
+        routerLink="/admin/settings"
+        [attr.aria-label]="'common.back' | translate"
+      >
+        <app-icon name="arrow_back"></app-icon>
+      </button>
+      <a class="adm-crumb" routerLink="/admin/settings">{{ 'admin.settings.title' | translate }}</a>
+      <span class="adm-crumb-sep">/</span>
+      <span class="adm-crumb adm-crumb--active">{{ 'admin.settings.chatService' | translate }}</span>
+    </div>
+    <div class="adm-bar__actions">
+      <button
+        type="button"
+        class="adm-icon-btn"
+        (click)="refresh()"
+        [disabled]="loading"
+        [title]="'common.refresh' | translate"
+        [attr.aria-label]="'common.refresh' | translate"
+      >
+        <app-icon name="refresh"></app-icon>
+      </button>
+      @if (settings) {
+        <button type="button" class="adm-btn adm-btn--primary" (click)="saveSettings()" [disabled]="saving">
+          <app-icon [name]="saving ? 'sync' : 'check'"></app-icon>
+          {{ (saving ? 'chatService.saving' : 'chatService.save') | translate }}
+        </button>
+      }
+    </div>
+  </header>
+
+  @if (loading) {
+    <div class="adm-loading">{{ 'common.loading' | translate }}</div>
+  }
+
+  @if (!loading && settings) {
+    <div class="adm-grid adm-grid--full">
+      <div class="adm-main cs-main">
+
+        @if (error) {
+          <div class="adm-error" role="alert">{{ error }}</div>
+        }
+        @if (successMessage) {
+          <div class="adm-success">{{ successMessage }}</div>
+        }
+
+        <!-- Connection -->
+        <section class="adm-section">
+          <header class="adm-section__head cs-head">
+            <div>
+              <h2 class="adm-section__title">{{ 'chatService.connectionSettings' | translate }}</h2>
+              <p class="adm-section__sub">{{ 'chatService.baseUrlHint' | translate }}</p>
+            </div>
+            <span class="cs-status" [class.is-on]="settings.enabled && settings.has_auth_token && settings.base_url">
+              <app-icon [name]="settings.enabled && settings.has_auth_token && settings.base_url ? 'check_circle' : 'cancel'"></app-icon>
+              {{ (settings.enabled && settings.has_auth_token && settings.base_url ? 'chatService.configured' : 'chatService.notConfigured') | translate }}
+            </span>
+          </header>
+
+          <div class="adm-fields">
+            <label class="adm-toggle adm-field--span2">
+              <input type="checkbox" [(ngModel)]="enabled" name="enabled" />
+              <span class="adm-toggle__track"><span class="adm-toggle__dot"></span></span>
+              <span class="adm-toggle__text">
+                {{ 'chatService.serviceEnabled' | translate }}:
+                <strong>{{ (enabled ? 'chatService.enabledLabel' : 'chatService.disabledLabel') | translate }}</strong>
+              </span>
+            </label>
+
+            <label class="adm-field adm-field--span2">
+              <span class="adm-field__label">{{ 'chatService.baseUrl' | translate }}</span>
+              <input type="text" class="adm-input adm-input--mono" [(ngModel)]="baseUrl" name="baseUrl" [placeholder]="'chatService.baseUrlPlaceholder' | translate" />
+              <span class="cs-hint">{{ 'chatService.baseUrlHint' | translate }}</span>
+            </label>
+
+            <div class="adm-field adm-field--span2">
+              <span class="adm-field__label">{{ 'chatService.authToken' | translate }}</span>
+              @if (!showAuthTokenInput) {
+                <div class="adm-pwd">
+                  <input
+                    type="text"
+                    class="adm-input adm-input--mono"
+                    [value]="settings.has_auth_token ? settings.auth_token_masked : ('chatService.notConfigured' | translate)"
+                    readonly
+                  />
+                  <button type="button" class="adm-btn adm-btn--mini" (click)="toggleAuthTokenInput()">
+                    <app-icon name="edit"></app-icon>
+                    {{ (settings.has_auth_token ? 'chatService.changeToken' : 'chatService.setToken') | translate }}
+                  </button>
+                </div>
+              } @else {
+                <div class="adm-pwd">
+                  <input
+                    [type]="showAuthToken ? 'text' : 'password'"
+                    class="adm-input adm-input--mono"
+                    [(ngModel)]="authToken"
+                    name="authToken"
+                    [placeholder]="'chatService.authTokenPlaceholder' | translate"
+                    autocomplete="new-password"
+                  />
+                  <button type="button" class="adm-icon-btn" (click)="showAuthToken = !showAuthToken" aria-label="Toggle visibility">
+                    <app-icon [name]="showAuthToken ? 'visibility_off' : 'visibility'"></app-icon>
+                  </button>
+                  <button type="button" class="adm-btn adm-btn--mini" (click)="toggleAuthTokenInput()">
+                    {{ 'common.cancel' | translate }}
+                  </button>
+                </div>
+              }
+            </div>
+          </div>
+        </section>
+
+        <!-- Endpoints (collapsible) -->
+        <section class="adm-section">
+          <header class="adm-section__head cs-head cs-head--clickable" (click)="toggleEndpoints()" role="button" tabindex="0" (keydown.enter)="toggleEndpoints()">
+            <div>
+              <h2 class="adm-section__title">{{ 'chatService.endpoints' | translate }}</h2>
+            </div>
+            <app-icon [name]="showEndpoints ? 'expand_less' : 'expand_more'" class="cs-chevron"></app-icon>
+          </header>
+
+          @if (showEndpoints) {
+            <div class="adm-fields">
+              <label class="adm-field adm-field--span2">
+                <span class="adm-field__label">{{ 'chatService.wsEndpoint' | translate }}</span>
+                <input type="text" class="adm-input adm-input--mono" [(ngModel)]="wsEndpoint" name="wsEndpoint" />
+                <span class="cs-hint">{{ 'chatService.wsEndpointHint' | translate }}</span>
+              </label>
+              <label class="adm-field adm-field--span2">
+                <span class="adm-field__label">{{ 'chatService.chatsEndpoint' | translate }}</span>
+                <input type="text" class="adm-input adm-input--mono" [(ngModel)]="chatsEndpoint" name="chatsEndpoint" />
+                <span class="cs-hint">{{ 'chatService.chatsEndpointHint' | translate }}</span>
+              </label>
+              <label class="adm-field adm-field--span2">
+                <span class="adm-field__label">{{ 'chatService.messagesEndpoint' | translate }}</span>
+                <input type="text" class="adm-input adm-input--mono" [(ngModel)]="messagesEndpoint" name="messagesEndpoint" />
+                <span class="cs-hint">{{ 'chatService.messagesEndpointHint' | translate }} (supports {{ '{' }}platform{{ '}' }} and {{ '{' }}userId{{ '}' }} placeholders)</span>
+              </label>
+              <label class="adm-field adm-field--span2">
+                <span class="adm-field__label">{{ 'chatService.sendEndpoint' | translate }}</span>
+                <input type="text" class="adm-input adm-input--mono" [(ngModel)]="sendEndpoint" name="sendEndpoint" />
+                <span class="cs-hint">{{ 'chatService.sendEndpointHint' | translate }} (supports {{ '{' }}platform{{ '}' }} and {{ '{' }}userId{{ '}' }} placeholders)</span>
+              </label>
+              <div class="adm-field--span2 cs-actions">
+                <button type="button" class="adm-btn adm-btn--ghost" (click)="resetEndpoints()">
+                  <app-icon name="restart_alt"></app-icon>
+                  {{ 'chatService.resetDefaults' | translate }}
+                </button>
+              </div>
+            </div>
+          }
+        </section>
+
+        <!-- Platforms -->
+        <section class="adm-section">
+          <header class="adm-section__head">
+            <div>
+              <h2 class="adm-section__title">{{ 'chatService.platforms' | translate }}</h2>
+              <p class="adm-section__sub">{{ 'chatService.platformsCount' | translate: {configured: platforms.length, enabled: enabledPlatformsCount} }}</p>
+            </div>
+          </header>
+
+          <div class="cs-presets">
+            <button type="button" class="adm-btn adm-btn--ghost" (click)="addPresetPlatform('telegram')">
+              <app-icon name="send"></app-icon> {{ 'chatService.addTelegram' | translate }}
+            </button>
+            <button type="button" class="adm-btn adm-btn--ghost" (click)="addPresetPlatform('instagram')">
+              <app-icon name="camera_alt"></app-icon> {{ 'chatService.addInstagram' | translate }}
+            </button>
+            <button type="button" class="adm-btn adm-btn--ghost" (click)="addPresetPlatform('whatsapp')">
+              <app-icon name="phone"></app-icon> {{ 'chatService.addWhatsApp' | translate }}
+            </button>
+            <button type="button" class="adm-btn adm-btn--ghost" (click)="toggleNewPlatformForm()">
+              <app-icon name="add"></app-icon> {{ 'chatService.addCustom' | translate }}
+            </button>
+          </div>
+
+          @if (showNewPlatform) {
+            <div class="cs-new-platform">
+              <input type="text" class="adm-input" [(ngModel)]="newPlatform.id" [placeholder]="'chatService.platformIdPlaceholder' | translate" />
+              <input type="text" class="adm-input" [(ngModel)]="newPlatform.name" [placeholder]="'chatService.displayName' | translate" />
+              <input type="text" class="adm-input" [(ngModel)]="newPlatform.icon" [placeholder]="'chatService.materialIcon' | translate" />
+              <button type="button" class="adm-icon-btn" (click)="addCustomPlatform()" [attr.aria-label]="'common.add' | translate">
+                <app-icon name="check"></app-icon>
+              </button>
+              <button type="button" class="adm-icon-btn" (click)="toggleNewPlatformForm()" [attr.aria-label]="'common.cancel' | translate">
+                <app-icon name="close"></app-icon>
+              </button>
+            </div>
+          }
+
+          @if (platforms.length > 0) {
+            <div class="cs-platforms">
+              @for (platform of platforms; track platform.id; let i = $index) {
+                <div class="cs-platform" [class.is-disabled]="!platform.enabled">
+                  <app-icon [name]="platform.icon || 'chat'" class="cs-platform__icon"></app-icon>
+                  <div class="cs-platform__info">
+                    <span class="cs-platform__name">{{ platform.name }}</span>
+                    <span class="cs-platform__id">{{ platform.id }}</span>
+                  </div>
+                  @if (platform.base_url) {
+                    <span class="cs-platform__url">{{ platform.base_url }}</span>
+                  }
+                  <div class="cs-platform__actions">
+                    <label class="adm-toggle adm-toggle--bare">
+                      <input type="checkbox" [checked]="platform.enabled" (change)="togglePlatformEnabled(i)" />
+                      <span class="adm-toggle__track"><span class="adm-toggle__dot"></span></span>
+                    </label>
+                    <button type="button" class="adm-icon-btn adm-icon-btn--danger" (click)="removePlatform(i)" [title]="'chatService.removePlatform' | translate" [attr.aria-label]="'chatService.removePlatform' | translate">
+                      <app-icon name="delete"></app-icon>
+                    </button>
+                  </div>
+                </div>
+              }
+            </div>
+          } @else {
+            <div class="cs-empty">
+              <app-icon name="forum" class="cs-empty__icon"></app-icon>
+              <p>{{ 'chatService.noPlatforms' | translate }}</p>
+            </div>
+          }
+        </section>
+
+        <!-- Status -->
+        <section class="adm-section">
+          <header class="adm-section__head">
+            <div>
+              <h2 class="adm-section__title">{{ 'chatService.status' | translate }}</h2>
+            </div>
+          </header>
+
+          <div class="adm-meta">
+            <div class="adm-meta__row">
+              <span class="adm-meta__label">{{ 'chatService.lastUpdated' | translate }}</span>
+              <span class="adm-meta__value">{{ formatDate(settings.last_update) }}</span>
+            </div>
+            <div class="adm-meta__row">
+              <span class="adm-meta__label">{{ 'chatService.platforms' | translate }}</span>
+              <span class="adm-meta__value">{{ 'chatService.platformsCount' | translate: {configured: platforms.length, enabled: enabledPlatformsCount} }}</span>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  }
+</div>

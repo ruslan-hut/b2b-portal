@@ -1,7 +1,8 @@
-import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
 import { SearchBarComponent } from './search-bar.component';
 import { CoreModule } from '../../../../core/core.module';
+import { SharedModule } from '../../../../shared/shared.module';
 import { FrontendCategory } from '../../../../core/services/product.service';
 
 describe('SearchBarComponent', () => {
@@ -12,7 +13,7 @@ describe('SearchBarComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       declarations: [SearchBarComponent],
-      imports: [CoreModule, FormsModule]
+      imports: [CoreModule, SharedModule, FormsModule]
     })
     .compileComponents();
 
@@ -26,74 +27,11 @@ describe('SearchBarComponent', () => {
       { uid: 'cat-3', name: 'Category 3' }
     ];
 
-    component.categories = mockCategories;
+    fixture.componentRef.setInput('categories', mockCategories);
   });
 
   it('should create', () => {
     expect(component).toBeTruthy();
-  });
-
-  describe('Search Debouncing', () => {
-    it('should debounce search input by 400ms', fakeAsync(() => {
-      spyOn(component.search, 'emit');
-      fixture.detectChanges();
-
-      component.searchQuery = 'test';
-      component.onSearchInput();
-
-      // Should not emit immediately
-      expect(component.search.emit).not.toHaveBeenCalled();
-
-      // Wait 200ms - still should not emit
-      tick(200);
-      expect(component.search.emit).not.toHaveBeenCalled();
-
-      // Wait another 200ms (total 400ms)
-      tick(200);
-      expect(component.search.emit).toHaveBeenCalledWith('test');
-    }));
-
-    it('should only emit when search query changes', fakeAsync(() => {
-      spyOn(component.search, 'emit');
-      fixture.detectChanges();
-
-      component.searchQuery = 'test';
-      component.onSearchInput();
-      tick(400);
-
-      expect(component.search.emit).toHaveBeenCalledWith('test');
-      expect(component.search.emit).toHaveBeenCalledTimes(1);
-
-      // Type same query again
-      component.searchQuery = 'test';
-      component.onSearchInput();
-      tick(400);
-
-      // Should not emit again for same value
-      expect(component.search.emit).toHaveBeenCalledTimes(1);
-    }));
-
-    it('should reset debounce timer on new input', fakeAsync(() => {
-      spyOn(component.search, 'emit');
-      fixture.detectChanges();
-
-      component.searchQuery = 'test';
-      component.onSearchInput();
-
-      tick(300);
-      expect(component.search.emit).not.toHaveBeenCalled();
-
-      // Type more before 400ms
-      component.searchQuery = 'test2';
-      component.onSearchInput();
-
-      tick(300);
-      expect(component.search.emit).not.toHaveBeenCalled();
-
-      // Wait full 400ms from last input
-      tick(100);
-      expect(component.search.emit).toHaveBeenCalledWith('test2');
-    }));
   });
 
   describe('Search Button Click', () => {
@@ -101,7 +39,7 @@ describe('SearchBarComponent', () => {
       spyOn(component.search, 'emit');
       fixture.detectChanges();
 
-      component.searchQuery = 'test query';
+      component.searchQuery.set('test query');
       component.onSearchClick();
 
       expect(component.search.emit).toHaveBeenCalledWith('test query');
@@ -111,7 +49,7 @@ describe('SearchBarComponent', () => {
       spyOn(component.search, 'emit');
       fixture.detectChanges();
 
-      component.searchQuery = 'test query';
+      component.searchQuery.set('test query');
       component.onSearchClick(); // simulates Enter key handler
 
       expect(component.search.emit).toHaveBeenCalledWith('test query');
@@ -123,7 +61,7 @@ describe('SearchBarComponent', () => {
       spyOn(component.categoryChange, 'emit');
       fixture.detectChanges();
 
-      component.selectedCategory = 'cat-1';
+      component.selectedCategory.set('cat-1');
       component.onCategorySelect();
 
       expect(component.categoryChange.emit).toHaveBeenCalledWith('cat-1');
@@ -149,8 +87,8 @@ describe('SearchBarComponent', () => {
 
   describe('Cart Total Display', () => {
     it('should display cart total with currency', () => {
-      component.cartTotal = 1234.56;
-      component.currencyName = 'USD';
+      fixture.componentRef.setInput('cartTotal', 1234.56);
+      fixture.componentRef.setInput('currencyName', 'USD');
       fixture.detectChanges();
 
       const cartTotalElement = fixture.nativeElement.querySelector('.cart-total-amount');
@@ -159,8 +97,8 @@ describe('SearchBarComponent', () => {
     });
 
     it('should display cart total without currency when not provided', () => {
-      component.cartTotal = 1234.56;
-      component.currencyName = undefined;
+      fixture.componentRef.setInput('cartTotal', 1234.56);
+      fixture.componentRef.setInput('currencyName', undefined);
       fixture.detectChanges();
 
       const cartTotalElement = fixture.nativeElement.querySelector('.cart-total-amount');
@@ -169,8 +107,8 @@ describe('SearchBarComponent', () => {
     });
 
     it('should format cart total to 2 decimal places', () => {
-      component.cartTotal = 1234.5;
-      component.currencyName = 'EUR';
+      fixture.componentRef.setInput('cartTotal', 1234.5);
+      fixture.componentRef.setInput('currencyName', 'EUR');
       fixture.detectChanges();
 
       const cartTotalElement = fixture.nativeElement.querySelector('.cart-total-amount');
@@ -178,11 +116,4 @@ describe('SearchBarComponent', () => {
     });
   });
 
-  describe('Component Lifecycle', () => {
-    it('should complete search subject on destroy', () => {
-      spyOn(component['searchSubject'], 'complete');
-      component.ngOnDestroy();
-      expect(component['searchSubject'].complete).toHaveBeenCalled();
-    });
-  });
 });

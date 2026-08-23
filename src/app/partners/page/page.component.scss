@@ -1,0 +1,374 @@
+.pp-shell {
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr);
+  gap: var(--spacing-xl);
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: var(--spacing-lg) var(--spacing-md) var(--spacing-2xl);
+}
+
+// --- sidebar ----------------------------------------------------------------
+
+.pp-side {
+  align-self: start;
+  position: sticky;
+  top: var(--spacing-md);
+}
+
+.pp-side__root {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  margin-bottom: var(--spacing-sm);
+  font-family: var(--font-heading);
+  font-size: var(--text-md);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  text-decoration: none;
+
+  app-icon {
+    font-size: var(--icon-md);
+    width: var(--icon-md);
+    height: var(--icon-md);
+    color: var(--color-primary);
+  }
+}
+
+.pp-side__list,
+.pp-side__sublist {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.pp-side__sublist {
+  margin-left: var(--spacing-md);
+}
+
+.pp-side__link {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: 6px var(--spacing-sm);
+  min-height: var(--touch-target-min);
+  border-left: 2px solid transparent;
+  font-size: var(--text-base);
+  color: var(--color-text-secondary);
+  text-decoration: none;
+
+  &:hover {
+    color: var(--color-text-primary);
+    background: color-mix(in srgb, var(--color-primary) 6%, transparent);
+  }
+
+  &.is-current {
+    border-left-color: var(--color-primary);
+    color: var(--color-primary);
+    font-weight: var(--font-weight-medium);
+  }
+}
+
+.pp-side__link--nested {
+  font-size: var(--text-sm);
+}
+
+.pp-draft-chip {
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-semibold);
+  line-height: 15px;
+  padding: 0 5px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  color: var(--color-text-muted);
+}
+
+// --- staff bar --------------------------------------------------------------
+//
+// Styled like the maintenance banner rather than a floating widget: it is a
+// statement about the page, not a control panel hovering over it.
+
+.pp-staffbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-xs) var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+  border: 1px solid var(--color-success);
+  border-radius: var(--radius-md);
+  background: var(--color-success-container);
+  font-size: var(--text-sm);
+
+  &.is-draft {
+    border-color: var(--color-warning);
+    background: color-mix(in srgb, var(--color-warning) 12%, transparent);
+  }
+}
+
+.pp-staffbar__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-success);
+  flex: 0 0 auto;
+
+  .is-draft & {
+    background: var(--color-warning);
+  }
+}
+
+.pp-staffbar__text {
+  flex: 1 1 auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--spacing-xs);
+  color: var(--color-text-primary);
+}
+
+.pp-staffbar__date {
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-secondary);
+}
+
+.pp-staffbar__audience {
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-semibold);
+  padding: 0 6px;
+  border-radius: var(--radius-pill);
+  background: var(--card-bg);
+  color: var(--color-text-secondary);
+}
+
+.pp-staffbar__actions {
+  display: flex;
+  gap: var(--spacing-xs);
+}
+
+// --- breadcrumbs ------------------------------------------------------------
+
+.pp-crumbs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px;
+  margin-bottom: var(--spacing-sm);
+  font-size: var(--text-sm);
+}
+
+.pp-crumb {
+  color: var(--color-text-secondary);
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+
+  &.is-current {
+    color: var(--color-text-primary);
+    font-weight: var(--font-weight-medium);
+  }
+}
+
+.pp-crumb__sep {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+  color: var(--color-text-muted);
+}
+
+
+// --- buttons and states -----------------------------------------------------
+
+.pp-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: var(--control-h-md);
+  min-height: var(--touch-target-min);
+  padding: 0 var(--spacing-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  background: var(--card-bg);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+  text-decoration: none;
+  cursor: pointer;
+
+  &:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+  }
+
+  app-icon {
+    font-size: var(--icon-sm);
+    width: var(--icon-sm);
+    height: var(--icon-sm);
+  }
+}
+
+.pp-loading,
+.pp-error {
+  padding: var(--spacing-lg);
+  text-align: center;
+  color: var(--color-text-secondary);
+}
+
+.pp-error { color: var(--color-danger); }
+
+.pp-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-2xl) var(--spacing-md);
+  text-align: center;
+}
+
+.pp-empty__icon {
+  font-size: var(--icon-xl);
+  width: var(--icon-xl);
+  height: var(--icon-xl);
+  color: var(--color-text-muted);
+}
+
+.pp-empty__title {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-size: var(--text-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.pp-empty__hint {
+  margin: 0 0 var(--spacing-sm);
+  color: var(--color-text-secondary);
+  max-width: 48ch;
+}
+
+// --- mobile -----------------------------------------------------------------
+
+.pp-contents-toggle {
+  display: none;
+  align-items: center;
+  gap: var(--spacing-xs);
+  width: 100%;
+  height: var(--control-h-lg);
+  margin-bottom: var(--spacing-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  background: var(--card-bg);
+  font-family: var(--font-body);
+  font-size: var(--text-md);
+  color: var(--color-text-primary);
+  cursor: pointer;
+  justify-content: center;
+}
+
+.pp-sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  background: var(--overlay-bg-light);
+  z-index: 50;
+}
+
+.pp-sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 51;
+  max-height: 80vh;
+  overflow-y: auto;
+  padding: var(--spacing-md);
+  padding-bottom: calc(var(--spacing-md) + env(safe-area-inset-bottom, 0px));
+  border-radius: 12px 12px 0 0;
+  background: var(--card-bg);
+}
+
+.pp-sheet__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-sm);
+  font-family: var(--font-heading);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.pp-sheet__close {
+  border: none;
+  background: none;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  min-width: var(--touch-target-min);
+  min-height: var(--touch-target-min);
+}
+
+// --- focus ------------------------------------------------------------------
+//
+// This is the customer-facing surface and every interactive element here had a
+// hover state and nothing for the keyboard.
+.pp-side__root,
+.pp-side__link,
+.pp-crumb,
+.pp-btn,
+.pp-contents-toggle,
+.pp-sheet__close {
+  &:focus-visible {
+    outline: none;
+    border-radius: var(--radius-control);
+    box-shadow: var(--focus-ring);
+  }
+}
+
+// --- mobile -----------------------------------------------------------------
+
+// This page collapses at 900px, not the 768px the admin tables use, so it owns
+// its switch under its own names. Borrowing .desktop-only / .mobile-only would
+// hand it the shared !important rules from styles/admin/_tables.scss and hide
+// the contents toggle across the 769–900px band where it is meant to show.
+.pp-desktop-only { display: block; }
+.pp-mobile-only { display: none; }
+
+@media (max-width: 900px) {
+  .pp-shell {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--spacing-md);
+  }
+
+  .pp-desktop-only { display: none; }
+
+  .pp-contents-toggle,
+  .pp-mobile-only { display: flex; }
+
+}
+
+// --- print ------------------------------------------------------------------
+//
+// A safety data sheet gets printed and filed. What survives is the document:
+// no navigation, no staff controls, no hub chrome — and link targets spelled
+// out, because a printed "Open current version" is a dead end otherwise.
+@media print {
+  .pp-side,
+  .pp-staffbar,
+  .pp-contents-toggle,
+  .pp-sheet,
+  .pp-sheet-backdrop {
+    display: none !important;
+  }
+
+  .pp-shell {
+    display: block;
+    max-width: none;
+    padding: 0;
+  }
+
+  .pp-crumbs { margin-bottom: var(--spacing-md); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pp-btn { transition: none; }
+}

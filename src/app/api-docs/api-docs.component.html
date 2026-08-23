@@ -1,0 +1,10 @@
+<div class="apidocs">
+  <header class="apidocs__bar">
+    <a class="apidocs__home" routerLink="/">← {{ siteName$ | async }}</a>
+    <span class="apidocs__title">Client API reference</span>
+    <a class="apidocs__spec" [href]="specUrl" target="_blank" rel="noopener">openapi.yaml</a>
+  </header>
+  @if (loading) { <div class="apidocs__loading">Loading documentation…</div> }
+  @if (error) { <div class="apidocs__error">{{ error }}</div> }
+  <div #redoc class="apidocs__body"></div>
+</div>

@@ -1,204 +1,220 @@
-<div class="logs-container">
-  <app-action-bar>
-    <div actionBarLeft>
-      <button class="btn-filter" (click)="toggleFilters()" [class.active]="isFiltersExpanded">
-        <span class="material-icons">filter_list</span>
-        <span class="btn-text">Filters</span>
-        <span class="material-icons toggle-icon">{{ isFiltersExpanded ? 'expand_less' : 'expand_more' }}</span>
+<div class="adm-page">
+
+  <header class="adm-bar">
+    <div class="adm-bar__crumbs">
+      <button
+        type="button"
+        class="adm-crumb-back"
+        routerLink="/admin/settings"
+        [attr.aria-label]="'common.back' | translate"
+      >
+        <app-icon name="arrow_back"></app-icon>
+      </button>
+      <a class="adm-crumb" routerLink="/admin/settings">{{ 'admin.settings.title' | translate }}</a>
+      <span class="adm-crumb-sep">/</span>
+      <span class="adm-crumb adm-crumb--active">{{ 'admin.settings.logs' | translate }}</span>
+    </div>
+    <div class="adm-bar__actions">
+      <button
+        type="button"
+        class="adm-btn adm-btn--ghost"
+        (click)="toggleFilters()"
+        [class.is-active]="isFiltersExpanded"
+        [attr.aria-expanded]="isFiltersExpanded"
+      >
+        <app-icon name="filter_list"></app-icon>
+        {{ 'common.filters' | translate }}
+      </button>
+      <button
+        type="button"
+        class="adm-icon-btn"
+        (click)="refresh()"
+        [disabled]="loading"
+        [title]="'common.refresh' | translate"
+        [attr.aria-label]="'common.refresh' | translate"
+      >
+        <app-icon name="refresh"></app-icon>
+      </button>
+      <button
+        type="button"
+        class="adm-icon-btn adm-icon-btn--danger"
+        (click)="cleanupLogs()"
+        [title]="'admin.logs.cleanupOldLogs' | translate"
+        [attr.aria-label]="'admin.logs.cleanupOldLogs' | translate"
+      >
+        <app-icon name="delete_sweep"></app-icon>
       </button>
     </div>
-    <div class="actions" actionBarRight>
-      <button class="btn-icon" (click)="refresh()" [disabled]="loading" title="Refresh">
-        <span class="material-icons">refresh</span>
-      </button>
-      <button class="btn-icon btn-cleanup" (click)="cleanupLogs()" title="Cleanup Old Logs">
-        <span class="material-icons">delete_sweep</span>
-      </button>
-    </div>
-  </app-action-bar>
+  </header>
 
-  <!-- Filters -->
-  <div class="filters" [class.expanded]="isFiltersExpanded">
-    <div class="filter-group">
-      <label for="level">Level:</label>
-      <select id="level" [(ngModel)]="levelFilter" (change)="onFilterChange()">
-        <option value="">All</option>
-        <option value="DEBUG">DEBUG</option>
-        <option value="INFO">INFO</option>
-        <option value="WARN">WARN</option>
-        <option value="ERROR">ERROR</option>
-      </select>
-    </div>
+  <div class="adm-grid adm-grid--full">
 
-    <div class="filter-group">
-      <label for="userUid">User UID:</label>
-      <input type="text" id="userUid" [(ngModel)]="userUidFilter" (input)="onFilterChange()" placeholder="Filter by user UID">
-    </div>
+    @if (isFiltersExpanded) {
+      <section class="adm-section log-filters">
+        <div class="adm-fields">
+          <label class="adm-field">
+            <span class="adm-field__label">{{ 'admin.logs.level' | translate }}</span>
+            <select class="adm-input" [(ngModel)]="levelFilter" (change)="onFilterChange()">
+              <option value="">{{ 'common.all' | translate }}</option>
+              <option value="DEBUG">DEBUG</option>
+              <option value="INFO">INFO</option>
+              <option value="WARN">WARN</option>
+              <option value="ERROR">ERROR</option>
+            </select>
+          </label>
 
-    <div class="filter-group">
-      <label for="requestId">Request ID:</label>
-      <input type="text" id="requestId" [(ngModel)]="requestIdFilter" (input)="onFilterChange()" placeholder="Filter by request ID">
-    </div>
+          <label class="adm-field">
+            <span class="adm-field__label">{{ 'admin.logs.userId' | translate }}</span>
+            <input type="text" class="adm-input" [(ngModel)]="userUidFilter" (input)="onFilterChange()" [placeholder]="'admin.logs.filterByUserId' | translate" />
+          </label>
 
-    <div class="filter-group">
-      <label for="dateFrom">Date From:</label>
-      <input type="date" id="dateFrom" [(ngModel)]="dateFromFilter" (change)="onFilterChange()">
-    </div>
+          <label class="adm-field">
+            <span class="adm-field__label">{{ 'admin.logs.requestId' | translate }}</span>
+            <input type="text" class="adm-input" [(ngModel)]="requestIdFilter" (input)="onFilterChange()" [placeholder]="'admin.logs.filterByRequestId' | translate" />
+          </label>
 
-    <div class="filter-group">
-      <label for="dateTo">Date To:</label>
-      <input type="date" id="dateTo" [(ngModel)]="dateToFilter" (change)="onFilterChange()">
-    </div>
+          <label class="adm-field">
+            <span class="adm-field__label">{{ 'admin.logs.dateFrom' | translate }}</span>
+            <input type="date" class="adm-input" [(ngModel)]="dateFromFilter" (change)="onFilterChange()" />
+          </label>
 
-    <div class="filter-group search-group">
-      <label for="search">Search:</label>
-      <input type="text" id="search" [(ngModel)]="searchFilter" (input)="onSearchChange()" placeholder="Search in message">
-    </div>
-  </div>
+          <label class="adm-field">
+            <span class="adm-field__label">{{ 'admin.logs.dateTo' | translate }}</span>
+            <input type="date" class="adm-input" [(ngModel)]="dateToFilter" (change)="onFilterChange()" />
+          </label>
 
-  <!-- Error Message -->
-  @if (error) {
-    <div class="error-message">
-      {{ error }}
-    </div>
-  }
-
-  <!-- Loading Indicator -->
-  @if (loading) {
-    <div class="loading">
-      Loading logs...
-    </div>
-  }
-
-  <!-- Logs Content -->
-  @if (!loading && !error) {
-    <!-- Desktop Table -->
-    <div class="logs-table-container desktop-only">
-      <table class="logs-table">
-        <thead>
-          <tr>
-            <th class="th-time">Time</th>
-            <th class="th-level">Level</th>
-            <th>Message</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (log of logs; track log) {
-            <tr class="log-row" [class.expanded]="isRowExpanded(log.id)" (click)="toggleRow(log.id)">
-              <td class="td-time">{{ formatTime(log.time) }}</td>
-              <td class="td-level">
-                <span class="level-badge" [ngClass]="getLevelClass(log.level)">
-                  {{ log.level }}
-                </span>
-              </td>
-              <td class="message-cell">
-                <div class="message-preview">{{ log.message }}</div>
-                @if (isRowExpanded(log.id)) {
-                  <div class="expanded-details">
-                    @if (log.user_uid) {
-                      <div class="detail-item">
-                        <span class="detail-label">User:</span>
-                        <span class="detail-value">{{ log.user_uid }}</span>
-                      </div>
-                    }
-                    @if (log.request_id) {
-                      <div class="detail-item">
-                        <span class="detail-label">Request:</span>
-                        <span class="detail-value mono">{{ log.request_id }}</span>
-                      </div>
-                    }
-                    @if (log.extra) {
-                      <div class="detail-item extra-item">
-                        <span class="detail-label">Extra:</span>
-                        <pre class="extra-content">{{ formatExtra(log.extra) | json }}</pre>
-                      </div>
-                    }
-                  </div>
-                }
-              </td>
-            </tr>
-          }
-          @if (logs.length === 0) {
-            <tr>
-              <td colspan="3" class="no-data">No logs found</td>
-            </tr>
-          }
-        </tbody>
-      </table>
-      <!-- Desktop Pagination -->
-      @if (totalPages > 1) {
-        <div class="pagination">
-          <button [disabled]="currentPage === 1" (click)="goToPage(currentPage - 1)">Previous</button>
-          <span>Page {{ currentPage }} of {{ totalPages }} ({{ total }} total)</span>
-          <button [disabled]="currentPage === totalPages" (click)="goToPage(currentPage + 1)">Next</button>
-        </div>
-      }
-    </div>
-
-    <!-- Mobile Cards -->
-    <div class="logs-cards mobile-only">
-      @for (log of logs; track log) {
-        <div class="log-card" [class.expanded]="isRowExpanded(log.id)" (click)="toggleRow(log.id)">
-          <div class="card-header">
-            <span class="level-badge" [ngClass]="getLevelClass(log.level)">
-              {{ log.level }}
-            </span>
-            <span class="log-time">{{ formatTime(log.time) }}</span>
-          </div>
-          <div class="card-message">
-            {{ log.message }}
-          </div>
-          <div class="card-summary">
-            @if (log.user_uid) {
-              <span class="summary-tag">
-                <span class="material-icons">person</span>
-                {{ log.user_uid }}
-              </span>
-            }
-            <span class="material-icons expand-icon">{{ isRowExpanded(log.id) ? 'expand_less' : 'expand_more' }}</span>
-          </div>
-          @if (isRowExpanded(log.id)) {
-            <div class="card-details">
-              <div class="detail-row">
-                <span class="label">Full Time:</span>
-                <span class="value">{{ formatDate(log.time) }}</span>
-              </div>
-              @if (log.user_uid) {
-                <div class="detail-row">
-                  <span class="label">User UID:</span>
-                  <span class="value mono">{{ log.user_uid }}</span>
-                </div>
-              }
-              @if (log.request_id) {
-                <div class="detail-row">
-                  <span class="label">Request ID:</span>
-                  <span class="value mono">{{ log.request_id }}</span>
-                </div>
-              }
-              @if (log.extra) {
-                <div class="detail-row extra-row">
-                  <span class="label">Extra Data:</span>
-                  <pre class="extra-content">{{ formatExtra(log.extra) | json }}</pre>
-                </div>
-              }
+          <label class="adm-field">
+            <span class="adm-field__label">{{ 'common.search' | translate }}</span>
+            <div class="adm-pwd">
+              <input
+                type="text"
+                class="adm-input"
+                [(ngModel)]="searchFilter"
+                (keyup.enter)="onSearchChange()"
+                [placeholder]="'admin.logs.searchInMessage' | translate"
+              />
+              <button type="button" class="adm-icon-btn" (click)="onSearchChange()" [attr.aria-label]="'common.search' | translate">
+                <app-icon name="search"></app-icon>
+              </button>
             </div>
+          </label>
+        </div>
+      </section>
+    }
+
+    @if (error) {
+      <div class="adm-error" role="alert">{{ error }}</div>
+    }
+
+    @if (loading) {
+      <div class="adm-loading">{{ 'common.loading' | translate }}</div>
+    }
+
+    @if (!loading && !error) {
+      @if (logs.length === 0) {
+        <div class="adm-section log-empty">{{ 'admin.logs.noLogs' | translate }}</div>
+      } @else {
+
+        <!-- Desktop table -->
+        <div class="log-table-wrap desktop-only">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th class="log-col-time">{{ 'admin.logs.time' | translate }}</th>
+                <th class="log-col-level">{{ 'admin.logs.level' | translate }}</th>
+                <th>{{ 'admin.logs.message' | translate }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (log of logs; track log) {
+                <tr class="log-row" [class.is-expanded]="isRowExpanded(log.id)" (click)="toggleRow(log.id)">
+                  <td class="log-time mono">{{ formatTime(log.time) }}</td>
+                  <td>
+                    <span class="log-level" [ngClass]="getLevelClass(log.level)">{{ log.level }}</span>
+                  </td>
+                  <td class="log-message">
+                    <div class="log-message__row">
+                      <span class="log-message__text">{{ log.message }}</span>
+                      <button type="button" class="adm-icon-btn" (click)="copyMessage(log, $event)" [title]="'admin.logs.copy' | translate">
+                        <app-icon name="content_copy"></app-icon>
+                      </button>
+                    </div>
+                    @if (isRowExpanded(log.id)) {
+                      <div class="log-details">
+                        @if (log.user_uid) {
+                          <div class="log-detail"><span class="log-detail__label">{{ 'admin.logs.user' | translate }}</span><span class="mono">{{ log.user_uid }}</span></div>
+                        }
+                        @if (log.request_id) {
+                          <div class="log-detail"><span class="log-detail__label">{{ 'admin.logs.request' | translate }}</span><span class="mono">{{ log.request_id }}</span></div>
+                        }
+                        @if (log.extra) {
+                          <div class="log-detail log-detail--extra">
+                            <span class="log-detail__label">{{ 'admin.logs.extra' | translate }}</span>
+                            <pre class="log-extra">{{ formatExtra(log.extra) | json }}</pre>
+                          </div>
+                        }
+                      </div>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Mobile cards -->
+        <div class="log-cards mobile-only">
+          @for (log of logs; track log) {
+            <article class="log-card" [class.is-expanded]="isRowExpanded(log.id)" (click)="toggleRow(log.id)">
+              <header class="log-card__head">
+                <span class="log-level" [ngClass]="getLevelClass(log.level)">{{ log.level }}</span>
+                <span class="log-card__time mono">{{ formatTime(log.time) }}</span>
+              </header>
+              <div class="log-card__message">
+                <span>{{ log.message }}</span>
+                <button type="button" class="adm-icon-btn" (click)="copyMessage(log, $event)" [title]="'admin.logs.copy' | translate">
+                  <app-icon name="content_copy"></app-icon>
+                </button>
+              </div>
+              <div class="log-card__summary">
+                @if (log.user_uid) {
+                  <span class="log-card__tag">
+                    <app-icon name="person"></app-icon>
+                    {{ log.user_uid }}
+                  </span>
+                }
+                <app-icon [name]="isRowExpanded(log.id) ? 'expand_less' : 'expand_more'" class="log-card__expand"></app-icon>
+              </div>
+              @if (isRowExpanded(log.id)) {
+                <div class="log-details">
+                  <div class="log-detail"><span class="log-detail__label">{{ 'admin.logs.fullTime' | translate }}</span><span>{{ formatDate(log.time) }}</span></div>
+                  @if (log.user_uid) {
+                    <div class="log-detail"><span class="log-detail__label">{{ 'admin.logs.userId' | translate }}</span><span class="mono">{{ log.user_uid }}</span></div>
+                  }
+                  @if (log.request_id) {
+                    <div class="log-detail"><span class="log-detail__label">{{ 'admin.logs.requestId' | translate }}</span><span class="mono">{{ log.request_id }}</span></div>
+                  }
+                  @if (log.extra) {
+                    <div class="log-detail log-detail--extra">
+                      <span class="log-detail__label">{{ 'admin.logs.extraData' | translate }}</span>
+                      <pre class="log-extra">{{ formatExtra(log.extra) | json }}</pre>
+                    </div>
+                  }
+                </div>
+              }
+            </article>
           }
         </div>
-      }
-      @if (logs.length === 0) {
-        <div class="no-data-card">No logs found</div>
-      }
-    </div>
 
-    <!-- Mobile Pagination -->
-    @if (totalPages > 1) {
-      <div class="mobile-pagination mobile-only">
-        <span class="page-info-mobile">Page {{ currentPage }} of {{ totalPages }} ({{ total }} logs)</span>
-        <div class="pagination-buttons">
-          <button [disabled]="currentPage === 1" (click)="goToPage(currentPage - 1)">Previous</button>
-          <button [disabled]="currentPage === totalPages" (click)="goToPage(currentPage + 1)">Next</button>
-        </div>
-      </div>
+        <app-pagination
+          [currentPage]="currentPage"
+          [totalPages]="totalPages"
+          [total]="total"
+          [pageSize]="pageSize"
+          [itemLabel]="'admin.logs.logs' | translate"
+          (pageChange)="goToPage($event)"
+        ></app-pagination>
+      }
     }
-  }
+  </div>
 </div>

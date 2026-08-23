@@ -1,10 +1,13 @@
 import { Component, OnInit, OnDestroy, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
 import { Subscription } from 'rxjs';
-import { AdminService, AdminProductWithDetails } from '../../core/services/admin.service';
+import { AdminService, AdminProductWithDetails, ProductCountryAvailability } from '../../core/services/admin.service';
 import { AuthService } from '../../core/services/auth.service';
 import { TranslationService } from '../../core/services/translation.service';
 import { ProductService } from '../../core/services/product.service';
+import { ClientService } from '../../core/services/client.service';
 import { PageTitleService } from '../../core/services/page-title.service';
+import { formatDateTime } from '../../core/utils/date-format';
+import { ToggleState, ExpandState } from '../../core/utils/ui-state';
 
 interface FilterOption {
   value: string;
@@ -16,13 +19,21 @@ interface FilterOption {
     templateUrl: './products.component.html',
     styleUrls: ['./products.component.scss'],
     standalone: false,
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    host: {
+      // Clicking anywhere else (or pressing Escape) dismisses the open country
+      // list; the badge itself stops propagation so it can still toggle.
+      '(document:click)': 'onDocumentClick($event)',
+      '(document:keydown.escape)': 'closeAvailability()',
+      // The panel is positioned against the viewport, so any scroll or resize
+      // would leave it stranded next to the wrong row: dismiss it instead.
+      '(window:resize)': 'closeAvailability()'
+    }
 })
 export class ProductsComponent implements OnInit, OnDestroy {
   private subscriptions = new Subscription();
 
   products: AdminProductWithDetails[] = [];
-  filteredProducts: AdminProductWithDetails[] = [];
   loading = false;
   error: string | null = null;
   
@@ -35,13 +46,16 @@ export class ProductsComponent implements OnInit, OnDestroy {
   // Filters
   selectedLanguage: string = '';
   selectedStore: string = '';
+  // True when the logged-in user is a store-scoped manager: the store filter
+  // is locked to their store and hidden from the UI.
+  storeLocked = false;
   selectedPriceType: string = '';
   selectedCategory: string = '';
   searchTerm = '';
 
   // Mobile UI state
-  isFiltersExpanded = false;
-  expandedCardIds: Set<string> = new Set();
+  filters = new ToggleState();
+  cards = new ExpandState();
 
   // Filter options
   languages: FilterOption[] = [];
@@ -54,12 +68,16 @@ export class ProductsComponent implements OnInit, OnDestroy {
     private authService: AuthService,
     private translationService: TranslationService,
     private productService: ProductService,
+    private clientService: ClientService,
     private cdr: ChangeDetectorRef,
     private pageTitleService: PageTitleService
   ) {}
 
   ngOnInit(): void {
     this.pageTitleService.setTitle('Products');
+    // Scroll does not bubble, so the host bindings never see the table's own
+    // horizontal scroll — listen in the capture phase to catch every scroller.
+    document.addEventListener('scroll', this.onDocumentScroll, true);
     // Refresh user data from server to get latest price_type_uid and store_uid
     this.subscriptions.add(
       this.authService.getCurrentEntity().subscribe({
@@ -78,8 +96,17 @@ export class ProductsComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    document.removeEventListener('scroll', this.onDocumentScroll, true);
     this.subscriptions.unsubscribe();
   }
+
+  private readonly onDocumentScroll = (event: Event): void => {
+    // Scrolling the panel's own country list must not dismiss it; only the page
+    // or the table moving out from under it should.
+    const target = event.target;
+    if (target instanceof Element && target.closest('.prd-cert-panel')) return;
+    this.closeAvailability();
+  };
 
   initializeDefaults(entity: any): void {
     // Set default language from current site language
@@ -91,6 +118,12 @@ export class ProductsComponent implements OnInit, OnDestroy {
       if ('store_uid' in entity && entity.store_uid) {
         this.selectedStore = entity.store_uid;
         console.log('[Products] Setting default store:', entity.store_uid);
+      }
+
+      // Store-scoped managers are locked to their own store.
+      this.storeLocked = this.authService.isStoreScopedManager();
+      if (this.storeLocked) {
+        this.selectedStore = this.authService.scopedStoreUid ?? this.selectedStore;
       }
       
       // Set price_type_uid if available (Client has it, User might have it)
@@ -106,6 +139,17 @@ export class ProductsComponent implements OnInit, OnDestroy {
   }
 
   loadFilterOptions(): void {
+    // Country names for the certification panel; failure only costs the names.
+    this.subscriptions.add(
+      this.clientService.getCountries().subscribe({
+        next: (countries) => {
+          this.countryNames = new Map(countries.map(c => [c.country_code.toUpperCase(), c.name]));
+          this.cdr.markForCheck();
+        },
+        error: (err) => console.error('Failed to load countries:', err)
+      })
+    );
+
     // Load languages
     this.subscriptions.add(
       this.adminService.getAvailableLanguages().subscribe({
@@ -205,6 +249,9 @@ export class ProductsComponent implements OnInit, OnDestroy {
     if (this.selectedCategory) {
       params.category = this.selectedCategory;
     }
+    if (this.searchTerm.trim()) {
+      params.search = this.searchTerm.trim();
+    }
 
     this.subscriptions.add(
       this.adminService.getProductsWithDetails(params).subscribe({
@@ -223,7 +270,6 @@ export class ProductsComponent implements OnInit, OnDestroy {
             this.totalPages = 1;
           }
 
-          this.applySearch();
           this.loading = false;
           this.cdr.detectChanges();
         },
@@ -237,20 +283,9 @@ export class ProductsComponent implements OnInit, OnDestroy {
     );
   }
 
-  applySearch(): void {
-    if (!this.searchTerm.trim()) {
-      this.filteredProducts = [...this.products];
-      return;
-    }
-
-    const search = this.searchTerm.toLowerCase();
-    this.filteredProducts = this.products.filter(product =>
-      product.uid.toLowerCase().includes(search) ||
-      product.sku?.toLowerCase().includes(search) ||
-      product.product_name?.toLowerCase().includes(search) ||
-      product.category_uid?.toLowerCase().includes(search) ||
-      product.category_name?.toLowerCase().includes(search)
-    );
+  onSearch(): void {
+    this.currentPage = 1;
+    this.loadProducts();
   }
 
   onFilterChange(): void {
@@ -302,10 +337,6 @@ export class ProductsComponent implements OnInit, OnDestroy {
     );
   }
 
-  onSearchChange(): void {
-    this.applySearch();
-  }
-
   goToPage(page: number): void {
     if (page >= 1 && page <= this.totalPages) {
       this.currentPage = page;
@@ -313,45 +344,8 @@ export class ProductsComponent implements OnInit, OnDestroy {
     }
   }
 
-  getPageNumbers(): number[] {
-    const pages: number[] = [];
-    const maxVisible = 5; // Show max 5 page numbers
-    
-    if (this.totalPages <= maxVisible) {
-      // Show all pages if total is less than max visible
-      for (let i = 1; i <= this.totalPages; i++) {
-        pages.push(i);
-      }
-    } else {
-      // Show pages around current page
-      let start = Math.max(1, this.currentPage - Math.floor(maxVisible / 2));
-      let end = Math.min(this.totalPages, start + maxVisible - 1);
-      
-      // Adjust start if we're near the end
-      if (end - start < maxVisible - 1) {
-        start = Math.max(1, end - maxVisible + 1);
-      }
-      
-      for (let i = start; i <= end; i++) {
-        pages.push(i);
-      }
-    }
-    
-    return pages;
-  }
-
-  goToFirstPage(): void {
-    this.goToPage(1);
-  }
-
-  goToLastPage(): void {
-    this.goToPage(this.totalPages);
-  }
-
   formatDate(dateString?: string): string {
-    if (!dateString) return '-';
-    const date = new Date(dateString);
-    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+    return formatDateTime(dateString);
   }
 
   formatPrice(price?: number): string {
@@ -360,32 +354,114 @@ export class ProductsComponent implements OnInit, OnDestroy {
     return (price / 100).toFixed(2);
   }
 
-  // Expose Math to template
-  Math = Math;
+  // --- Country availability (certification) badge ---------------------------
+  // The rows come with the product list; the badge only opens and closes a
+  // panel, so there is no extra request when an admin inspects a product.
 
-  getEndItemNumber(): number {
-    return Math.min(this.currentPage * this.pageSize, this.total);
+  /** UID of the product whose country list is open, null when none is. */
+  openAvailabilityUid: string | null = null;
+
+  availabilityRows(product: AdminProductWithDetails): ProductCountryAvailability[] {
+    return product.country_availability ?? [];
   }
 
-  getStartItemNumber(): number {
-    return (this.currentPage - 1) * this.pageSize + 1;
+  /** Products with no rows show no badge at all — nothing to open. */
+  hasAvailability(product: AdminProductWithDetails): boolean {
+    return this.availabilityRows(product).length > 0;
   }
 
-  // Mobile UI methods
-  toggleFilters(): void {
-    this.isFiltersExpanded = !this.isFiltersExpanded;
-    this.cdr.detectChanges();
+  availabilityCount(product: AdminProductWithDetails): number {
+    return this.availabilityRows(product).length;
   }
 
-  toggleCardExpanded(uid: string): void {
-    if (this.expandedCardIds.has(uid)) {
-      this.expandedCardIds.delete(uid);
+  isAvailabilityOpen(product: AdminProductWithDetails): boolean {
+    return this.openAvailabilityUid === product.uid;
+  }
+
+  /**
+   * Viewport coordinates of the open panel. The table scrolls horizontally, so
+   * a panel positioned inside the cell would be clipped by that overflow; it is
+   * rendered `position: fixed` instead and placed by hand off the badge's rect.
+   */
+  availabilityPanelTop = 0;
+  availabilityPanelLeft = 0;
+
+  /** Fallback size used before the panel exists; the stylesheet caps both. */
+  private static readonly PANEL_W = 320;
+  private static readonly PANEL_H = 320;
+  private static readonly PANEL_GAP = 4;
+  private static readonly PANEL_MARGIN = 8;
+
+  toggleAvailability(product: AdminProductWithDetails, event: Event): void {
+    event.stopPropagation();
+    if (this.isAvailabilityOpen(product)) {
+      this.openAvailabilityUid = null;
     } else {
-      this.expandedCardIds.add(uid);
+      this.openAvailabilityUid = product.uid;
+      const badge = event.currentTarget as HTMLElement | null;
+      // Place it off an estimate first so it never paints at 0,0, then measure
+      // the rendered panel — its width follows the country names.
+      this.positionAvailabilityPanel(badge, ProductsComponent.PANEL_W, ProductsComponent.PANEL_H);
+      requestAnimationFrame(() => {
+        const panel = document.querySelector('.prd-cert-panel') as HTMLElement | null;
+        if (!panel || this.openAvailabilityUid !== product.uid) return;
+        this.positionAvailabilityPanel(badge, panel.offsetWidth, panel.offsetHeight);
+        this.cdr.markForCheck();
+      });
+    }
+    this.cdr.markForCheck();
+  }
+
+  /** Anchors the panel under the badge, flipping when it would leave the viewport. */
+  private positionAvailabilityPanel(badge: HTMLElement | null, width: number, height: number): void {
+    if (!badge) return;
+    const rect = badge.getBoundingClientRect();
+    const gap = ProductsComponent.PANEL_GAP;
+    const margin = ProductsComponent.PANEL_MARGIN;
+
+    const below = window.innerHeight - rect.bottom - gap - margin;
+    this.availabilityPanelTop = below >= height ? rect.bottom + gap : Math.max(margin, rect.top - gap - height);
+
+    const maxLeft = window.innerWidth - width - margin;
+    this.availabilityPanelLeft = Math.max(margin, Math.min(rect.left, maxLeft));
+  }
+
+  /** Any click outside the open panel dismisses it — its scrollbars included. */
+  onDocumentClick(event: Event): void {
+    const target = event.target;
+    if (target instanceof Element && target.closest('.prd-cert-panel')) return;
+    this.closeAvailability();
+  }
+
+  closeAvailability(): void {
+    if (this.openAvailabilityUid !== null) {
+      this.openAvailabilityUid = null;
+      this.cdr.markForCheck();
     }
   }
 
-  isCardExpanded(uid: string): boolean {
-    return this.expandedCardIds.has(uid);
+  /** ISO code → country name, empty until the countries request lands. */
+  private countryNames = new Map<string, string>();
+
+  /** Label for a row: the ISO code, or "any country" for the wildcard row. */
+  availabilityCountryLabel(row: ProductCountryAvailability): string {
+    return row.country_code || this.translationService.instant('admin.products.anyCountry');
+  }
+
+  /** Resolved country name, or '' when the code is unknown or is the wildcard. */
+  availabilityCountryName(row: ProductCountryAvailability): string {
+    if (!row.country_code) return '';
+    return this.countryNames.get(row.country_code.toUpperCase()) ?? '';
+  }
+
+  textColorFor(hex: string): string {
+    const c = (hex || '').replace('#', '');
+    if (c.length !== 3 && c.length !== 6) return '#fff';
+    const full = c.length === 3 ? c.split('').map(ch => ch + ch).join('') : c;
+    const r = parseInt(full.slice(0, 2), 16);
+    const g = parseInt(full.slice(2, 4), 16);
+    const b = parseInt(full.slice(4, 6), 16);
+    const lum = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+    return lum > 0.6 ? '#1a1a1a' : '#ffffff';
   }
 }

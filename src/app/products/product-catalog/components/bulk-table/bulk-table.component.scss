@@ -1,6 +1,6 @@
 .empty-state {
   text-align: center;
-  padding: var(--spacing-xl-2xl) var(--spacing-lg);
+  padding: var(--spacing-xl) var(--spacing-lg);
   color: var(--color-text-secondary);
 
   .empty-icon {
@@ -116,6 +116,14 @@
 
         .product-name-cell {
           line-height: 1.4;
+        }
+
+        .product-barcode-cell {
+          margin-top: 2px;
+          font-family: monospace;
+          font-size: 11px;
+          font-weight: 400;
+          color: var(--color-text-muted);
         }
 
         .product-badges {

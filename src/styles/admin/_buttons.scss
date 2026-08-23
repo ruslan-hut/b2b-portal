@@ -1,0 +1,125 @@
+/* ============================================================
+   Admin Buttons
+   Reference: DESIGN_POLICY.md §4
+   ============================================================ */
+
+.adm-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: var(--control-h-md);
+  padding: 0 var(--spacing-md-sm);
+  border-radius: var(--radius-control);
+  border: 1px solid transparent;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  letter-spacing: .01em;
+  /* A bar button is sized by its label, never the other way round. Without
+     this, adding any flexible control to a bar — a search field, a state chip —
+     squeezes "New page" onto two lines inside a 32px-high button. */
+  white-space: nowrap;
+  cursor: pointer;
+  background: transparent;
+  color: var(--color-text-primary);
+  font-family: inherit;
+  text-decoration: none;
+  transition: background-color .15s ease, border-color .15s ease, color .15s ease, transform .05s ease;
+
+  app-icon { font-size: var(--icon-sm); }
+
+  &:disabled {
+    opacity: .55;
+    cursor: not-allowed;
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(1px);
+  }
+
+  &--ghost {
+    border-color: var(--color-border);
+    color: var(--color-text-secondary);
+
+    &:hover:not(:disabled) {
+      border-color: var(--color-text-secondary);
+      color: var(--color-text-primary);
+    }
+  }
+
+  &--primary {
+    background: var(--color-primary);
+    color: var(--color-on-primary);
+    height: var(--control-h-lg);
+    padding: 0 var(--spacing-md);
+
+    &:hover:not(:disabled) {
+      background: var(--color-primary-dark, var(--color-primary));
+      filter: brightness(.95);
+    }
+  }
+
+  &--danger {
+    background: transparent;
+    color: var(--color-danger);
+    border-color: var(--color-danger);
+
+    &:hover:not(:disabled) {
+      background: var(--color-danger);
+      color: var(--color-text-inverse);
+    }
+  }
+
+  &--mini {
+    height: var(--control-h-sm);
+    padding: 0 var(--spacing-sm-md);
+    font-size: var(--text-xs);
+    border-color: var(--color-border);
+    color: var(--color-text-secondary);
+
+    &:hover:not(:disabled) {
+      border-color: var(--color-primary);
+      color: var(--color-primary);
+    }
+  }
+
+  /* Square, label-free variant for bar actions that are rare or whose icon is
+     unambiguous. Keeps them in the bar without spending a label's width on
+     them. Requires a title + aria-label — the icon is the only affordance. */
+  &--icon {
+    width: var(--control-h-md);
+    padding: 0;
+    gap: 0;
+    justify-content: center;
+
+    app-icon { font-size: var(--icon-md); }
+  }
+}
+
+/* Ghost buttons sit on the bar's recessed ground, so they take the control
+   surface to read as raised. The primary keeps its own fill. */
+.adm-bar .adm-btn--ghost {
+  background: var(--adm-bar-control-bg);
+}
+
+/* On narrow viewports buttons in the sticky bar collapse to icon-only.
+   Text nodes are zeroed out via font-size; the icon keeps its own explicit
+   size and stays visible, because <app-icon> sets font-size on its own host
+   rather than inheriting it. Bar buttons must carry an icon for this to
+   work — text-only buttons would render empty. */
+@media (max-width: 768px) {
+  .adm-bar .adm-btn {
+    padding: 0;
+    gap: 0;
+    font-size: 0;
+    width: var(--control-h-md);
+    justify-content: center;
+
+    &--primary {
+      width: var(--control-h-lg);
+    }
+
+    app-icon {
+      font-size: var(--icon-md);
+    }
+  }
+}

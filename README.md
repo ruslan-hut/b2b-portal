@@ -8,222 +8,162 @@
 ![Responsive](https://img.shields.io/badge/Responsive-Design-blue)
 [![License](https://img.shields.io/badge/License-BSD_3--Clause-blue.svg)](LICENSE)
 
-A modern B2B portal application built with Angular 21, designed for clients to browse products and create orders.
+Frontend of the B2B Portal: a wholesale ordering platform where clients browse a
+priced catalog and place orders, and staff run the back office — clients, orders,
+products, CRM, chat, shipments and integrations — from an admin zone in the same
+application.
 
-## Technology Stack
+This repository is the public mirror of the platform's frontend. It also carries
+the **full documentation of every API the platform exposes to the outside
+world**, including the [Client API](docs/api/client-api.md) — the
+key-authenticated machine-to-machine surface that clients integrate their own
+ERP or procurement systems with.
 
-- **Framework**: Angular 21.x with Module-based architecture
+## Integration documentation
+
+| Document | What it covers |
+|---|---|
+| [Client API](docs/api/client-api.md) | `/api/client/v1` — API keys, scopes, rate limits, idempotency, catalog, quotes, orders, invoices, profile |
+| [Client API Manual (UK)](docs/api/client-api-manual-uk.html) | The same contract as a standalone integrator manual in Ukrainian |
+| [Webhooks](docs/api/webhooks.md) | Outbound events, signing, retry policy |
+| [Invoice Request](docs/api/invoice-request.md) | Invoice request and issue flow |
+| [Chat Service Integration](docs/api/chat-service-integration.md) | External chat service protocol |
+
+The Client API's OpenAPI document is served by the backend at
+`GET /api/client/v1/openapi.yaml` and rendered in the portal itself under
+`/api-docs`; `/api-guide` is the narrative version of the same material. Both
+routes are public — the contract holds no secrets and integrators need it before
+they hold a key.
+
+Internal surfaces are documented too: [API structure](docs/api/structure.md),
+[authentication and common patterns](docs/api/authentication-and-common-patterns.md),
+[frontend API](docs/api/frontend-api.md),
+[data management API](docs/api/data-management-api.md) and
+[admin API](docs/api/admin-api.md).
+
+## Technology stack
+
+- **Framework**: Angular 21, module-based with lazy-loaded feature modules
 - **Language**: TypeScript 5.9 (strict mode)
-- **Styling**: SCSS with responsive design and gradient themes
-- **Forms**: Reactive Forms with custom validation
-- **State Management**: RxJS BehaviorSubjects
-- **HTTP Client**: Angular HttpClient
-- **Routing**: Angular Router with lazy loading and route guards
-- **Internationalization**: Custom translation system (English, Ukrainian)
-- **Build Tool**: Angular CLI with Webpack
+- **Styling**: SCSS, token-driven theming with light and dark modes
+- **Forms**: Reactive Forms
+- **State**: RxJS services; signals in newer components
+- **Routing**: Angular Router with lazy loading and role-based guards
+- **i18n**: custom translation service (English, Ukrainian)
+- **PWA**: Angular service worker (`ngsw-config.json`)
+- **Docs rendering**: Redoc, bundled as an asset
 
 ## Features
 
--  **User Authentication** - JWT-based authentication with support for Users and Clients
-   - Auto-detection of login type (username+password or phone+PIN)
-   - Automatic token refresh
-   - Multi-device session management
--  **Product Catalog** - Browse and search through product inventory
--  **Shopping Cart** - Add products to cart with quantity management
--  **Order Management** - Create orders and view order history
--  **Responsive Design** - Works seamlessly on desktop and mobile devices
--  **Modern UI** - Beautiful gradient-based design with smooth animations
--  **Internationalization** - English and Ukrainian language support
+**Client area**
+- JWT authentication for both users (username + password) and clients
+  (phone + PIN), auto-detected from the identifier format, with token refresh
+- Product catalog with search, filters and client-specific pricing
+- Cart, order confirmation and order history with status tracking
+- Partners area, profile, addresses and self-service Client API keys
 
-## Project Structure
+**Admin zone** (`/admin`, role-gated)
+- Dashboard, clients, companies, orders, products and product cleanup
+- CRM: pipeline board, tasks, workload, activity timeline, dashboards
+- Chat with clients over WebSocket, plus external chat-service settings
+- Shipments and carrier integrations, invoices, content editor, tags, stores
+- Integrations and settings: webhooks, Telegram, mail, AI, Binotel, Client API
+  keys and gates, users, sessions, logs and data tables
+
+**Cross-cutting**
+- Prices, discounts, VAT and totals are computed by the backend; the frontend
+  displays pre-calculated values
+- Responsive desktop-first layouts with dedicated mobile list patterns
+- Light/dark theme and per-installation branding (see the theming contract)
+
+## Project structure
 
 ```
 src/app/
- core/                    # Core module (singleton services, guards, models)
-    guards/             # Route guards (auth protection)
-    models/             # Data models and interfaces
-    services/           # Application-wide services
- auth/                   # Authentication module
-    login/             # Login component
- orders/                 # Orders module
-    order-history/     # Order history component
- products/               # Products module
-    product-catalog/   # Product catalog component
-    order-confirmation/ # Order confirmation component
- shared/                 # Shared components (future)
+├── core/          # Singleton services, guards, interceptors, models, pipes
+├── auth/          # Login
+├── products/      # Catalog, cart, order confirmation
+├── orders/        # Order history and detail
+├── partners/      # Partners area
+├── profile/       # Client profile, addresses, API keys
+├── api-docs/      # Public Redoc rendering of the Client API contract
+├── api-guide/     # Public narrative Client API guide
+├── admin/         # Admin zone (lazy-loaded, role-gated)
+└── shared/        # Shared components, directives, utilities
+src/brand/         # Brand token files; _active.scss is generated by set-env
+branding/          # Per-brand static assets copied into src/assets/branding
 ```
 
-## Technology Stack
-
-- **Framework**: Angular 21.x
-- **Language**: TypeScript 5.9 (strict mode)
-- **Styling**: SCSS
-- **Forms**: Reactive Forms
-- **State Management**: RxJS BehaviorSubjects
-- **Routing**: Angular Router with lazy loading
-
-## Getting Started
+## Getting started
 
 ### Prerequisites
 
-- Node.js (v22 or higher)
-- npm (v10 or higher)
+- Node.js 22+
+- npm 10+
 
-### Installation
+### Install and run
 
-1. Navigate to the frontend directory:
-```bash
-cd frontend
-```
-
-2. Install dependencies:
 ```bash
 npm install
+npm start                 # dev server on http://localhost:4200
+npm run local             # dev server with environment.local.ts
 ```
 
-3. Start the development server:
-```bash
-ng serve
-```
-
-4. Navigate to `http://localhost:4200/` in your browser
-
-## Development
-
-### Development Server
-
-Run `ng serve` for a dev server. The application will automatically reload if you change any of the source files.
-
-### Code Scaffolding
-
-Generate new components:
-```bash
-ng generate component component-name
-ng generate service service-name
-ng generate module module-name
-```
+Point the dev build at your backend by copying
+`src/environments/environment.local.example.ts` to
+`src/environments/environment.local.ts` (gitignored) and setting `apiUrl`, then
+run `npm run local`. See
+[Frontend Local Development](docs/getting-started/frontend-local-development.md).
 
 ### Build
 
-Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory.
+```bash
+npm run build             # development build
+npm run build:prod        # set-env + production build
+```
 
-### Running Tests
+`npm run build:prod` runs `scripts/set-env.js` first, which applies
+per-installation configuration to the source tree: `API_URL`, `APP_TITLE`,
+`THEME` and `THEME_COLOR`. In production the API URL defaults to the relative
+`/api/v1`, which works both behind an Nginx proxy and in the monolith
+deployment where the backend serves the built frontend.
 
 ```bash
-ng test              # Unit tests
-ng e2e               # End-to-end tests (when configured)
+API_URL=/api/v1 APP_TITLE="B2B Portal" THEME=stock THEME_COLOR="#667eea" npm run build:prod
 ```
 
-## Usage
+Theming is a contract, not a fork: brand tokens live in `src/brand/_<theme>.scss`,
+brand assets in `branding/<theme>/`, and web fonts in `scripts/brand-fonts.js`.
+`npm run check:theme` audits a brand file against the policy. See
+[Theming Contract](docs/development/theming-contract.md).
 
-### Authentication
+### Tests
 
-The application uses **JWT-based authentication** and supports two types of entities:
-
-#### User Login (username + password)
+```bash
+npm test                  # Karma unit tests
 ```
-Username/Phone: admin
-Password/PIN: password123
-```
-
-#### Client Login (phone + PIN code)
-```
-Username/Phone: +1234567890
-Password/PIN: 1234
-```
-
-**Auto-Detection**: The login form automatically detects whether you're logging in as a User or Client based on the identifier format:
-- Phone numbers (10+ digits, optional +) → Client login
-- Other text → User login
-
-### Backend Configuration
-
-Before using authentication, ensure your backend API is running and configured:
-
-1. **Local Development** (Recommended): Use `environment.local.ts` for your personal dev settings:
-   ```bash
-   cp src/environments/environment.local.example.ts src/environments/environment.local.ts
-   # Edit environment.local.ts with your backend URL
-   ng serve --configuration=local
-   ```
-   See [LOCAL_DEVELOPMENT.md](./docs/LOCAL_DEVELOPMENT.md) for details.
-
-2. **Default Development**: Update `src/environments/environment.ts`:
-   ```typescript
-   apiUrl: 'http://localhost:8080/api/v1'
-   ```
-
-3. **Production**: Set the `API_URL` environment variable or GitHub secret (see [DEPLOYMENT.md](./docs/DEPLOYMENT.md))
-
-### Key Features
-
-1. **Product Browsing**
-   - Search products by name, description, or category
-   - View product details including price, SKU, and availability
-   - Add products to cart directly from catalog
-
-2. **Shopping Cart**
-   - Side panel with cart items
-   - Adjust quantities or remove items
-   - See real-time total calculation
-   - Proceed to checkout
-
-3. **Order Confirmation**
-   - Review cart items
-   - Enter shipping address
-   - Submit order
-   - Receive order confirmation
-
-4. **Order History**
-   - View all past orders
-   - See order status and details
-   - Track order timeline
-
-## Configuration
-
-### Environment Files
-
-- `environment.ts` - Development environment
-- `environment.prod.ts` - Production environment
-
-Configure API endpoints and other settings in these files.
-
-## Coding Standards
-
-Please refer to [CODING_POLICY.md](./docs/CODING_POLICY.md) for detailed coding guidelines including:
-- TypeScript standards
-- Naming conventions
-- Component structure
-- Service patterns
-- Styling guidelines
-- Git workflow
 
 ## Documentation
 
-- **[Quick Start Guide](docs/QUICKSTART.md)** - Fast setup and testing
-- **[API Structure](docs/api/API_STRUCTURE.md)** - Complete backend API endpoint reference
-- **[Translation Implementation](docs/TRANSLATION_IMPLEMENTATION.md)** - Complete translation system
-- **[Deployment Guide](docs/DEPLOYMENT.md)** - Frontend deployment instructions
-
-For project-wide documentation, see the [Main Documentation Index](docs/README.md).
+- **[Documentation Index](docs/README.md)** — everything below, in one place
+- [Frontend Quickstart](docs/getting-started/frontend-quickstart.md)
+- [Frontend Overview](docs/architecture/frontend-overview.md)
+- [Coding Policy](docs/development/frontend-coding-policy.md)
+- [Design Policy](DESIGN_POLICY.md) — the authoritative UI policy for this repo
+- [Translation Implementation](docs/development/translation-implementation.md)
+- [Deployment Overview](docs/deployment/overview.md) and
+  [Nginx](docs/deployment/nginx.md) / [Docker](docs/deployment/docker.md) /
+  [GitHub Actions](docs/deployment/github-actions.md)
 
 ## Contributing
 
 1. Create a feature branch
-2. Make your changes
-3. Write/update tests
+2. Make your changes, following
+   [CODING_POLICY](docs/development/frontend-coding-policy.md) and
+   [DESIGN_POLICY.md](DESIGN_POLICY.md)
+3. Update the affected documentation
 4. Submit a pull request
-
-Please follow the coding standards outlined in [CODING_POLICY.md](./docs/CODING_POLICY.md).
 
 ## License
 
-This project is licensed under the BSD 3-Clause License - see the [LICENSE](LICENSE) file for details.
-
-## Support
-
-For questions or issues, please create an issue in the repository.
-
----
-
-**Built with  using Angular**
+BSD 3-Clause — see [LICENSE](LICENSE).

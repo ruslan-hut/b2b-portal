@@ -1,0 +1,96 @@
+// =============================================================================
+// EXAMPLE BRAND — teal and copper
+// =============================================================================
+// Not a deployment. This exists so the theming mechanism has something real to
+// exercise: CI builds it and runs the contrast check against it, so the wiring
+// and the contract cannot rot between the day a brand is written and the day
+// the next one is.
+//
+// It is also the honest answer to "what does a brand actually have to override?"
+// Swapping the seed alone is not enough — the stock neutrals carry an indigo
+// tint (--color-background-hover, --color-surface-variant), the admin chrome is
+// its own unrelated palette, and a handful of tokens hardcode a hue that no
+// derivation reaches (--assist-ink, the dark table header). Every one of those
+// is listed below. Anything a brand does *not* list keeps its stock value.
+//
+// Select with: THEME=example npm run set-env
+// =============================================================================
+
+@mixin light-overrides {
+  /* --- seed ------------------------------------------------------------- */
+  --color-primary: #0f6f68;
+  --color-primary-dark: #0a544f;
+  --color-primary-light: #4a9d96;
+
+  --color-secondary: #b4531f;
+  --color-secondary-dark: #8c3f16;
+
+  /* --gradient-primary, --focus-ring-color, --shadow-primary and the three
+     --color-primary-overlay-* derive from the seed. Nothing to do here. */
+
+  /* --- M3 container roles ----------------------------------------------- */
+  --color-primary-container: #dcefec;
+  --color-on-primary-container: #06322e;
+  --color-secondary-container: #f7e6db;
+  --color-on-secondary-container: #4a1e08;
+
+  /* --- neutral ground ---------------------------------------------------- */
+  /* The stock hover and active tints are indigo-derived; leaving them turns
+     every hover in the app back into the old brand. */
+  --color-background: #f4f6f5;
+  --color-background-secondary: #f7f9f8;
+  --color-background-hover: #eef4f3;
+  --color-background-active: #e2eeec;
+  --color-surface-variant: #eef4f3;
+
+  --color-text-primary: #1f2a29;
+  --color-text-secondary: #4d5a58;
+  --color-border: #dbe3e1;
+
+  --adm-bar-bg: #e9eeed;
+
+  /* --- admin chrome ------------------------------------------------------ */
+  /* A separate palette from the brand in stock, so a brand has to state it. */
+  --admin-nav-bg: #14312f;
+  --admin-nav-item-hover-bg: #1d423f;
+  --admin-nav-item-active-bg: #0f6f68;
+  --admin-nav-border: #1d423f;
+  --admin-header-bg: #14312f;
+
+  /* --- assistant marker -------------------------------------------------- */
+  /* --assist and --assist-soft follow --color-secondary; --assist-ink is a
+     literal in the stock palette and does not. */
+  --assist-ink: #4a1e08;
+}
+
+@mixin dark-overrides {
+  /* --- seed ------------------------------------------------------------- */
+  --color-primary: #4fb3aa;
+  --color-primary-dark: #0f6f68;
+  --color-primary-light: #7fd0c8;
+
+  --color-secondary: #d4854f;
+  --color-secondary-dark: #b4531f;
+
+  /* --- M3 container roles ----------------------------------------------- */
+  --color-primary-container: #12332f;
+  --color-on-primary-container: #bfe8e3;
+  --color-secondary-container: #3a2416;
+  --color-on-secondary-container: #f2d4bd;
+
+  /* --- neutral ground ---------------------------------------------------- */
+  --color-background-hover: #16302d;
+  --color-background-active: #1b3b37;
+  --color-surface-variant: #1b3b37;
+
+  /* --- admin chrome ------------------------------------------------------ */
+  --admin-nav-item-active-bg: #0f6f68;
+
+  /* --- table header ------------------------------------------------------ */
+  /* Light derives this from --gradient-primary; dark deliberately mutes the
+     brand instead of deriving, so a brand has to make the call itself. */
+  --table-header-bg: linear-gradient(135deg, #1d4441 0%, #2f3a33 100%);
+
+  /* --- assistant marker -------------------------------------------------- */
+  --assist-ink: #f2d4bd;
+}

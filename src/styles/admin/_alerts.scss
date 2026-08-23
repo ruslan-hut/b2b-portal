@@ -1,0 +1,34 @@
+/* ============================================================
+   Admin Alerts
+   Reference: DESIGN_POLICY.md §6
+   ============================================================ */
+
+%adm-alert-base {
+  padding: var(--spacing-sm-md) var(--spacing-md);
+  border-left: 3px solid currentColor;
+  border-radius: var(--radius-control);
+  font-size: var(--text-sm);
+  line-height: 1.4;
+}
+
+.adm-error {
+  @extend %adm-alert-base;
+  color: var(--color-alert-error-text, var(--color-danger));
+  background: var(--color-alert-error-bg, var(--card-bg));
+  border-left-color: var(--color-danger);
+  white-space: pre-line; // preserve line breaks in multi-item validation messages
+}
+
+.adm-success {
+  @extend %adm-alert-base;
+  color: var(--color-success, var(--color-text-primary));
+  background: var(--status-success-bg, var(--card-bg));
+  border-left-color: var(--color-success, var(--color-primary));
+}
+
+.adm-warning {
+  @extend %adm-alert-base;
+  color: var(--color-warning, var(--color-text-primary));
+  background: var(--status-warning-bg, var(--card-bg));
+  border-left-color: var(--color-warning, var(--color-text-secondary));
+}

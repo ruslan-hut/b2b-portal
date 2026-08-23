@@ -8,19 +8,22 @@ import {
   User,
   Client,
   AuthMeResponse,
-  RefreshTokenRequest,
   TokensListResponse,
   ApiResponse
 } from '../models/user.model';
+import { AuthSettings } from '../models/auth-settings.model';
 import { environment } from '../../../environments/environment';
 import { AppSettingsService } from './app-settings.service';
+import { StoreService } from './store.service';
+import { PriceTypeService } from './price-type.service';
 
 interface AuthData {
   entityType: 'user' | 'client';
   entity: User | Client;
   accessToken: string;
-  refreshToken: string;
   expiresAt: string;
+  // The refresh token is intentionally NOT stored here: it lives only in an
+  // httpOnly cookie set by the backend, out of reach of JavaScript/XSS.
 }
 
 @Injectable({
@@ -40,7 +43,9 @@ export class AuthService {
 
   constructor(
     private http: HttpClient,
-    private appSettingsService: AppSettingsService
+    private appSettingsService: AppSettingsService,
+    private storeService: StoreService,
+    private priceTypeService: PriceTypeService
   ) {
     const authData = this.getStoredAuthData();
     this.currentEntitySubject = new BehaviorSubject<User | Client | null>(
@@ -67,10 +72,50 @@ export class AuthService {
   }
 
   /**
+   * The current authenticated user, or null when the logged-in entity is a
+   * client or nobody is logged in.
+   */
+  public get currentUser(): User | null {
+    return this.entityTypeValue === 'user' ? (this.currentEntityValue as User) : null;
+  }
+
+  /**
+   * True when the logged-in entity is an admin user.
+   */
+  public get isAdmin(): boolean {
+    return this.currentUser?.role === 'admin';
+  }
+
+  /**
+   * True when the logged-in user is bound to a single store (a store-scoped
+   * manager). Such users may only see and act on their own store's data, so
+   * the UI must not offer them a store selector. Admins and unbound users
+   * are global and return false.
+   *
+   * Content editors are excluded even when they carry a store: for them the
+   * binding is the catalog-preview context (which store's assortment and
+   * prices the client-area preview shows), not a restriction. Mirrors
+   * UserAuth.IsStoreScoped on the backend — keep the two in step.
+   */
+  public isStoreScopedManager(): boolean {
+    const u = this.currentUser;
+    return !!u && u.role !== 'admin' && u.role !== 'content_editor' && !!u.store_uid;
+  }
+
+  /**
+   * The store UID a scoped user is locked to, or null for global users/admins.
+   */
+  public get scopedStoreUid(): string | null {
+    return this.isStoreScopedManager() ? (this.currentUser!.store_uid ?? null) : null;
+  }
+
+  /**
    * Login with user credentials or client credentials
    */
   login(credentials: LoginRequest): Observable<LoginResponse> {
-    return this.http.post<LoginResponse>(`${this.apiUrl}/auth/login`, credentials).pipe(
+    // withCredentials so the browser stores the httpOnly refresh cookie the
+    // backend sets (required for cross-origin dev; harmless same-origin).
+    return this.http.post<LoginResponse>(`${this.apiUrl}/auth/login`, credentials, { withCredentials: true }).pipe(
       switchMap(response => {
         if (response.success) {
           // Wait for login success handling to complete
@@ -97,7 +142,7 @@ export class AuthService {
       return of(null);
     }
 
-    return this.http.post(`${this.apiUrl}/auth/logout`, {}).pipe(
+    return this.http.post(`${this.apiUrl}/auth/logout`, {}, { withCredentials: true }).pipe(
       tap(() => this.clearAuthData()),
       catchError(error => {
         // Even if logout fails on server, clear local data
@@ -111,16 +156,9 @@ export class AuthService {
    * Refresh access token using refresh token
    */
   refreshToken(): Observable<LoginResponse> {
-    const authData = this.getStoredAuthData();
-    if (!authData || !authData.refreshToken) {
-      return throwError(() => new Error('No refresh token available'));
-    }
-
-    const request: RefreshTokenRequest = {
-      refresh_token: authData.refreshToken
-    };
-
-    return this.http.post<LoginResponse>(`${this.apiUrl}/auth/refresh`, request).pipe(
+    // The refresh token is sent automatically via the httpOnly cookie; no token
+    // is read from or held in JS. withCredentials ensures the cookie is included.
+    return this.http.post<LoginResponse>(`${this.apiUrl}/auth/refresh`, {}, { withCredentials: true }).pipe(
       switchMap(response => {
         if (response.success) {
           // Wait for login success handling to complete
@@ -225,6 +263,67 @@ export class AuthService {
   }
 
   /**
+   * Fetch public auth flags (e.g. whether mail is enabled). Used by the login
+   * page to decide whether to surface the "forgot password" link.
+   */
+  getAuthSettings(): Observable<AuthSettings> {
+    return this.http.get<ApiResponse<AuthSettings>>(`${this.apiUrl}/auth/settings`).pipe(
+      map(response => response.data)
+    );
+  }
+
+  /**
+   * Initiate a password (user) or PIN (client) recovery flow.
+   *
+   * Pass either an email or a phone number (not both). Phone-based recovery is
+   * client-only: the backend looks up the client by phone and sends the
+   * recovery message to whatever email is on file for them.
+   *
+   * Always resolves successfully; the response message is intentionally
+   * generic to prevent enumeration. Pass the user's currently selected UI
+   * language so the recovery email is delivered in that language.
+   */
+  forgotPassword(
+    identifier: { email?: string; phone?: string },
+    language?: string
+  ): Observable<{ message: string }> {
+    const body: { email?: string; phone?: string; language?: string } = {};
+    if (identifier.email) {
+      body.email = identifier.email;
+    }
+    if (identifier.phone) {
+      body.phone = identifier.phone;
+    }
+    if (language) {
+      body.language = language;
+    }
+    return this.http.post<ApiResponse<{ message: string }>>(
+      `${this.apiUrl}/auth/forgot-password`,
+      body
+    ).pipe(map(response => response.data));
+  }
+
+  /**
+   * Complete a password reset using the token from the recovery email.
+   */
+  resetPassword(token: string, newPassword: string): Observable<{ message: string }> {
+    return this.http.post<ApiResponse<{ message: string }>>(
+      `${this.apiUrl}/auth/reset-password`,
+      { token, new_password: newPassword }
+    ).pipe(map(response => response.data));
+  }
+
+  /**
+   * Change the password of the currently authenticated user from inside the app.
+   */
+  changePassword(currentPassword: string, newPassword: string): Observable<{ message: string }> {
+    return this.http.post<ApiResponse<{ message: string }>>(
+      `${this.apiUrl}/auth/change-password`,
+      { current_password: currentPassword, new_password: newPassword }
+    ).pipe(map(response => response.data));
+  }
+
+  /**
    * Check if user is authenticated
    */
   isAuthenticated(): boolean {
@@ -248,39 +347,10 @@ export class AuthService {
   }
 
   /**
-   * Get refresh token
-   */
-  getRefreshToken(): string | null {
-    const authData = this.getStoredAuthData();
-    return authData ? authData.refreshToken : null;
-  }
-
-  /**
    * Clear authentication data (public method for guards/interceptors)
    */
   public clearAuth(): void {
     this.clearAuthData();
-  }
-
-  /**
-   * Debug helper: Inspect current token (call from browser console)
-   * Usage: In console, run: window['authService'].inspectToken()
-   */
-  public inspectToken(): void {
-    const token = this.getAccessToken();
-    if (!token) {
-      console.log('❌ No access token found');
-      return;
-    }
-
-    const payload = this.decodeToken(token);
-    console.log('🔍 Current Access Token Info:');
-    console.log('  Token UID:', payload.token_uid);
-    console.log('  Expires At:', new Date(payload.exp * 1000).toISOString());
-    console.log('  Issued At:', new Date(payload.iat * 1000).toISOString());
-    console.log('  User/Client UID:', payload.user_uid || payload.client_uid);
-    console.log('  Full Token (first 50 chars):', token.substring(0, 50) + '...');
-    console.log('  Full Payload:', payload);
   }
 
   // Private helper methods
@@ -293,8 +363,8 @@ export class AuthService {
       entityType: response.data.entity_type,
       entity: {} as any, // Will be populated by getCurrentEntity() call
       accessToken: response.data.access_token,
-      refreshToken: response.data.refresh_token,
       expiresAt: response.data.expires_at
+      // refresh token is delivered as an httpOnly cookie, not stored here
     };
 
     this.storeAuthData(authData);
@@ -315,6 +385,10 @@ export class AuthService {
     this.stopRefreshTokenTimer();
     // Clear AppSettings on logout
     this.appSettingsService.clearSettings();
+    // Drop cached reference data so a different user logging in on the same tab
+    // can't transiently see the previous user's store / price-type lists.
+    this.storeService.invalidateCache();
+    this.priceTypeService.invalidateCache();
   }
 
   private storeAuthData(authData: AuthData): void {
@@ -369,20 +443,6 @@ export class AuthService {
     if (this.refreshTokenTimeout) {
       clearTimeout(this.refreshTokenTimeout);
       this.refreshTokenTimeout = undefined;
-    }
-  }
-
-  /**
-   * Decode JWT token to extract payload (for debugging)
-   */
-  private decodeToken(token: string): any {
-    try {
-      const payload = token.split('.')[1];
-      const decoded = atob(payload);
-      return JSON.parse(decoded);
-    } catch (error) {
-      console.error('Failed to decode token:', error);
-      return {};
     }
   }
 }

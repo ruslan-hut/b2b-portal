@@ -1,0 +1,1062 @@
+<div class="adm-page">
+
+  <header class="adm-bar">
+    <div class="adm-bar__crumbs">
+      <button
+        type="button"
+        class="adm-crumb-back"
+        (click)="navigateBack()"
+        [attr.aria-label]="'admin.shipment.carriers.backToList' | translate"
+      >
+        <app-icon name="arrow_back"></app-icon>
+      </button>
+      <a class="adm-crumb" (click)="navigateBack()" (keydown.enter)="navigateBack()" tabindex="0">
+        {{ 'admin.shipment.carriers.title' | translate }}
+      </a>
+      <span class="adm-crumb-sep">/</span>
+      <span class="adm-crumb adm-crumb--active">
+        {{ isEditMode
+            ? (carrierForm.get('name')?.value || ('admin.shipment.carriers.editCarrier' | translate))
+            : ('admin.shipment.carriers.newCarrier' | translate) }}
+        @if (hasUnsavedChanges) {
+          <app-icon name="warning" class="cre-unsaved" [attr.aria-label]="'admin.shipment.carriers.unsavedChanges' | translate" [attr.title]="'admin.shipment.carriers.unsavedChanges' | translate"></app-icon>
+        }
+      </span>
+    </div>
+    <div class="adm-bar__actions">
+      <button type="button" class="adm-btn adm-btn--ghost" (click)="navigateBack()" [disabled]="saving">
+        <app-icon name="close"></app-icon>
+        {{ 'common.cancel' | translate }}
+      </button>
+      <button
+        type="button"
+        class="adm-btn adm-btn--primary"
+        (click)="saveCarrier()"
+        [disabled]="carrierForm.invalid || saving || loading"
+      >
+        <app-icon [name]="saving ? 'sync' : 'check'"></app-icon>
+        {{ (saving ? 'common.saving' : 'common.save') | translate }}
+      </button>
+    </div>
+  </header>
+
+  @if (loading) {
+    <div class="adm-loading">{{ 'common.loading' | translate }}</div>
+  }
+
+  @if (!loading) {
+    <div class="adm-grid">
+
+      <!-- Sidebar -->
+      <aside class="adm-side">
+        <div class="adm-id-card">
+          <div class="adm-avatar cre-avatar" [attr.data-active]="carrierForm.get('active')?.value">
+            <app-icon name="local_shipping"></app-icon>
+          </div>
+          <div class="adm-id-name">
+            {{ carrierForm.get('name')?.value || ('admin.shipment.carriers.newCarrier' | translate) }}
+          </div>
+          <div class="adm-id-username">{{ carrierTypeLabel() }}</div>
+          <div class="adm-id-role">
+            <span class="adm-role-chip" [attr.data-role]="carrierForm.get('active')?.value ? 'manager' : 'client'">
+              {{ (carrierForm.get('active')?.value ? 'common.active' : 'common.inactive') | translate }}
+            </span>
+          </div>
+        </div>
+
+        <div class="adm-meta">
+          <div class="adm-meta__title">{{ 'admin.shipment.carriers.basicInfo' | translate }}</div>
+          <div class="adm-meta__row">
+            <span class="adm-meta__label">{{ 'common.store' | translate }}</span>
+            <span class="adm-meta__value">{{ storeLabel() }}</span>
+          </div>
+          <div class="adm-meta__row">
+            <span class="adm-meta__label">{{ 'admin.shipment.carriers.service' | translate }}</span>
+            <span class="adm-meta__value">
+              {{ carrierForm.get('default_service_type')?.value || ('admin.shipment.carriers.default' | translate) }}
+            </span>
+          </div>
+          @if (carrierForm.get('api_url')?.value) {
+            <div class="adm-meta__row adm-meta__row--mono">
+              <span class="adm-meta__label">URL</span>
+              <span
+                class="adm-meta__value adm-uid"
+                [copyOnClick]="carrierForm.get('api_url')?.value"
+              >
+                <span class="adm-uid__text">{{ carrierForm.get('api_url')?.value }}</span>
+              </span>
+            </div>
+          }
+          @if (isEditMode && carrierUid) {
+            <div class="adm-meta__row adm-meta__row--mono">
+              <span class="adm-meta__label">UID</span>
+              <span class="adm-meta__value adm-uid" [copyOnClick]="carrierUid">
+                <span class="adm-uid__text">{{ carrierUid }}</span>
+              </span>
+            </div>
+          }
+          @if (editingCarrier?.last_update) {
+            <div class="adm-meta__row">
+              <span class="adm-meta__label">{{ 'common.updated' | translate }}</span>
+              <span class="adm-meta__value">{{ formatDate(editingCarrier!.last_update) }}</span>
+            </div>
+          }
+        </div>
+      </aside>
+
+      <!-- Main -->
+      <form class="adm-main" [formGroup]="carrierForm" (ngSubmit)="saveCarrier()" autocomplete="off">
+
+        @if (error) {
+          <div class="adm-error" role="alert">{{ error }}</div>
+        }
+
+        <!-- Basic -->
+        <section class="adm-section">
+          <header class="adm-section__head">
+            <div>
+              <h2 class="adm-section__title">{{ 'admin.shipment.carriers.basicInfo' | translate }}</h2>
+              <p class="adm-section__sub">{{ 'admin.shipment.carriers.carrierType' | translate }}</p>
+            </div>
+          </header>
+
+          <div class="adm-fields">
+            <label class="adm-field adm-field--span2">
+              <span class="adm-field__label">
+                {{ 'admin.shipment.carriers.carrierName' | translate }} <em>*</em>
+              </span>
+              <input
+                type="text"
+                class="adm-input"
+                formControlName="name"
+                [class.is-invalid]="carrierForm.get('name')?.invalid && carrierForm.get('name')?.touched"
+                [placeholder]="'admin.shipment.carriers.carrierNamePlaceholder' | translate"
+              />
+              @if (carrierForm.get('name')?.invalid && carrierForm.get('name')?.touched) {
+                <span class="cre-field-error">{{ 'admin.shipment.carriers.nameRequired' | translate }}</span>
+              }
+            </label>
+
+            <label class="adm-field">
+              <span class="adm-field__label">
+                {{ 'admin.shipment.carriers.carrierType' | translate }} <em>*</em>
+              </span>
+              <select class="adm-input" formControlName="carrier_type" (change)="onCarrierTypeChange()">
+                @for (type of carrierTypes; track type.value) {
+                  <option [value]="type.value">{{ type.label }}</option>
+                }
+              </select>
+            </label>
+
+            <label class="adm-field">
+              <span class="adm-field__label">{{ 'common.store' | translate }}</span>
+              <select class="adm-input" formControlName="store_uid">
+                <option [ngValue]="null">{{ 'admin.shipment.scopeShared' | translate }}</option>
+                @for (s of stores; track s.uid) {
+                  <option [ngValue]="s.uid">{{ s.name }}</option>
+                }
+              </select>
+            </label>
+
+            <label class="adm-field">
+              <span class="adm-field__label">{{ 'admin.shipment.carriers.company' | translate }}</span>
+              <select class="adm-input" formControlName="company_uid">
+                <option [ngValue]="null">{{ 'admin.shipment.carriers.companyNotLinked' | translate }}</option>
+                @for (c of companies; track c.uid) {
+                  <option [ngValue]="c.uid">{{ c.name }}</option>
+                }
+              </select>
+            </label>
+
+            <label class="adm-toggle adm-field--span2">
+              <input type="checkbox" formControlName="active" />
+              <span class="adm-toggle__track"><span class="adm-toggle__dot"></span></span>
+              <span class="adm-toggle__text">
+                {{ 'common.status' | translate }}:
+                <strong>{{ (carrierForm.get('active')?.value ? 'common.active' : 'common.inactive') | translate }}</strong>
+              </span>
+            </label>
+          </div>
+        </section>
+
+        <!-- API credentials (not for manual carriers) -->
+        @if (!isManual()) {
+        <section class="adm-section">
+          <header class="adm-section__head">
+            <div>
+              <h2 class="adm-section__title">{{ 'admin.shipment.carriers.apiCredentials' | translate }}</h2>
+              <p class="adm-section__sub">{{ 'admin.shipment.carriers.apiUrl' | translate }}</p>
+            </div>
+          </header>
+
+          <div class="adm-fields">
+            <label class="adm-field adm-field--span2">
+              <span class="adm-field__label">
+                {{ 'admin.shipment.carriers.apiUrl' | translate }} <em>*</em>
+              </span>
+              <input
+                type="url"
+                class="adm-input adm-input--mono"
+                formControlName="api_url"
+                [class.is-invalid]="carrierForm.get('api_url')?.invalid && carrierForm.get('api_url')?.touched"
+                placeholder="https://api.dhl24.com.pl/webapi2"
+              />
+              @if (carrierForm.get('api_url')?.invalid && carrierForm.get('api_url')?.touched) {
+                <span class="cre-field-error">{{ 'admin.shipment.carriers.urlRequired' | translate }}</span>
+              }
+            </label>
+
+            @if (!isNovaPoshta()) {
+            <label class="adm-field">
+              <span class="adm-field__label">
+                {{ 'admin.shipment.carriers.username' | translate }} <em>*</em>
+              </span>
+              <input
+                type="text"
+                class="adm-input"
+                formControlName="username"
+                [class.is-invalid]="carrierForm.get('username')?.invalid && carrierForm.get('username')?.touched"
+                [placeholder]="'admin.shipment.carriers.usernamePlaceholder' | translate"
+                autocomplete="off"
+              />
+              @if (carrierForm.get('username')?.invalid && carrierForm.get('username')?.touched) {
+                <span class="cre-field-error">{{ 'admin.shipment.carriers.usernameRequired' | translate }}</span>
+              }
+            </label>
+            }
+
+            <label class="adm-field">
+              <span class="adm-field__label">
+                {{ 'common.password' | translate }}
+                @if (!isEditMode) { <em>*</em> }
+                @else { <span class="cre-field-hint">{{ 'admin.shipment.carriers.leaveEmptyToKeep' | translate }}</span> }
+              </span>
+              <input
+                type="password"
+                class="adm-input adm-input--mono"
+                formControlName="password"
+                [placeholder]="'admin.shipment.carriers.passwordPlaceholder' | translate"
+                autocomplete="new-password"
+              />
+            </label>
+
+            @if (!isNovaPoshta()) {
+            <label class="adm-field">
+              <span class="adm-field__label">{{ 'admin.shipment.carriers.accountNumber' | translate }}</span>
+              <input
+                type="text"
+                class="adm-input"
+                formControlName="account_number"
+                [placeholder]="'admin.shipment.carriers.accountNumberPlaceholder' | translate"
+              />
+            </label>
+            }
+
+            <label class="adm-field">
+              <span class="adm-field__label">{{ 'admin.shipment.carriers.defaultServiceType' | translate }}</span>
+              <input type="text" class="adm-input" formControlName="default_service_type" placeholder="AH" />
+            </label>
+
+            <div class="adm-field--span2 cre-test">
+              <button
+                type="button"
+                class="adm-btn adm-btn--ghost"
+                (click)="testCarrier()"
+                [disabled]="testLoading || !carrierForm.get('api_url')?.valid || !carrierForm.get('username')?.valid"
+              >
+                <app-icon [name]="testLoading ? 'sync' : 'wifi_tethering'" [class.cre-spin]="testLoading"></app-icon>
+                {{ (testLoading ? 'admin.shipment.carriers.testing' : 'common.testConnection') | translate }}
+              </button>
+
+              @if (testResult) {
+                @if (testResult.success) {
+                  <div class="adm-success cre-test__result" role="status">
+                    <app-icon name="check_circle"></app-icon>
+                    <div class="cre-test__details">
+                      <span>{{ 'admin.shipment.carriers.connectionSuccessful' | translate }}</span>
+                      @if (testResult.api_version) {
+                        <span class="cre-test__info">{{ 'admin.shipment.carriers.apiVersion' | translate }}: {{ testResult.api_version }}</span>
+                      }
+                      @if (testResult.message) {
+                        <span class="cre-test__info">{{ testResult.message }}</span>
+                      }
+                    </div>
+                  </div>
+                } @else {
+                  <div class="adm-error cre-test__result" role="alert">
+                    <app-icon name="error"></app-icon>
+                    <span>{{ testResult.error || ('admin.shipment.carriers.connectionFailed' | translate) }}</span>
+                  </div>
+                }
+              }
+            </div>
+          </div>
+        </section>
+        }
+
+        <!-- Shipper address (DHL / InPost only) -->
+        @if (!isNovaPoshta() && !isManual()) {
+        <section class="adm-section">
+          <header class="adm-section__head">
+            <div>
+              <h2 class="adm-section__title">{{ 'admin.shipment.carriers.shipperAddress' | translate }}</h2>
+              <p class="adm-section__sub">{{ 'admin.shipment.carriers.shipperAddressHint' | translate }}</p>
+            </div>
+          </header>
+
+          <div class="adm-fields">
+            <label class="adm-field adm-field--span2">
+              <span class="adm-field__label">
+                {{ 'admin.shipment.carriers.shipperName' | translate }} <em>*</em>
+              </span>
+              <input
+                type="text"
+                class="adm-input"
+                formControlName="shipper_name"
+                [class.is-invalid]="carrierForm.get('shipper_name')?.invalid && carrierForm.get('shipper_name')?.touched"
+                [placeholder]="'admin.shipment.carriers.shipperNamePlaceholder' | translate"
+              />
+              @if (carrierForm.get('shipper_name')?.invalid && carrierForm.get('shipper_name')?.touched) {
+                <span class="cre-field-error">{{ 'admin.shipment.carriers.shipperNameRequired' | translate }}</span>
+              }
+            </label>
+
+            <label class="adm-field adm-field--span2">
+              <span class="adm-field__label">
+                {{ 'admin.shipment.carriers.streetAddress' | translate }} <em>*</em>
+              </span>
+              <input
+                type="text"
+                class="adm-input"
+                formControlName="shipper_street"
+                [class.is-invalid]="carrierForm.get('shipper_street')?.invalid && carrierForm.get('shipper_street')?.touched"
+                [placeholder]="'admin.shipment.carriers.streetPlaceholder' | translate"
+              />
+              @if (carrierForm.get('shipper_street')?.invalid && carrierForm.get('shipper_street')?.touched) {
+                <span class="cre-field-error">{{ 'admin.shipment.carriers.streetRequired' | translate }}</span>
+              }
+            </label>
+
+            <label class="adm-field">
+              <span class="adm-field__label">
+                {{ 'admin.shipment.carriers.city' | translate }} <em>*</em>
+              </span>
+              <input
+                type="text"
+                class="adm-input"
+                formControlName="shipper_city"
+                [class.is-invalid]="carrierForm.get('shipper_city')?.invalid && carrierForm.get('shipper_city')?.touched"
+                [placeholder]="'admin.shipment.carriers.city' | translate"
+              />
+              @if (carrierForm.get('shipper_city')?.invalid && carrierForm.get('shipper_city')?.touched) {
+                <span class="cre-field-error">{{ 'admin.shipment.carriers.cityRequired' | translate }}</span>
+              }
+            </label>
+
+            <label class="adm-field">
+              <span class="adm-field__label">
+                {{ 'admin.shipment.carriers.postalCode' | translate }} <em>*</em>
+              </span>
+              <input
+                type="text"
+                class="adm-input"
+                formControlName="shipper_postal_code"
+                [class.is-invalid]="carrierForm.get('shipper_postal_code')?.invalid && carrierForm.get('shipper_postal_code')?.touched"
+                placeholder="12345"
+                maxlength="10"
+              />
+              @if (carrierForm.get('shipper_postal_code')?.invalid && carrierForm.get('shipper_postal_code')?.touched) {
+                <span class="cre-field-error">{{ 'admin.shipment.carriers.postalCodeRequired' | translate }}</span>
+              }
+            </label>
+
+            <label class="adm-field">
+              <span class="adm-field__label">
+                {{ 'common.phone' | translate }} <em>*</em>
+              </span>
+              <input
+                type="tel"
+                class="adm-input"
+                formControlName="shipper_phone"
+                [class.is-invalid]="carrierForm.get('shipper_phone')?.invalid && carrierForm.get('shipper_phone')?.touched"
+                placeholder="123456789"
+              />
+              @if (carrierForm.get('shipper_phone')?.invalid && carrierForm.get('shipper_phone')?.touched) {
+                <span class="cre-field-error">{{ 'admin.shipment.carriers.phoneRequired' | translate }}</span>
+              }
+            </label>
+
+            <label class="adm-field">
+              <span class="adm-field__label">
+                {{ 'common.email' | translate }} <em>*</em>
+              </span>
+              <input
+                type="email"
+                class="adm-input"
+                formControlName="shipper_email"
+                [class.is-invalid]="carrierForm.get('shipper_email')?.invalid && carrierForm.get('shipper_email')?.touched"
+                placeholder="sender@example.com"
+              />
+              @if (carrierForm.get('shipper_email')?.invalid && carrierForm.get('shipper_email')?.touched) {
+                <span class="cre-field-error">{{ 'admin.shipment.carriers.emailRequired' | translate }}</span>
+              }
+            </label>
+
+            <label class="adm-field adm-field--span2">
+              <span class="adm-field__label">
+                {{ 'admin.shipment.carriers.shipperContactPerson' | translate }}
+              </span>
+              <input
+                type="text"
+                class="adm-input"
+                formControlName="shipper_contact_person"
+                maxlength="60"
+                [placeholder]="'admin.shipment.carriers.shipperContactPersonPlaceholder' | translate"
+              />
+              <span class="cre-field-hint">{{ 'admin.shipment.carriers.shipperContactPersonHint' | translate }}</span>
+            </label>
+          </div>
+        </section>
+        }
+
+        @if (isNovaPoshta()) {
+          <section class="adm-section">
+            <header class="adm-section__head">
+              <div>
+                <h2 class="adm-section__title">{{ 'admin.shipment.carriers.npSender' | translate }}</h2>
+                <p class="adm-section__sub">{{ 'admin.shipment.carriers.npSenderHint' | translate }}</p>
+              </div>
+            </header>
+
+            <div class="adm-field--span2 cre-test cre-npaction">
+              <button type="button" class="adm-btn adm-btn--primary" (click)="npLoadSender()" [disabled]="npLoading">
+                <app-icon [name]="npLoading ? 'sync' : 'download'" [class.cre-spin]="npLoading"></app-icon>
+                {{ 'admin.shipment.carriers.npLoadSender' | translate }}
+              </button>
+              @if (npLoading) {
+                <span class="cre-field-hint">{{ 'admin.shipment.carriers.npLoading' | translate }}</span>
+              }
+              @if (npError) {
+                <span class="cre-field-error">{{ npError }}</span>
+              }
+            </div>
+
+            <div class="adm-fields">
+              <label class="adm-field">
+                <span class="adm-field__label">{{ 'admin.shipment.carriers.npSenderCounterparty' | translate }} <em>*</em></span>
+                <select class="adm-input" formControlName="np_sender_ref" (change)="onNpCounterpartyChange()"
+                  [class.is-invalid]="carrierForm.get('np_sender_ref')?.invalid && carrierForm.get('np_sender_ref')?.touched">
+                  <option value="">{{ 'admin.shipment.carriers.npSelectPlaceholder' | translate }}</option>
+                  @if (carrierForm.get('np_sender_ref')?.value && !npHasCounterparty(carrierForm.get('np_sender_ref')?.value)) {
+                    <option [value]="carrierForm.get('np_sender_ref')?.value">{{ 'admin.shipment.carriers.npCurrentSaved' | translate }}</option>
+                  }
+                  @for (cp of npCounterparties; track cp.ref) {
+                    <option [value]="cp.ref">{{ cp.name }}{{ cp.edrpou ? ' (' + cp.edrpou + ')' : '' }}</option>
+                  }
+                </select>
+              </label>
+
+              <label class="adm-field">
+                <span class="adm-field__label">{{ 'admin.shipment.carriers.npSenderContact' | translate }} <em>*</em></span>
+                <select class="adm-input" formControlName="np_sender_contact_ref" (change)="onNpContactChange()"
+                  [class.is-invalid]="carrierForm.get('np_sender_contact_ref')?.invalid && carrierForm.get('np_sender_contact_ref')?.touched">
+                  <option value="">{{ 'admin.shipment.carriers.npSelectPlaceholder' | translate }}</option>
+                  @if (carrierForm.get('np_sender_contact_ref')?.value && !npHasContact(carrierForm.get('np_sender_contact_ref')?.value)) {
+                    <option [value]="carrierForm.get('np_sender_contact_ref')?.value">{{ 'admin.shipment.carriers.npCurrentSaved' | translate }}</option>
+                  }
+                  @for (ct of npContacts; track ct.ref) {
+                    <option [value]="ct.ref">{{ ct.name }}{{ ct.phone ? ' — ' + ct.phone : '' }}</option>
+                  }
+                </select>
+              </label>
+
+              <label class="adm-field">
+                <span class="adm-field__label">{{ 'admin.shipment.carriers.npSenderPhone' | translate }} <em>*</em></span>
+                <input type="text" class="adm-input" formControlName="np_sender_phone"
+                  [class.is-invalid]="carrierForm.get('np_sender_phone')?.invalid && carrierForm.get('np_sender_phone')?.touched"
+                  placeholder="380501234567" />
+              </label>
+
+              <label class="adm-field">
+                <span class="adm-field__label">{{ 'admin.shipment.carriers.npSenderCity' | translate }}</span>
+                <input type="text" class="adm-input" formControlName="np_sender_city" placeholder="Київ" />
+              </label>
+
+              <label class="adm-field">
+                <span class="adm-field__label">{{ 'admin.shipment.carriers.npSenderWarehouseNumber' | translate }}</span>
+                <input type="text" class="adm-input" formControlName="np_sender_warehouse_number" placeholder="5" />
+              </label>
+
+              <label class="adm-field">
+                <span class="adm-field__label">&nbsp;</span>
+                <button type="button" class="adm-btn adm-btn--ghost cre-resolve-btn" (click)="npResolveWarehouse()" [disabled]="npLoading">
+                  <app-icon [name]="npLoading ? 'sync' : 'search'" [class.cre-spin]="npLoading"></app-icon>
+                  {{ 'admin.shipment.carriers.npResolveWarehouse' | translate }}
+                </button>
+                @if (npResolvedWarehouse) {
+                  <span class="cre-field-hint">✓ {{ npResolvedWarehouse.city }} — {{ npResolvedWarehouse.desc }}</span>
+                } @else if (carrierForm.get('np_sender_address_ref')?.value) {
+                  <span class="cre-field-hint">{{ 'admin.shipment.carriers.npWarehouseConfigured' | translate }}</span>
+                }
+              </label>
+
+              <label class="adm-field">
+                <span class="adm-field__label">{{ 'admin.shipment.carriers.npPayerType' | translate }}</span>
+                <select class="adm-input" formControlName="np_payer_type">
+                  <option value="Sender">{{ 'admin.shipment.carriers.npPayerSender' | translate }}</option>
+                  <option value="Recipient">{{ 'admin.shipment.carriers.npPayerRecipient' | translate }}</option>
+                  <option value="ThirdPerson">{{ 'admin.shipment.carriers.npPayerThird' | translate }}</option>
+                </select>
+              </label>
+
+              <label class="adm-field">
+                <span class="adm-field__label">{{ 'admin.shipment.carriers.npPaymentMethod' | translate }}</span>
+                <select class="adm-input" formControlName="np_payment_method">
+                  <option value="Cash">{{ 'admin.shipment.carriers.npPaymentCash' | translate }}</option>
+                  <option value="NonCash">{{ 'admin.shipment.carriers.npPaymentNonCash' | translate }}</option>
+                </select>
+              </label>
+
+              <label class="adm-field">
+                <span class="adm-field__label">{{ 'admin.shipment.carriers.npCargoType' | translate }}</span>
+                <select class="adm-input" formControlName="np_cargo_type">
+                  <option value="Parcel">{{ 'admin.shipment.carriers.npCargoParcel' | translate }}</option>
+                  <option value="Cargo">{{ 'admin.shipment.carriers.npCargoCargo' | translate }}</option>
+                  <option value="Documents">{{ 'admin.shipment.carriers.npCargoDocuments' | translate }}</option>
+                </select>
+              </label>
+
+              <label class="adm-field">
+                <span class="adm-field__label">{{ 'admin.shipment.carriers.npDeclaredCost' | translate }}</span>
+                <input type="number" min="1" class="adm-input" formControlName="np_declared_cost" placeholder="300" />
+                <span class="cre-field-hint">{{ 'admin.shipment.carriers.npDeclaredCostHint' | translate }}</span>
+              </label>
+            </div>
+
+            @if (npSaveBlockers().length) {
+              <p class="cre-field-hint cre-field-hint--warn">
+                {{ 'admin.shipment.carriers.npSaveBlocked' | translate }}: {{ npSaveBlockers().join(', ') }}
+              </p>
+            }
+          </section>
+        }
+
+        @if (isInpost()) {
+          <section class="adm-section">
+            <header class="adm-section__head">
+              <div>
+                <h2 class="adm-section__title">{{ 'admin.shipment.carriers.inpostPickup' | translate }}</h2>
+                <p class="adm-section__sub">{{ 'admin.shipment.carriers.inpostPickupHint' | translate }}</p>
+              </div>
+            </header>
+
+            <div class="adm-fields">
+              <label class="adm-field">
+                <span class="adm-field__label">{{ 'admin.shipment.carriers.inpostDispatchPointId' | translate }}</span>
+                <input
+                  type="number"
+                  class="adm-input"
+                  formControlName="inpost_dispatch_point_id"
+                  placeholder="12345"
+                  min="1"
+                />
+                <span class="cre-field-hint">{{ 'admin.shipment.carriers.inpostDispatchPointIdHint' | translate }}</span>
+              </label>
+
+              <label class="adm-toggle adm-field">
+                <input type="checkbox" formControlName="inpost_pickup_disabled" />
+                <span class="adm-toggle__track"><span class="adm-toggle__dot"></span></span>
+                <span class="adm-toggle__text">
+                  {{ 'admin.shipment.carriers.inpostPickupDisabled' | translate }}
+                  <span class="adm-toggle__hint">{{ 'admin.shipment.carriers.inpostPickupDisabledHint' | translate }}</span>
+                </span>
+              </label>
+
+              <label class="adm-field">
+                <span class="adm-field__label">{{ 'admin.shipment.carriers.inpostSendingMethod' | translate }}</span>
+                <select class="adm-input" formControlName="inpost_sending_method">
+                  <option value="">{{ 'admin.shipment.carriers.inpostSendingMethodDefault' | translate }}</option>
+                  <option value="parcel_locker">{{ 'admin.shipment.carriers.inpostSendingMethodParcelLocker' | translate }}</option>
+                  <option value="dispatch_order">{{ 'admin.shipment.carriers.inpostSendingMethodDispatchOrder' | translate }}</option>
+                  <option value="dispatch_point">{{ 'admin.shipment.carriers.inpostSendingMethodDispatchPoint' | translate }}</option>
+                </select>
+                <span class="cre-field-hint">{{ 'admin.shipment.carriers.inpostSendingMethodHint' | translate }}</span>
+              </label>
+
+              <label class="adm-field">
+                <span class="adm-field__label">{{ 'admin.shipment.carriers.inpostDropoffPoint' | translate }}</span>
+                <input
+                  type="text"
+                  class="adm-input adm-input--mono"
+                  formControlName="inpost_dropoff_point"
+                  placeholder="WAW721M"
+                  maxlength="32"
+                />
+                <span class="cre-field-hint">{{ 'admin.shipment.carriers.inpostDropoffPointHint' | translate }}</span>
+              </label>
+
+              <label class="adm-field">
+                <span class="adm-field__label">{{ 'admin.shipment.carriers.inpostLabelFormat' | translate }}</span>
+                <select class="adm-input" formControlName="inpost_label_format">
+                  <option value="Pdf">PDF</option>
+                  <option value="ZebraDpl">Zebra ZPL</option>
+                  <option value="EPL2">EPL2</option>
+                </select>
+              </label>
+
+              <label class="adm-field">
+                <span class="adm-field__label">{{ 'admin.shipment.carriers.inpostLabelType' | translate }}</span>
+                <select class="adm-input" formControlName="inpost_label_type">
+                  <option value="A6">A6</option>
+                  <option value="A4">A4</option>
+                </select>
+              </label>
+            </div>
+          </section>
+        }
+
+        @if (isGls()) {
+          <section class="adm-section">
+            <header class="adm-section__head">
+              <div>
+                <h2 class="adm-section__title">{{ 'admin.shipment.carriers.glsSettings' | translate }}</h2>
+                <p class="adm-section__sub">{{ 'admin.shipment.carriers.glsSettingsHint' | translate }}</p>
+              </div>
+            </header>
+
+            <div class="adm-fields">
+              <label class="adm-field">
+                <span class="adm-field__label">{{ 'admin.shipment.carriers.glsLabelMode' | translate }}</span>
+                <select class="adm-input" formControlName="gls_label_mode">
+                  <option value="one_label_on_a4_pdf">{{ 'admin.shipment.carriers.glsLabelA4' | translate }}</option>
+                  <option value="four_labels_on_a4_pdf">{{ 'admin.shipment.carriers.glsLabelA4Four' | translate }}</option>
+                  <option value="roll_160x100_pdf">{{ 'admin.shipment.carriers.glsLabelRollPdf' | translate }}</option>
+                  <option value="roll_160x100_zebra">{{ 'admin.shipment.carriers.glsLabelZebra' | translate }}</option>
+                  <option value="roll_160x100_zebra_300">{{ 'admin.shipment.carriers.glsLabelZebra300' | translate }}</option>
+                  <option value="roll_160x100_datamax">{{ 'admin.shipment.carriers.glsLabelDatamax' | translate }}</option>
+                </select>
+              </label>
+
+              <label class="adm-field">
+                <span class="adm-field__label">{{ 'admin.shipment.carriers.glsPfc' | translate }}</span>
+                <input type="text" class="adm-input" formControlName="gls_pfc" maxlength="8" />
+                <span class="cre-field-hint">{{ 'admin.shipment.carriers.glsPfcHint' | translate }}</span>
+              </label>
+
+              <label class="adm-field">
+                <span class="adm-field__label">{{ 'admin.shipment.carriers.glsIntegratorId' | translate }}</span>
+                <input type="text" class="adm-input adm-input--mono" formControlName="gls_integrator_id" maxlength="64" />
+                <span class="cre-field-hint">{{ 'admin.shipment.carriers.glsIntegratorIdHint' | translate }}</span>
+              </label>
+
+              <label class="adm-toggle adm-field">
+                <input type="checkbox" formControlName="gls_auto_pickup_disabled" />
+                <span class="adm-toggle__track"><span class="adm-toggle__dot"></span></span>
+                <span class="adm-toggle__text">
+                  {{ 'admin.shipment.carriers.glsAutoPickupDisabled' | translate }}
+                  <span class="adm-toggle__hint">{{ 'admin.shipment.carriers.glsAutoPickupDisabledHint' | translate }}</span>
+                </span>
+              </label>
+            </div>
+          </section>
+
+          <section class="adm-section">
+            <header class="adm-section__head">
+              <div>
+                <h2 class="adm-section__title">{{ 'admin.shipment.carriers.glsTracking' | translate }}</h2>
+                <p class="adm-section__sub">{{ 'admin.shipment.carriers.glsTrackingHint' | translate }}</p>
+              </div>
+            </header>
+
+            <div class="adm-fields">
+              <label class="adm-field">
+                <span class="adm-field__label">{{ 'admin.shipment.carriers.glsTrackingApiUrl' | translate }}</span>
+                <input type="text" class="adm-input adm-input--mono" formControlName="gls_tracking_api_url" />
+                <span class="cre-field-hint">{{ 'admin.shipment.carriers.glsTrackingApiUrlHint' | translate }}</span>
+              </label>
+
+              <label class="adm-field">
+                <span class="adm-field__label">{{ 'admin.shipment.carriers.glsTrackingUsername' | translate }}</span>
+                <input type="text" class="adm-input" formControlName="gls_tracking_username" autocomplete="off" />
+              </label>
+
+              <label class="adm-field">
+                <span class="adm-field__label">{{ 'admin.shipment.carriers.glsTrackingPassword' | translate }}</span>
+                <input type="password" class="adm-input" formControlName="gls_tracking_password" autocomplete="new-password" />
+              </label>
+            </div>
+          </section>
+        }
+
+        @if (isDhl24()) {
+          <section class="adm-section">
+            <header class="adm-section__head">
+              <div>
+                <h2 class="adm-section__title">{{ 'admin.shipment.carriers.dhlMultiparcel' | translate }}</h2>
+                <p class="adm-section__sub">{{ 'admin.shipment.carriers.dhlMultiparcelHint' | translate }}</p>
+              </div>
+            </header>
+
+            <div class="adm-fields">
+              <label class="adm-toggle adm-field">
+                <input type="checkbox" formControlName="support_multiparcel" />
+                <span class="adm-toggle__track"><span class="adm-toggle__dot"></span></span>
+                <span class="adm-toggle__text">
+                  {{ 'admin.shipment.carriers.dhlSupportMultiparcel' | translate }}
+                  <span class="adm-toggle__hint">{{ 'admin.shipment.carriers.dhlSupportMultiparcelHint' | translate }}</span>
+                </span>
+              </label>
+
+              <label class="adm-field">
+                <span class="adm-field__label">{{ 'admin.orders.insuranceMode' | translate }}</span>
+                <select class="adm-input" formControlName="default_insurance_mode">
+                  <option value="">{{ 'admin.orders.insuranceModeNone' | translate }}</option>
+                  <option value="order_total">{{ 'admin.orders.insuranceModeOrderTotal' | translate }}</option>
+                  <option value="manual">{{ 'admin.orders.insuranceModeManual' | translate }}</option>
+                </select>
+              </label>
+            </div>
+          </section>
+
+          <section class="adm-section">
+            <header class="adm-section__head">
+              <div>
+                <h2 class="adm-section__title">{{ 'admin.shipment.carriers.dhlCustoms' | translate }}</h2>
+                <p class="adm-section__sub">{{ 'admin.shipment.carriers.dhlCustomsHint' | translate }}</p>
+              </div>
+            </header>
+
+            <div class="adm-fields">
+              <label class="adm-field">
+                <span class="adm-field__label">{{ 'admin.shipment.carriers.dhlCustomsType' | translate }}</span>
+                <select class="adm-input" formControlName="customs_type">
+                  <option value="S">{{ 'admin.shipment.carriers.dhlCustomsTypeSimplified' | translate }}</option>
+                  <option value="I">{{ 'admin.shipment.carriers.dhlCustomsTypeIndividual' | translate }}</option>
+                </select>
+                <span class="cre-field-hint">{{ 'admin.shipment.carriers.dhlCustomsTypeHint' | translate }}</span>
+              </label>
+
+              <label class="adm-field">
+                <span class="adm-field__label">{{ 'admin.shipment.carriers.dhlCustomsCategory' | translate }}</span>
+                <select class="adm-input" formControlName="customs_category">
+                  <option value="11">{{ 'admin.shipment.carriers.dhlCustomsCategorySale' | translate }}</option>
+                  <option value="31">{{ 'admin.shipment.carriers.dhlCustomsCategoryGift' | translate }}</option>
+                  <option value="32">{{ 'admin.shipment.carriers.dhlCustomsCategorySample' | translate }}</option>
+                  <option value="21">{{ 'admin.shipment.carriers.dhlCustomsCategoryReturn' | translate }}</option>
+                  <option value="91">{{ 'admin.shipment.carriers.dhlCustomsCategoryDocuments' | translate }}</option>
+                  <option value="9">{{ 'admin.shipment.carriers.dhlCustomsCategoryOther' | translate }}</option>
+                </select>
+              </label>
+
+              <label class="adm-field">
+                <span class="adm-field__label">{{ 'admin.shipment.carriers.dhlCustomsDefaultTariff' | translate }}</span>
+                <input
+                  type="text"
+                  class="adm-input adm-input--mono"
+                  formControlName="customs_default_tariff_code"
+                  placeholder="3304300000"
+                  maxlength="20"
+                />
+                <span class="cre-field-hint">{{ 'admin.shipment.carriers.dhlCustomsDefaultTariffHint' | translate }}</span>
+              </label>
+
+              <label class="adm-field">
+                <span class="adm-field__label">{{ 'admin.shipment.carriers.dhlCustomsDefaultOrigin' | translate }}</span>
+                <input
+                  type="text"
+                  class="adm-input adm-input--mono"
+                  formControlName="customs_default_country_of_origin"
+                  placeholder="PL"
+                  maxlength="2"
+                />
+                <span class="cre-field-hint">{{ 'admin.shipment.carriers.dhlCustomsDefaultOriginHint' | translate }}</span>
+              </label>
+
+              <label class="adm-field">
+                <span class="adm-field__label">{{ 'admin.shipment.carriers.dhlShipperEori' | translate }}</span>
+                <input type="text" class="adm-input adm-input--mono" formControlName="shipper_eori" maxlength="17" />
+                <span class="cre-field-hint">{{ 'admin.shipment.carriers.dhlShipperEoriHint' | translate }}</span>
+              </label>
+
+              <label class="adm-field">
+                <span class="adm-field__label">{{ 'admin.shipment.carriers.dhlShipperNip' | translate }}</span>
+                <input type="text" class="adm-input adm-input--mono" formControlName="shipper_nip" maxlength="17" />
+              </label>
+
+              <label class="adm-field">
+                <span class="adm-field__label">{{ 'admin.shipment.carriers.dhlShipperVat' | translate }}</span>
+                <input type="text" class="adm-input adm-input--mono" formControlName="shipper_vat" maxlength="15" />
+              </label>
+            </div>
+          </section>
+        }
+
+        @if (isDhlExpress()) {
+          <section class="adm-section">
+            <header class="adm-section__head">
+              <div>
+                <h2 class="adm-section__title">{{ 'admin.shipment.carriers.dhlExpressService' | translate }}</h2>
+                <p class="adm-section__sub">{{ 'admin.shipment.carriers.dhlExpressServiceHint' | translate }}</p>
+              </div>
+            </header>
+
+            <div class="adm-fields">
+              <label class="adm-field">
+                <span class="adm-field__label">{{ 'admin.shipment.carriers.dhlExpressShipperCountry' | translate }}</span>
+                <input
+                  type="text"
+                  class="adm-input adm-input--mono"
+                  formControlName="shipper_country_code"
+                  placeholder="PL"
+                  maxlength="2"
+                />
+                <span class="cre-field-hint">{{ 'admin.shipment.carriers.dhlExpressShipperCountryHint' | translate }}</span>
+              </label>
+
+              <label class="adm-field">
+                <span class="adm-field__label">{{ 'admin.shipment.carriers.dhlExpressCompanyName' | translate }}</span>
+                <input type="text" class="adm-input" formControlName="shipper_company_name" maxlength="60" />
+              </label>
+
+              <label class="adm-field">
+                <span class="adm-field__label">{{ 'admin.shipment.carriers.dhlExpressReceiverType' | translate }}</span>
+                <select class="adm-input" formControlName="dhl_receiver_type_code">
+                  <option value="business">{{ 'admin.shipment.carriers.dhlExpressReceiverBusiness' | translate }}</option>
+                  <option value="private">{{ 'admin.shipment.carriers.dhlExpressReceiverPrivate' | translate }}</option>
+                </select>
+              </label>
+
+              <label class="adm-field">
+                <span class="adm-field__label">{{ 'admin.shipment.carriers.dhlExpressContentDescription' | translate }}</span>
+                <input type="text" class="adm-input" formControlName="dhl_content_description" maxlength="70" />
+                <span class="cre-field-hint">{{ 'admin.shipment.carriers.dhlExpressContentDescriptionHint' | translate }}</span>
+              </label>
+
+              <label class="adm-field">
+                <span class="adm-field__label">{{ 'admin.shipment.carriers.dhlExpressBillingCurrency' | translate }}</span>
+                <input
+                  type="text"
+                  class="adm-input adm-input--mono"
+                  formControlName="dhl_billing_currency"
+                  placeholder="PLN"
+                  maxlength="3"
+                />
+              </label>
+
+              <label class="adm-field">
+                <span class="adm-field__label">{{ 'admin.shipment.carriers.dhlExpressTimezone' | translate }}</span>
+                <input type="text" class="adm-input adm-input--mono" formControlName="dhl_timezone" placeholder="Europe/Warsaw" />
+                <span class="cre-field-hint">{{ 'admin.shipment.carriers.dhlExpressTimezoneHint' | translate }}</span>
+              </label>
+
+              <label class="adm-toggle adm-field">
+                <input type="checkbox" formControlName="support_multiparcel" />
+                <span class="adm-toggle__track"><span class="adm-toggle__dot"></span></span>
+                <span class="adm-toggle__text">
+                  {{ 'admin.shipment.carriers.dhlSupportMultiparcel' | translate }}
+                  <span class="adm-toggle__hint">{{ 'admin.shipment.carriers.dhlExpressMultiparcelHint' | translate }}</span>
+                </span>
+              </label>
+
+              <label class="adm-field">
+                <span class="adm-field__label">{{ 'admin.orders.insuranceMode' | translate }}</span>
+                <select class="adm-input" formControlName="default_insurance_mode">
+                  <option value="">{{ 'admin.orders.insuranceModeNone' | translate }}</option>
+                  <option value="order_total">{{ 'admin.orders.insuranceModeOrderTotal' | translate }}</option>
+                  <option value="manual">{{ 'admin.orders.insuranceModeManual' | translate }}</option>
+                </select>
+              </label>
+            </div>
+          </section>
+
+          <section class="adm-section">
+            <header class="adm-section__head">
+              <div>
+                <h2 class="adm-section__title">{{ 'admin.shipment.carriers.dhlExpressPickupLabels' | translate }}</h2>
+                <p class="adm-section__sub">{{ 'admin.shipment.carriers.dhlExpressPickupLabelsHint' | translate }}</p>
+              </div>
+            </header>
+
+            <div class="adm-fields">
+              <label class="adm-toggle adm-field">
+                <input type="checkbox" formControlName="dhl_request_pickup" />
+                <span class="adm-toggle__track"><span class="adm-toggle__dot"></span></span>
+                <span class="adm-toggle__text">
+                  {{ 'admin.shipment.carriers.dhlExpressRequestPickup' | translate }}
+                  <span class="adm-toggle__hint">{{ 'admin.shipment.carriers.dhlExpressRequestPickupHint' | translate }}</span>
+                </span>
+              </label>
+
+              @if (carrierForm.get('dhl_request_pickup')?.value) {
+                <label class="adm-field">
+                  <span class="adm-field__label">{{ 'admin.shipment.carriers.dhlExpressPickupCloseTime' | translate }}</span>
+                  <input type="text" class="adm-input adm-input--mono" formControlName="dhl_pickup_close_time" placeholder="18:00" maxlength="5" />
+                  <span class="cre-field-hint">{{ 'admin.shipment.carriers.dhlExpressPickupCloseTimeHint' | translate }}</span>
+                </label>
+              }
+
+              <label class="adm-field">
+                <span class="adm-field__label">{{ 'admin.shipment.carriers.dhlExpressLabelTemplate' | translate }}</span>
+                <select class="adm-input" formControlName="dhl_label_template">
+                  <option value="ECOM26_84_A4_001">{{ 'admin.shipment.carriers.dhlExpressLabelA4' | translate }}</option>
+                  <option value="ECOM26_84_001">{{ 'admin.shipment.carriers.dhlExpressLabelThermal' | translate }}</option>
+                </select>
+                <span class="cre-field-hint">{{ 'admin.shipment.carriers.dhlExpressLabelTemplateHint' | translate }}</span>
+              </label>
+
+              <label class="adm-toggle adm-field">
+                <input type="checkbox" formControlName="dhl_request_invoice_image" />
+                <span class="adm-toggle__track"><span class="adm-toggle__dot"></span></span>
+                <span class="adm-toggle__text">
+                  {{ 'admin.shipment.carriers.dhlExpressRequestInvoice' | translate }}
+                  <span class="adm-toggle__hint">{{ 'admin.shipment.carriers.dhlExpressRequestInvoiceHint' | translate }}</span>
+                </span>
+              </label>
+            </div>
+          </section>
+
+          <section class="adm-section">
+            <header class="adm-section__head">
+              <div>
+                <h2 class="adm-section__title">{{ 'admin.shipment.carriers.dhlCustoms' | translate }}</h2>
+                <p class="adm-section__sub">{{ 'admin.shipment.carriers.dhlExpressCustomsHint' | translate }}</p>
+              </div>
+            </header>
+
+            <div class="adm-fields">
+              <label class="adm-field">
+                <span class="adm-field__label">{{ 'admin.shipment.carriers.dhlExpressIncoterm' | translate }}</span>
+                <select class="adm-input" formControlName="dhl_incoterm">
+                  <option value="DAP">{{ 'admin.shipment.carriers.dhlExpressIncotermDap' | translate }}</option>
+                  <option value="DDP">{{ 'admin.shipment.carriers.dhlExpressIncotermDdp' | translate }}</option>
+                </select>
+                <span class="cre-field-hint">{{ 'admin.shipment.carriers.dhlExpressIncotermHint' | translate }}</span>
+              </label>
+
+              <label class="adm-field">
+                <span class="adm-field__label">{{ 'admin.shipment.carriers.dhlExpressPayerAccount' | translate }}</span>
+                <input type="text" class="adm-input adm-input--mono" formControlName="dhl_payer_account_number" maxlength="12" />
+                <span class="cre-field-hint">{{ 'admin.shipment.carriers.dhlExpressPayerAccountHint' | translate }}</span>
+              </label>
+
+              @if (carrierForm.get('dhl_incoterm')?.value === 'DDP') {
+                <label class="adm-field">
+                  <span class="adm-field__label">
+                    {{ 'admin.shipment.carriers.dhlExpressDutiesAccount' | translate }} <em>*</em>
+                  </span>
+                  <input type="text" class="adm-input adm-input--mono" formControlName="dhl_duties_account_number" maxlength="12" />
+                  <span class="cre-field-hint">{{ 'admin.shipment.carriers.dhlExpressDutiesAccountHint' | translate }}</span>
+                </label>
+              }
+
+              <label class="adm-toggle adm-field">
+                <input type="checkbox" formControlName="dhl_paperless_trade" />
+                <span class="adm-toggle__track"><span class="adm-toggle__dot"></span></span>
+                <span class="adm-toggle__text">
+                  {{ 'admin.shipment.carriers.dhlExpressPaperlessTrade' | translate }}
+                  <span class="adm-toggle__hint">{{ 'admin.shipment.carriers.dhlExpressPaperlessTradeHint' | translate }}</span>
+                </span>
+              </label>
+
+              @if (carrierForm.get('dhl_paperless_trade')?.value) {
+                <label class="adm-toggle adm-field">
+                  <input type="checkbox" formControlName="dhl_bypass_plt_error" />
+                  <span class="adm-toggle__track"><span class="adm-toggle__dot"></span></span>
+                  <span class="adm-toggle__text">
+                    {{ 'admin.shipment.carriers.dhlExpressBypassPlt' | translate }}
+                    <span class="adm-toggle__hint">{{ 'admin.shipment.carriers.dhlExpressBypassPltHint' | translate }}</span>
+                  </span>
+                </label>
+              }
+
+              <label class="adm-field">
+                <span class="adm-field__label">{{ 'admin.shipment.carriers.dhlExpressExportReason' | translate }}</span>
+                <select class="adm-input" formControlName="customs_export_reason_type">
+                  <option value="permanent">{{ 'admin.shipment.carriers.dhlExpressExportPermanent' | translate }}</option>
+                  <option value="temporary">{{ 'admin.shipment.carriers.dhlExpressExportTemporary' | translate }}</option>
+                  <option value="return">{{ 'admin.shipment.carriers.dhlExpressExportReturn' | translate }}</option>
+                </select>
+              </label>
+
+              <label class="adm-field">
+                <span class="adm-field__label">{{ 'admin.shipment.carriers.dhlExpressShipmentType' | translate }}</span>
+                <select class="adm-input" formControlName="customs_shipment_type">
+                  <option value="commercial">{{ 'admin.shipment.carriers.dhlExpressShipmentCommercial' | translate }}</option>
+                  <option value="personal">{{ 'admin.shipment.carriers.dhlExpressShipmentPersonal' | translate }}</option>
+                </select>
+              </label>
+
+              <label class="adm-field">
+                <span class="adm-field__label">{{ 'admin.shipment.carriers.dhlCustomsDefaultTariff' | translate }}</span>
+                <input
+                  type="text"
+                  class="adm-input adm-input--mono"
+                  formControlName="customs_default_tariff_code"
+                  placeholder="3304300000"
+                  maxlength="20"
+                />
+                <span class="cre-field-hint">{{ 'admin.shipment.carriers.dhlCustomsDefaultTariffHint' | translate }}</span>
+              </label>
+
+              <label class="adm-field">
+                <span class="adm-field__label">{{ 'admin.shipment.carriers.dhlCustomsDefaultOrigin' | translate }}</span>
+                <input
+                  type="text"
+                  class="adm-input adm-input--mono"
+                  formControlName="customs_default_country_of_origin"
+                  placeholder="PL"
+                  maxlength="2"
+                />
+                <span class="cre-field-hint">{{ 'admin.shipment.carriers.dhlCustomsDefaultOriginHint' | translate }}</span>
+              </label>
+
+              <label class="adm-field">
+                <span class="adm-field__label">{{ 'admin.shipment.carriers.dhlShipperEori' | translate }}</span>
+                <input type="text" class="adm-input adm-input--mono" formControlName="shipper_eori" maxlength="17" />
+                <span class="cre-field-hint">{{ 'admin.shipment.carriers.dhlExpressShipperEoriHint' | translate }}</span>
+              </label>
+
+              <label class="adm-field">
+                <span class="adm-field__label">{{ 'admin.shipment.carriers.dhlShipperVat' | translate }}</span>
+                <input type="text" class="adm-input adm-input--mono" formControlName="shipper_vat" maxlength="15" />
+                <span class="cre-field-hint">{{ 'admin.shipment.carriers.dhlExpressShipperVatHint' | translate }}</span>
+              </label>
+            </div>
+          </section>
+        }
+
+        <!-- Event mappings -->
+        <section class="adm-section">
+          <header class="adm-section__head">
+            <div>
+              <h2 class="adm-section__title">{{ 'admin.shipment.carriers.eventMappings' | translate }}</h2>
+              <p class="adm-section__sub">{{ 'admin.shipment.carriers.eventMappingsHint' | translate }}</p>
+            </div>
+          </header>
+
+          <div class="cre-events">
+            @for (mapping of eventMappings; track mapping.code) {
+              <div class="cre-event">
+                <div class="cre-event__info">
+                  <span class="cre-event__code">{{ mapping.code }}</span>
+                  <span class="cre-event__desc">{{ mapping.description }}</span>
+                </div>
+                <select
+                  class="adm-input cre-event__select"
+                  [(ngModel)]="mapping.stageUid"
+                  [ngModelOptions]="{standalone: true}"
+                  (ngModelChange)="onMappingChange()"
+                >
+                  <option [ngValue]="null">{{ 'admin.shipment.carriers.recordOnly' | translate }}</option>
+                  @for (stage of stages; track stage.uid) {
+                    <option [value]="stage.uid">{{ stage.name }}</option>
+                  }
+                </select>
+              </div>
+            }
+          </div>
+        </section>
+      </form>
+    </div>
+  }
+</div>

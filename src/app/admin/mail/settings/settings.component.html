@@ -1,315 +1,272 @@
-<div class="settings-container">
-  <app-action-bar>
-    <div class="page-title" actionBarLeft>
-      <h1>Mail Settings</h1>
-    </div>
-    <div actionBarRight>
-      <button class="btn-icon" (click)="refresh()" [disabled]="loading" title="Refresh">
-        <span class="material-icons">refresh</span>
+<div class="adm-page">
+
+  <header class="adm-bar">
+    <div class="adm-bar__crumbs">
+      <button
+        type="button"
+        class="adm-crumb-back"
+        routerLink="/admin/settings"
+        [attr.aria-label]="'common.back' | translate"
+      >
+        <app-icon name="arrow_back"></app-icon>
       </button>
+      <a class="adm-crumb" routerLink="/admin/settings">{{ 'admin.settings.title' | translate }}</a>
+      <span class="adm-crumb-sep">/</span>
+      <span class="adm-crumb adm-crumb--active">{{ 'admin.settings.mail' | translate }}</span>
     </div>
-  </app-action-bar>
-
-  <!-- Error Message -->
-  @if (error) {
-    <div class="error-message">
-      {{ error }}
+    <div class="adm-bar__actions">
+      <button
+        type="button"
+        class="adm-icon-btn"
+        (click)="refresh()"
+        [disabled]="loading"
+        [title]="'common.refresh' | translate"
+        [attr.aria-label]="'common.refresh' | translate"
+      >
+        <app-icon name="refresh"></app-icon>
+      </button>
+      @if (settings) {
+        <button
+          type="button"
+          class="adm-btn adm-btn--primary"
+          (click)="saveSettings()"
+          [disabled]="saving"
+        >
+          <app-icon [name]="saving ? 'sync' : 'check'"></app-icon>
+          {{ (saving ? 'common.saving' : 'admin.mail.saveSettings') | translate }}
+        </button>
+      }
     </div>
-  }
+  </header>
 
-  <!-- Success Message -->
-  @if (successMessage) {
-    <div class="success-message">
-      {{ successMessage }}
-    </div>
-  }
-
-  <!-- Loading Indicator -->
   @if (loading) {
-    <div class="loading">
-      Loading...
-    </div>
+    <div class="adm-loading">{{ 'common.loading' | translate }}</div>
   }
 
   @if (!loading && settings) {
-    <!-- Service Status Card -->
-    <div class="settings-card status-card">
-      <div class="card-header">
-        <h2>Service Status</h2>
-        <span class="status-indicator" [class.connected]="settings.service_connected">
-          <span class="material-icons">{{ settings.service_connected ? 'check_circle' : 'cancel' }}</span>
-          {{ settings.service_connected ? 'Connected' : 'Disconnected' }}
-        </span>
-      </div>
-      <div class="card-body">
-        <div class="status-grid">
-          <div class="status-item">
-            <span class="status-label">Provider</span>
-            <span class="status-value">{{ settings.provider | titlecase }}</span>
-          </div>
-          <div class="status-item">
-            <span class="status-label">Sender Email</span>
-            <span class="status-value">
-              @if (settings.sender_email) {
-                {{ settings.sender_email }}
-              } @else {
-                <span class="not-set">Not configured</span>
-              }
+    <div class="adm-grid adm-grid--full">
+      <div class="adm-main mail-main">
+
+        @if (error) {
+          <div class="adm-error" role="alert">{{ error }}</div>
+        }
+        @if (successMessage) {
+          <div class="adm-success">{{ successMessage }}</div>
+        }
+
+        <!-- Service status -->
+        <section class="adm-section">
+          <header class="adm-section__head mail-status-head">
+            <div>
+              <h2 class="adm-section__title">{{ 'admin.mail.serviceStatus' | translate }}</h2>
+              <p class="adm-section__sub">{{ 'admin.mail.providerConfiguration' | translate }}</p>
+            </div>
+            <span class="mail-status" [class.is-connected]="settings.service_connected">
+              <app-icon [name]="settings.service_connected ? 'check_circle' : 'cancel'"></app-icon>
+              {{ (settings.service_connected ? 'admin.mail.connected' : 'admin.mail.disconnected') | translate }}
             </span>
-          </div>
-          <div class="status-item">
-            <span class="status-label">Sender Name</span>
-            <span class="status-value">{{ settings.sender_name || 'Not set' }}</span>
-          </div>
-          <div class="status-item">
-            <span class="status-label">Last Updated</span>
-            <span class="status-value">{{ formatDate(settings.last_update) }}</span>
-          </div>
-        </div>
-        <div class="status-actions">
-          <button
-            class="btn btn-primary"
-            (click)="restartService()"
-            [disabled]="restarting || !settings.has_api_key || !settings.sender_email"
-            title="Restart mail service with current settings"
-          >
-            @if (restarting) {
-              <span class="material-icons spinning">sync</span>
-              Restarting...
-            } @else {
-              <span class="material-icons">restart_alt</span>
-              Restart Service
-            }
-          </button>
-        </div>
-      </div>
-    </div>
+          </header>
 
-    <!-- Settings Form Card -->
-    <div class="settings-card">
-      <div class="card-header">
-        <h2>Provider Configuration</h2>
-      </div>
-      <div class="card-body">
-        <form (ngSubmit)="saveSettings()">
-          <!-- Provider Selection -->
-          <div class="form-group">
-            <label for="provider">Email Provider</label>
-            <select id="provider" [(ngModel)]="provider" name="provider">
-              @for (p of providers; track p.value) {
-                <option [value]="p.value">{{ p.label }}</option>
-              }
-            </select>
+          <div class="adm-meta mail-status-meta">
+            <div class="adm-meta__row">
+              <span class="adm-meta__label">{{ 'admin.mail.provider' | translate }}</span>
+              <span class="adm-meta__value">{{ settings.provider | titlecase }}</span>
+            </div>
+            <div class="adm-meta__row">
+              <span class="adm-meta__label">{{ 'admin.mail.senderEmail' | translate }}</span>
+              <span class="adm-meta__value">
+                {{ settings.sender_email || ('admin.mail.notConfigured' | translate) }}
+              </span>
+            </div>
+            <div class="adm-meta__row">
+              <span class="adm-meta__label">{{ 'admin.mail.senderName' | translate }}</span>
+              <span class="adm-meta__value">{{ settings.sender_name || ('admin.mail.notSet' | translate) }}</span>
+            </div>
+            <div class="adm-meta__row">
+              <span class="adm-meta__label">{{ 'common.lastUpdate' | translate }}</span>
+              <span class="adm-meta__value">{{ formatDate(settings.last_update) }}</span>
+            </div>
           </div>
 
-          <!-- API Key Section -->
-          <div class="form-group">
-            <label>API Key</label>
-            <div class="api-key-section">
+          <div class="mail-actions">
+            <button
+              type="button"
+              class="adm-btn adm-btn--ghost"
+              (click)="restartService()"
+              [disabled]="restarting || !settings.has_api_key || !settings.sender_email"
+              [title]="'admin.mail.restartHint' | translate"
+            >
+              <app-icon [name]="restarting ? 'sync' : 'restart_alt'" [class.mail-spin]="restarting"></app-icon>
+              {{ (restarting ? 'admin.mail.restarting' : 'admin.mail.restartService') | translate }}
+            </button>
+          </div>
+        </section>
+
+        <!-- Provider configuration -->
+        <section class="adm-section">
+          <header class="adm-section__head">
+            <div>
+              <h2 class="adm-section__title">{{ 'admin.mail.providerConfiguration' | translate }}</h2>
+              <p class="adm-section__sub">{{ 'admin.mail.senderEmailHint' | translate }}</p>
+            </div>
+          </header>
+
+          <div class="adm-fields">
+            <label class="adm-field">
+              <span class="adm-field__label">{{ 'admin.mail.emailProvider' | translate }}</span>
+              <select class="adm-input" [(ngModel)]="provider" name="provider">
+                @for (p of providers; track p.value) {
+                  <option [value]="p.value">{{ p.label }}</option>
+                }
+              </select>
+            </label>
+
+            <div class="adm-field">
+              <span class="adm-field__label">{{ 'admin.mail.apiKey' | translate }}</span>
               @if (!showApiKeyInput) {
-                <div class="api-key-display">
-                  @if (settings.has_api_key) {
-                    <span class="masked-key">{{ settings.api_key_masked }}</span>
-                  } @else {
-                    <span class="not-set">Not configured</span>
-                  }
-                  <button type="button" class="btn btn-secondary btn-sm" (click)="toggleApiKeyInput()">
-                    <span class="material-icons">edit</span>
-                    {{ settings.has_api_key ? 'Change' : 'Set' }} API Key
+                <div class="adm-pwd">
+                  <input
+                    type="text"
+                    class="adm-input adm-input--mono"
+                    [value]="settings.has_api_key ? settings.api_key_masked : ('admin.mail.notConfigured' | translate)"
+                    readonly
+                  />
+                  <button type="button" class="adm-btn adm-btn--mini" (click)="toggleApiKeyInput()">
+                    <app-icon name="edit"></app-icon>
+                    {{ (settings.has_api_key ? 'admin.mail.changeApiKey' : 'admin.mail.setApiKey') | translate }}
                   </button>
                 </div>
               } @else {
-                <div class="api-key-input">
+                <div class="adm-pwd">
                   <input
                     type="password"
+                    class="adm-input adm-input--mono"
                     [(ngModel)]="apiKey"
                     name="apiKey"
-                    placeholder="Enter new API key"
+                    [placeholder]="'admin.mail.apiKeyPlaceholder' | translate"
                     autocomplete="new-password"
                   />
-                  <div class="api-key-actions">
-                    <button type="button" class="btn btn-text btn-sm" (click)="toggleApiKeyInput()">
-                      Cancel
-                    </button>
-                  </div>
+                  <button type="button" class="adm-btn adm-btn--mini" (click)="toggleApiKeyInput()">
+                    {{ 'common.cancel' | translate }}
+                  </button>
                 </div>
               }
             </div>
-          </div>
 
-          <!-- Sender Email -->
-          <div class="form-group">
-            <label for="senderEmail">Sender Email</label>
-            <input
-              type="email"
-              id="senderEmail"
-              [(ngModel)]="senderEmail"
-              name="senderEmail"
-              placeholder="noreply@example.com"
-            />
-            <span class="form-hint">Email address that will appear as the sender</span>
-          </div>
+            <label class="adm-field">
+              <span class="adm-field__label">{{ 'admin.mail.senderEmail' | translate }}</span>
+              <input type="email" class="adm-input" [(ngModel)]="senderEmail" name="senderEmail" placeholder="noreply@example.com" />
+              <span class="mail-hint">{{ 'admin.mail.senderEmailHint' | translate }}</span>
+            </label>
 
-          <!-- Sender Name -->
-          <div class="form-group">
-            <label for="senderName">Sender Name</label>
-            <input
-              type="text"
-              id="senderName"
-              [(ngModel)]="senderName"
-              name="senderName"
-              placeholder="Comex B2B"
-            />
-            <span class="form-hint">Display name for the sender</span>
-          </div>
+            <label class="adm-field">
+              <span class="adm-field__label">{{ 'admin.mail.senderName' | translate }}</span>
+              <input type="text" class="adm-input" [(ngModel)]="senderName" name="senderName" placeholder="Comex B2B" />
+              <span class="mail-hint">{{ 'admin.mail.senderNameHint' | translate }}</span>
+            </label>
 
-          <!-- Reply-To Email -->
-          <div class="form-group">
-            <label for="replyToEmail">Reply-To Email (Optional)</label>
-            <input
-              type="email"
-              id="replyToEmail"
-              [(ngModel)]="replyToEmail"
-              name="replyToEmail"
-              placeholder="support@example.com"
-            />
-            <span class="form-hint">Email address for replies (if different from sender)</span>
-          </div>
+            <label class="adm-field adm-field--span2">
+              <span class="adm-field__label">{{ 'admin.mail.replyToEmail' | translate }}</span>
+              <input type="email" class="adm-input" [(ngModel)]="replyToEmail" name="replyToEmail" placeholder="support@example.com" />
+              <span class="mail-hint">{{ 'admin.mail.replyToEmailHint' | translate }}</span>
+            </label>
 
-          <!-- Enabled Toggle -->
-          <div class="form-group">
-            <label>Service Enabled</label>
-            <div class="toggle-container">
-              <label class="toggle">
-                <input type="checkbox" [(ngModel)]="enabled" name="enabled" />
-                <span class="toggle-slider"></span>
-              </label>
-              <span class="toggle-label">{{ enabled ? 'Mail service is enabled' : 'Mail service is disabled' }}</span>
+            <label class="adm-toggle adm-field--span2">
+              <input type="checkbox" [(ngModel)]="enabled" name="enabled" />
+              <span class="adm-toggle__track"><span class="adm-toggle__dot"></span></span>
+              <span class="adm-toggle__text">
+                {{ 'admin.mail.serviceEnabled' | translate }}:
+                <strong>{{ (enabled ? 'admin.mail.serviceIsEnabled' : 'admin.mail.serviceIsDisabled') | translate }}</strong>
+              </span>
+            </label>
+          </div>
+        </section>
+
+        <!-- Notification settings -->
+        <section class="adm-section">
+          <header class="adm-section__head">
+            <div>
+              <h2 class="adm-section__title">{{ 'admin.mail.notificationSettings' | translate }}</h2>
+              <p class="adm-section__sub">{{ 'admin.mail.clientOrderConfirmationHint' | translate }}</p>
             </div>
-          </div>
+          </header>
 
-          <!-- Save Button -->
-          <div class="form-actions">
-            <button type="submit" class="btn btn-primary" [disabled]="saving">
-              @if (saving) {
-                <span class="material-icons spinning">sync</span>
-                Saving...
-              } @else {
-                <span class="material-icons">save</span>
-                Save Settings
+          <div class="adm-fields">
+            <label class="adm-toggle adm-field--span2">
+              <input type="checkbox" [(ngModel)]="clientOrderConfirmation" name="clientOrderConfirmation" />
+              <span class="adm-toggle__track"><span class="adm-toggle__dot"></span></span>
+              <span class="adm-toggle__text">
+                {{ 'admin.mail.clientOrderConfirmation' | translate }}
+                <span class="adm-toggle__hint">{{ 'admin.mail.clientOrderConfirmationHint' | translate }}</span>
+              </span>
+            </label>
+
+            <label class="adm-toggle adm-field--span2">
+              <input type="checkbox" [(ngModel)]="adminNewOrderNotification" name="adminNewOrderNotification" />
+              <span class="adm-toggle__track"><span class="adm-toggle__dot"></span></span>
+              <span class="adm-toggle__text">
+                {{ 'admin.mail.adminNewOrderNotification' | translate }}
+                <span class="adm-toggle__hint">{{ 'admin.mail.adminNewOrderNotificationHint' | translate }}</span>
+              </span>
+            </label>
+
+            <label class="adm-toggle adm-field--span2">
+              <input type="checkbox" [(ngModel)]="clientStatusChangeNotification" name="clientStatusChangeNotification" />
+              <span class="adm-toggle__track"><span class="adm-toggle__dot"></span></span>
+              <span class="adm-toggle__text">
+                {{ 'admin.mail.clientStatusChangeNotification' | translate }}
+                <span class="adm-toggle__hint">{{ 'admin.mail.clientStatusChangeNotificationHint' | translate }}</span>
+              </span>
+            </label>
+          </div>
+        </section>
+
+        <!-- Test connection -->
+        <section class="adm-section">
+          <header class="adm-section__head">
+            <div>
+              <h2 class="adm-section__title">{{ 'common.testConnection' | translate }}</h2>
+              <p class="adm-section__sub">{{ 'admin.mail.testEmailHint' | translate }}</p>
+            </div>
+          </header>
+
+          <div class="adm-fields">
+            <div class="adm-field adm-field--span2">
+              <span class="adm-field__label">{{ 'admin.mail.testEmailAddress' | translate }}</span>
+              <div class="adm-pwd">
+                <input
+                  type="email"
+                  class="adm-input"
+                  [(ngModel)]="testEmail"
+                  [placeholder]="'admin.mail.testEmailPlaceholder' | translate"
+                />
+                <button
+                  type="button"
+                  class="adm-btn adm-btn--ghost"
+                  (click)="testConnection()"
+                  [disabled]="testing || !testEmail.trim() || (!apiKey.trim() && !settings.has_api_key) || !senderEmail.trim()"
+                >
+                  <app-icon [name]="testing ? 'sync' : 'send'" [class.mail-spin]="testing"></app-icon>
+                  {{ (testing ? 'admin.mail.testing' : 'admin.mail.sendTestEmail') | translate }}
+                </button>
+              </div>
+
+              @if (testResult) {
+                @if (testResult.success) {
+                  <div class="adm-success mail-test-result" role="status">
+                    <app-icon name="check_circle"></app-icon>
+                    {{ 'admin.mail.testSuccess' | translate }}
+                  </div>
+                } @else {
+                  <div class="adm-error mail-test-result" role="alert">
+                    <app-icon name="error"></app-icon>
+                    {{ testResult.error }}
+                  </div>
+                }
               }
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-
-    <!-- Notification Toggles Card -->
-    <div class="settings-card">
-      <div class="card-header">
-        <h2>Notification Settings</h2>
-      </div>
-      <div class="card-body">
-        <form (ngSubmit)="saveSettings()">
-          <!-- Client Order Confirmation -->
-          <div class="form-group">
-            <label>Client Order Confirmation</label>
-            <div class="toggle-container">
-              <label class="toggle">
-                <input type="checkbox" [(ngModel)]="clientOrderConfirmation" name="clientOrderConfirmation" />
-                <span class="toggle-slider"></span>
-              </label>
-              <span class="toggle-label">{{ clientOrderConfirmation ? 'Send confirmation emails to clients' : 'Disabled' }}</span>
             </div>
-            <span class="form-hint">Send email to client when they place an order</span>
           </div>
-
-          <!-- Admin New Order Notification -->
-          <div class="form-group">
-            <label>Admin New Order Notification</label>
-            <div class="toggle-container">
-              <label class="toggle">
-                <input type="checkbox" [(ngModel)]="adminNewOrderNotification" name="adminNewOrderNotification" />
-                <span class="toggle-slider"></span>
-              </label>
-              <span class="toggle-label">{{ adminNewOrderNotification ? 'Notify admins/managers of new orders' : 'Disabled' }}</span>
-            </div>
-            <span class="form-hint">Send email to admins and managers when a new order is placed</span>
-          </div>
-
-          <!-- Client Status Change Notification -->
-          <div class="form-group">
-            <label>Client Status Change Notification</label>
-            <div class="toggle-container">
-              <label class="toggle">
-                <input type="checkbox" [(ngModel)]="clientStatusChangeNotification" name="clientStatusChangeNotification" />
-                <span class="toggle-slider"></span>
-              </label>
-              <span class="toggle-label">{{ clientStatusChangeNotification ? 'Notify clients of order status changes' : 'Disabled' }}</span>
-            </div>
-            <span class="form-hint">Send email to client when their order status changes</span>
-          </div>
-
-          <!-- Save Button -->
-          <div class="form-actions">
-            <button type="submit" class="btn btn-primary" [disabled]="saving">
-              @if (saving) {
-                <span class="material-icons spinning">sync</span>
-                Saving...
-              } @else {
-                <span class="material-icons">save</span>
-                Save Settings
-              }
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-
-    <!-- Test Connection Card -->
-    <div class="settings-card">
-      <div class="card-header">
-        <h2>Test Connection</h2>
-      </div>
-      <div class="card-body">
-        <div class="form-group">
-          <label for="testEmail">Test Email Address</label>
-          <div class="test-email-input">
-            <input
-              type="email"
-              id="testEmail"
-              [(ngModel)]="testEmail"
-              placeholder="Enter email to receive test message"
-            />
-            <button
-              type="button"
-              class="btn btn-secondary"
-              (click)="testConnection()"
-              [disabled]="testing || !testEmail.trim() || (!apiKey.trim() && !settings.has_api_key) || !senderEmail.trim()"
-            >
-              @if (testing) {
-                <span class="material-icons spinning">sync</span>
-                Testing...
-              } @else {
-                <span class="material-icons">send</span>
-                Send Test Email
-              }
-            </button>
-          </div>
-          <span class="form-hint">A test email will be sent to verify your configuration</span>
-        </div>
-
-        @if (testResult) {
-          <div class="test-result" [class.success]="testResult.success" [class.error]="!testResult.success">
-            @if (testResult.success) {
-              <span class="material-icons">check_circle</span>
-              <span>Test email sent successfully! Check your inbox.</span>
-            } @else {
-              <span class="material-icons">error</span>
-              <span>{{ testResult.error }}</span>
-            }
-          </div>
-        }
+        </section>
       </div>
     </div>
   }

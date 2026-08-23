@@ -1,12 +1,32 @@
 <div class="chat-list">
   <div class="chat-list-header">
     <h2>{{ 'chat.title' | translate }}</h2>
+    <div class="header-actions">
+      <button
+        class="icon-btn"
+        [class.active]="showUnreadOnly"
+        [class.loading]="loadingUnread"
+        [title]="'chat.showUnread' | translate"
+        [disabled]="loadingUnread || (!hasUnread && !showUnreadOnly)"
+        (click)="toggleUnread.emit()"
+      >
+        <app-icon [name]="showUnreadOnly ? 'filter_list_off' : 'filter_list'"></app-icon>
+      </button>
+      <button
+        class="icon-btn"
+        [title]="'chat.markAllRead' | translate"
+        [disabled]="!hasUnread"
+        (click)="markAllRead.emit()"
+      >
+        <app-icon name="done_all"></app-icon>
+      </button>
+    </div>
   </div>
 
-  @if (chats.length === 0) {
+  @if (chats.length === 0 && !loadingUnread) {
     <div class="empty-state">
-      <span class="material-icons">chat_bubble_outline</span>
-      <p>{{ 'chat.noChats' | translate }}</p>
+      <app-icon name="chat_bubble_outline"></app-icon>
+      <p>{{ showUnreadOnly ? ('chat.noUnread' | translate) : ('chat.noChats' | translate) }}</p>
     </div>
   }
 
@@ -18,11 +38,11 @@
         (click)="onSelect(chat)"
       >
         <div class="platform-icon" [ngClass]="getPlatformClass(chat.platform)">
-          <span class="material-icons">{{ getPlatformIcon(chat.platform) }}</span>
+          <app-icon [name]="getPlatformIcon(chat.platform)"></app-icon>
         </div>
         <div class="conversation-info">
           <div class="conversation-top">
-            <span class="user-name">{{ chat.user_name }}</span>
+            <span class="user-name">{{ chat.user_name || chat.messenger_name || chat.user_id }}</span>
             <span class="time">{{ formatTime(chat.last_time) }}</span>
           </div>
           <div class="conversation-bottom">
@@ -32,6 +52,18 @@
             }
           </div>
         </div>
+      </div>
+    }
+
+    @if (hasMoreChats && !showUnreadOnly) {
+      <div class="load-more">
+        <button
+          class="load-more-btn"
+          (click)="loadMore.emit()"
+        >
+          <app-icon name="expand_more"></app-icon>
+          <span>{{ 'chat.loadMore' | translate }}</span>
+        </button>
       </div>
     }
   </div>

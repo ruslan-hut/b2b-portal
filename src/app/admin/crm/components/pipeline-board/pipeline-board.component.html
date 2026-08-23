@@ -1,46 +1,61 @@
 <div class="pipeline-board" cdkDropListGroup>
-  <div
-    class="pipeline-column"
-    *ngFor="let column of columns; let i = index; trackBy: trackByColumn"
-    [style.--column-color]="column.stage.color"
-  >
-    <div class="column-header">
-      <div class="column-title">
-        <span class="color-indicator" [style.background-color]="column.stage.color"></span>
-        <h3>{{ column.stage.name }}</h3>
-      </div>
-      <span class="order-count">{{ column.total_count }}</span>
-    </div>
-
+  @for (column of columns(); track column.stage.uid; let i = $index) {
     <div
-      class="column-content"
-      cdkDropList
-      [id]="'column-' + i"
-      [cdkDropListData]="getColumnData(column)"
-      [cdkDropListConnectedTo]="getConnectedDropLists()"
-      (cdkDropListDropped)="onDrop($event)"
+      class="pipeline-column"
+      [style.--column-color]="column.stage.color"
     >
-      <app-order-card
-        *ngFor="let order of column.orders; trackBy: trackByOrder"
-        [order]="order"
-        [stageColor]="column.stage.color"
-        cdkDrag
-        (click)="onViewClick(order)"
-        (openDetails)="onOpenDetailsClick(order)"
-      ></app-order-card>
-
-      <div class="empty-state" *ngIf="column.orders.length === 0">
-        <p>No orders in this stage</p>
+      <div class="column-header">
+        <div class="column-title">
+          <span class="color-indicator" [style.background-color]="column.stage.color"></span>
+          <h3>{{ column.stage | localizedStageName }}</h3>
+          @if (column.stage.allow_create_shipment) {
+            <app-icon name="local_shipping" class="shipment-icon" [title]="'admin.crm.allowCreateShipmentHint' | translate"></app-icon>
+          }
+          @if (column.stage.allow_split) {
+            <app-icon name="call_split" class="shipment-icon" [title]="'admin.crm.allowSplitHint' | translate"></app-icon>
+          }
+        </div>
+        <span class="order-count">{{ column.total_count }}</span>
       </div>
 
-      <div class="load-more" *ngIf="column.orders.length < column.total_count">
-        <span>{{ column.orders.length }} of {{ column.total_count }} orders</span>
+      <div
+        class="column-content"
+        cdkDropList
+        [id]="'column-' + i"
+        [cdkDropListData]="getColumnData(column)"
+        [cdkDropListConnectedTo]="getConnectedDropLists()"
+        (cdkDropListDropped)="onDrop($event)"
+      >
+        @for (order of column.orders; track order.uid) {
+          <app-order-card
+            [order]="order"
+            [stageColor]="column.stage.color"
+            [highlight]="changedOrderUids().has(order.uid)"
+            cdkDrag
+            (click)="onViewClick(order)"
+            (openDetails)="onOpenDetailsClick(order)"
+          ></app-order-card>
+        }
+
+        @if (column.orders.length === 0) {
+          <div class="empty-state">
+            <p>{{ 'admin.crm.noOrdersInStage' | translate }}</p>
+          </div>
+        }
+
+        @if (column.orders.length < column.total_count) {
+          <div class="load-more">
+            <span>{{ column.orders.length }} {{ 'common.of' | translate }} {{ column.total_count }} {{ 'admin.crm.orders' | translate }}</span>
+          </div>
+        }
       </div>
     </div>
-  </div>
+  }
 
-  <div class="empty-board" *ngIf="columns.length === 0">
-    <h3>No pipeline stages configured</h3>
-    <p>Go to Settings to create pipeline stages</p>
-  </div>
+  @if (columns().length === 0) {
+    <div class="empty-board">
+      <h3>{{ 'admin.crm.noStagesConfigured' | translate }}</h3>
+      <p>{{ 'admin.crm.goToSettings' | translate }}</p>
+    </div>
+  }
 </div>

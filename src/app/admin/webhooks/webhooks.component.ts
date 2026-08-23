@@ -3,8 +3,11 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { WebhookService, Webhook, WebhookDelivery, WebhookUpsertRequest } from '../../core/services/webhook.service';
+import { formatDateTime } from '../../core/utils/date-format';
 import { AdminService } from '../../core/services/admin.service';
 import { PageTitleService } from '../../core/services/page-title.service';
+import { ConfirmDialogService } from '../../core/services/confirm-dialog.service';
+import { NotificationService } from '../../core/services/notification.service';
 
 @Component({
     selector: 'app-webhooks',
@@ -57,7 +60,9 @@ export class WebhooksComponent implements OnInit, OnDestroy {
     private fb: FormBuilder,
     private cdr: ChangeDetectorRef,
     private pageTitleService: PageTitleService,
-    private router: Router
+    private router: Router,
+    private confirmDialog: ConfirmDialogService,
+    private notifications: NotificationService
   ) {
     this.webhookForm = this.fb.group({
       name: ['', [Validators.required, Validators.maxLength(255)]],
@@ -238,8 +243,12 @@ export class WebhooksComponent implements OnInit, OnDestroy {
     );
   }
 
-  deleteWebhook(webhook: Webhook): void {
-    if (!confirm(`Are you sure you want to delete webhook "${webhook.name}"?`)) {
+  async deleteWebhook(webhook: Webhook): Promise<void> {
+    const confirmed = await this.confirmDialog.ask({
+      message: `Are you sure you want to delete webhook "${webhook.name}"?`,
+      danger: true
+    });
+    if (!confirmed) {
       return;
     }
 
@@ -327,20 +336,24 @@ export class WebhooksComponent implements OnInit, OnDestroy {
     return this.expandedDeliveries.has(uid);
   }
 
-  cleanupDeliveries(): void {
-    if (!confirm('Are you sure you want to cleanup old delivery logs? This action cannot be undone.')) {
+  async cleanupDeliveries(): Promise<void> {
+    const confirmed = await this.confirmDialog.ask({
+      message: 'Are you sure you want to cleanup old delivery logs? This action cannot be undone.',
+      danger: true
+    });
+    if (!confirmed) {
       return;
     }
 
     this.subscriptions.add(
       this.webhookService.cleanupDeliveries(90).subscribe({
         next: (response) => {
-          alert(`Cleanup completed. Deleted ${response.data || 0} delivery records.`);
+          this.notifications.success(`Cleanup completed. Deleted ${response.data || 0} delivery records.`);
           this.loadDeliveries();
         },
         error: (err) => {
           console.error('Failed to cleanup deliveries:', err);
-          alert('Failed to cleanup deliveries');
+          this.notifications.error('Failed to cleanup deliveries');
         }
       })
     );
@@ -380,7 +393,7 @@ export class WebhooksComponent implements OnInit, OnDestroy {
   }
 
   formatDate(dateString: string): string {
-    return new Date(dateString).toLocaleString();
+    return formatDateTime(dateString);
   }
 
   formatJson(json: string | undefined): string {
@@ -400,17 +413,4 @@ export class WebhooksComponent implements OnInit, OnDestroy {
     }
   }
 
-  copyToClipboard(text: string, event: Event): void {
-    event.stopPropagation();
-    navigator.clipboard.writeText(text).then(() => {
-      const button = event.target as HTMLElement;
-      const icon = button.closest('.btn-copy')?.querySelector('.material-icons');
-      if (icon) {
-        icon.textContent = 'check';
-        setTimeout(() => {
-          icon.textContent = 'content_copy';
-        }, 1500);
-      }
-    });
-  }
 }

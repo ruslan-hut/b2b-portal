@@ -36,7 +36,7 @@
     cursor: pointer;
     transition: all 0.2s ease;
 
-    .material-icons {
+    app-icon {
       font-size: 20px;
     }
 
@@ -132,13 +132,13 @@
     background: var(--gradient-primary);
     border: none;
     border-radius: var(--radius-lg);
-    color: white;
+    color: var(--color-on-primary);
     font-size: 16px;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.3s ease;
 
-    .material-icons {
+    app-icon {
       font-size: 20px;
     }
 
@@ -206,7 +206,7 @@
 
   @media (max-width: 768px) {
     padding: var(--spacing-sm-md);
-    gap: 6px;
+    gap: var(--spacing-xs);
 
     // Hide desktop view on mobile
     &.cart-items-desktop {
@@ -238,8 +238,61 @@
     background: var(--color-danger-light);
   }
 
+  // Neutral surface, not the hover tint: this is a discontinued line sitting
+  // idle, and taking on the hover colour would read as pointed-at.
+  &.inactive-product {
+    border-color: var(--color-text-secondary);
+    background: var(--color-background-secondary);
+    opacity: 0.92;
+  }
+
   @media (max-width: 768px) {
     padding: var(--spacing-md-sm);
+  }
+}
+
+.cart-filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs, 4px);
+  height: var(--control-h-md, 32px);
+  padding: 0 var(--spacing-sm, 8px);
+  margin-bottom: var(--spacing-sm, 8px);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control, 6px);
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  font-size: var(--text-sm, 12px);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+
+  app-icon {
+    font-size: var(--icon-sm, 16px);
+  }
+
+  .chip-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    border-radius: 10px;
+    background: var(--color-alert-error-bg);
+    color: var(--color-alert-error-text, var(--color-error));
+    font-size: var(--text-xs, 11px);
+    font-weight: 600;
+  }
+
+  &:hover {
+    background: var(--color-background-hover);
+  }
+
+  &.active {
+    background: var(--color-alert-error-bg);
+    border-color: var(--color-alert-error-border);
+    color: var(--color-alert-error-text, var(--color-error));
   }
 }
 
@@ -281,7 +334,7 @@
   .price-per-unit {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: var(--spacing-xs);
     flex-wrap: wrap;
 
     .price-original {
@@ -348,13 +401,13 @@
     cursor: pointer;
     transition: all 0.15s ease;
 
-    .material-icons {
+    app-icon {
       font-size: 18px;
     }
 
     &:hover:not(:disabled) {
       background: var(--color-primary);
-      color: white;
+      color: var(--color-on-primary);
     }
 
     &:disabled {
@@ -425,8 +478,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
+  padding: 6px;
   border: none;
   background: var(--color-danger-light);
   border-radius: var(--radius-md);
@@ -434,7 +488,7 @@
   cursor: pointer;
   transition: all 0.2s ease;
 
-  .material-icons {
+  app-icon {
     font-size: 20px;
   }
 
@@ -463,6 +517,17 @@
     font-size: 13px;
     color: var(--color-danger);
     font-weight: 600;
+  }
+
+  // Stands the danger box down to neutral: grey surface to match the grey icon
+  // and text below, rather than the hover tint.
+  &.inactive {
+    background: var(--color-background-secondary);
+
+    .warning-icon,
+    .warning-text {
+      color: var(--color-text-secondary);
+    }
   }
 }
 
@@ -626,7 +691,7 @@
         background-color: var(--color-border);
       }
 
-      .material-icons {
+      app-icon {
         font-size: 20px;
       }
     }
@@ -684,9 +749,15 @@
   font-weight: 600;
   font-size: 14px;
 
-  .material-icons {
+  app-icon {
     font-size: 20px;
     flex-shrink: 0;
+  }
+
+  &.inactive {
+    background: var(--color-background-secondary);
+    border-color: var(--color-text-secondary);
+    color: var(--color-text-secondary);
   }
 }
 
@@ -700,11 +771,11 @@
   border: 1px solid var(--color-warning);
   border-radius: var(--radius-md);
   margin-bottom: var(--spacing-md);
-  color: var(--color-warning-dark);
+  color: var(--color-alert-warning-text);
   font-weight: 600;
   font-size: 14px;
 
-  .material-icons {
+  app-icon {
     font-size: 20px;
     flex-shrink: 0;
   }
@@ -723,11 +794,11 @@
   border: none;
   border-radius: var(--radius-lg);
   background: var(--gradient-primary);
-  color: white;
+  color: var(--color-on-primary);
   cursor: pointer;
   transition: all 0.3s ease;
 
-  .material-icons {
+  app-icon {
     font-size: 22px;
   }
 
@@ -772,7 +843,7 @@
 
   &.expanded {
     border-color: var(--color-primary);
-    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.15);
+    box-shadow: var(--shadow-primary);
   }
 
   &.insufficient-stock {
@@ -784,17 +855,17 @@
   .item-collapsed {
     display: flex;
     align-items: center;
-    padding: 8px 12px;
-    gap: 8px;
+    padding: var(--spacing-sm) var(--spacing-md-sm);
+    gap: var(--spacing-sm);
     cursor: pointer;
-    min-height: 44px;
+    min-height: 48px;
 
     .item-collapsed-info {
       flex: 1;
       min-width: 0;
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: var(--spacing-xs);
 
       .item-name {
         font-size: 14px;
@@ -808,7 +879,7 @@
       .item-warning-badge {
         flex-shrink: 0;
 
-        .material-icons {
+        app-icon {
           font-size: 16px;
           color: var(--color-danger);
         }
@@ -818,13 +889,13 @@
     .item-collapsed-right {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: var(--spacing-sm);
       flex-shrink: 0;
 
       .item-qty-badge {
         background: var(--dropdown-item-active-bg);
         padding: 2px 8px;
-        border-radius: 10px;
+        border-radius: var(--radius-md-lg);
         font-size: 12px;
         font-weight: 600;
         color: var(--color-primary);
@@ -858,7 +929,7 @@
     border-top: 1px solid var(--color-border-light);
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: var(--spacing-sm);
 
     .expanded-row {
       display: flex;
@@ -879,7 +950,7 @@
       .price-value {
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: var(--spacing-sm);
         flex-wrap: wrap;
 
         .price-original {
@@ -900,16 +971,16 @@
 
         .discount-badge {
           padding: 2px 6px;
-          background: rgba(102, 126, 234, 0.12);
+          background: var(--color-primary-overlay);
           color: var(--color-primary);
           font-size: 10px;
           font-weight: 600;
-          border-radius: 4px;
+          border-radius: var(--radius-sm);
         }
       }
 
       &.total-row {
-        padding-top: 8px;
+        padding-top: var(--spacing-sm);
         border-top: 1px solid var(--color-border-light);
 
         .row-label {
@@ -928,26 +999,26 @@
     .quantity-control {
       display: flex;
       align-items: center;
-      gap: 4px;
+      gap: var(--spacing-xs);
       background: var(--color-background);
       border-radius: var(--radius-md);
-      padding: 4px;
+      padding: var(--spacing-xs);
 
       .qty-btn {
         width: 36px;
         height: 36px;
-        border-radius: 6px;
+        border-radius: var(--radius-sm-md);
         border: none;
         background: var(--card-bg);
         color: var(--color-text-primary);
         cursor: pointer;
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+        box-shadow: var(--shadow-xs);
         transition: all 0.15s ease;
         display: flex;
         align-items: center;
         justify-content: center;
 
-        .material-icons {
+        app-icon {
           font-size: 18px;
         }
 
@@ -966,7 +1037,7 @@
         padding: 6px 4px;
         text-align: center;
         border: 1px solid var(--color-border);
-        border-radius: 6px;
+        border-radius: var(--radius-sm-md);
         background: var(--card-bg);
         font-size: 15px;
         font-weight: 600;
@@ -989,10 +1060,10 @@
     .stock-warning {
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: var(--spacing-xs);
       padding: 8px 10px;
       background: var(--color-danger-light);
-      border-radius: 6px;
+      border-radius: var(--radius-sm-md);
       margin-top: 0;
 
       .warning-icon {
@@ -1011,9 +1082,9 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 6px;
+      gap: var(--spacing-xs);
       width: 100%;
-      padding: 8px 16px;
+      padding: var(--spacing-sm) var(--spacing-md);
       min-height: 40px;
       background: var(--color-danger-light);
       border: 1px solid var(--color-danger);
@@ -1024,7 +1095,7 @@
       cursor: pointer;
       transition: all 0.2s ease;
 
-      .material-icons {
+      app-icon {
         font-size: 18px;
       }
 
@@ -1045,21 +1116,21 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
+    gap: var(--spacing-xs);
     width: 100%;
-    padding: 12px 16px;
-    min-height: 44px;
+    padding: var(--spacing-md-sm) var(--spacing-md);
+    min-height: 48px;
     background: var(--color-background);
     border: 1px dashed var(--color-border);
-    border-radius: 10px;
+    border-radius: var(--radius-md-lg);
     color: var(--color-primary);
     font-size: 14px;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s ease;
-    margin-top: 8px;
+    margin-top: var(--spacing-sm);
 
-    .material-icons {
+    app-icon {
       font-size: 20px;
     }
 
@@ -1084,5 +1155,130 @@
       color: var(--color-primary);
       border-color: var(--color-primary);
     }
+  }
+}
+
+// Notice about items removed by cart validation on login
+.removed-items-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-sm-md);
+  padding: var(--spacing-md-sm) var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+  background: var(--color-warning-light);
+  border: 1px solid var(--color-warning);
+  border-radius: var(--radius-md);
+
+  .notice-icon {
+    font-size: 20px;
+    color: var(--color-warning);
+    flex-shrink: 0;
+  }
+
+  .notice-body {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .notice-header {
+    font-weight: 600;
+    color: var(--color-text-primary);
+    margin-bottom: var(--spacing-xs);
+  }
+
+  .notice-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .notice-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-xs) var(--spacing-sm);
+    font-size: var(--text-sm);
+    padding: 2px 0;
+  }
+
+  .notice-name {
+    font-weight: 500;
+    color: var(--color-text-primary);
+  }
+
+  .notice-reason {
+    color: var(--color-text-secondary);
+  }
+
+  .notice-text {
+    font-size: 13px;
+    color: var(--color-text-secondary);
+  }
+
+  // The holding session's user agent — a raw UA string, so it must not be
+  // allowed to stretch the notice on narrow screens.
+  .notice-holder {
+    margin-top: var(--spacing-xs);
+    font-family: monospace;
+    font-size: 12px;
+    overflow-wrap: anywhere;
+  }
+
+  .btn-takeover {
+    margin-top: var(--spacing-sm);
+    padding: var(--spacing-xs) var(--spacing-md);
+    border: 1px solid var(--color-warning);
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--color-text-primary);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+
+    &:hover:not(:disabled) {
+      background: color-mix(in srgb, var(--color-warning) 15%, transparent);
+    }
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: default;
+    }
+  }
+
+  .notice-dismiss {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px;
+    border: none;
+    background: transparent;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    flex-shrink: 0;
+
+    &:hover {
+      color: var(--color-text-primary);
+      background: color-mix(in srgb, var(--color-warning) 15%, transparent);
+    }
+
+    app-icon {
+      font-size: 18px;
+    }
+  }
+}
+
+// The "reloaded from another session" notice reports rather than warns: nothing
+// went wrong and nothing was lost, so it drops the warning colouring the other
+// cart notices use.
+.cart-refreshed-notice {
+  background: var(--color-surface);
+  border-color: var(--color-border);
+
+  .notice-icon {
+    color: var(--color-text-secondary);
+  }
+
+  .notice-dismiss:hover {
+    background: var(--color-border);
   }
 }

@@ -1,0 +1,75 @@
+<div class="crit" [class.is-expanded]="expanded" [class.is-active]="isActive">
+  <button
+    type="button"
+    class="crit__head"
+    (click)="toggleExpanded()"
+    [attr.aria-expanded]="expanded"
+  >
+    @if (icon) {
+      <app-icon [name]="icon" class="crit__icon"></app-icon>
+    }
+    <span class="crit__label">{{ label }}</span>
+
+    @if (isActive) {
+      <span class="crit__badge" [class.crit__badge--exclude]="selection.exclude">
+        {{ selection.exclude ? ('common.excluding' | translate) : ('common.including' | translate) }}
+        {{ selection.values.length }}
+      </span>
+      <app-icon name="close" class="crit__clear" role="button" tabindex="0" (click)="clear($event)" (keydown.enter)="clear($event)" [attr.aria-label]="'common.clear' | translate"></app-icon>
+    } @else {
+      <span class="crit__badge crit__badge--empty" aria-hidden="true">—</span>
+    }
+
+    <app-icon [name]="expanded ? 'expand_less' : 'expand_more'" class="crit__chevron"></app-icon>
+  </button>
+
+  @if (expanded) {
+    <div class="crit__body">
+      <div class="crit__mode" role="group" [attr.aria-label]="label">
+        <button
+          type="button"
+          class="crit__mode-btn"
+          [class.is-on]="!selection.exclude"
+          (click)="setExclude(false)"
+        >{{ 'common.include' | translate }}</button>
+        <button
+          type="button"
+          class="crit__mode-btn"
+          [class.is-on]="selection.exclude"
+          (click)="setExclude(true)"
+        >{{ 'common.exclude' | translate }}</button>
+      </div>
+
+      @if (showSearch) {
+        <input
+          type="search"
+          class="adm-input crit__search"
+          [(ngModel)]="searchTerm"
+          [placeholder]="'common.search' | translate"
+        />
+      }
+
+      <div class="crit__list">
+        @for (option of visibleOptions; track option.value) {
+          <label class="crit__option">
+            <input
+              type="checkbox"
+              [checked]="isSelected(option.value)"
+              (change)="toggleOption(option.value)"
+            />
+            <span class="crit__option-label">{{ option.label }}</span>
+            @if (option.hint) {
+              <span class="crit__option-hint">{{ option.hint }}</span>
+            }
+          </label>
+        } @empty {
+          <p class="crit__empty">{{ 'common.noResults' | translate }}</p>
+        }
+      </div>
+
+      @if (note) {
+        <p class="crit__note">{{ note }}</p>
+      }
+    </div>
+  }
+</div>

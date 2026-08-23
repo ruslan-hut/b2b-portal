@@ -33,7 +33,8 @@ export class ProductMapper {
       // Support both snake_case (backend) and camelCase (mock data) for compatibility
       isNew: backendProduct.is_new || (backendProduct as any).isNew || false,
       isHotSale: backendProduct.is_hot_sale || (backendProduct as any).isHotSale || false,
-      sortOrder: backendProduct.sort_order || (backendProduct as any).sortOrder
+      sortOrder: backendProduct.sort_order || (backendProduct as any).sortOrder,
+      tags: backendProduct.tags
     };
   }
 }

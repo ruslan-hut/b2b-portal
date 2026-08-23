@@ -1,10 +1,99 @@
+:host {
+  flex-shrink: 0;
+}
+
 .message-input {
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--color-border);
+  background: var(--card-bg);
+}
+
+.file-error {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-xs) var(--spacing-md);
+  background: var(--color-alert-error-bg);
+  color: var(--color-alert-error-text);
+  font-size: 13px;
+
+  app-icon {
+    font-size: 16px;
+  }
+
+  .dismiss-btn {
+    margin-left: auto;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: inherit;
+    padding: 0;
+
+    app-icon {
+      font-size: 16px;
+    }
+  }
+}
+
+.file-previews {
+  display: flex;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md) 0;
+  overflow-x: auto;
+}
+
+.file-preview {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  background: var(--color-background-secondary);
+  border-radius: var(--radius-md);
+  max-width: 160px;
+
+  img {
+    width: 40px;
+    height: 40px;
+    object-fit: cover;
+    border-radius: var(--radius-sm);
+  }
+
+  app-icon {
+    font-size: 24px;
+    color: var(--color-text-muted);
+  }
+
+  .file-preview-name {
+    font-size: 12px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .remove-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    color: var(--color-text-muted);
+
+    app-icon {
+      font-size: 16px;
+    }
+
+    &:hover {
+      color: var(--color-text-primary);
+    }
+  }
+}
+
+.input-row {
   display: flex;
   align-items: flex-end;
   gap: var(--spacing-sm);
   padding: var(--spacing-md);
-  border-top: 1px solid var(--color-border);
-  background: var(--color-bg-primary);
 
   textarea {
     flex: 1;
@@ -32,6 +121,26 @@
       color: var(--color-text-muted);
     }
   }
+}
+
+.attach-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border: none;
+  border-radius: 50%;
+  background: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: color 0.2s ease;
+
+  &:hover {
+    color: var(--color-primary);
+  }
+}
 
   .send-btn {
     display: flex;
@@ -41,23 +150,45 @@
     height: 38px;
     border: none;
     border-radius: 50%;
-    background: var(--color-primary);
-    color: white;
+     background: transparent;
+    color: var(--color-text-muted);
     cursor: pointer;
     flex-shrink: 0;
     transition: opacity 0.2s ease;
 
-    &:disabled {
-      opacity: 0.4;
-      cursor: not-allowed;
-    }
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
 
-    &:not(:disabled):hover {
-      opacity: 0.85;
-    }
+  &:not(:disabled):hover {
+    opacity: 0.85;
+  }
 
-    .material-icons {
-      font-size: 20px;
+  app-icon {
+    font-size: 20px;
+  }
+}
+
+@media (max-width: 768px) {
+  .input-row {
+    padding: var(--spacing-sm);
+    gap: var(--spacing-xs);
+
+    textarea {
+      font-size: 16px; // Prevents iOS zoom
+      min-height: 40px;
+      padding: var(--spacing-sm);
     }
+  }
+
+  .attach-btn,
+  .send-btn {
+    width: 44px;
+    height: 44px;
+  }
+
+  .file-previews {
+    padding: var(--spacing-xs) var(--spacing-sm) 0;
   }
 }

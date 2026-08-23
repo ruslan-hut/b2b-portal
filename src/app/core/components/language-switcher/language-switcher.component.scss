@@ -9,7 +9,7 @@
   gap: 0.25rem;
   padding: 0.5rem 0.75rem;
   border: 1px solid var(--color-border);
-  border-radius: 6px;
+  border-radius: var(--radius-sm-md);
   background-color: var(--card-bg);
   color: var(--color-text-primary);
   cursor: pointer;
@@ -57,7 +57,7 @@
   min-width: 160px;
   background-color: var(--card-bg);
   border: 1px solid var(--color-border);
-  border-radius: 6px;
+  border-radius: var(--radius-sm-md);
   box-shadow: var(--shadow-md);
   opacity: 0;
   visibility: hidden;

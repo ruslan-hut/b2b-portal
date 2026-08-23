@@ -1,0 +1,90 @@
+<div class="rt" [class.is-disabled]="disabled">
+  <div class="rt__bar" role="toolbar" [attr.aria-label]="'richText.toolbar' | translate">
+    <!-- mousedown is what steals the selection; the click never gets to run
+         against the text the editor highlighted unless it is prevented. -->
+    @for (button of inlineButtons; track button.command) {
+      <button type="button" class="rt__btn" [class.is-active]="active[button.command]"
+              [disabled]="disabled || showSource"
+              [title]="button.labelKey | translate" [attr.aria-label]="button.labelKey | translate"
+              [attr.aria-pressed]="active[button.command] ? 'true' : 'false'"
+              (mousedown)="$event.preventDefault()" (click)="run(button)">
+        <app-icon [name]="button.icon"></app-icon>
+      </button>
+    }
+
+    <span class="rt__sep" aria-hidden="true"></span>
+
+    @for (button of blockButtons; track button.argument) {
+      <button type="button" class="rt__btn rt__btn--text" [class.is-active]="active[buttonKey(button)]"
+              [disabled]="disabled || showSource"
+              [title]="button.labelKey | translate" [attr.aria-label]="button.labelKey | translate"
+              [attr.aria-pressed]="active[buttonKey(button)] ? 'true' : 'false'"
+              (mousedown)="$event.preventDefault()" (click)="run(button)">
+        {{ button.text }}
+      </button>
+    }
+
+    <span class="rt__sep" aria-hidden="true"></span>
+
+    @for (button of listButtons; track button.command) {
+      <button type="button" class="rt__btn" [class.is-active]="active[button.command]"
+              [disabled]="disabled || showSource"
+              [title]="button.labelKey | translate" [attr.aria-label]="button.labelKey | translate"
+              [attr.aria-pressed]="active[button.command] ? 'true' : 'false'"
+              (mousedown)="$event.preventDefault()" (click)="run(button)">
+        <app-icon [name]="button.icon"></app-icon>
+      </button>
+    }
+
+    <span class="rt__sep" aria-hidden="true"></span>
+
+    <button type="button" class="rt__btn" [class.is-active]="linkOpen"
+            [disabled]="disabled || showSource"
+            [title]="'richText.link' | translate" [attr.aria-label]="'richText.link' | translate"
+            (mousedown)="$event.preventDefault()" (click)="openLink()">
+      <app-icon name="link"></app-icon>
+    </button>
+
+    <button type="button" class="rt__btn" [disabled]="disabled || showSource"
+            [title]="'richText.clear' | translate" [attr.aria-label]="'richText.clear' | translate"
+            (mousedown)="$event.preventDefault()" (click)="clearFormat()">
+      <app-icon name="format_clear"></app-icon>
+    </button>
+
+    <button type="button" class="rt__btn rt__btn--source" [class.is-active]="showSource"
+            [disabled]="disabled"
+            [title]="'richText.source' | translate" [attr.aria-label]="'richText.source' | translate"
+            [attr.aria-pressed]="showSource ? 'true' : 'false'"
+            (mousedown)="$event.preventDefault()" (click)="toggleSource()">
+      <app-icon name="code"></app-icon>
+    </button>
+  </div>
+
+  @if (linkOpen) {
+    <div class="rt__link">
+      <input type="url" class="rt__link-input" [(ngModel)]="linkUrl" [ngModelOptions]="{ standalone: true }"
+             [placeholder]="'richText.linkPlaceholder' | translate"
+             (keydown.enter)="$event.preventDefault(); applyLink()"
+             (keydown.escape)="cancelLink()" />
+      <button type="button" class="rt__link-btn" (click)="applyLink()">
+        {{ 'common.ok' | translate }}
+      </button>
+      <button type="button" class="rt__link-btn rt__link-btn--ghost" (click)="cancelLink()">
+        {{ 'common.cancel' | translate }}
+      </button>
+    </div>
+  }
+
+  <!-- The surface stays in the DOM under the source view: it holds the caret
+       and the undo stack, and recreating it would drop both on every toggle. -->
+  <div #surface class="rt__surface" [class.is-hidden]="showSource"
+       [attr.contenteditable]="disabled ? 'false' : 'true'"
+       [style.min-height.em]="rows * 1.6"
+       role="textbox" aria-multiline="true"
+       (input)="onInput()" (blur)="onBlur()" (paste)="onPaste($event)"></div>
+
+  @if (showSource) {
+    <textarea class="rt__source" spellcheck="false" [rows]="rows" [disabled]="disabled"
+              [value]="sourceValue" (input)="onSourceInput($event)" (blur)="onBlur()"></textarea>
+  }
+</div>

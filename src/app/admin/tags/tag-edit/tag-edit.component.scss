@@ -1,0 +1,58 @@
+:host {
+  display: block;
+}
+
+/* Live preview chip — reused in sidebar and color section */
+.tag-preview-chip {
+  display: inline-flex;
+  align-items: center;
+  height: var(--control-h-sm);
+  padding: 0 var(--spacing-md-sm);
+  border-radius: var(--radius-pill, 999px);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Sidebar card override: replace circular avatar with a chip preview */
+.tag-preview-card {
+  gap: var(--spacing-sm-md);
+
+  .tag-preview-chip {
+    height: var(--control-h-md);
+    padding: 0 var(--spacing-md);
+    font-size: var(--text-sm);
+  }
+}
+
+/* Color picker row */
+.tag-color-row {
+  display: flex;
+  align-items: stretch;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+}
+
+.tag-color-picker {
+  width: var(--control-h-lg);
+  height: var(--control-h-md);
+  padding: 2px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  background: var(--input-bg);
+  cursor: pointer;
+
+  &::-webkit-color-swatch-wrapper { padding: 0; }
+  &::-webkit-color-swatch { border: none; border-radius: 4px; }
+}
+
+.tag-color-hex {
+  width: 120px;
+  flex: 0 0 auto;
+  text-transform: uppercase;
+}

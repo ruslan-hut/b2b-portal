@@ -1,0 +1,103 @@
+<div class="adm-page">
+
+  <header class="adm-bar">
+    <div class="adm-bar__crumbs">
+      <button
+        type="button"
+        class="adm-crumb-back"
+        routerLink="/admin/settings"
+        [attr.aria-label]="'common.back' | translate"
+      >
+        <app-icon name="arrow_back"></app-icon>
+      </button>
+      <a class="adm-crumb" routerLink="/admin/settings">{{ 'admin.settings.title' | translate }}</a>
+      <span class="adm-crumb-sep">/</span>
+      <span class="adm-crumb adm-crumb--active">{{ 'admin.settings.general' | translate }}</span>
+    </div>
+    <div class="adm-bar__actions">
+      <button
+        type="button"
+        class="adm-icon-btn"
+        (click)="refresh()"
+        [disabled]="loading"
+        [title]="'common.refresh' | translate"
+        [attr.aria-label]="'common.refresh' | translate"
+      >
+        <app-icon name="refresh"></app-icon>
+      </button>
+      @if (!loading) {
+        <button
+          type="button"
+          class="adm-btn adm-btn--primary"
+          (click)="save()"
+          [disabled]="saving || !siteName.trim()"
+        >
+          <app-icon [name]="saving ? 'sync' : 'check'"></app-icon>
+          {{ (saving ? 'common.saving' : 'common.save') | translate }}
+        </button>
+      }
+    </div>
+  </header>
+
+  <div class="adm-grid adm-grid--full">
+
+    @if (error) {
+      <div class="adm-error" role="alert">{{ error }}</div>
+    }
+
+    @if (successMessage) {
+      <div class="adm-success">{{ successMessage }}</div>
+    }
+
+    @if (loading) {
+      <div class="adm-loading">{{ 'common.loading' | translate }}</div>
+    }
+
+    @if (!loading) {
+      <section class="adm-section gen-main">
+        <header class="adm-section__head">
+          <div>
+            <h2 class="adm-section__title">{{ 'admin.general.branding' | translate }}</h2>
+            <p class="adm-section__sub">{{ 'admin.general.siteNameHint' | translate }}</p>
+          </div>
+        </header>
+
+        <div class="adm-fields">
+          <label class="adm-field adm-field--span2">
+            <span class="adm-field__label">{{ 'admin.general.siteName' | translate }}</span>
+            <input
+              type="text"
+              id="siteName"
+              class="adm-input"
+              [(ngModel)]="siteName"
+              maxlength="255"
+              [placeholder]="'admin.general.siteNamePlaceholder' | translate"
+            />
+          </label>
+
+          <label class="adm-field adm-field--span2">
+            <span class="adm-field__label">{{ 'admin.general.siteUrl' | translate }}</span>
+            <input
+              type="url"
+              id="siteUrl"
+              class="adm-input"
+              [(ngModel)]="siteUrl"
+              maxlength="255"
+              [placeholder]="'admin.general.siteUrlPlaceholder' | translate"
+            />
+            <span class="adm-field__hint">{{ 'admin.general.siteUrlHint' | translate }}</span>
+          </label>
+        </div>
+
+        @if (settings) {
+          <div class="adm-pairs">
+            <div class="adm-pair">
+              <span class="adm-pair__label">{{ 'common.lastUpdate' | translate }}</span>
+              <span class="adm-pair__value">{{ formatDate(settings.last_update) }}</span>
+            </div>
+          </div>
+        }
+      </section>
+    }
+  </div>
+</div>

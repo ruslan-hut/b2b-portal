@@ -1,0 +1,67 @@
+<div class="dialog-overlay" (click)="onClose()">
+  <div class="dialog-content" (click)="$event.stopPropagation()">
+    <div class="dialog-header">
+      <app-icon name="error_outline" class="header-icon"></app-icon>
+      <h2>{{ 'errors.order.title' | translate }}</h2>
+      <button class="close-btn" (click)="onClose()" aria-label="Close">
+        <app-icon name="close"></app-icon>
+      </button>
+    </div>
+
+    <div class="dialog-body">
+      <p class="dialog-message">{{ detail?.message }}</p>
+
+      @if (hasProblems) {
+        <div class="problems-block">
+          <div class="problems-heading">
+            {{ 'errors.order.affectedHeader' | translate: { count: detail?.problems?.length ?? 0 } }}
+          </div>
+          <ul class="problems-list">
+            @for (p of visibleProblems; track p.productUid) {
+              <li class="problem-row">
+                <app-icon [name]="p.reason === 'insufficient_stock' ? 'warning' : 'block'" class="row-icon" [class.icon-inactive]="p.reason !== 'insufficient_stock'"></app-icon>
+                <div class="problem-text">
+                  <span class="problem-name">{{ p.name || p.sku || p.productUid }}</span>
+                  <span class="problem-reason">
+                    @switch (p.reason) {
+                      @case ('inactive') {
+                        {{ 'errors.order.reason.inactive' | translate }}
+                      }
+                      @case ('not_found') {
+                        {{ 'errors.order.reason.notFound' | translate }}
+                      }
+                      @case ('no_price') {
+                        {{ 'errors.order.reason.noPrice' | translate }}
+                      }
+                      @case ('not_available') {
+                        {{ 'errors.order.reason.notAvailable' | translate }}
+                      }
+                      @default {
+                        {{ 'errors.order.reason.insufficientStock' | translate: { available: p.available ?? 0, requested: p.requested ?? 0 } }}
+                      }
+                    }
+                  </span>
+                </div>
+              </li>
+            }
+          </ul>
+          @if (extraCount > 0) {
+            <div class="more-row">{{ 'errors.order.moreCount' | translate: { count: extraCount } }}</div>
+          }
+        </div>
+      }
+    </div>
+
+    <div class="dialog-footer">
+      @if (hasProblems && canShowProblems) {
+        <button class="btn btn-secondary" (click)="onShowProblems()">
+          <app-icon name="filter_list"></app-icon>
+          {{ 'errors.order.actionShowProblems' | translate }}
+        </button>
+      }
+      <button class="btn btn-primary" (click)="onClose()">
+        {{ 'common.close' | translate }}
+      </button>
+    </div>
+  </div>
+</div>

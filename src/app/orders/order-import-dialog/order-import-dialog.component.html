@@ -1,0 +1,229 @@
+<div class="dialog-overlay" (click)="onBackdropClick()">
+  <div
+    class="dialog-panel"
+    role="dialog"
+    aria-modal="true"
+    [attr.aria-label]="'orders.importOrderTitle' | translate"
+    (click)="$event.stopPropagation()"
+  >
+    <header class="dialog-header">
+      <h2>{{ 'orders.importOrderTitle' | translate }}</h2>
+      <button
+        type="button"
+        class="icon-btn"
+        [disabled]="busy"
+        [attr.aria-label]="'common.close' | translate"
+        (click)="onClose()"
+      >
+        <app-icon name="close"></app-icon>
+      </button>
+    </header>
+
+    <div class="dialog-body">
+      @if (!hasResult) {
+        <p class="dialog-hint">{{ 'orders.importOrderHint' | translate }}</p>
+
+        <section class="field-group">
+          <div class="field-header">
+            <h3 class="field-label">{{ 'orders.importColumns' | translate }}</h3>
+            @if (!columnsAreDefault) {
+              <button type="button" class="link-btn" [disabled]="parsing" (click)="resetColumns()">
+                {{ 'orders.importColumnsReset' | translate }}
+              </button>
+            }
+          </div>
+
+          <div class="column-inputs">
+            <label class="column-input">
+              <span class="column-label">{{ 'orders.importSkuColumn' | translate }}</span>
+              <input
+                type="number"
+                class="compact-input"
+                [min]="minColumn"
+                [max]="maxColumn"
+                step="1"
+                [disabled]="parsing"
+                [(ngModel)]="skuColumn"
+              />
+            </label>
+            <label class="column-input">
+              <span class="column-label">{{ 'orders.importQuantityColumn' | translate }}</span>
+              <input
+                type="number"
+                class="compact-input"
+                [min]="minColumn"
+                [max]="maxColumn"
+                step="1"
+                [disabled]="parsing"
+                [(ngModel)]="quantityColumn"
+              />
+            </label>
+          </div>
+
+          @if (columnsInvalid) {
+            <p class="notice error">
+              <app-icon name="error_outline"></app-icon>
+              <span>{{ 'orders.importColumnsInvalid' | translate }}</span>
+            </p>
+          } @else if (columnsCollide) {
+            <p class="notice error">
+              <app-icon name="error_outline"></app-icon>
+              <span>{{ 'orders.importColumnsCollide' | translate }}</span>
+            </p>
+          } @else {
+            <p class="column-hint">{{ 'orders.importColumnsHint' | translate }}</p>
+          }
+        </section>
+
+        <label
+          class="dropzone"
+          [class.active]="dragActive"
+          [class.busy]="parsing"
+          [class.disabled]="!columnsUsable"
+          (dragover)="onDragOver($event)"
+          (dragleave)="onDragLeave()"
+          (drop)="onDrop($event)"
+        >
+          <input
+            type="file"
+            accept=".xlsx,.xlsm"
+            [disabled]="parsing || !columnsUsable"
+            (change)="onFileInput($event)"
+          />
+          @if (parsing) {
+            <div class="spinner spinner-lg"></div>
+            <span class="dropzone-title">{{ 'orders.importReading' | translate }}</span>
+            @if (fileName) {
+              <span class="dropzone-note">{{ fileName }}</span>
+            }
+          } @else {
+            <app-icon name="upload_file" class="dropzone-icon"></app-icon>
+            <span class="dropzone-title">{{ 'orders.importChooseFile' | translate }}</span>
+            <span class="dropzone-note">{{ 'orders.importFileTypes' | translate }}</span>
+          }
+        </label>
+      } @else if (result; as res) {
+        <div class="summary">
+          <div class="summary-stat">
+            <span class="summary-value">{{ items.length }}</span>
+            <span class="summary-label">{{ 'orders.importMatchedLines' | translate }}</span>
+          </div>
+          <div class="summary-stat">
+            <span class="summary-value">{{ money(totalCents) }}</span>
+            <span class="summary-label">
+              {{ 'orders.importTotalWithVat' | translate }}{{ currencyName ? ', ' + currencyName : '' }}
+            </span>
+          </div>
+          @if (res.skipped.length > 0) {
+            <div class="summary-stat warning">
+              <span class="summary-value">{{ res.skipped.length }}</span>
+              <span class="summary-label">{{ 'orders.importSkippedLines' | translate }}</span>
+            </div>
+          }
+        </div>
+
+        @if (clampedCount > 0) {
+          <p class="notice">
+            <app-icon name="info"></app-icon>
+            <span>{{ 'orders.importClampedNotice' | translate }} ({{ clampedCount }})</span>
+          </p>
+        }
+
+        @if (items.length === 0) {
+          <p class="notice error">
+            <app-icon name="error_outline"></app-icon>
+            <span>{{ 'orders.importNothingMatched' | translate }}</span>
+          </p>
+        } @else {
+          <div class="table-scroll">
+            <table class="import-table">
+              <thead>
+                <tr>
+                  <th>{{ 'orders.excelColumnSku' | translate }}</th>
+                  <th>{{ 'orders.excelColumnProductName' | translate }}</th>
+                  <th class="numeric">{{ 'orders.excelColumnQuantity' | translate }}</th>
+                  <th class="numeric">{{ 'orders.importLineTotal' | translate }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (item of items; track trackByRow($index, item)) {
+                  <tr>
+                    <td class="mono">{{ item.sku }}</td>
+                    <td>{{ item.productName }}</td>
+                    <td class="numeric">
+                      {{ item.quantity }}
+                      @if (item.clamped) {
+                        <span
+                          class="clamped-badge"
+                          [title]="('orders.importClampedFrom' | translate) + ' ' + item.requestedQuantity"
+                        >
+                          {{ 'orders.importClampedShort' | translate }}
+                        </span>
+                      }
+                    </td>
+                    <td class="numeric">{{ money(item.priceFinal * item.quantity) }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+
+        @if (res.skipped.length > 0) {
+          <section class="skipped">
+            <button type="button" class="skipped-toggle" (click)="toggleSkipped()">
+              <app-icon [name]="skippedExpanded ? 'expand_less' : 'expand_more'"></app-icon>
+              <span>
+                {{ 'orders.importSkippedLines' | translate }} ({{ res.skipped.length }})
+              </span>
+            </button>
+            @if (skippedExpanded) {
+              <ul class="skipped-list">
+                @for (row of res.skipped; track trackByRow($index, row)) {
+                  <li>
+                    <span class="skipped-row">{{ 'orders.importRow' | translate }} {{ row.rowNumber }}</span>
+                    <span class="skipped-name">{{ row.sku || row.barcode || row.productName || '—' }}</span>
+                    <span class="skipped-reason">{{ skipReasonKey(row.reason) | translate }}</span>
+                  </li>
+                }
+              </ul>
+            }
+          </section>
+        }
+
+        @if (cartItemCount > 0 && items.length > 0) {
+          <section class="field-group">
+            <h3 class="field-label">{{ 'orders.importCartHasItems' | translate }}</h3>
+            <div class="apply-modes">
+              <label class="apply-mode" [class.selected]="applyMode === 'replace'">
+                <input type="radio" name="applyMode" value="replace" [(ngModel)]="applyMode" />
+                <span>{{ 'orders.importReplaceCart' | translate }}</span>
+              </label>
+              <label class="apply-mode" [class.selected]="applyMode === 'merge'">
+                <input type="radio" name="applyMode" value="merge" [(ngModel)]="applyMode" />
+                <span>{{ 'orders.importMergeCart' | translate }}</span>
+              </label>
+            </div>
+          </section>
+        }
+      }
+    </div>
+
+    <footer class="dialog-footer">
+      <button type="button" class="btn-action-bar" [disabled]="busy" (click)="onClose()">
+        {{ 'common.cancel' | translate }}
+      </button>
+      @if (hasResult) {
+        <button type="button" class="btn-primary-cta" [disabled]="!canApply" (click)="onConfirm()">
+          @if (applying) {
+            <span class="spinner spinner-on-primary"></span>
+            <span>{{ 'orders.importApplying' | translate }}</span>
+          } @else {
+            <app-icon name="shopping_cart"></app-icon>
+            <span>{{ 'orders.importApply' | translate }}</span>
+          }
+        </button>
+      }
+    </footer>
+  </div>
+</div>

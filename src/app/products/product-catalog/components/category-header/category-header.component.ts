@@ -1,8 +1,8 @@
-import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 
 /**
- * Presentational component for category headers in the product catalog
- * Displays category name with gradient text and decorative divider
+ * Presentational component for category headers in the product catalog.
+ * Displays category name with gradient text and decorative divider.
  */
 @Component({
   selector: 'app-category-header',
@@ -12,8 +12,5 @@ import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class CategoryHeaderComponent {
-  /**
-   * Category name to display
-   */
-  @Input({ required: true }) categoryName!: string;
+  readonly categoryName = input.required<string>();
 }

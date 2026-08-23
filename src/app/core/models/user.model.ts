@@ -1,3 +1,16 @@
+/**
+ * Roles the backend accepts on write — mirrors `entity.StaffRoles` in Go,
+ * where the same list backs the `oneof` validation tag on User.Role.
+ *
+ * The retired values "user" and "client" are deliberately absent. Neither was
+ * ever read by an authorization gate — every check tests for admin, manager or
+ * content_editor — so an account holding one could log in and then reach
+ * nothing beyond the /auth self-service endpoints. Blocking an account is what
+ * the `active` flag is for. Rows may still hold a legacy value, so treat any
+ * role outside this list as "needs re-roling", not as an error.
+ */
+export const KNOWN_ROLES = ['admin', 'manager', 'content_editor'] as const;
+
 // User entity (from /auth/me endpoint)
 export interface User {
   uid: string;
@@ -6,10 +19,15 @@ export interface User {
   first_name: string;
   last_name: string;
   role: string;
+  /** Login gate. False means blocked by an admin or dropped from the ERP roster. */
+  active?: boolean;
   // Optional store assignment (new in multi-store backend)
   store_uid?: string;
   // Optional price type assignment
   price_type_uid?: string;
+  // Notification preferences
+  receive_email_notifications?: boolean;
+  all_orders?: boolean;
 }
 
 // Client entity (from /auth/me endpoint)
@@ -21,6 +39,7 @@ export interface Client {
   pin_code: string;
   address: string;
   discount: number;
+  additional_discount?: number; // Bonus discount in percentage points, added after any product discount limit
   vat_rate?: number; // VAT rate percentage (0-100)
   vat_number?: string; // VAT registration number (if registered)
   business_registration_number?: string; // Business registration number
@@ -96,9 +115,5 @@ export interface TokensListResponse {
   data: TokenInfo[];
 }
 
-// Standard API response structure
-export interface ApiResponse<T> {
-  status: string;
-  data: T;
-  message?: string;
-}
+// Re-export ApiResponse from shared model for backward compatibility
+export { ApiResponse } from './api.model';

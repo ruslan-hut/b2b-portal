@@ -1,0 +1,35 @@
+:host {
+  display: block;
+}
+
+/* All shell, form, identity, button and alert styling is provided by the
+   shared admin design system (src/styles/admin/*). This page carries no
+   page-specific overrides. */
+
+/* Blocked marker next to the role chip in the identity card. Reuses the role
+   chip's shape so the two read as one row of status, not two systems. */
+.ue-blocked-chip {
+  color: var(--color-danger);
+  border-color: var(--color-danger);
+  background: var(--status-error-bg);
+}
+
+/* Shown when the loaded user holds a role the backend no longer accepts. The
+   picker is blank in that case, so this explains why before the admin hits
+   save and gets a bare validation error. */
+.ue-legacy {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-sm);
+  border: 1px solid var(--color-warning, var(--color-border));
+  border-radius: var(--radius-sm);
+  background: var(--status-warning-bg);
+  color: var(--color-text-primary);
+  font-size: var(--text-sm);
+
+  app-icon {
+    font-size: 18px;
+    color: var(--color-warning, var(--color-text-muted));
+  }
+}

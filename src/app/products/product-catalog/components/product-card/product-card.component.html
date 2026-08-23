@@ -2,51 +2,56 @@
   <div class="product-image" (click)="onImageClick($event)">
     <img
       [src]="getProductImageUrl()"
-      [alt]="product.name"
+      [alt]="product().name"
       (error)="onImageError($event)" />
 
-    <!-- Product badges (new / hot sale) -->
+    <!-- Product badges (hot sale + store-scoped custom tags) -->
     <div class="product-badges">
-      @if (product.isNew) {
-        <span class="badge badge-new">{{ 'products.new' | translate }}</span>
-      }
-      @if (product.isHotSale) {
+      @if (product().isHotSale) {
         <span class="badge badge-hot-sale">{{ 'products.hotSale' | translate }}</span>
+      }
+      @for (tag of product().tags; track tag.uid) {
+        <span class="badge badge-custom" [style.background-color]="tag.color">{{ tag.name }}</span>
       }
     </div>
 
     <!-- Cart quantity badge -->
-    @if (cartQuantity > 0) {
+    @if (!previewMode() && cartQuantity() > 0) {
       <div class="quantity-badge">
-        <span class="material-icons quantity-icon">shopping_cart</span>
-        <span class="quantity-badge-text">{{ cartQuantity }}</span>
+        <app-icon name="shopping_cart" class="quantity-icon"></app-icon>
+        <span class="quantity-badge-text">{{ cartQuantity() }}</span>
       </div>
     }
   </div>
 
   <div class="product-info">
-    <div class="product-category">{{ product.category }}</div>
-    <h3 class="product-name">{{ product.name }}</h3>
-    <div class="product-sku">{{ 'products.sku' | translate }}: {{ product.sku }}</div>
+    <div class="product-category">{{ product().category }}</div>
+    <h3 class="product-name">{{ product().name }}</h3>
+    <div class="product-sku">
+      <span>{{ 'products.sku' | translate }}: {{ product().sku }}</span>
+      @if (product().barcode) {
+        <span class="product-barcode">{{ product().barcode }}</span>
+      }
+    </div>
 
     <div class="product-footer">
       <div class="product-price">
-        @if (product.price && product.price > 0) {
+        @if (product().price && product().price > 0) {
           <div class="price-row">
             <div class="price-values">
               <!-- Original price with VAT (strikethrough if discount) -->
-              @if (hasDiscount) {
+              @if (hasDiscount()) {
                 <div class="original-price">
-                  <span class="strikethrough">{{ originalPrice.toFixed(2) }}</span>
+                  <span class="strikethrough">{{ originalPrice().toFixed(2) }}</span>
                 </div>
               }
               <!-- Discounted price (prominent) -->
-              <div class="price-amount" [class.discounted]="hasDiscount">
-                {{ priceWithVat.toFixed(2) }}
+              <div class="price-amount" [class.discounted]="hasDiscount()">
+                {{ priceWithVat().toFixed(2) }}
               </div>
             </div>
-            @if (product.discountPercent && product.discountPercent > 0) {
-              <span class="discount-tag">{{ product.discountPercent }}%</span>
+            @if ((product().discountPercent ?? 0) > 0) {
+              <span class="discount-tag">{{ product().discountPercent }}%</span>
             }
           </div>
           <div class="price-label small">{{ 'products.price' | translate }}</div>
@@ -55,13 +60,15 @@
         }
       </div>
 
-      <button
-        class="btn btn-add-to-cart"
-        (click)="onAddToCartClick($event)"
-        [disabled]="!product.inStock"
-        >
-        {{ product.inStock ? ('products.addToCart' | translate) : ('products.outOfStock' | translate) }}
-      </button>
+      @if (!previewMode()) {
+        <button
+          class="btn btn-add-to-cart"
+          (click)="onAddToCartClick($event)"
+          [disabled]="!product().inStock"
+          >
+          {{ product().inStock ? ('products.addToCart' | translate) : ('products.outOfStock' | translate) }}
+        </button>
+      }
     </div>
   </div>
 </div>

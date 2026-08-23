@@ -2,6 +2,9 @@ import { Component, OnInit, OnDestroy, ChangeDetectorRef, ChangeDetectionStrateg
 import { Subscription } from 'rxjs';
 import { LogService, LogEntry, LogFilters } from '../../core/services/log.service';
 import { PageTitleService } from '../../core/services/page-title.service';
+import { ConfirmDialogService } from '../../core/services/confirm-dialog.service';
+import { NotificationService } from '../../core/services/notification.service';
+import { formatDateTime, formatTimeOnly } from '../../core/utils/date-format';
 
 @Component({
     selector: 'app-logs',
@@ -41,7 +44,9 @@ export class LogsComponent implements OnInit, OnDestroy {
   constructor(
     private logService: LogService,
     private cdr: ChangeDetectorRef,
-    private pageTitleService: PageTitleService
+    private pageTitleService: PageTitleService,
+    private confirmDialog: ConfirmDialogService,
+    private notifications: NotificationService
   ) {}
 
   ngOnInit(): void {
@@ -156,35 +161,49 @@ export class LogsComponent implements OnInit, OnDestroy {
   }
 
   formatDate(dateString: string): string {
-    return new Date(dateString).toLocaleString();
+    return formatDateTime(dateString);
   }
 
   formatTime(dateString: string): string {
-    const date = new Date(dateString);
-    return date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    return formatTimeOnly(dateString);
   }
 
   refresh(): void {
     this.loadLogs();
   }
 
-  cleanupLogs(): void {
-    if (!confirm('Are you sure you want to cleanup old logs? This action cannot be undone.')) {
+  async cleanupLogs(): Promise<void> {
+    if (!await this.confirmDialog.ask({ message: 'Are you sure you want to cleanup old logs? This action cannot be undone.', danger: true })) {
       return;
     }
 
     this.subscriptions.add(
       this.logService.cleanupLogs(90).subscribe({
         next: (response) => {
-          alert(`Cleanup completed. Deleted ${response.data?.deleted_count || 0} log entries.`);
+          this.notifications.success(`Cleanup completed. Deleted ${response.data?.deleted_count || 0} log entries.`);
           this.loadLogs();
         },
         error: (err) => {
           console.error('Failed to cleanup logs:', err);
-          alert('Failed to cleanup logs');
+          this.notifications.error('Failed to cleanup logs');
         }
       })
     );
+  }
+
+  copyMessage(log: LogEntry, event: Event): void {
+    event.stopPropagation();
+    const parts = [log.message];
+    if (log.user_uid) parts.push(`User: ${log.user_uid}`);
+    if (log.request_id) parts.push(`Request: ${log.request_id}`);
+    if (log.extra) {
+      try {
+        parts.push(JSON.stringify(JSON.parse(log.extra), null, 2));
+      } catch {
+        parts.push(log.extra);
+      }
+    }
+    navigator.clipboard.writeText(parts.join('\n'));
   }
 
   // Mobile UI methods

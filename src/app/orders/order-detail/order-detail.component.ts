@@ -3,28 +3,16 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { Subscription } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { formatDateTime } from '../../core/utils/date-format';
+import { formatAmount } from '../../core/utils/money-format';
 import { OrderService } from '../../core/services/order.service';
-import { Order, OrderStatus, toLegacyStatus } from '../../core/models/order.model';
+import { ClientPhase, Order, OrderClientTimeline } from '../../core/models/order.model';
 import { TranslationService } from '../../core/services/translation.service';
 import { CurrencyService } from '../../core/services/currency.service';
 import { AuthService } from '../../core/services/auth.service';
 import { AppSettingsService } from '../../core/services/app-settings.service';
+import { ApiResponse } from '../../core/models/api.model';
 import * as XLSX from 'xlsx';
-
-interface OrderStatusHistory {
-  uid: string;
-  order_uid: string;
-  user_firstname?: string;
-  user_lastname?: string;
-  status: string;
-  comment?: string;
-  created_at: string;
-}
-
-interface ApiResponse<T> {
-  success: boolean;
-  data: T;
-}
 
 @Component({
     selector: 'app-order-detail',
@@ -39,13 +27,13 @@ export class OrderDetailComponent implements OnInit, OnDestroy {
   loading = true;
   error: string | null = null;
   currencyName: string | undefined = undefined;
+  /** Whether this account has any branches at all — gates the billing block. */
+  hasBranches = false;
 
-  // History state
-  history: OrderStatusHistory[] = [];
-  historyLimit = 50;
-  historyOffset = 0;
-  historyDesc = true; // default: newest first
-  historyLoading = false;
+  // Progress track state. The client sees phases, never the internal stage
+  // history — those rows carry staff names and internal notes.
+  timeline: OrderClientTimeline | null = null;
+  timelineLoading = false;
 
   // Mobile card expansion state
   expandedItems: Set<number> = new Set();
@@ -115,6 +103,17 @@ export class OrderDetailComponent implements OnInit, OnDestroy {
     if (settings && settings.currency) {
       this.currencyName = settings.currency.name;
     }
+    this.hasBranches = (settings?.branches?.length || 0) > 0;
+  }
+
+  /**
+   * The billing block earns its place when the payer can vary: the order names
+   * a branch, or the account has branches an order could have been billed to.
+   * An account with none is always its own payer, so the block would repeat
+   * what the header already says.
+   */
+  showBilledTo(): boolean {
+    return !!this.order?.branchUid || this.hasBranches;
   }
 
   loadOrderDetail(): void {
@@ -136,7 +135,7 @@ export class OrderDetailComponent implements OnInit, OnDestroy {
           this.loading = false;
           this.cdr.detectChanges();
           // Load status history after order is loaded
-          this.loadHistory();
+          this.loadTimeline();
         },
         error: (err) => {
           console.error('Failed to load order detail:', err);
@@ -148,93 +147,68 @@ export class OrderDetailComponent implements OnInit, OnDestroy {
     );
   }
 
-  loadHistory(): void {
+  loadTimeline(): void {
     if (!this.orderId) return;
-    this.historyLoading = true;
+    this.timelineLoading = true;
     this.cdr.markForCheck();
 
     this.subscriptions.add(
-      this.http.post<ApiResponse<Record<string, OrderStatusHistory[]>>>(
-        `${environment.apiUrl}/order/history?limit=${this.historyLimit}&offset=${this.historyOffset}&sort=${this.historyDesc ? 'desc' : 'asc'}`,
-        { data: [this.orderId] }
+      this.http.get<ApiResponse<OrderClientTimeline>>(
+        `${environment.apiUrl}/frontend/orders/${this.orderId}/history`
       ).subscribe({
         next: (resp) => {
-          const map = resp.data || {};
-          this.history = map[this.orderId] || [];
-          this.historyLoading = false;
+          this.timeline = resp.data || null;
+          this.timelineLoading = false;
           this.cdr.detectChanges();
         },
         error: (err) => {
-          console.error('Failed to load order history', err);
-          this.history = [];
-          this.historyLoading = false;
+          console.error('Failed to load order progress', err);
+          this.timeline = null;
+          this.timelineLoading = false;
           this.cdr.detectChanges();
         }
       })
     );
   }
 
+  /**
+   * The track is worth drawing only once the order has reached a phase. An order
+   * sitting in a stage nobody mapped shows nothing rather than an empty bar that
+   * reads as "no progress made".
+   */
+  hasProgress(): boolean {
+    return !!this.timeline && !this.timeline.cancelled && !!this.timeline.current;
+  }
+
+  phaseLabel(phase: ClientPhase): string {
+    return this.translationService.instant('orders.phase.' + phase);
+  }
+
   formatDate(date: Date | string): string {
-    if (!date) return '-';
-    const d = typeof date === 'string' ? new Date(date) : date;
-    return d.toLocaleDateString() + ' ' + d.toLocaleTimeString();
+    return formatDateTime(date);
   }
 
   goBack(): void {
     this.router.navigate(['/orders/history']);
   }
 
-  getDisplayStatus(status: string): string {
-    const legacyStatus = toLegacyStatus(status);
-    if (legacyStatus) {
-      const keyMap: { [key in OrderStatus]: string } = {
-        [OrderStatus.DRAFT]: 'orders.draft',
-        [OrderStatus.NEW]: 'orders.new',
-        [OrderStatus.PROCESSING]: 'orders.processing',
-        [OrderStatus.CONFIRMED]: 'orders.confirmed',
-        [OrderStatus.CANCELLED]: 'orders.cancelled'
-      };
-      return this.translationService.instant(keyMap[legacyStatus]);
-    }
-    return this.formatCustomStageName(status);
+  /**
+   * Order money arrives already converted to display units (order.service
+   * divides by 100), so this is the formatAmount family, not formatCents.
+   * Use it for every amount on this page — the order list next door formats the
+   * same totals, and 19587.50 beside 19 587,50 reads as two different numbers.
+   */
+  money(value: number | null | undefined): string {
+    return formatAmount(value);
   }
 
-  getStatusClass(status: string): string {
-    const legacyStatus = toLegacyStatus(status);
-    if (legacyStatus) {
-      const classMap: { [key in OrderStatus]: string } = {
-        [OrderStatus.DRAFT]: 'status-draft',
-        [OrderStatus.NEW]: 'status-new',
-        [OrderStatus.PROCESSING]: 'status-processing',
-        [OrderStatus.CONFIRMED]: 'status-confirmed',
-        [OrderStatus.CANCELLED]: 'status-cancelled'
-      };
-      return classMap[legacyStatus];
-    }
-    return this.getCustomStageClass(status);
-  }
-
-  private formatCustomStageName(stageName: string): string {
-    if (!stageName || stageName.trim() === '') {
-      return this.translationService.instant('orders.unknownStatus');
-    }
-    // Title case each word
-    return stageName.split(' ')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-      .join(' ');
-  }
-
-  private getCustomStageClass(stageName: string): string {
-    const lower = stageName.toLowerCase();
-    if (lower.includes('cancel') || lower.includes('reject')) return 'status-custom-cancelled';
-    if (lower.includes('confirm') || lower.includes('complet') || lower.includes('done')) return 'status-custom-confirmed';
-    if (lower.includes('process') || lower.includes('review') || lower.includes('pending')) return 'status-custom-processing';
-    return 'status-custom-default';
-  }
-
-  // Deprecated: kept for backward compatibility
-  getTranslatedStatus(status: string): string {
-    return this.getDisplayStatus(status);
+  /**
+   * Same amount with the app currency appended, joined by a no-break space so
+   * a narrow column never leaves "UAH" stranded on its own line.
+   */
+  moneyWithCurrency(value: number | null | undefined): string {
+    const amount = formatAmount(value);
+    return this.currencyName ? `${amount} ${this.currencyName}` : amount;
   }
 
   /**
@@ -267,6 +241,14 @@ export class OrderDetailComponent implements OnInit, OnDestroy {
   getVatAmount(): number {
     if (!this.order) return 0;
     return this.order.totalVat || 0;
+  }
+
+  /**
+   * Get delivery cost - from backend
+   */
+  getDeliveryCost(): number {
+    if (!this.order) return 0;
+    return this.order.deliveryCost || 0;
   }
 
   /**
@@ -327,7 +309,9 @@ export class OrderDetailComponent implements OnInit, OnDestroy {
 
     // Add data rows
     this.order.items.forEach(item => {
-      // Convert from cents to currency format (divide by 100)
+      // Already in display units — order.service divided by 100 on the way in.
+      // Left as plain 2-decimal strings on purpose: the on-screen format uses a
+      // no-break space and a comma decimal, which a spreadsheet will not parse.
       const priceWithVat = (item.priceWithVat || 0);
       const priceAfterDiscount = (item.priceAfterDiscountWithVat || 0);
       const total = (item.subtotal || 0);

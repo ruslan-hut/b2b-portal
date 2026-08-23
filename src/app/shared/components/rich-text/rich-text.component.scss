@@ -1,0 +1,210 @@
+/* Rich text editor — DESIGN_POLICY.md §3 (form primitives), §9.6 (an authored
+   field renders at the treatment it will publish at). */
+
+.rt {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  background: var(--input-bg);
+  overflow: hidden;
+
+  &:focus-within {
+    border-color: var(--color-primary);
+    box-shadow: var(--focus-ring);
+  }
+
+  &.is-disabled { opacity: .6; }
+}
+
+/* ---------- Toolbar ---------- */
+.rt__bar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-wrap: wrap;
+  padding: var(--spacing-xs);
+  border-bottom: 1px solid var(--color-border-subtle);
+  background: var(--color-background);
+}
+
+.rt__sep {
+  width: 1px;
+  height: var(--icon-md);
+  margin: 0 var(--spacing-xs);
+  background: var(--color-border);
+}
+
+.rt__btn {
+  width: var(--control-h-sm);
+  height: var(--control-h-sm);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: background-color .15s ease, color .15s ease;
+
+  app-icon { font-size: var(--icon-sm); }
+
+  &:hover:not(:disabled) {
+    background: var(--card-bg);
+    color: var(--color-text-primary);
+  }
+
+  &.is-active {
+    background: var(--card-bg);
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+  }
+
+  &:disabled {
+    opacity: .35;
+    cursor: not-allowed;
+  }
+
+  /* H2 / H3 carry their level as the label — no icon says "level two". */
+  &--text {
+    width: auto;
+    padding: 0 var(--spacing-sm);
+    font-family: var(--font-heading);
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  &--source { margin-left: auto; }
+}
+
+/* ---------- Link row ---------- */
+.rt__link {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-bottom: 1px solid var(--color-border-subtle);
+  background: var(--color-background);
+}
+
+.rt__link-input {
+  flex: 1;
+  min-width: 0;
+  height: var(--control-h-sm);
+  padding: 0 var(--spacing-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  background: var(--input-bg);
+  color: var(--input-text);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: var(--text-sm);
+
+  &:focus { outline: none; border-color: var(--color-primary); }
+}
+
+.rt__link-btn {
+  height: var(--control-h-sm);
+  padding: 0 var(--spacing-sm-md);
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-control);
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+
+  &--ghost {
+    border-color: var(--color-border);
+    background: transparent;
+    color: var(--color-text-secondary);
+  }
+}
+
+/* ---------- Editing surface ---------- */
+/* ::ng-deep for the same reason as `.pp-text`: the surface's children are
+   assigned as innerHTML and by contenteditable itself, so they never carry the
+   component's _ngcontent attribute. */
+:host ::ng-deep .rt__surface {
+  padding: var(--spacing-sm) var(--spacing-sm-md);
+  color: var(--input-text);
+  font-family: var(--font-body);
+  font-size: var(--text-prose);
+  line-height: var(--leading-prose);
+  overflow-wrap: anywhere;
+
+  &:focus { outline: none; }
+
+  &.is-hidden { display: none; }
+
+  /* Mirrors `.pp-text` in content-article at admin scale: the block is written
+     here and read there, and a list that looks like a list in only one of the
+     two is why an editor reaches for the preview on every keystroke. */
+  :where(p) { margin: 0 0 var(--spacing-sm); }
+  :where(p:last-child) { margin-bottom: 0; }
+
+  :where(h1, h2, h3, h4, h5, h6) {
+    font-family: var(--font-heading);
+    line-height: 1.35;
+    color: var(--color-text-primary);
+  }
+  :where(h1, h2) { margin: var(--spacing-md) 0 var(--spacing-xs); font-size: var(--text-xl); font-weight: var(--font-weight-bold); }
+  :where(h3) { margin: var(--spacing-md) 0 var(--spacing-xs); font-size: var(--text-lg); font-weight: var(--font-weight-semibold); }
+  :where(h4, h5, h6) { margin: var(--spacing-sm) 0 var(--spacing-xs); font-size: var(--text-md); font-weight: var(--font-weight-semibold); }
+
+  :where(ul, ol) { margin: 0 0 var(--spacing-sm); padding-left: var(--spacing-lg); }
+  :where(li) { margin-bottom: var(--spacing-2xs); }
+  :where(li > ul, li > ol) { margin: var(--spacing-2xs) 0 0; }
+
+  :where(ul) { list-style: disc; }
+  :where(ol) { list-style: decimal; }
+
+  :where(dl) { margin: 0 0 var(--spacing-sm); }
+  :where(dt) { font-weight: var(--font-weight-semibold); }
+  :where(dd) { margin: 0 0 var(--spacing-xs) var(--spacing-md); color: var(--color-text-secondary); }
+
+  :where(a) { color: var(--color-primary); text-decoration: underline; text-underline-offset: 2px; }
+  :where(strong, b) { font-weight: var(--font-weight-semibold); }
+  :where(em, i) { font-style: italic; }
+  :where(u, ins) { text-decoration: underline; }
+  :where(s, strike, del) { text-decoration: line-through; color: var(--color-text-muted); }
+  :where(sub, sup) { font-size: .75em; line-height: 0; }
+  :where(small) { font-size: var(--text-sm); color: var(--color-text-secondary); }
+  :where(abbr) { text-decoration: underline dotted; }
+  :where(code) { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .9em; }
+  :where(pre) {
+    margin: 0 0 var(--spacing-sm);
+    padding: var(--spacing-sm);
+    border-radius: var(--radius-sm);
+    background: var(--color-background);
+    overflow-x: auto;
+  }
+  :where(blockquote) {
+    margin: 0 0 var(--spacing-sm);
+    padding-left: var(--spacing-md);
+    border-left: 2px solid var(--color-border);
+    color: var(--color-text-secondary);
+  }
+  :where(hr) { margin: var(--spacing-md) 0; border: 0; border-top: 1px solid var(--color-border); }
+  :where(img) { max-width: 100%; height: auto; }
+
+  :where(table) { width: 100%; margin: 0 0 var(--spacing-sm); border-collapse: collapse; font-size: var(--text-base); }
+  :where(th, td) { padding: var(--spacing-xs) var(--spacing-sm); border: 1px solid var(--color-border); text-align: left; }
+  :where(th) { font-weight: var(--font-weight-semibold); background: var(--color-background); }
+}
+
+/* ---------- Source view ---------- */
+.rt__source {
+  width: 100%;
+  padding: var(--spacing-sm) var(--spacing-sm-md);
+  border: 0;
+  background: var(--input-bg);
+  color: var(--input-text);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: var(--text-sm);
+  line-height: 1.6;
+  resize: vertical;
+  box-sizing: border-box;
+
+  &:focus { outline: none; }
+}

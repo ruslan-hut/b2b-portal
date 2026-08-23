@@ -17,14 +17,18 @@ export class BoxService {
     return this.http.post<{ data: string[] }>(this.apiUrl, { data: boxes });
   }
 
-  // List boxes with pagination
-  listBoxes(page: number = 1, count: number = 20): Observable<{
+  // List boxes with pagination, optionally scoped to a store. The store_uid query
+  // param activates a "store-specific + shared NULL" view on the backend.
+  listBoxes(page: number = 1, count: number = 20, storeUID?: string): Observable<{
     data: ShipmentBox[];
     pagination?: { total: number; total_pages: number };
   }> {
-    const params = new HttpParams()
+    let params = new HttpParams()
       .set('page', page.toString())
       .set('count', count.toString());
+    if (storeUID) {
+      params = params.set('store_uid', storeUID);
+    }
     return this.http.get<any>(this.apiUrl, { params });
   }
 

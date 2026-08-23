@@ -1,0 +1,464 @@
+@use '../../../styles/mixins' as *;
+
+:host {
+  display: block;
+}
+
+/* ---------- Header ---------- */
+.ssn-refreshed {
+  align-self: center;
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+/* ---------- Summary tiles ---------- */
+.ssn-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--spacing-sm-md);
+}
+
+.ssn-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--spacing-sm-md);
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-md);
+
+  &--accent {
+    border-color: var(--color-primary);
+  }
+
+  &__value {
+    font-size: var(--text-2xl);
+    font-weight: 600;
+    line-height: 1.1;
+    color: var(--color-text-primary);
+  }
+
+  &__label {
+    font-size: var(--text-sm);
+    color: var(--color-text-primary);
+  }
+
+  &__hint {
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+  }
+}
+
+/* ---------- Session-start histogram ---------- */
+.ssn-chart {
+  padding: var(--spacing-sm-md);
+
+  &__title {
+    margin: 0;
+    font-size: var(--text-md);
+    font-weight: 600;
+    color: var(--color-text-primary);
+  }
+
+  &__note {
+    margin: 2px 0 var(--spacing-sm);
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+  }
+
+  &__bars {
+    display: flex;
+    align-items: flex-end;
+    gap: 2px;
+    height: 90px;
+  }
+}
+
+.ssn-bar {
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  height: 100%;
+  min-width: 0;
+
+  &__fill {
+    width: 100%;
+    background: var(--color-primary);
+    border-radius: 2px 2px 0 0;
+    opacity: .75;
+    transition: height .2s ease;
+  }
+
+  &:hover &__fill {
+    opacity: 1;
+  }
+
+  &__label {
+    margin-top: 2px;
+    font-size: 10px;
+    color: var(--color-text-muted);
+  }
+}
+
+/* ---------- Runtime panel ---------- */
+.ssn-runtime {
+  padding: 0;
+
+  &__toggle {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    width: 100%;
+    padding: var(--spacing-sm-md);
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: var(--text-md);
+    font-weight: 600;
+    color: var(--color-text-primary);
+    text-align: left;
+
+    &:hover {
+      background: var(--color-background-secondary);
+    }
+  }
+
+  &__summary {
+    font-weight: 400;
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+  }
+
+  &__chevron {
+    margin-left: auto;
+  }
+
+  &__body {
+    padding: 0 var(--spacing-sm-md) var(--spacing-sm-md);
+    border-top: 1px solid var(--color-border-light);
+  }
+
+  &__note {
+    margin: var(--spacing-sm) 0;
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+  }
+
+  &__subtitle {
+    margin: var(--spacing-md) 0 var(--spacing-sm);
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--color-text-primary);
+  }
+}
+
+.ssn-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: var(--spacing-sm-md);
+  margin-top: var(--spacing-sm);
+}
+
+.ssn-metric {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--spacing-sm);
+  background: var(--color-background-secondary);
+  border-radius: var(--radius-sm);
+
+  /* A non-zero pool wait or a rising error rate is the thing worth noticing. */
+  &.is-warning {
+    box-shadow: inset 2px 0 0 var(--color-warning);
+  }
+
+  &__label {
+    font-size: var(--text-xs);
+    text-transform: uppercase;
+    letter-spacing: .03em;
+    color: var(--color-text-muted);
+  }
+
+  &__value {
+    font-size: var(--text-lg);
+    font-weight: 600;
+    color: var(--color-text-primary);
+
+    small {
+      margin-left: 3px;
+      font-size: var(--text-xs);
+      font-weight: 400;
+      color: var(--color-text-muted);
+    }
+  }
+
+  &__hint {
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+  }
+}
+
+.ssn-meter {
+  height: 3px;
+  margin-top: 4px;
+  background: var(--color-border-light);
+  border-radius: 2px;
+  overflow: hidden;
+
+  &__fill {
+    height: 100%;
+    background: var(--color-primary);
+    transition: width .2s ease;
+  }
+}
+
+.ssn-route {
+  font-family: var(--font-mono, monospace);
+  font-size: var(--text-xs);
+}
+
+.ssn-errors {
+  color: var(--color-danger);
+  font-weight: 600;
+}
+
+/* ---------- Filters / empty ---------- */
+.ssn-filters {
+  padding-block: var(--spacing-sm-md);
+}
+
+.ssn-empty {
+  padding: var(--spacing-lg);
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: var(--text-md);
+}
+
+/* ---------- Table ---------- */
+.ssn-table-wrap {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-md);
+  overflow-x: auto;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-md);
+
+  thead {
+    background: var(--table-header-bg);
+    color: var(--table-header-text);
+
+    th {
+      @include table-cell-padding;
+      text-align: left;
+      font-weight: 600;
+      font-size: var(--text-sm);
+      white-space: nowrap;
+    }
+  }
+
+  tbody {
+    tr {
+      border-bottom: 1px solid var(--color-border-light);
+
+      &:last-child { border-bottom: none; }
+
+      /* The admin's own session, so they can see what they are about to cut off. */
+      &.is-current {
+        background: color-mix(in srgb, var(--color-primary) 6%, transparent);
+      }
+    }
+
+    td {
+      @include table-cell-padding;
+      color: var(--color-text-primary);
+      white-space: nowrap;
+    }
+  }
+
+  .actions-col {
+    width: 1%;
+    white-space: nowrap;
+  }
+}
+
+/* Angular strips the whitespace between elements, so the gap between the name
+   and its badges has to be declared rather than inherited from the markup. */
+.ssn-account {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.ssn-name {
+  font-weight: 500;
+}
+
+/* ---------- Badges ----------
+   Three kinds of badge sit within a few pixels of each other in a session row:
+   the status pill, the role tag and the "you" marker. Any difference in size or
+   shape between them reads as accidental, so they share one definition and vary
+   only in colour. Written as a placeholder rather than three copies because the
+   copies had already drifted apart — 5px against 7px of padding, a rounded
+   rectangle against a pill, a 15% tint against 12%.
+
+   The role tag also has to override the global .adm-role-chip, a heavier
+   outlined chip sized for the user editor: at this density its border and
+   uppercase tracking shout over the status column beside it. That override is
+   scoped here, so the users page keeps the original treatment. */
+%ssn-badge-base {
+  display: inline-block;
+  padding: 1px 7px;
+  border: none;
+  border-radius: 999px;
+  font-size: var(--text-xs);
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: 0;
+  white-space: nowrap;
+  /* Neutral ground; every variant below tints away from it. */
+  background: var(--color-border-light);
+  color: var(--color-text-muted);
+}
+
+/* One tint strength for all of them, so no colour looks heavier than another. */
+@mixin ssn-badge-tint($color) {
+  background: color-mix(in srgb, #{$color} 12%, transparent);
+  color: $color;
+}
+
+.adm-role-chip {
+  @extend %ssn-badge-base;
+
+  &[data-role='admin'] {
+    @include ssn-badge-tint(var(--color-danger));
+  }
+
+  &[data-role='manager'] {
+    @include ssn-badge-tint(var(--color-primary));
+  }
+
+  &[data-role='content_editor'] {
+    @include ssn-badge-tint(var(--color-secondary));
+  }
+}
+
+.ssn-device {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--color-text-secondary, var(--color-text-primary));
+}
+
+.ssn-ip {
+  font-family: var(--font-mono, monospace);
+  font-size: var(--text-sm);
+}
+
+/* The "you" marker. No margin of its own — .ssn-account's flex gap spaces it,
+   and a margin on top of that would set it adrift from the other two. */
+.ssn-badge {
+  @extend %ssn-badge-base;
+
+  &--current {
+    @include ssn-badge-tint(var(--color-primary));
+  }
+}
+
+.ssn-status {
+  @extend %ssn-badge-base;
+
+  &[data-status='active'] {
+    @include ssn-badge-tint(var(--color-success));
+  }
+
+  &[data-status='idle'] {
+    @include ssn-badge-tint(var(--color-primary));
+  }
+
+  &[data-status='revoked'],
+  &[data-status='expired'] {
+    @include ssn-badge-tint(var(--color-danger));
+  }
+}
+
+/* ---------- Mobile cards ---------- */
+.ssn-cards {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.ssn-card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-sm-md);
+
+  &__head {
+    position: relative;
+    cursor: pointer;
+    padding-right: var(--spacing-lg);
+  }
+
+  &__title {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    flex-wrap: wrap;
+  }
+
+  &__name {
+    font-weight: 600;
+    color: var(--color-text-primary);
+  }
+
+  &__sub {
+    margin-top: 2px;
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+  }
+
+  &__expand {
+    position: absolute;
+    top: 0;
+    right: 0;
+    color: var(--color-text-muted);
+  }
+
+  &__details {
+    margin-top: var(--spacing-sm);
+    padding-top: var(--spacing-sm);
+    border-top: 1px solid var(--color-border-light);
+  }
+
+  &__row {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--spacing-sm);
+    padding: 3px 0;
+    font-size: var(--text-sm);
+  }
+
+  &__label {
+    color: var(--color-text-muted);
+  }
+
+  &__value {
+    color: var(--color-text-primary);
+    text-align: right;
+    word-break: break-word;
+  }
+
+  &__actions {
+    display: flex;
+    gap: var(--spacing-sm);
+    margin-top: var(--spacing-sm);
+  }
+}

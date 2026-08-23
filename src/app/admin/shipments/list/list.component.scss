@@ -1,0 +1,113 @@
+@use '../../../../styles/mixins' as *;
+
+:host {
+  display: block;
+}
+
+.shp-filters {
+  padding-block: var(--spacing-sm-md);
+}
+
+.shp-empty {
+  padding: var(--spacing-lg);
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: var(--text-md);
+}
+
+.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: var(--text-xs);
+}
+
+.shp-city { color: var(--color-text-muted); }
+
+.shp-link {
+  color: var(--color-primary);
+  text-decoration: none;
+  &:hover { text-decoration: underline; }
+}
+
+/* Several orders on one consolidated waybill. Wraps rather than widening the
+   column. The comma is its own element rather than a ::before on the link: a
+   pseudo-element would sit inside the anchor, joining its click target and
+   underlining with it on hover. */
+.shp-orders {
+  .shp-sep {
+    margin-right: var(--spacing-xs);
+    color: var(--color-text-muted);
+  }
+}
+
+/* ---------- Status chip ---------- */
+.shp-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: var(--control-h-xs);
+  padding: 0 var(--spacing-sm);
+  border-radius: 999px;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--color-text-secondary);
+  background: var(--color-background-secondary);
+  border: 1px solid var(--color-border-light);
+
+  &__dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+
+  &.status-pending    { color: var(--color-text-muted); }
+  &.status-created    { color: var(--color-info); border-color: currentColor; }
+  &.status-picked_up,
+  &.status-in_transit { color: var(--color-warning); border-color: currentColor; }
+  &.status-delivered  { color: var(--color-success, var(--color-primary)); border-color: currentColor; }
+  &.status-returned   { color: var(--color-warning); border-color: currentColor; }
+  &.status-cancelled,
+  &.status-error      { color: var(--color-danger); border-color: currentColor; }
+}
+
+/* ---------- Table ---------- */
+.shp-table-wrap {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-md);
+  overflow-x: auto;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-md);
+
+  thead {
+    background: var(--table-header-bg);
+    color: var(--table-header-text);
+
+    th {
+      @include table-cell-padding;
+      text-align: left;
+      font-weight: 600;
+      font-size: var(--text-sm);
+      white-space: nowrap;
+    }
+  }
+
+  tbody td {
+    @include table-cell-padding;
+    color: var(--color-text-primary);
+    white-space: nowrap;
+  }
+}
+
+.shp-row {
+  border-bottom: 1px solid var(--color-border-light);
+  transition: background-color .15s ease;
+
+  &:last-child { border-bottom: none; }
+  &:hover { background-color: var(--color-background-secondary); }
+}

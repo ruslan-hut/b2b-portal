@@ -1,0 +1,178 @@
+<div class="adm-page">
+
+  <header class="adm-bar">
+    <div class="adm-bar__crumbs">
+      <button
+        type="button"
+        class="adm-crumb-back"
+        routerLink="/admin/settings"
+        [attr.aria-label]="'common.back' | translate"
+      >
+        <app-icon name="arrow_back"></app-icon>
+      </button>
+      <a class="adm-crumb" routerLink="/admin/settings">{{ 'admin.settings.title' | translate }}</a>
+      <span class="adm-crumb-sep">/</span>
+      <span class="adm-crumb adm-crumb--active">{{ 'admin.settings.stores' | translate }}</span>
+    </div>
+    <div class="adm-bar__actions">
+      <button
+        type="button"
+        class="adm-icon-btn"
+        (click)="refresh()"
+        [disabled]="loading"
+        [title]="'common.refresh' | translate"
+        [attr.aria-label]="'common.refresh' | translate"
+      >
+        <app-icon name="refresh"></app-icon>
+      </button>
+    </div>
+  </header>
+
+  <div class="adm-grid adm-grid--full">
+
+    @if (error) {
+      <div class="adm-error" role="alert">{{ error }}</div>
+    }
+    @if (successMessage) {
+      <div class="adm-success">{{ successMessage }}</div>
+    }
+
+    @if (loading) {
+      <div class="adm-loading">{{ 'common.loading' | translate }}</div>
+    } @else if (stores.length === 0) {
+      <div class="adm-section sto-empty">
+        <app-icon name="store" class="sto-empty__icon"></app-icon>
+        <p class="sto-empty__text">{{ 'admin.noStores' | translate }}</p>
+      </div>
+    } @else {
+      <div class="sto-list">
+        @for (store of stores; track store.uid) {
+          <section class="adm-section sto-card" [class.is-expanded]="expandedStoreUid === store.uid">
+            <header
+              class="sto-card__head"
+              (click)="toggleExpand(store)"
+              (keydown.enter)="toggleExpand(store)"
+              (keydown.space)="toggleExpand(store); $event.preventDefault()"
+              role="button"
+              tabindex="0"
+              [attr.aria-expanded]="expandedStoreUid === store.uid"
+            >
+              <div class="sto-card__title">
+                <h2 class="sto-card__name">{{ store.name }}</h2>
+                <div class="sto-card__tags">
+                  @if (store.country_code) {
+                    <span class="adm-role-chip">{{ store.country_code }}</span>
+                  }
+                  <span class="adm-role-chip" [attr.data-role]="store.active ? 'manager' : 'client'">
+                    {{ (store.active ? 'common.active' : 'common.inactive') | translate }}
+                  </span>
+                </div>
+              </div>
+              <app-icon [name]="expandedStoreUid === store.uid ? 'expand_less' : 'expand_more'" class="sto-card__expand"></app-icon>
+            </header>
+
+            @if (expandedStoreUid === store.uid) {
+              <form class="sto-card__body" (ngSubmit)="saveStore(store)">
+                <div class="adm-fields">
+                  <div class="adm-field adm-field--span2">
+                    <span class="adm-field__label">{{ 'admin.storeId' | translate }}</span>
+                    <span class="adm-meta__value adm-uid sto-uid" [copyOnClick]="store.uid">
+                      <span class="adm-uid__text">{{ store.uid }}</span>
+                    </span>
+                  </div>
+
+                  <label class="adm-field adm-field--span2">
+                    <span class="adm-field__label">{{ 'admin.storeName' | translate }} <em>*</em></span>
+                    <input type="text" class="adm-input" [(ngModel)]="editName" name="name" required />
+                  </label>
+
+                  <label class="adm-field">
+                    <span class="adm-field__label">{{ 'admin.defaultVatRate' | translate }} (%)</span>
+                    <input type="number" class="adm-input" [(ngModel)]="editDefaultVatRate" name="defaultVatRate" min="0" max="100" step="0.01" />
+                    <span class="sto-hint">{{ 'admin.defaultVatRateHint' | translate }}</span>
+                  </label>
+
+                  <label class="adm-field">
+                    <span class="adm-field__label">{{ 'admin.countryCode' | translate }}</span>
+                    <input type="text" class="adm-input" [(ngModel)]="editCountryCode" name="countryCode" maxlength="5" placeholder="e.g. PL, UA" />
+                    <span class="sto-hint">{{ 'admin.countryCodeHint' | translate }}</span>
+                  </label>
+
+                  <label class="adm-field">
+                    <span class="adm-field__label">{{ 'admin.orderPrefix' | translate }}</span>
+                    <input type="text" class="adm-input" [(ngModel)]="editOrderPrefix" name="orderPrefix" maxlength="10" pattern="[A-Za-z0-9]*" placeholder="e.g. MW" />
+                    <span class="sto-hint" [class.sto-hint--error]="orderPrefixInvalid">{{ 'admin.orderPrefixHint' | translate }}</span>
+                  </label>
+
+                  <label class="adm-toggle adm-field--span2">
+                    <input type="checkbox" [(ngModel)]="editActive" name="active" />
+                    <span class="adm-toggle__track"><span class="adm-toggle__dot"></span></span>
+                    <span class="adm-toggle__text">
+                      {{ 'common.active' | translate }}:
+                      <strong>{{ (editActive ? 'common.active' : 'common.inactive') | translate }}</strong>
+                    </span>
+                  </label>
+
+                  <label class="adm-toggle adm-field--span2">
+                    <input type="checkbox" [(ngModel)]="editShowQuantity" name="showQuantity" />
+                    <span class="adm-toggle__track"><span class="adm-toggle__dot"></span></span>
+                    <span class="adm-toggle__text">
+                      {{ 'admin.showQuantity' | translate }}
+                      <span class="adm-toggle__hint">{{ 'admin.showQuantityHint' | translate }}</span>
+                    </span>
+                  </label>
+
+                  <label class="adm-toggle adm-field--span2">
+                    <input type="checkbox" [(ngModel)]="editRequireBusinessRegistration" name="requireBusinessRegistration" />
+                    <span class="adm-toggle__track"><span class="adm-toggle__dot"></span></span>
+                    <span class="adm-toggle__text">
+                      {{ 'admin.requireBusinessRegistration' | translate }}
+                      <span class="adm-toggle__hint">{{ 'admin.requireBusinessRegistrationHint' | translate }}</span>
+                    </span>
+                  </label>
+
+                  <label class="adm-toggle adm-field--span2" [class.is-disabled]="certificationFilterLocked">
+                    <input
+                      type="checkbox"
+                      [(ngModel)]="editUseCertificationFilter"
+                      name="useCertificationFilter"
+                      [disabled]="certificationFilterLocked"
+                    />
+                    <span class="adm-toggle__track"><span class="adm-toggle__dot"></span></span>
+                    <span class="adm-toggle__text">
+                      {{ 'admin.useCertificationFilter' | translate }}
+                      <span class="adm-toggle__hint">{{ 'admin.useCertificationFilterHint' | translate }}</span>
+                    </span>
+                  </label>
+
+                  @if (certificationFilterLocked) {
+                    <!-- Kept outside the toggle: .is-disabled dims the whole label,
+                         and the reason it is locked must stay readable. -->
+                    <p class="adm-field--span2 sto-toggle-blocked" role="note">
+                      <app-icon name="info"></app-icon>
+                      {{ 'admin.useCertificationFilterNoData' | translate }}
+                    </p>
+                  }
+
+                  @if (store.last_update) {
+                    <div class="adm-field adm-field--span2 sto-updated">
+                      <span class="adm-field__label">{{ 'common.lastUpdate' | translate }}</span>
+                      <span>{{ formatDate(store.last_update) }}</span>
+                    </div>
+                  }
+
+                  <div class="adm-field--span2 sto-actions">
+                    <button type="submit" class="adm-btn adm-btn--primary" [disabled]="saving || !editName || orderPrefixInvalid">
+                      <app-icon [name]="saving ? 'sync' : 'check'"></app-icon>
+                      {{ (saving ? 'common.saving' : 'common.save') | translate }}
+                    </button>
+                  </div>
+                </div>
+              </form>
+            }
+          </section>
+        }
+      </div>
+    }
+  </div>
+</div>

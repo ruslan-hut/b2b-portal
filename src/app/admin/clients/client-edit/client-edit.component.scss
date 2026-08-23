@@ -1,746 +1,574 @@
-@use '../../../../styles/mixins' as *;
-
-.client-edit-container {
-  max-width: 900px;
-  margin: 0 auto;
-  padding: var(--spacing-md-lg);
+:host {
+  display: block;
 }
 
-.page-header {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-md-sm);
-  margin-bottom: var(--spacing-lg);
-
-  h1 {
-    font-size: 1.5rem;
-    font-weight: var(--font-weight-bold);
-    color: var(--color-text-primary);
-    margin: 0;
-    flex: 1;
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-sm-md);
-
-    .unsaved-warning-icon {
-      font-size: 22px;
-      color: var(--color-warning);
-      animation: pulse 2s ease-in-out infinite;
-      cursor: help;
-    }
-  }
+/* ---------- Bar accent: unsaved warning ---------- */
+.ce-unsaved {
+  font-size: var(--icon-sm);
+  color: var(--color-warning, var(--color-danger));
+  margin-left: 4px;
+  vertical-align: middle;
 }
 
-.btn-icon-header {
-  @include icon-button(40px);
-  background: var(--color-background-secondary);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  color: var(--color-text-primary);
+/* ---------- Field-level error & hint ---------- */
+.ce-field-error {
+  font-size: var(--text-xs);
+  color: var(--color-danger);
+}
 
-  &:hover:not(:disabled) {
-    background: var(--color-border);
-  }
+.ce-field-hint {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  line-height: 1.4;
+}
 
-  &.btn-save {
-    background: var(--color-info);
-    border-color: var(--color-info);
-    color: var(--color-text-inverse);
+/* Invalid input outline */
+.adm-input.is-invalid {
+  border-color: var(--color-danger);
 
-    &:hover:not(:disabled) {
-      background: var(--color-info-dark);
-      border-color: var(--color-info-dark);
-    }
-
-    &:disabled {
-      @include disabled-state;
-    }
+  &:focus {
+    border-color: var(--color-danger);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-danger) 18%, transparent);
   }
 }
 
-.loading-container {
-  text-align: center;
-  padding: 60px var(--spacing-md-lg);
-
-  &.small {
-    padding: var(--spacing-md-lg);
-  }
-
-  .spinner-large {
-    width: 50px;
-    height: 50px;
-    border: 4px solid rgba(var(--color-info-rgb), 0.2);
-    border-radius: 50%;
-    border-top-color: var(--color-info);
-    animation: spin 0.8s linear infinite;
-    margin: 0 auto 20px;
-  }
-
-  p {
-    color: var(--color-text-secondary);
-    font-size: 16px;
-  }
-}
-
-.message {
-  padding: 12px 16px;
-  border-radius: 8px;
-  margin-bottom: 20px;
-  font-size: 14px;
-
-  &.success {
-    background: var(--status-success-bg);
-    color: var(--color-success);
-    border: 1px solid var(--color-success);
-  }
-
-  &.error {
-    background: var(--status-error-bg);
-    color: var(--color-danger);
-    border: 1px solid var(--color-danger);
-  }
-
-  &.warning {
-    background: var(--status-warning-bg);
-    color: var(--color-warning);
-    border: 1px solid var(--color-warning);
-  }
-}
-
-.client-form {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-xl);
-}
-
-.form-section {
-  background: var(--card-bg);
-  border-radius: 12px;
-  box-shadow: var(--shadow-sm);
-  padding: 25px;
-
-  h2 {
-    font-size: 20px;
-    font-weight: var(--font-weight-bold);
-    color: var(--color-text-primary);
-    margin: 0 0 20px 0;
-    padding-bottom: 15px;
-    border-bottom: 2px solid var(--color-border-light);
-  }
-}
-
-.form-row {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: var(--spacing-md-lg);
-  margin-bottom: 15px;
-
-  &:last-child {
-    margin-bottom: 0;
-  }
+/* Two-card mode grid (overrides the 4-col default) */
+.ce-mode-grid {
+  grid-template-columns: 1fr 1fr;
 
   @media (max-width: 600px) {
     grid-template-columns: 1fr;
   }
 }
 
-.form-group {
-  margin-bottom: 0;
-
-  label {
-    display: block;
-    font-size: 14px;
-    font-weight: var(--font-weight-semibold);
-    color: var(--color-text-primary);
-    margin-bottom: 8px;
-  }
-
-  input,
-  select,
-  textarea {
-    width: 100%;
-    padding: var(--spacing-sm);
-    border: 2px solid var(--color-border);
-    border-radius: var(--radius-md);
-    font-size: 15px;
-    transition: border-color 0.3s ease, box-shadow 0.3s ease;
-    font-family: inherit;
-    background: var(--input-bg);
-    color: var(--input-text);
-
-    &:focus {
-      outline: none;
-      border-color: var(--color-primary);
-      box-shadow: var(--focus-ring);
-    }
-
-    &.invalid {
-      border-color: var(--color-danger);
-    }
-
-    &::placeholder {
-      color: var(--color-text-muted);
-    }
-
-    &.readonly-field {
-      background-color: var(--color-background-secondary);
-      color: var(--color-text-muted);
-      cursor: not-allowed;
-
-      &:focus {
-        border-color: var(--color-border);
-        box-shadow: none;
-      }
-    }
-  }
-
-  textarea {
-    resize: vertical;
-    min-height: 60px;
-  }
-
-  select {
-    cursor: pointer;
-  }
-
-  .error-message {
-    display: block;
-    font-size: 12px;
-    color: var(--color-danger);
-    margin-top: 5px;
-  }
-
-  .field-hint {
-    display: block;
-    font-size: 12px;
-    color: var(--color-text-muted);
-    margin-top: 5px;
-
-    &.field-hint-success {
-      color: var(--color-success);
-      font-weight: var(--font-weight-medium);
-    }
-  }
-
-  .input-with-button {
-    display: flex;
-    gap: 8px;
-
-    input {
-      flex: 1;
-    }
-
-    .btn-generate {
-      padding: 8px 16px;
-      background: var(--color-success);
-      color: var(--color-text-inverse);
-      border: none;
-      border-radius: 8px;
-      font-size: 13px;
-      font-weight: var(--font-weight-semibold);
-      cursor: pointer;
-      white-space: nowrap;
-      transition: background 0.3s ease;
-
-      &:hover {
-        background: var(--color-success-dark);
-      }
-    }
-  }
-
-}
-
-// Switch toggle styles
-.switch-wrapper {
-  display: flex;
+/* ---------- Addresses section ---------- */
+.ce-addr-head {
   align-items: center;
-  gap: 12px;
-  padding-top: 5px;
+  justify-content: space-between;
 
-  .switch {
-    position: relative;
-    display: inline-block;
-    width: 50px;
-    height: 26px;
-
-    input {
-      opacity: 0;
-      width: 0;
-      height: 0;
-
-      &:checked + .slider {
-        background-color: var(--color-success);
-      }
-
-      &:checked + .slider:before {
-        transform: translateX(24px);
-      }
-
-      &:focus + .slider {
-        box-shadow: 0 0 0 3px rgba(var(--color-success-rgb), 0.2);
-      }
-    }
-
-    .slider {
-      position: absolute;
-      cursor: pointer;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background-color: var(--color-border);
-      transition: 0.3s;
-      border-radius: 26px;
-
-      &:before {
-        position: absolute;
-        content: "";
-        height: 20px;
-        width: 20px;
-        left: 3px;
-        bottom: 3px;
-        background-color: var(--card-bg);
-        transition: 0.3s;
-        border-radius: 50%;
-        box-shadow: var(--shadow-sm);
-      }
-    }
-  }
-
-  .switch-text {
-    font-size: 14px;
-    font-weight: var(--font-weight-bold);
-    color: var(--color-danger);
-    transition: color 0.3s ease;
-    min-width: 60px;
-
-    &.active {
-      color: var(--color-success);
-    }
-  }
+  > div { flex: 1; min-width: 0; }
 }
 
-.radio-group {
-  display: flex;
-  gap: var(--spacing-md-lg);
-  padding-top: 5px;
-
-  .radio-label {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    cursor: pointer;
-
-    input[type="radio"] {
-      width: 16px;
-      height: 16px;
-      cursor: pointer;
-    }
-
-    span {
-      font-size: 14px;
-    }
-  }
-}
-
-.checkbox-group {
-  .checkbox-label {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-md-sm);
-    cursor: pointer;
-
-    input[type="checkbox"] {
-      width: 18px;
-      height: 18px;
-      cursor: pointer;
-    }
-
-    span {
-      font-size: 14px;
-      color: var(--color-text-primary);
-    }
-  }
-}
-
-.form-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-  padding-top: 10px;
-}
-
-// Button styles
-.btn {
-  padding: 12px 24px;
-  font-size: 14px;
-  font-weight: var(--font-weight-semibold);
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-
-  &.btn-primary {
-    background: var(--color-info);
-    color: var(--color-text-inverse);
-
-    &:hover:not(:disabled) {
-      background: var(--color-info-dark);
-    }
-
-    &:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-    }
-  }
-
-  &.btn-secondary {
-    background: var(--color-background-secondary);
-    color: var(--color-text-primary);
-    border: 2px solid var(--color-border);
-
-    &:hover {
-      background: var(--color-background-secondary);
-      border-color: var(--color-border);
-    }
-  }
-
-  &.btn-sm {
-    padding: 8px 16px;
-    font-size: 13px;
-  }
-
-  &.btn-icon {
-    padding: 8px;
-    background: transparent;
-    border: none;
-    font-size: 18px;
-    color: var(--color-text-secondary);
-
-    &:hover {
-      color: var(--color-text-primary);
-    }
-
-    &.btn-danger:hover {
-      color: var(--color-danger);
-    }
-
-    .star-icon {
-      color: var(--color-warning);
-    }
-  }
-
-  &.btn-close {
-    padding: 4px 10px;
-    background: transparent;
-    font-size: 24px;
-    color: var(--color-text-secondary);
-
-    &:hover {
-      color: var(--color-text-primary);
-    }
-  }
-}
-
-.spinner-small {
-  width: 16px;
-  height: 16px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-radius: 50%;
-  border-top-color: white;
-  animation: spin 0.8s linear infinite;
-}
-
-// Addresses Section
-.addresses-section {
-  margin-top: 30px;
-
-  .section-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-    padding-bottom: 15px;
-    border-bottom: 2px solid var(--color-border-light);
-
-    h2 {
-      margin: 0;
-      padding: 0;
-      border: none;
-      flex: 1;
-    }
-  }
-}
-
-.empty-addresses {
+.ce-empty {
+  padding: var(--spacing-lg);
   text-align: center;
-  padding: 40px 20px;
+  color: var(--color-text-muted);
+  font-size: var(--text-md);
+}
+
+/* An empty destination list is a restriction, not an absence — it reads as a
+   consequence rather than as "nothing here yet". */
+.ce-empty--warn {
+  text-align: left;
+  border: 1px solid var(--color-border);
+  border-left: 3px solid var(--color-warning);
+  border-radius: var(--radius-md);
+  background: var(--status-warning-bg);
+  color: var(--color-text-secondary);
+  padding: var(--spacing-md);
+}
+
+/* ---------- Certification countries ---------- */
+/* Chips, not a table: the list is short, unordered and read at a glance — the
+   question is only ever "is country X in it?". */
+.ce-cert-countries {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ce-cert-country {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: var(--color-background-secondary);
+}
+
+.ce-cert-country__code {
+  font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: .06em;
+  color: var(--color-text-primary);
+}
+
+.ce-cert-country__name {
+  font-size: var(--text-sm);
   color: var(--color-text-secondary);
 }
 
-.addresses-list {
+.ce-addresses {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-sm-md);
+
+  @media (max-width: 720px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.ce-address {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-md);
-}
-
-.address-card {
-  padding: 20px;
-  background: var(--color-background-secondary);
-  border: 2px solid var(--color-border);
-  border-radius: 10px;
-  transition: all 0.3s ease;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm-md) var(--spacing-md-sm);
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-control);
+  transition: border-color .15s ease;
 
   &.is-default {
-    border-color: var(--color-info);
-    background: var(--status-info-bg);
+    border-color: var(--color-primary);
   }
 
-  .address-header {
+  &__head {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    margin-bottom: 10px;
-
-    .address-country {
-      display: flex;
-      align-items: center;
-      gap: var(--spacing-md-sm);
-
-      strong {
-        font-size: 16px;
-        color: var(--color-text-primary);
-      }
-
-      .default-badge {
-        padding: 4px 10px;
-        background: var(--color-info);
-        color: var(--color-text-inverse);
-        font-size: 11px;
-        font-weight: var(--font-weight-semibold);
-        text-transform: uppercase;
-        border-radius: 12px;
-      }
-    }
-
-    .address-actions {
-      display: flex;
-      gap: var(--spacing-xs);
-    }
+    justify-content: space-between;
+    gap: var(--spacing-sm);
   }
 
-  .address-details {
-    p {
-      margin: 0;
-      font-size: 14px;
-      color: var(--color-text-secondary);
-      line-height: 1.5;
-    }
+  &__country {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    font-size: var(--text-md);
+    color: var(--color-text-primary);
+  }
+
+  &__actions {
+    display: inline-flex;
+    gap: 6px;
+  }
+
+  &__body {
+    margin: 0;
+    font-size: var(--text-sm);
+    color: var(--color-text-secondary);
+    line-height: 1.5;
   }
 }
 
-// Country Autocomplete
-.country-autocomplete {
-  .autocomplete-wrapper {
-    position: relative;
-
-    input {
-      padding-right: 35px;
-    }
-
-    .btn-clear {
-      position: absolute;
-      right: 10px;
-      top: 50%;
-      transform: translateY(-50%);
-      background: none;
-      border: none;
-      font-size: 18px;
-      color: var(--color-text-muted);
-      cursor: pointer;
-      padding: 4px 8px;
-      line-height: 1;
-
-      &:hover {
-        color: var(--color-text-secondary);
-      }
-    }
-
-    .autocomplete-dropdown {
-      position: absolute;
-      top: 100%;
-      left: 0;
-      right: 0;
-      background: var(--card-bg);
-      border: 2px solid var(--color-border);
-      border-top: none;
-      border-radius: 0 0 8px 8px;
-      max-height: 200px;
-      overflow-y: auto;
-      z-index: 100;
-      box-shadow: var(--shadow-md);
-
-      .autocomplete-item {
-        display: flex;
-        align-items: center;
-        gap: var(--spacing-md-sm);
-        padding: 8px 14px;
-        cursor: pointer;
-        transition: background 0.2s ease;
-
-        &:hover {
-          background: var(--color-background-secondary);
-        }
-
-        &.selected {
-          background: var(--status-info-bg);
-        }
-
-        .country-code {
-          font-size: 12px;
-          font-weight: var(--font-weight-semibold);
-          color: var(--color-info);
-          background: rgba(var(--color-info-rgb), 0.1);
-          padding: 2px 6px;
-          border-radius: 4px;
-          min-width: 32px;
-          text-align: center;
-        }
-
-        .country-name {
-          font-size: 14px;
-          color: var(--color-text-primary);
-        }
-      }
-
-      .autocomplete-no-results {
-        padding: 12px 14px;
-        font-size: 14px;
-        color: var(--color-text-muted);
-        text-align: center;
-      }
-    }
-  }
-}
-
-// Modal
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: var(--overlay-bg);
-  display: flex;
+.ce-default-badge {
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  padding: 20px;
+  height: var(--control-h-xs);
+  padding: 0 var(--spacing-sm);
+  border-radius: 999px;
+  background: var(--color-primary-container, var(--color-background-secondary));
+  color: var(--color-primary);
+  border: 1px solid var(--color-primary);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
 }
 
-.modal-content {
-  background: var(--card-bg);
-  border-radius: 12px;
-  width: 100%;
-  max-width: 500px;
-  max-height: 90vh;
-  overflow-y: auto;
-  box-shadow: var(--shadow-xl);
-
-  .modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 20px 25px;
-    border-bottom: 2px solid var(--color-border-light);
-
-    h3 {
-      margin: 0;
-      font-size: 20px;
-      font-weight: var(--font-weight-bold);
-      color: var(--color-text-primary);
-    }
-  }
-
-  .address-form {
-    padding: 25px;
-
-    .form-group {
-      margin-bottom: 15px;
-    }
-  }
-
-  .modal-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 12px;
-    padding-top: 20px;
-    border-top: 2px solid var(--color-border-light);
-    margin-top: 20px;
-  }
+.ce-official-badge {
+  display: inline-flex;
+  align-items: center;
+  height: var(--control-h-xs);
+  padding: 0 var(--spacing-sm);
+  border-radius: 999px;
+  background: var(--color-info-container, var(--color-background-secondary));
+  color: var(--color-info);
+  border: 1px solid var(--color-info);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
 }
 
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
+/* Branch a delivery address is linked to. Visually quieter than the default and
+   official badges: those are states the operator sets here, this one only
+   reports which branch the ERP-owned link points at. */
+.ce-branch-badge {
+  display: inline-flex;
+  align-items: center;
+  height: var(--control-h-xs);
+  padding: 0 var(--spacing-sm);
+  border-radius: 999px;
+  background: var(--color-background-secondary);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border);
+  font-size: var(--text-xs);
+  font-weight: 600;
 }
 
-@keyframes pulse {
-  0%, 100% {
-    opacity: 1;
+/* ---------- Branches (read-only, ERP-owned) ---------- */
+/* 340px, not the 260px a plain card would take: each row here is a label and a
+   value on one line, and at 260px the Ukrainian labels leave so little room that
+   every value ellipsises down to a few characters. */
+.ce-branches {
+  display: grid;
+  gap: var(--spacing-sm);
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+}
+
+.ce-branch {
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-background-secondary);
+  cursor: pointer;
+  transition: border-color .15s ease, background .15s ease;
+
+  &:hover,
+  &:focus-within {
+    border-color: var(--color-primary);
+    background: var(--color-background);
   }
-  50% {
+
+  &.is-inactive {
     opacity: 0.6;
   }
 }
 
-// Responsive
-@media (max-width: 768px) {
-  .page-header {
-    gap: var(--spacing-md-sm);
+.ce-branch__head {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+}
 
-    h1 {
-      font-size: 1.25rem;
+/* The branch name is the card's button. Styled as the heading it already was:
+   the affordance is the hover underline and the pointer, not button chrome. */
+.ce-branch__open {
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  text-align: left;
+  cursor: pointer;
+
+  &:hover {
+    text-decoration: underline;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+    border-radius: var(--radius-xs);
+  }
+}
+
+.ce-branch__badge {
+  font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+}
+
+/* Labelled field list. Every value carries its label: a bare number in a branch
+   card is unreadable without opening the table to find out what it is.
+   One line per value, ellipsised — a wrapped VAT number or e-mail turns the card
+   into a ragged block and makes the labels hard to scan against their values.
+   The full text is on the title attribute and in the detail modal. */
+.ce-branch__fields {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--spacing-xs) var(--spacing-sm);
+  margin: var(--spacing-sm) 0 0;
+  font-size: var(--text-sm);
+
+  dt {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--color-text-secondary);
+  }
+
+  /* The row, not the value, is the flex line: the warning marker keeps its size
+     while the value ellipsises. No overflow clipping here — that would cut the
+     marker's tooltip off at the column edge. */
+  dd {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    margin: 0;
+    min-width: 0;
+    color: var(--color-text-primary);
+  }
+}
+
+.ce-branch__value {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Detail modal: the same pairs with no truncation, so long values are readable. */
+.ce-branch-detail {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--spacing-sm) var(--spacing-md);
+  margin: 0;
+  font-size: var(--text-sm);
+
+  dt {
+    color: var(--color-text-secondary);
+  }
+
+  dd {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    margin: 0;
+    min-width: 0;
+    color: var(--color-text-primary);
+    overflow-wrap: anywhere;
+
+    > span {
+      min-width: 0;
     }
   }
+}
 
-  .btn-icon-header {
-    width: 36px;
-    height: 36px;
+.ce-branch-detail__uid {
+  font-family: var(--font-mono, monospace);
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+}
 
-    .material-icons {
-      font-size: 18px;
-    }
+/* Marker for a gap that changes how the branch is billed. Informational rather
+   than alarming: the record is ERP-owned and nothing here can fix it, so it
+   marks the field and keeps the sentence in the tooltip. */
+.ce-warn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  color: var(--color-warning);
+  cursor: help;
+
+  &__icon {
+    font-size: var(--icon-sm);
   }
 
-  .addresses-section .section-header {
-    gap: var(--spacing-md-sm);
+  /* Anchored to the marker's right edge so a long sentence grows back across
+     the card instead of off it. */
+  &__tip {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    z-index: 20;
+    width: max-content;
+    max-width: 260px;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-control);
+    background: var(--card-bg);
+    box-shadow: var(--elevation-3);
+    color: var(--color-text-primary);
+    font-size: var(--text-xs);
+    font-weight: 400;
+    line-height: 1.45;
+    text-align: left;
+    white-space: normal;
+    cursor: default;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity .12s ease, visibility .12s ease;
   }
 
-  .address-card .address-header {
+  &:hover &__tip,
+  &:focus &__tip,
+  &:focus-visible &__tip {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+    border-radius: var(--radius-xs);
+  }
+}
+
+/* Toggle under a collapsed branch or address list. Sits below the cards rather
+   than in the section header: it is about the list, and the header already
+   carries the section's own action. */
+.ce-show-all {
+  margin-top: var(--spacing-sm);
+}
+
+/* ---------- Address modal ---------- */
+.ce-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--overlay-bg-light);
+  padding: var(--spacing-md);
+  overflow-y: auto;
+}
+
+.ce-modal {
+  width: 100%;
+  max-width: 560px;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 2 * var(--spacing-md));
+  overflow: hidden;
+
+  /* Read-only detail: a field list needs far less width than the address form. */
+  &--narrow {
+    max-width: 420px;
+  }
+
+  &__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-md);
+    padding: var(--spacing-md) var(--spacing-md-lg);
+    border-bottom: 1px solid var(--color-border-light);
+  }
+
+  /* Title plus any status marker, so the marker reads as part of the name
+     rather than as the first row of the body. */
+  &__heading {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    flex-wrap: wrap;
+    min-width: 0;
+  }
+
+  &__title {
+    margin: 0;
+    font-size: var(--text-lg);
+    font-weight: 600;
+    color: var(--color-text-primary);
+  }
+
+  &__body {
+    padding: var(--spacing-md) var(--spacing-md-lg);
+    overflow-y: auto;
+    display: flex;
     flex-direction: column;
-    gap: var(--spacing-md-sm);
-    align-items: flex-start;
+    gap: var(--spacing-md);
   }
 
-  .form-actions {
-    flex-direction: column;
+  &__foot {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm-md) var(--spacing-md-lg);
+    border-top: 1px solid var(--color-border-light);
+  }
+}
 
-    .btn {
-      width: 100%;
+/* ---------- Country autocomplete ---------- */
+.ce-country-field { position: relative; }
+
+.ce-autocomplete {
+  position: relative;
+  width: 100%;
+
+  &__clear {
+    position: absolute;
+    top: 50%;
+    right: 4px;
+    transform: translateY(-50%);
+    width: calc(var(--control-h-md) - 8px);
+    height: calc(var(--control-h-md) - 8px);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    border-radius: 50%;
+
+    app-icon { font-size: var(--icon-sm); }
+
+    &:hover { background: var(--color-background-secondary); color: var(--color-text-primary); }
+  }
+
+  &__list {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    z-index: 5;
+    max-height: 240px;
+    overflow-y: auto;
+    background: var(--card-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-control);
+    box-shadow: var(--dropdown-shadow);
+  }
+
+  &__item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-xs) var(--spacing-sm-md);
+    cursor: pointer;
+    font-size: var(--text-sm);
+    color: var(--color-text-primary);
+
+    &:hover, &.is-selected {
+      background: var(--color-background-secondary);
     }
+
+    &.is-selected { color: var(--color-primary); font-weight: 600; }
   }
 
-  .modal-actions {
-    flex-direction: column;
-
-    .btn {
-      width: 100%;
-    }
+  &__code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+    min-width: 32px;
   }
+
+  &__name { flex: 1; }
+
+  &__empty {
+    padding: var(--spacing-sm) var(--spacing-sm-md);
+    color: var(--color-text-muted);
+    font-size: var(--text-sm);
+  }
+}
+
+/* ---------- Client API keys glance ---------- */
+.ce-api-keys {
+  list-style: none;
+  margin: var(--spacing-sm-md) 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.ce-api-key {
+  display: grid;
+  grid-template-columns: minmax(120px, 1fr) auto auto auto;
+  gap: var(--spacing-sm);
+  align-items: baseline;
+  padding: 4px 0;
+  font-size: var(--text-sm);
+  border-top: 1px dashed var(--color-border-light);
+
+  &.is-revoked { opacity: .55; }
+  &__name { font-weight: 600; color: var(--color-text-primary); }
+  &__prefix { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: var(--text-xs); color: var(--color-text-secondary); }
+  &__meta { font-size: var(--text-xs); color: var(--color-text-muted); white-space: nowrap; }
 }
