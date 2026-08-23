@@ -151,31 +151,13 @@ productService.toggleViewMode()        // Switches between grid/bulk display
 - Products: `core/mock-data/products.mock.ts` (15 products, 3 categories)
 - Orders: `core/mock-data/orders.mock.ts`
 
-### Money Values and Pricing (CRITICAL)
+### Money Values and Pricing
 
-**PRIMARY CONCEPT: All money calculations are performed on the backend. The frontend only displays values received from the API.**
+Monetary values are **integer cents** end-to-end (e.g., `1999` = $19.99). Display formula: `(price / 100).toFixed(2)`. When creating orders, send only product UIDs + quantities; backend returns the fully-calculated order. (See global rule on backend-authoritative money.)
 
-**All monetary values in the backend API are in cents** for precision:
-- Product prices are stored and transmitted as **integers** (e.g., 1999 = $19.99)
-- When displaying prices, divide by 100: `(price / 100).toFixed(2)`
-- **DO NOT perform calculations on the frontend** - all totals, discounts, VAT amounts come pre-calculated from the backend
+### Discount and VAT Schema
 
-**Example conversion**:
-```typescript
-// Display price from API (backend provides value in cents)
-displayPrice(priceInCents: number): string {
-  return (priceInCents / 100).toFixed(2);
-}
-
-// When sending order data to API, only send product UIDs and quantities
-// Backend calculates all prices, discounts, VAT, and totals
-```
-
-### Discount and VAT Features
-
-**CRITICAL: The backend is the single source of truth for all pricing calculations.**
-
-The application supports multi-level discount and VAT calculation, but **all calculations are performed on the backend**:
+The application supports multi-level discount and VAT calculation. Backend computes everything; frontend stores the snapshot fields below for display.
 
 **Client Model** (from API):
 - `discount` (number, 0-100): Default discount percentage for client
@@ -199,12 +181,6 @@ The application supports multi-level discount and VAT calculation, but **all cal
 - `price_discount` (number): Price after discount in cents (calculated by backend)
 - `tax` (number): VAT amount for this item (calculated by backend)
 - `total` (number): Item total (calculated by backend)
-
-**Frontend Responsibilities**:
-- **Display** values received from the backend API
-- **Format** monetary values for display (convert cents to currency format)
-- **Send** only product UIDs and quantities when creating orders
-- **DO NOT** calculate discounts, VAT, or totals on the frontend
 
 ### Preview Pricing Pattern (Product Catalog)
 
